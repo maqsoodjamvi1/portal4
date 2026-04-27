@@ -1,0 +1,12 @@
+<?php
+
+namespace Config;
+
+use CodeIgniter\Config\BaseConfig;
+
+class Aws extends BaseConfig
+{
+    public $key = 'YOUR_AWS_KEY';
+    public $secret = 'YOUR_AWS_SECRET';
+    public $region = 'us-east-1';
+}

@@ -1,0 +1,955 @@
+<?php // app/Views/admin/fee_scripts.php ?>
+
+<!-- Bootstrap Switch CSS -->
+<link rel="stylesheet" href="<?= base_url('assets/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css'); ?>">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    var base_url = "<?= base_url() ?>";
+
+    function showFamilyFeeHistoryPage(parent_id) {
+        var url = base_url + "/fee/familyHistory/" + parent_id;
+        window.open(url, "_blank", "width=1000,height=700,scrollbars=yes,resizable=yes");
+    }
+</script>
+
+
+<script>
+// ✅ Global fee pool — accessible to all scripts
+var feePool = [];
+
+
+let lastMoveType = null;
+
+// ✅ Helper to clear pool safely
+function clearFeePool() {
+    feePool = [];
+    renderFeePool();
+    showStatus('Payment pool cleared');
+}
+
+
+
+// // ✅ Function to clear both data & UI
+// function clearFeePool() {
+//     feePool = [];
+//     $('#fee-pool').empty(); // Clear the pool container
+// }
+
+// Enhanced fee scripts with additional functionality
+$(document).ready(function() {
+    // Initialize date picker
+    $('#datepicker2').datetimepicker({
+        format: 'YYYY-MM-DD',
+        defaultDate: new Date()
+    });
+
+    // Initialize student select2
+    $('#student_id').select2({
+        placeholder: 'Search by student name or ID',
+        minimumInputLength: 2,
+        width: '100%',
+        ajax: {
+            url: '<?= base_url('admin/fee-chalan-pay/get-studentinfo'); ?>',
+            type: 'POST',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    term: params.term // search term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: $.map(data, function(item) {
+                        return {
+                            id: item.id,
+                            text: item.text
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        templateResult: formatStudent,
+        templateSelection: formatStudentSelection
+    })
+    .on('select2:select', function(e) {
+        // ✅ Clear fee pool every time a new student is selected
+        clearFeePool();
+        loadStudentCard(e.params.data.id);
+    })
+    .on('select2:clear', function() {
+        // ✅ Also clear pool if selection is cleared
+        clearFeePool();
+    });
+
+    // Initialize bootstrap switch
+    $("input[data-bootstrap-switch]").each(function(){
+        $(this).bootstrapSwitch();
+    });
+});
+
+function formatStudent(student) {
+    if (student.loading) return student.text;
+    return $('<div class="student-result">' + student.text + '</div>');
+}
+
+function formatStudentSelection(student) {
+    return student.text || student.id;
+}
+
+
+function loadStudentCard(student_id) {
+    // ✅ Always clear fee pool before loading new student
+    clearFeePool();
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/getStudentCardAjax'); ?>',
+        type: 'POST',
+        data: { student_id: student_id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                lastStudentCardAjaxResponse = response;
+                $('#student-card-container').html(response.html);
+                
+                // Update parent summary
+                $('#parentSummary').show();
+                $('#familyTotalAmount').text(response.family_total ?? '0');
+                
+                // ✅ Load parent-related data
+                fetchParentFeeSummary(response.parent_id);
+                loadPaidFeeTable(response.parent_id);
+
+                // Re-init toggle switches if any
+                $("input[data-bootstrap-switch]").each(function() {
+                    $(this).bootstrapSwitch();
+                });
+
+            } else {
+                $('#student-card-container').html('<div class="alert alert-danger">' + response.html + '</div>');
+                
+                if (response.parent_id) {
+                    fetchParentFeeSummary(response.parent_id);
+                }
+                $('#parentSummary').hide();
+            }
+        },
+        error: function() {
+            $('#student-card-container').html('<div class="alert alert-danger">Error loading student data</div>');
+            $('#parentSummary').hide();
+        }
+    });
+}
+
+
+function fetchParentFeeSummary(parentId) {
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/get-parent-fee-summary') ?>',
+        type: 'POST',
+        data: { parent_id: parentId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Show the parent summary block
+                $('#parentSummary').show();
+
+                // Update values in the unified block
+               // $('#parentName').text('Parent: ' + (response.parent_name ?? ''));
+                $('#todayPaidAmount').text(parseFloat(response.totalToday || 0).toFixed(0));
+                $('#monthPaidAmount').text(parseFloat(response.totalMonth || 0).toFixed(0));
+                $('#familyTotalAmount').text(parseFloat(response.familyTotalDue || 0).toFixed(0));
+               // $('#studentCount').text(response.student_count || '0');
+
+                // Set date labels
+                const today = new Date();
+                const todayFormatted = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+                const monthFormatted = today.toLocaleDateString('en-US', { month: 'long' });
+
+                $('#todayDateLabel').text(todayFormatted);
+                $('#monthLabel').text(monthFormatted);
+            } else {
+                $('#parentSummary').hide();
+            }
+        },
+        error: function() {
+            
+            showStatus('Failed to load parent fee summary')
+            $('#parentSummary').hide();
+        }
+    });
+}
+
+
+
+function markFeeUnpaid(chalanId, studentId, parentId) {
+    $.post('<?= base_url('admin/fee-chalan-pay/make-unpaid') ?>', { chalan_id: chalanId }, function(resp) {
+        if (resp.success) {
+            showStatus('Marked as unpaid');
+            const parentId = $('#student-card-container .student-card').data('parent-id');
+        if (!parentId) {
+            showStatus('Unable to refresh family info: missing parent ID');
+            return;
+        }
+            loadStudentCard(studentId);
+             fetchParentFeeSummary(parentId);      // ✅ Refresh summary
+        loadPaidFeeTable(parentId);           // ✅ Refresh paid records
+            
+
+        } else {
+            showToast(resp.message || 'Failed to update status', 'danger');
+        }
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toastId = 'toast-' + Date.now();
+    const toast = `
+        <div id="${toastId}" class="toast bg-${type} text-white fade show" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; min-width: 250px; z-index: 1050;">
+            <div class="toast-header bg-${type} text-white">
+                <strong class="mr-auto"><i class="fas fa-info-circle"></i> Info</strong>
+                <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+
+    $('body').append(toast);
+    setTimeout(() => {
+        $('#' + toastId).toast('hide').remove();
+    }, 3000);
+}
+
+
+function loadPaidFeeTable(parentId) {
+    $.post('<?= base_url('admin/fee-chalan-pay/get-monthly-paid-fees') ?>', { parent_id: parentId }, function(resp) {
+        if (resp.success) {
+            const tbody = $('#paidFeeTableBody');
+            tbody.empty();
+
+            if (resp.data.length === 0) {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted">No payments found</td></tr>');
+                return;
+            }
+resp.data.forEach((fee, index) => {
+    const today = new Date();
+
+    let isTodayUpdate = false;
+    if (fee.updated_date) {
+        // Convert updated_date string to a Date object
+        const updatedDate = new Date(fee.updated_date.replace(/-/g, '/')); // Safari-safe parsing
+
+        // Compare year, month, and day
+        isTodayUpdate =
+            updatedDate.getFullYear() === today.getFullYear() &&
+            updatedDate.getMonth() === today.getMonth() &&
+            updatedDate.getDate() === today.getDate();
+    }
+
+    const highlight = index === 0 ? 'table-success' : '';
+    const canUnpaid = isTodayUpdate
+        ? `<button class="btn btn-sm btn-danger" onclick="markFeeUnpaid(${fee.chalan_id}, ${fee.student_id}, ${fee.parent_id})">Unpaid</button>`
+        : '';
+
+    tbody.append(`
+        <tr class="${highlight}">
+            <td>${fee.first_name} ${fee.last_name}</td>
+            <td>${fee.fee_type_name}<br><small class="text-muted">(${fee.fee_month})</small></td>
+            <td>
+                <div>Rs ${(parseFloat(fee.amount) - parseFloat(fee.discount || 0)).toFixed(0)}</div>
+                <small class="text-muted">${fee.paid_date}</small>
+            </td>
+            <td>${canUnpaid}</td>
+        </tr>
+    `);
+});
+
+            // Scroll to table
+            $('html, body').animate({
+                scrollTop: $('#paidFeeTableWrapper').offset().top - 100
+            }, 500);
+        } else {
+            showStatus('Failed to load paid fee data');
+        }
+    });
+}
+
+
+
+
+
+
+function renderFeePool() {
+    let html = '';
+    let total = 0;
+
+    feePool.forEach((fee, index) => {
+        const amount = parseFloat(fee.amount) || 0;
+        const discount = parseFloat(fee.discount) || 0;
+        const paid = amount - discount;
+        total += paid;
+
+        html += `
+            <tr>
+                <td>
+                    <strong>${fee.student_name ?? 'N/A'}</strong>
+                </td>
+                <td>
+                    <strong>${fee.feeType}</strong><br>
+                    <small class="text-muted">${fee.feeMonth}</small>
+                </td>
+                <td>
+                     Rs ${amount.toFixed(2)}
+                    ${discount > 0 ? `<br><small class="text-success">(Discount: Rs ${discount.toFixed(2)})</small>` : ''}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="removeFeeFromPool(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    if (feePool.length === 0) {
+        html = `<tr><td colspan="4" class="text-center text-muted">No fees selected.</td></tr>`;
+        $('#paymentPoolCard').hide();
+    } else {
+        $('#paymentPoolCard').show();
+    }
+
+    $('#paymentPoolTable tbody').html(html);
+    $('#confirmPaymentBtn').toggle(feePool.length > 0);
+    $('#clearPoolBtn').toggle(feePool.length > 0);
+    $('#poolTotalAmount').text(total.toFixed(2));
+}
+
+
+function clearFeePool() {
+    
+        feePool.forEach(fee => {
+            const $btn = $('#fee-btn-' + fee.chalan_id);
+            if ($btn.length) {
+                $('#fee-buttons-' + fee.student_id).append($btn);
+                $btn.show();
+            }
+        });
+
+        feePool = [];
+        renderFeePool();
+        showStatus('Payment pool cleared');
+    
+}
+
+
+
+function removeFeeFromPool(index) {
+    const removed = feePool.splice(index, 1)[0]; // Remove the item from pool
+    renderFeePool();
+    showStatus('Value moved from pool to student card');
+
+    if (removed && removed.chalan_id) {
+        const $btn = $('#fee-btn-' + removed.chalan_id);
+
+        // ✅ If fee button exists in hidden block, move it back to fee card
+        if ($btn.length) {
+            $('#fee-buttons-' + removed.student_id).append($btn);
+            $btn.show();
+        } else {
+            // 🔁 Optional fallback: reload the entire student card if button is missing
+            console.warn('Fee button not found in DOM, reloading card...');
+            reloadStudentCard(removed.student_id);
+        }
+    }
+}
+
+
+
+function reloadStudentCard(studentId) {
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/getStudentCardAjax') ?>',
+        type: 'POST',
+        data: { student_id: studentId },
+        success: function(resp) {
+            if (resp.success && resp.html) {
+                $('#student-card-container').html(resp.html);
+                removePooledFeesFromCard(); // Hide pooled fees again
+            }
+        }
+    });
+}
+
+
+$('#confirmPaymentBtn').click(function () {
+    const paid_date = $('#datePaid').val();
+    const studentId = $('#student_id').val(); // hidden input in modal (selected student)
+    const parentId = $('#student-card-container .student-card').data('parent-id'); // from fee card
+
+    if (!paid_date) {
+        toastr.error('Please select a payment date');
+        return;
+    }
+
+    if (feePool.length === 0) {
+        toastr.error('No fees in payment pool to confirm');
+        return;
+    }
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/mark-multiple-fees-as-paid') ?>', // ✅ use lowercase/kebab-case
+        type: 'POST',
+        data: {
+            fees: JSON.stringify(feePool),
+            paid_date: paid_date,
+            student_id: studentId
+        },
+        success: function (response) {
+            if (response.success) {
+                showStatus('Payment confirmed successfully');
+
+                // ✅ Reload student card with latest data
+                loadStudentCard(studentId);
+
+                // ✅ Refresh parent summary
+                fetchParentFeeSummary(parentId);
+
+                loadPaidFeeTable(parentId);           // ✅ Refresh paid fee entries
+
+                // ✅ Refresh paid table with highlight
+                if (response.last_chalan_id) {
+                    loadPaidFeeTable(parentId, response.last_chalan_id); // highlight row
+                } else {
+                    loadPaidFeeTable(parentId); // fallback
+                }
+
+                // ✅ Clear fee pool and re-render
+                feePool = [];
+                renderFeePool();
+
+                // ✅ Update dues for all siblings
+                if (response.student_dues_all && Array.isArray(response.student_dues_all)) {
+                    response.student_dues_all.forEach(function (student) {
+                        const formatted = new Intl.NumberFormat().format(student.amount);
+                        $('#student-dues-' + student.student_id).text('Rs ' + formatted);
+                    });
+                }
+
+                // ✅ Update family dues
+                if (response.family_dues) {
+                    $('#family-dues').text('Rs ' + response.family_dues.amount);
+                }
+
+            } else {
+                toastr.error(response.message || 'Payment confirmation failed');
+                feePool.forEach(fee => {
+                    if (fee.cardElement) fee.cardElement.show();
+                });
+            }
+        },
+        error: function () {
+            toastr.error('Error processing payment confirmation');
+            feePool.forEach(fee => {
+                if (fee.cardElement) fee.cardElement.show();
+            });
+        }
+    });
+});
+
+
+
+function removePooledFeesFromCard() {
+    feePool.forEach(fee => {
+        $('#fee-row-' + fee.chalan_id).addClass('d-none');
+    });
+}
+
+
+
+
+
+
+function restoreFeeRowFromCard(chalan_id) {
+    $('#fee-row-' + chalan_id).removeClass('d-none');
+}
+
+function showStatus(message, color = '#00a65a') {
+    const $status = $('#status-message');
+    $status.css('background', color)
+           .text(message)
+           .fadeIn(200);
+
+    clearTimeout($status.data('timeout')); // prevent overlap timing
+    const timeout = setTimeout(() => {
+        $status.fadeOut(200);
+    }, 2000);
+
+    $status.data('timeout', timeout);
+}
+
+
+function submitPartial() {
+    const chalanId = $('#partialChalanId').val();
+    const studentId = $('#partialStudentId').val();
+    const paid = parseFloat($('#partialPaid').val()) || 0;
+    const discount = parseFloat($('#partialDiscount').val()) || 0;
+    const total = parseFloat($('#partialTotal').val()) || 0;
+    const balance = total - (paid + discount);
+
+    if (paid <= 0 && discount <= 0) {
+        toastr.error('Please enter either payment amount or discount');
+        return;
+    }
+
+    if (balance < 0) {
+        toastr.error('Payment + discount cannot exceed total amount');
+        return;
+    }
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/addPartialFeeToPool') ?>',
+        type: 'POST',
+        data: {
+            chalan_id: chalanId,
+            student_id: studentId,
+            paid_amount: paid,
+            discount_amount: discount,
+            paid_date: $('#datePaid').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                showStatus('Partial payment processed successfully');
+                $('#partialModal').modal('hide');
+                const remainingBalance = paid + discount;
+                // 1️⃣ Push the paid portion into the pool
+                feePool.push({
+                    chalan_id: response.fee.chalan_id,
+                    student_id: response.fee.student_id,
+                      student_name: response.fee.student_name, // ✅ now filled
+                      amount: remainingBalance,
+                    paid: paid,
+                    discount: discount,
+                    feeType: response.fee.feeType,
+                    feeMonth: response.fee.feeMonth
+                });
+
+                // ✅ Hide the original fee button manually
+        $('#fee-btn-' + chalanId).addClass('d-none');
+
+                renderFeePool();
+
+                // 2️⃣ Refresh the current student card
+                $.ajax({
+                    url: '<?= base_url('admin/fee-chalan-pay/getStudentCardAjax') ?>',
+                    method: 'POST',
+                    data: { student_id: studentId },
+                    success: function(resp) {
+                        if (resp.success && resp.html) {
+                            $('#student-card-container').html(resp.html);
+                             removePooledFeesFromCard(); // ✅ Hide duplicates
+                        } else {
+                            toastr.warning('Could not refresh student card.');
+                        }
+                    },
+                    error: function() {
+                        toastr.error('Error refreshing student card.');
+                    }
+                });
+            } else {
+                showStatus(response.message || 'Partial payment failed');
+            }
+        },
+        error: function() {
+            
+             showStatus('Error processing partial payment');
+        }
+    });
+}
+
+
+// ----------------------
+// 1️⃣ Single Fee Payment
+// ----------------------
+function paySingleFee(button) {
+    const $btn = $(button);
+    const feeId = $btn.data('fee-id');
+    const studentId = $btn.data('student');
+    const amount = parseFloat($btn.data('amount')) || 0;
+    const discount = parseFloat($btn.data('discount')) || 0;
+
+    const isPartial = $('#partialToggle').is(':checked');
+
+    if (!isPartial) {
+        const studentName = $btn.data('student-name') 
+            || $btn.closest('.student-card').find('.student-header h5').text().trim();
+
+        // Prevent duplicate entries in pool
+        if (feePool.some(f => f.chalan_id === feeId)) return;
+
+        // If switching from family/student move, clear pool first
+        if (lastMoveType === 'student' || lastMoveType === 'family') {
+            clearFeePool();
+        }
+
+        // Push fee to pool
+        feePool.push({
+            chalan_id: feeId,
+            student_id: studentId,
+            student_name: studentName,
+            amount: amount,
+            paid: amount,
+            discount: discount,
+            feeType: $btn.data('feetype'),
+            feeMonth: $btn.data('feemonth')
+        });
+
+        $('#fee-hidden-' + studentId).append($btn);
+        $btn.hide();
+
+        renderFeePool();
+        showToast('Fee added to pool');
+
+        lastMoveType = 'single'; // update tracker
+    } else {
+        // Partial move
+        if (lastMoveType === 'student' || lastMoveType === 'family') {
+            clearFeePool();
+        }
+
+        $('#partialChalanId').val(feeId);
+        $('#partialStudentId').val(studentId);
+
+        let payable = amount - discount;
+        $('#partialTotal').val(payable.toFixed(2));
+        $('#partialPaid').val('0');
+        $('#partialDiscount').val('0');
+        $('#partialBalance').val(payable.toFixed(2));
+
+        $('#partialModal').modal('show');
+
+        lastMoveType = 'partial';
+    }
+}
+
+
+// ---------------------------
+// 2️⃣ Add all unpaid fees (student move)
+// ---------------------------
+function addAllUnpaidFeesToPool(button) {
+    // If switching from single or partial, clear first
+    if (lastMoveType === 'single' || lastMoveType === 'partial') {
+        clearFeePool();
+    }
+
+    const domStudentName = $(button).closest('.student-card').find('.student-header h5').text().trim();
+    const studentId = $(button).data('student-id');
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/get-unpaid-fees') ?>',
+        type: 'POST',
+        data: { student_id: studentId },
+        success: function(response) {
+            if (response.success && response.fees?.length) {
+                let addedCount = 0;
+
+                response.fees.forEach(fee => {
+                    const feeId = fee.chalan_id;
+
+                    if (!feePool.some(f => f.chalan_id === feeId)) {
+                        const amount = parseFloat(fee.amount) || 0;
+                        const discount = parseFloat(fee.discount || 0);
+                        const netAmount = amount - discount;
+
+                        if (netAmount > 0) {
+                            feePool.push({
+                                chalan_id: feeId,
+                                student_id: fee.student_id,
+                                student_name: fee.student_name || domStudentName,
+                                amount: amount,
+                                paid: netAmount,
+                                discount: discount,
+                                feeType: fee.fee_type_name,
+                                feeMonth: fee.fee_month
+                            });
+
+                            const $btn = $('#fee-btn-' + feeId);
+                            if ($btn.length) {
+                                $('#fee-hidden-' + fee.student_id).append($btn);
+                                $btn.hide();
+                            }
+
+                            addedCount++;
+                        }
+                    }
+                });
+
+                if (addedCount > 0) {
+                    renderFeePool();
+                    showStatus(`Added ${addedCount} unpaid fees to payment pool`);
+                } else {
+                    toastr.info('No new unpaid fees to add');
+                }
+            } else {
+                toastr.warning(response.message || 'No unpaid fees found');
+            }
+        },
+        error: () => toastr.error('Error fetching unpaid fees')
+    });
+
+    lastMoveType = 'student';
+}
+
+
+// ---------------------------
+// 3️⃣ Add all unpaid family fees
+// ---------------------------
+function addFamilyUnpaidFeesToPool(parentId) {
+    // Family move always clears pool first
+    clearFeePool();
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/get-family-unpaid-fees') ?>',
+        type: 'POST',
+        data: { parent_id: parentId },
+        success: function(response) {
+            if (response.success && Array.isArray(response.fees) && response.fees.length) {
+                let addedCount = 0;
+
+                response.fees.forEach(fee => {
+                    const feeId = fee.chalan_id;
+                    if (!feePool.some(f => f.chalan_id === feeId)) {
+                        const amount = parseFloat(fee.amount || 0);
+                        const discount = parseFloat(fee.discount || 0);
+                        const netAmount = amount - discount;
+
+                        if (netAmount > 0) {
+                            feePool.push({
+                                chalan_id: feeId,
+                                student_id: fee.student_id,
+                                student_name: fee.student_name,
+                                amount: amount,
+                                paid: netAmount,
+                                discount: discount,
+                                feeType: fee.fee_type_name,
+                                feeMonth: fee.fee_month
+                            });
+
+                            const $btn = $('#fee-btn-' + feeId);
+                            if ($btn.length) {
+                                $('#fee-hidden-' + fee.student_id).append($btn);
+                                $btn.hide();
+                            }
+
+                            addedCount++;
+                        }
+                    }
+                });
+
+                if (addedCount > 0) {
+                    renderFeePool();
+                    showStatus(`Added ${addedCount} unpaid family fees to payment pool`);
+                } else {
+                    toastr.info('No new unpaid family fees to add');
+                }
+            } else {
+                toastr.warning(response.message || 'No unpaid family fees found');
+            }
+        },
+        error: () => toastr.error('Error fetching unpaid family fees')
+    });
+
+    lastMoveType = 'family';
+}
+
+
+
+function updatePartialBalance() {
+    const total = parseFloat($('#partialTotal').val()) || 0;
+    const paid = parseFloat($('#partialPaid').val()) || 0;
+    const discount = parseFloat($('#partialDiscount').val()) || 0;
+    const balance = total - (paid + discount);
+
+    $('#partialBalance').val(balance.toFixed(2));
+}
+
+// Bind events to update balance live
+$('#partialPaid, #partialDiscount').on('input', updatePartialBalance);
+
+
+let firstStudentId = null;
+
+
+function showEditStudentFeeModal(student_id) {
+     firstStudentId = student_id;
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/getStudentCardAjax'); ?>',
+        type: 'POST',
+        data: { student_id: student_id },
+        success: function(response) {
+            if (response.success && response.student_details?.length) {
+                let tbody = '';
+                response.student_details.forEach((student) => {
+                    const name = student.student_name ?? 'N/A';
+                    const currentFee = student.monthly_fee ?? 0;
+
+                   tbody += `
+    <tr>
+        <td>${name}</td>
+        <td>Rs ${currentFee}</td>
+        <td>
+            <input type="number" step="0.01" name="new_fee[${student.student_id}]" class="form-control" value="${currentFee}">
+        </td>
+    </tr>
+`;
+                });
+
+                $('#studentFeeEditBody').html(tbody);
+                $('#editStudentFeeModal').modal('show');
+            } else {
+                toastr.warning("No student found for this parent");
+            }
+        },
+        error: function() {
+            toastr.error("Error fetching student fee info.");
+        }
+    });
+}
+
+
+$('#saveFeeChanges').on('click', function () {
+    let data = {};
+        
+    // Gather all updated fees from input fields
+    $('input[name^="new_fee"]').each(function () {
+        const studentId = $(this).attr('name').match(/\[(\d+)\]/)[1];
+        const enteredFee = parseFloat($(this).val());
+        if (!isNaN(enteredFee)) {
+            data[studentId] = enteredFee;
+        }
+    });
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/updateStudentDiscount'); ?>',
+        method: 'POST',
+        data: { fees: data },
+        success: function (res) {
+            if (res.success) {
+                toastr.success('Discounts updated successfully.');
+                $('#editStudentFeeModal').modal('hide');
+                  // 🔁 Refresh student card
+        const firstStudentId = $('.student-card').first().data('student-id');
+        if (firstStudentId) {
+            $.ajax({
+                url: '<?= base_url('admin/fee-chalan-pay/getStudentCardAjax'); ?>',
+                method: 'POST',
+                data: { student_id: firstStudentId },
+                success: function (resp) {
+                      console.log("Student card refresh response:", resp); // ✅ Debug this
+                    if (resp.success && resp.html) {
+                        $('#student-card-container').html(resp.html); // replace with your actual wrapper div ID
+                    } else {
+                        toastr.warning('Could not refresh student card.');
+                    }
+                },
+                error: function () {
+                    toastr.error('Refresh failed.');
+                }
+            });
+        }
+            } else {
+                toastr.warning(res.message || 'Update failed.');
+            }
+        },
+        error: function () {
+            toastr.error('AJAX request failed.');
+        }
+    });
+});
+
+
+function showAdvanceFeeStudentModal(student_id) {
+    firstStudentId = student_id;
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/getAdvanceFeeStudentsAjax'); ?>',
+        type: 'POST',
+        data: { student_id: student_id },
+        success: function(response) {
+            if (response.success && response.student_dues?.length) {
+                let tbody = '';
+                response.student_dues.forEach((student) => {
+                    const name = student.student_name ?? 'N/A';
+                    const dues = parseFloat(student.total_due) || 0;
+                    const advanceFee = parseFloat(student.advance_fee) || 0;
+                    const readOnly = dues > 0 ? 'readonly' : '';
+
+                    tbody += `
+                        <tr>
+                            <td>${name}</td>
+                            <td>Rs ${dues.toFixed(2)}</td>
+                            <td>
+                                <input type="number" step="0.01" name="advance_fee[${student.student_id}]"
+                                    class="form-control" value="${advanceFee.toFixed(2)}" ${readOnly}>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                $('#advanceStudentFeeBody').html(tbody);
+                $('#advanceStudentFeeModal').modal('show');
+            } else {
+                toastr.warning("No students found");
+            }
+        },
+        error: function() {
+            toastr.error("Error fetching advance student fee info.");
+        }
+    });
+}
+
+
+
+$('#saveAdvanceFee').on('click', function () {
+    let data = {};
+
+    $('input[name^="advance_fee"]').each(function () {
+        const studentId = $(this).attr('name').match(/\[(\d+)\]/)[1];
+        const fee = parseFloat($(this).val());
+        const isDisabled = $(this).prop('readonly');
+
+        if (!isNaN(fee) && fee > 0 && !isDisabled) {
+            data[studentId] = fee;
+        }
+    });
+
+    $.ajax({
+        url: '<?= base_url('admin/fee-chalan-pay/saveAdvanceFee'); ?>', // ✅ Save endpoint
+        method: 'POST',
+        data: { fees: JSON.stringify(data) },
+        dataType: 'json',
+        success: function (res) {
+            if (res.success) {
+                toastr.success('Advance fees updated successfully.');
+                $('#advanceStudentFeeModal').modal('hide');
+
+                // Optional: Refresh card
+            } else {
+                toastr.warning(res.message || 'Update failed.');
+            }
+        },
+        error: function () {
+            toastr.error('AJAX request failed.');
+        }
+    });
+});
+
+$(document).on("click", ".fee-history-btn", function() {
+    let parentId = $(this).data("parent-id");
+    window.open("<?= base_url('fees/familyHistory/') ?>" + parentId, "_blank");
+});
+
+</script>

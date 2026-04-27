@@ -1,0 +1,93 @@
+<?= $this->extend('layouts/admin_template') ?>
+<?= $this->section('content') ?>
+<!-- jQuery (usually already included) -->
+<script src="https://code.jquery.com/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+<script src="/path/to/server.js"></script>
+
+<!-- Bootstrap 4 Tooltip Dependencies -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<section class="content-header">
+  <div class="container-fluid">
+    <h1><i class="fas fa-calendar-alt"></i> Generate Datesheet</h1>
+  </div>
+</section>
+
+<section class="content">
+  <div class="card card-primary">
+    <div class="card-header">
+      <h3 class="card-title">Select Exam Details</h3>
+    </div>
+    <div class="card-body">
+      <form id="datesheetForm">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label><strong>Class Section</strong></label>
+            <select name="cls_sec_id" id="cls_sec_id" class="form-control" required>
+              <option value="">-- Select Class Section --</option>
+             <?php foreach ($sectionsclassinfo as $section): ?>
+<option value="<?= $section['section_id'] ?>"><?= esc($section['sectionclassname']) ?></option>
+<?php endforeach; ?>
+
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label><strong>Exam</strong></label>
+            <select name="exam_id" id="exam_id" class="form-control" required>
+              <option value="">-- Select Exam --</option>
+             <?php foreach ($exams as $exam): ?>
+<option value="<?= $exam->eid ?>"><?= esc($exam->exam_name) ?></option>
+<?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-primary btn-block" id="loadDatesheet">
+              <i class="fas fa-table"></i> Load Datesheet Grid
+            </button>
+          </div>
+        </div>
+
+        <div id="datesheetGrid"></div>
+
+        <div class="mt-4 text-right">
+          <button type="submit" class="btn btn-success d-none" id="saveDatesheetBtn">
+            <i class="fas fa-save"></i> Save Datesheet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  $('#loadDatesheet').click(function () {
+    const cls_sec_id = $('#cls_sec_id').val();
+    const exam_id = $('#exam_id').val();
+
+    if (!cls_sec_id || !exam_id) {
+      alert('Please select both class section and exam.');
+      return;
+    }
+
+    $('#datesheetGrid').html('<div class="text-center my-3"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>');
+
+    $.post('<?= base_url("admin/datesheet/fetch-grid") ?>', {
+      cls_sec_id: cls_sec_id,
+      exam_id: exam_id
+    }, function (html) {
+      $('#datesheetGrid').html(html);
+      $('#saveDatesheetBtn').removeClass('d-none');
+    });
+  });
+
+  $('#datesheetForm').submit(function (e) {
+    e.preventDefault();
+    $.post('<?= base_url("admin/datesheet/save-grid") ?>', $(this).serialize(), function (res) {
+      alert(res.message);
+      if (res.success) location.reload();
+    }, 'json');
+  });
+</script>
+
+<?= $this->endSection() ?>

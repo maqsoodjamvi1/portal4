@@ -1,0 +1,818 @@
+<?php
+namespace App\Controllers\Admin;
+
+use App\Controllers\BaseController;
+use CodeIgniter\HTTP\IncomingRequest;
+
+class StudentsResultsCard extends BaseController
+{
+     protected $db;
+    protected $session;
+
+    public function __construct()
+    {
+        helper(['url', 'form']);
+        if (!function_exists('getSchoolInfo')) {
+            // If you keep these helpers, autoload them or include here.
+            // helper('your_custom_helpers');
+        }
+
+        $this->db      = \Config\Database::connect();
+        $this->session = session();
+
+        // Permission (if your CI4 project still uses it)
+        if (function_exists('check_permission')) {
+            check_permission('admin-result-cards');
+        }
+    }
+
+    # ==========================
+    # Public: Index (form page)
+    # ==========================
+    public function index()
+    {
+        $campusId  = (int) $this->session->get('member_campusid');
+        $sessionId = (int) $this->session->get('member_sessionid');
+        $school    = getSchoolInfo();
+
+        // Exams of this campus/session
+        $exams = $this->db->table('exam')
+            ->where('campus_id', $campusId)
+            ->where('session_id', $sessionId)
+            ->orderBy('exam_start_date', 'ASC')
+            ->get()->getResult();
+
+        // Class-Sections visible to user (re-use your own helpers if any)
+        if (function_exists('currentUserRoles') && in_array(5, currentUserRoles() ?? [])) {
+            $sectionsclassinfo = function_exists('teacherSubjectSections') ? teacherSubjectSections() : [];
+        } else {
+            $sectionsclassinfo = function_exists('userClassSections') ? userClassSections() : [];
+        }
+
+        return view('admin/students_results_card', [
+            'exams'              => $exams,
+            'sectionsclassinfo'  => $sectionsclassinfo,
+            'schoolinfo'         => $school,
+        ]);
+    }
+
+  private function fetchStudentClassRows($sessionId, $clsSecId, $campusId, $statusFilter = null)
+    {
+        $builder = $this->db->table('student_class sc')
+            ->select('
+                sc.*,
+                s.student_id,
+                s.first_name,
+                s.last_name,
+                s.father_name,
+                s.reg_no,
+                s.status as student_status,
+                s.campus_id,
+                c.class_name,
+                c.class_short_name,
+                sec.section_name
+            ')
+            ->join('students s', 's.student_id = sc.student_id')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+            ->join('classes c', 'c.class_id = cs.class_id')
+            ->join('sections sec', 'sec.section_id = cs.section_id')
+            ->where('sc.session_id', $sessionId)
+            ->where('sc.cls_sec_id', $clsSecId)
+            ->where('s.campus_id', $campusId);
+            // REMOVED: ->where('sc.status', 1)  - This was filtering out historical records
+        
+        // Apply student status filter only
+        if ($statusFilter !== null) {
+            if (is_array($statusFilter)) {
+                $builder->whereIn('s.status', $statusFilter);
+            } else {
+                $builder->where('s.status', $statusFilter);
+            }
+        }
+        
+        return $builder->orderBy('s.reg_no', 'ASC')
+                       ->get()
+                       ->getResult();
+    }
+ public function data()
+    {
+        try {
+            // 1) Parse request + safety defaults
+            $ctx = $this->parseRequestForResultCards($this->request, $this->session);
+            
+            // Add the showAllStudents flag to context
+            $ctx['showAllStudents'] = $this->request->getPost('showAllStudents') === '1';
+
+            if (!empty($ctx['error'])) {
+                return $this->asHtml('<div class="alert alert-danger">'.$ctx['error'].'</div>');
+            }
+
+            // Determine status filter based on showAllStudents flag
+            // showAllStudents = true: show students with status 1 OR 4 (active + historical)
+            // showAllStudents = false: show only students with status 1 (active only)
+            $statusFilter = $ctx['showAllStudents'] ? ['1', '4'] : '1';
+            
+            // 2) Fetch students of selected class-section, campus & session
+            $studentClass = $this->fetchStudentClassRows(
+                (int)$ctx['session_id'],
+                (int)$ctx['cls_sec_id'],
+                (int)$ctx['campus_id'],
+                $statusFilter
+            );
+            
+            // Optional quick debug
+            if (empty($studentClass) && ($this->request->getPost('debug') === '1')) {
+                $counts = [
+                    'students_in_campus' => (int)$this->db->table('students')->where('campus_id', $ctx['campus_id'])->countAllResults(),
+                    'student_class_rows_for_cls_sec' => (int)$this->db->table('student_class')->where('cls_sec_id', $ctx['cls_sec_id'])->countAllResults(),
+                    'student_class_rows_for_cls_sec_and_session' => (int)$this->db->table('student_class')
+                        ->where('cls_sec_id', $ctx['cls_sec_id'])
+                        ->where('session_id', $ctx['session_id'])
+                        ->countAllResults(),
+                    'flags' => [
+                        'showMarks'      => (bool)$ctx['showMarks'],
+                        'showPercentage' => (bool)$ctx['showPercentage'],
+                        'showGrades'     => (bool)$ctx['showGrades'],
+                        'showAllStudents' => (bool)$ctx['showAllStudents'],
+                    ],
+                    'examids'    => $ctx['examids'],
+                    'cls_sec_id' => $ctx['cls_sec_id'],
+                    'status_filter_applied' => $statusFilter,
+                ];
+                return $this->asHtml('<pre>'.print_r($counts, true).'</pre>');
+            }
+
+            if (empty($studentClass)) {
+                $message = $ctx['showAllStudents'] 
+                    ? "No students found for this class/section in selected session (including historical)."
+                    : "No active students found for this class/section.";
+                return $this->asHtml('<div class="alert alert-warning">' . $message . '</div>');
+            }
+
+            // 3) Exams
+            $examInfo = $this->fetchExamInfo($ctx['examids']);
+            if (empty($examInfo)) {
+                return $this->asHtml('<div class="alert alert-warning">No exams found for selection.</div>');
+            }
+
+            // 4) Class totals & rankings
+            $classTotals = $this->computeClassExamTotals($studentClass, $examInfo, (int)$ctx['cls_sec_id']);
+            $rankings    = $this->computeRankings($classTotals);
+
+            // 5) Filter students with at least one result
+            $filtered = $this->filterStudentsWithAnyResult($studentClass, $examInfo);
+            
+            // 6) Render cards (KEEP YOUR ORIGINAL RENDER METHOD - NO CHANGES)
+            $html = $this->renderResultCardsHtml($filtered, $examInfo, $rankings, $ctx);
+            if (trim($html) === '') {
+                $html = '<div class="alert alert-info">No result cards to show.</div>';
+            }
+            return $this->asHtml($html);
+
+        } catch (\Throwable $e) {
+            return $this->asHtml('<div class="alert alert-danger">Error: '.$e->getMessage().'</div>');
+        }
+    }
+
+    # =========================================================
+    # Sub-fn: Parse flags & selection (with typo/alias support)
+    # =========================================================
+   protected function parseRequestForResultCards(IncomingRequest $request, $session): array
+    {
+        // ... YOUR EXISTING CODE - NO CHANGES ...
+        $rawExamids = $request->getPost('examids');
+        if (is_string($rawExamids)) {
+            $examids = array_filter(array_map('intval', preg_split('/[,\s]+/', $rawExamids)));
+        } elseif (is_array($rawExamids)) {
+            $examids = array_filter(array_map('intval', $rawExamids));
+        } else {
+            $examids = [];
+        }
+        $examids = array_values(array_unique($examids));
+
+        $useShortName   = $this->getFlag($request, ['useShortName','use_short_name']);
+        $showMarks      = $this->getFlag($request, ['showMarks','show_marks','marks'], true);
+        $showPercentage = $this->getFlag($request, [
+            'showPercentage','show_percentage','show-percent','percentage',
+            'showPercent','show_percent','show-percentage','percent',
+            'showpersentage','show_persentage','persentage'
+        ], false);
+        $showGrades     = $this->getFlag($request, ['showGrades','show_grade','grades','grade'], false);
+
+        $ctx = [
+            'useShortName'      => $useShortName,
+            'rowHeight'         => (int)($request->getPost('rowHeight') ?: 30),
+            'showMarks'         => $showMarks,
+            'showPercentage'    => $showPercentage,
+            'showGrades'        => $showGrades,
+            'cls_sec_id'        => (int)$request->getPost('cls_sec_id'),
+            'examids'           => $examids,
+            'showAttendance'    => $this->getFlag($request, ['showAttendance','attendance']),
+            'showPosition'      => $this->getFlag($request, ['showPosition','position']),
+            'showSignatureLine' => $this->getFlag($request, ['showSignatureLine','signature','sign_line']),
+            'showCampus'        => $this->getFlag($request, ['showCampus','campus']),
+            'showWebsite'       => $this->getFlag($request, ['showWebsite','website']),
+            'showLocation'      => $this->getFlag($request, ['showLocation','location']),
+            'campus_id'         => (int)$session->get('member_campusid'),
+            'session_id'        => (int)$session->get('member_sessionid'),
+            'schoolinfo'        => getSchoolInfo(),
+        ];
+
+        if (!$ctx['showMarks'] && !$ctx['showPercentage'] && !$ctx['showGrades']) {
+            $ctx['showMarks'] = true;
+        }
+
+        if (!$ctx['cls_sec_id'] || empty($ctx['examids'])) {
+            $ctx['error'] = 'Invalid class or exam selection.';
+        }
+        return $ctx;
+    }
+
+
+     protected function boolish($v, bool $default = false): bool
+    {
+        if (is_bool($v)) return $v;
+        if ($v === null) return $default;
+        $v = strtolower(trim((string)$v));
+        return in_array($v, ['1','true','on','yes','y'], true);
+    }
+    
+    protected function getFlag(IncomingRequest $req, array $keys, bool $default = false): bool
+    {
+        foreach ($keys as $k) {
+            $val = $req->getPost($k);
+            if ($val !== null) return $this->boolish($val, $default);
+        }
+        return $default;
+    }
+
+    protected function fetchExamInfo(array $examIds): array
+    {
+        if (empty($examIds)) return [];
+        return $this->db->table('exam')
+            ->whereIn('eid', $examIds)
+            ->orderBy('exam_start_date', 'ASC')
+            ->get()->getResultArray();
+    }
+
+   
+
+    # =========================================================
+    # Sub-fn: Compute totals per exam for ranking
+    # =========================================================
+    protected function computeClassExamTotals(array $studentClassRows, array $examInfo, int $clsSecId): array
+    {
+        $totals = []; // [eid][student_id] = obtained_total
+
+        foreach ($studentClassRows as $std) {
+            foreach ($examInfo as $exam) {
+                $row = $this->db->query(
+                    "SELECT SUM(r.obtained_marks) AS obt, SUM(d.total_marks) AS total
+                       FROM subject_results r
+                       JOIN datesheet d ON r.eid = d.eid AND r.sec_sub_id = d.sec_sub_id
+                      WHERE r.student_id = ? AND r.eid = ? AND d.cls_sec_id = ?",
+                    [$std->student_id, $exam['eid'], $clsSecId]
+                )->getRow();
+
+                if ($row && (int)$row->total > 0) {
+                    $totals[$exam['eid']][$std->student_id] = (float)$row->obt;
+                }
+            }
+        }
+        return $totals;
+    }
+
+    # =========================================================
+    # Sub-fn: Rankings (dense ranking with ties)
+    # =========================================================
+  protected function computeRankings(array $classTotals): array
+    {
+        $rankings = [];
+        foreach ($classTotals as $eid => $scores) {
+            arsort($scores);
+            $rank = 1; $lastScore = null; $tie = 1;
+            foreach ($scores as $sid => $score) {
+                if ($score !== $lastScore) {
+                    $rank = $tie;
+                }
+                $rankings[$eid][$sid] = $rank;
+                $lastScore = $score;
+                $tie++;
+            }
+        }
+        return $rankings;
+    }
+
+    # =========================================================
+    # Sub-fn: Only keep students who have any results
+    # =========================================================
+    protected function filterStudentsWithAnyResult(array $studentClassRows, array $examInfo): array
+    {
+        $filtered = [];
+        foreach ($studentClassRows as $sc) {
+            $student = $this->db->table('students')->where('student_id', $sc->student_id)->get()->getRow();
+            if (!$student) continue;
+            $validExamIds = [];
+            foreach ($examInfo as $exam) {
+                $has = $this->db->table('subject_results')
+                    ->where('student_id', $sc->student_id)
+                    ->where('eid', $exam['eid'])
+                    ->limit(1)->get()->getNumRows();
+                if ($has > 0) $validExamIds[] = (int)$exam['eid'];
+            }
+            if (!empty($validExamIds)) {
+                $filtered[] = ['studentinfo' => $sc, 'valid_examids' => $validExamIds];
+            }
+        }
+        return $filtered;
+    }
+
+    # =========================================================
+    # Sub-fn: Render HTML
+    # =========================================================
+   protected function renderResultCardsHtml(array $filtered, array $examInfo, array $rankings, array $ctx): string
+{
+    $schoolinfo     = $ctx['schoolinfo'];
+    $campusId       = (int)$ctx['campus_id'];
+    $rowHeight      = (int)$ctx['rowHeight'];
+    $showMarks      = (bool)$ctx['showMarks'];
+    $showPercentage = (bool)$ctx['showPercentage'];
+    $showGrades     = (bool)$ctx['showGrades'];
+    $useShortName   = (bool)$ctx['useShortName'];
+    $showPosition   = (bool)$ctx['showPosition']; // ADD THIS LINE
+
+    // Column count per exam (with fallback)
+    $colPerExam = 0;
+    if ($showMarks)      $colPerExam += 2; // Obt + Total
+    if ($showPercentage) $colPerExam += 1; // %
+    if ($showGrades)     $colPerExam += 1; // Grade
+    if ($colPerExam === 0) { $showMarks = true; $colPerExam = 2; }
+
+    $totalCards  = count($filtered);
+    $currentCard = 0;
+
+    $html = '<style>
+        @media print {
+            .result-card-wrapper { page-break-after: always !important; page-break-inside: avoid !important; break-inside: avoid !important; position: relative; }
+            .result-card-wrapper:last-child { page-break-after: auto !important; }
+        }
+    </style>';
+    
+foreach ($filtered as $item) {
+    $currentCard++;
+    $studentinfo    = $item['studentinfo'];
+    $validExamIds   = $item['valid_examids'];
+    $student        = $this->db->table('students')->where('student_id', $studentinfo->student_id)->get()->getRow();
+    $parent         = $this->db->table('parents')->where('parent_id', $student->parent_id ?? 0)->get()->getRow();
+
+    // ===== FIX: Initialize these for each student =====
+    $examTotals = []; // Reset totals array for this student
+    $hasAnyGrade = false; // Reset grade flag for this student
+    // =================================================
+
+    // Get position/rank for this student if showPosition is enabled
+    $positionData = null;
+    $studentPosition = null;
+    $overallPercentage = null;
+    
+    if ($showPosition && !empty($rankings)) {
+        // Debug: Check structure of rankings array
+        // Uncomment to debug - remove in production
+        // error_log(print_r($rankings, true));
+        
+        // Try different possible structures
+        foreach ($rankings as $key => $ranking) {
+            if (is_array($ranking) && isset($ranking[$studentinfo->student_id])) {
+                $positionData = $ranking[$studentinfo->student_id];
+                if (is_array($positionData)) {
+                    $studentPosition = $positionData['position'] ?? $positionData['rank'] ?? null;
+                    $overallPercentage = $positionData['percentage'] ?? $positionData['total_percentage'] ?? null;
+                } else {
+                    $studentPosition = $positionData;
+                }
+                break;
+            } elseif (is_array($ranking) && isset($ranking['student_id']) && $ranking['student_id'] == $studentinfo->student_id) {
+                $studentPosition = $ranking['position'] ?? $ranking['rank'] ?? null;
+                $overallPercentage = $ranking['percentage'] ?? $ranking['total_percentage'] ?? null;
+                break;
+            }
+        }
+        
+        // If still not found, try a different approach
+        if ($studentPosition === null && isset($rankings[$studentinfo->student_id])) {
+            $posData = $rankings[$studentinfo->student_id];
+            if (is_array($posData)) {
+                $studentPosition = $posData['position'] ?? $posData['rank'] ?? $posData;
+                $overallPercentage = $posData['percentage'] ?? $posData['total_percentage'] ?? null;
+            } else {
+                $studentPosition = $posData;
+            }
+        }
+    }
+
+    // This student's class/section label
+    $cs = $this->db->table('class_section cs')
+        ->select('cls.class_name, sec.section_name')
+        ->join('classes cls', 'cls.class_id = cs.class_id', 'left')
+        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+        ->where('cs.cls_sec_id', $studentinfo->cls_sec_id)
+        ->get()->getRow();
+    $fullClassSec = $cs ? ($cs->class_name . ' - ' . $cs->section_name) : 'N/A';
+    
+    // Only exams that this student actually has results for
+    $exams = array_values(array_filter($examInfo, function ($e) use ($validExamIds) {
+        return in_array((int)$e['eid'], $validExamIds, true);
+    }));
+
+    // Subjects for these exams (in the selected class-section)
+    $examCsv = implode(',', array_map('intval', $validExamIds));
+    $subjects = $this->db->query("
+        SELECT DISTINCT ds.sec_sub_id, ss.subject_id, s.subject_name, s.subject_short_name
+          FROM datesheet ds
+          JOIN section_subjects ss ON ss.sec_sub_id = ds.sec_sub_id AND ss.status = 1
+          JOIN allsubject s ON s.sid = ss.subject_id
+         WHERE ds.cls_sec_id = ? AND ds.total_marks > 0 AND ds.eid IN ($examCsv)
+    ", [(int)$ctx['cls_sec_id']])->getResult();
+
+    // Watermark + header area
+    $pageBreakStyle = ($currentCard < $totalCards) ? 'page-break-after: always;' : '';
+    $html .= '<div class="result-card-wrapper" style="position: relative; overflow: hidden; '.$pageBreakStyle.' page-break-inside: avoid; break-inside: avoid;">';
+
+    if (!empty($schoolinfo->logo)) {
+        $html .= '<img src="'.base_url('system-logo/' . $schoolinfo->logo).'" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:.07;max-width:300px;max-height:300px;z-index:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;pointer-events:none;" />';
+    }
+    $html .= '<div style="position:relative;z-index:2;">';
+
+    // Printable header
+    $html .= '<div class="printable-header" style="overflow:hidden;position:relative;height:auto;margin-bottom:10px;padding:10px;border-bottom:2px solid #000;">';
+    if (!empty($schoolinfo->logo)) {
+        $html .= '<img src="'.base_url('system-logo/' . $schoolinfo->logo).'" style="position:absolute;left:10px;top:10px;width:120px;height:120px;object-fit:contain;border:none;">';
+    }
+    
+    // Calculate dynamic font size based on school name length
+    $systemName = esc($schoolinfo->system_name);
+    $nameLength = strlen($schoolinfo->system_name);
+    $fontSize = '60px'; // Default font size
+
+    // Adjust font size for longer names
+    if ($nameLength > 20) {
+        if ($nameLength > 35) {
+            $fontSize = '36px'; // Very long names (35+ characters)
+        } elseif ($nameLength > 30) {
+            $fontSize = '42px'; // Long names (30-35 characters)
+        } elseif ($nameLength > 25) {
+            $fontSize = '46px'; // Moderately long names (25-30 characters)
+        } else {
+            $fontSize = '56px'; // Slightly long names (20-25 characters)
+        }
+    }
+
+    $html .= '<h1 style="margin:0 auto;font-size:' . $fontSize . ';font-family:Bebas Neue, cursive;letter-spacing:2px;word-spacing:4px;transform:scaleX(1.3);display:block;text-align:center;width:fit-content;">'
+          .  $systemName
+          .  '</h1>';
+
+    // Campus info (optional toggles)
+    $campus = $this->db->table('campus')->where([
+        'system_id' => $schoolinfo->system_id,
+        'campus_id' => $campusId
+    ])->get()->getRow();
+
+    if (!empty($ctx['showCampus'])) {
+        $html .= '<p style="margin:1px 0;text-align:center;font-size:20px;"><strong>Campus:</strong> '.esc($campus->campus_name ?? 'Main Campus').' | <strong>Phone:</strong> '.esc($campus->landline ?? 'N/A').'</p>';
+    }
+    if (!empty($ctx['showLocation'])) {
+        $html .= '<p style="margin:0;text-align:center;font-size:20px;"><strong>Location:</strong> '.esc($campus->location ?? 'N/A').'</p>';
+    }
+    if (!empty($ctx['showWebsite'])) {
+        $html .= '<p style="margin:0;text-align:center;font-size:20px;"><strong>Website:</strong> '.esc($campus->website ?? '').'</p>';
+    }
+
+    // Latest exam name
+    $latestExam = end($exams);
+    $latestExamName = $latestExam['exam_name'] ?? 'Latest Exam';
+    $html .= '<h2 style="margin:0 auto;font-size:40px;font-family:Bebas Neue, cursive;letter-spacing:2px;word-spacing:4px;transform:scaleX(1.3);display:block;text-align:center;width:fit-content;">Academic Report of '
+          .  esc($latestExamName)
+          .  '</h2>';
+
+    $html .= '</div>'; // printable-header
+    $html .= '</div>'; // z-index wrapper
+
+    // Student info header block
+    $fatherName = $parent->f_name ?? '';
+    $html .= '<div style="background:linear-gradient(90deg,#f0f4f8,#d9e2ec);padding:15px;border-radius:12px;margin:10px 0;font-size:16px;color:#2c3e50;font-family:\'Segoe UI\',Tahoma,Geneva,Verdana,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.1);display:flex;justify-content:space-between;">';
+    $html .= '<div style="width:78%;">';
+    $html .= '<div style="width:100%;margin-bottom:10px;text-align:center;"><div style="display:inline-block;font-size:22px;font-weight:bold;color:#1a1a1a;" title="Class">🏫 '.esc($fullClassSec).'</div></div>';
+    $html .= '<div style="width:100%;display:flex;justify-content:space-between;margin-bottom:5px;">'
+          .  '<div style="width:48%;font-size:18px;"><strong>🆔 Reg No:</strong> '.esc($student->reg_no ?? '').'</div>'
+          .  '<div style="width:48%;font-size:18px;"><strong>📞 Father Contact:</strong> '.esc($parent->father_contact ?? '').'</div>'
+          .  '</div>';
+    $html .= '<div style="width:100%;display:flex;justify-content:space-between;margin-bottom:5px;">'
+          .  '<div style="width:48%;font-size:18px;"><strong>👤 Name:</strong> '.esc(($student->first_name ?? '').' '.($student->last_name ?? '')).'</div>'
+          .  '<div style="width:48%;font-size:18px;"><strong>📱 Mother Contact:</strong> '.esc($parent->mother_contact ?? '').'</div>'
+          .  '</div>';
+    $html .= '<div style="width:100%;display:flex;justify-content:space-between;">'
+          .  '<div style="width:48%;font-size:18px;"><strong>👨‍👧 Father:</strong> '.esc($fatherName).'</div>'
+          .  '<div style="width:48%;font-size:18px;"><strong>🚨 Emergency:</strong> '.esc($parent->emergency_contact ?? '').'</div>'
+          .  '</div>';
+    $html .= '</div>';
+    $html .= '<div style="width:20%;text-align:center;">';
+    if (!empty($student->profile_photo)) {
+        $html .= '<img src="'.base_url('uploads/'.$student->profile_photo).'" style="width:100px;height:130px;object-fit:cover;border-radius:8px;border:2px solid #ccc;">';
+    } else {
+        $html .= '<div style="width:100px;height:130px;border-radius:8px;border:1px solid #000;text-align:center;line-height:130px;font-size:24px;"><i class="fa fa-user"></i></div>';
+    }
+    $html .= '</div>';
+    $html .= '</div>'; // block
+
+    // Table start - add class="result-table"
+    $html .= '<div class="table-responsive">';
+    $html .= '<table class="table table-bordered result-table"><thead>'; 
+
+    // Header row with exam names
+    $html .= '<tr style="height:'.$rowHeight.'px;">'
+           .  '<th rowspan="2" style="background-color:#004085!important;color:#fff;text-align:center;"><i class="fas fa-book"></i><br>Subject</th>';
+    foreach ($exams as $term) {
+        $html .= '<th colspan="'.$colPerExam.'" style="background-color:#17a2b8!important;color:#000;text-align:center;font-weight:bold;"><i class="fas fa-clipboard-check"></i> '
+              .  esc($term['exam_name'])
+              .  '</th>';
+    }
+    $html .= '?</tr>';
+
+    // Header row with column types - ADD CLASSES HERE
+    $html .= '<tr style="height:'.$rowHeight.'px;">';
+    foreach ($exams as $term) {
+        if ($showMarks) {
+            $html .= '<th class="marks-cell" style="background-color:#e9ecef!important;color:#000;">Obt</th>'
+                  .  '<th class="marks-cell" style="background-color:#e9ecef!important;color:#000;">Total</th>';
+        }
+        if ($showPercentage) {
+            $html .= '<th class="percentage-cell" style="background-color:#e9ecef!important;color:#000;">%</th>';
+        }
+        if ($showGrades) {
+            $html .= '<th class="grade-cell" style="background-color:#e9ecef!important;color:#000;">Grade</th>';
+        }
+    }
+    $html .= '</tr></thead><tbody>';
+
+    // In the subject rows loop, add classes to cells
+    foreach ($subjects as $subject) {
+        $label = $useShortName && !empty($subject->subject_short_name) ? $subject->subject_short_name : $subject->subject_name;
+        $html .= '<tr style="height:'.$rowHeight.'px;">';
+        $html .= '<td style="background-color:#e9ecef!important;color:#000;text-align:left;">'.esc($label).'</td>';
+
+        foreach ($exams as $exam) {
+            $res = $this->db->table('subject_results')
+                ->where('student_id', $studentinfo->student_id)
+                ->where('eid', (int)$exam['eid'])
+                ->where('sec_sub_id', $subject->sec_sub_id)
+                ->get()->getRow();
+
+            $ds  = $this->db->table('datesheet')
+                ->where('eid', (int)$exam['eid'])
+                ->where('sec_sub_id', $subject->sec_sub_id)
+                ->get()->getRow();
+
+            if ($res && $ds && (int)$ds->total_marks > 0) {
+                $obt   = (float)$res->obtained_marks;
+                $total = (float)$ds->total_marks;
+                $perc  = (int) round(($obt / $total) * 100);
+
+                if (!isset($examTotals[$exam['eid']])) $examTotals[$exam['eid']] = ['obt' => 0, 'total' => 0];
+                $examTotals[$exam['eid']]['obt']   += $obt;
+                $examTotals[$exam['eid']]['total'] += $total;
+
+                $gradeName = '-';
+                $g = $this->grade($perc);
+                if ($g) { $gradeName = $g->grade_name ?? ($g->name ?? '-'); $hasAnyGrade = true; }
+
+                if ($showMarks) {
+                    $html .= '<td class="marks-cell">'.(0 + $obt).'</td>';
+                    $html .= '<td class="marks-cell">'.(0 + $total).'</td>';
+                }
+                if ($showPercentage) {
+                    $html .= '<td class="percentage-cell">'.$perc.'%</td>';
+                }
+                if ($showGrades) {
+                    $html .= '<td class="grade-cell">'.esc($gradeName).'</td>';
+                }
+            } else {
+                if ($showMarks) {
+                    $html .= '<td class="marks-cell">-</td><td class="marks-cell">-</td>';
+                }
+                if ($showPercentage) {
+                    $html .= '<td class="percentage-cell">-</td>';
+                }
+                if ($showGrades) {
+                    $html .= '<td class="grade-cell">-</td>';
+                }
+            }
+        }
+        $html .= '</tr>';
+    }
+
+    // Update totals row with classes
+    if ($hasAnyGrade) {
+        // Totals
+        $html .= '<tr style="height:'.$rowHeight.'px;"><th style="background-color:#004085!important;color:#fff;">Total</th>';
+        foreach ($exams as $exam) {
+            $tot = $examTotals[$exam['eid']] ?? null;
+            if ($tot && $tot['total'] > 0) {
+                $perc = (int) round(($tot['obt'] / $tot['total']) * 100);
+                $g = $this->grade($perc);
+                $gradeName = $g ? ($g->grade_name ?? ($g->name ?? '-')) : '-';
+
+                if ($showMarks) {
+                    $html .= '<td class="marks-cell">'.(0 + $tot['obt']).'</td>';
+                    $html .= '<td class="marks-cell">'.(0 + $tot['total']).'</td>';
+                }
+                if ($showPercentage) {
+                    $html .= '<td class="percentage-cell">'.$perc.'%</td>';
+                }
+                if ($showGrades) {
+                    $html .= '<td class="grade-cell">'.esc($gradeName).'</td>';
+                }
+            } else {
+                if ($showMarks) {
+                    $html .= '<td class="marks-cell">-</td><td class="marks-cell">-</td>';
+                }
+                if ($showPercentage) {
+                    $html .= '<td class="percentage-cell">-</td>';
+                }
+                if ($showGrades) {
+                    $html .= '<td class="grade-cell">-</td>';
+                }
+            }
+        }
+        $html .= '</tr>';
+        
+        // POSITION ROW - ADDED HERE (BEFORE ATTENDANCE)
+        if ($showPosition && $studentPosition !== null && $studentPosition !== '') {
+            $positionNumber = (int)$studentPosition;
+            $positionText = '';
+            $positionIcon = '🏆';
+            
+            if ($positionNumber == 1) {
+                $positionText = '1st';
+                $positionIcon = '🥇';
+            } elseif ($positionNumber == 2) {
+                $positionText = '2nd';
+                $positionIcon = '🥈';
+            } elseif ($positionNumber == 3) {
+                $positionText = '3rd';
+                $positionIcon = '🥉';
+            } else {
+                $positionText = $positionNumber . 'th';
+                $positionIcon = '📊';
+            }
+            
+            $html .= '<tr style="height:'.$rowHeight.'px;"><th style="background-color:#004085!important;color:#fff;">Position</th>';
+            
+            // Calculate colspan based on total columns
+            $totalCols = count($exams) * $colPerExam;
+            
+            if ($overallPercentage !== null) {
+                $html .= '<td colspan="'.$totalCols.'" style="background-color:#fff3cd!important; text-align:center; font-size:16px; font-weight:bold;">';
+                $html .= $positionIcon . ' ' . $positionText . ' Position with ' . number_format($overallPercentage, 2) . '% Overall Marks';
+                $html .= '</td>';
+            } else {
+                $html .= '<td colspan="'.$totalCols.'" style="background-color:#fff3cd!important; text-align:center; font-size:16px; font-weight:bold;">';
+                $html .= $positionIcon . ' ' . $positionText . ' Position';
+                $html .= '</td>';
+            }
+            
+            $html .= '</tr>';
+        }
+        
+        // Attendance
+        if (!empty($ctx['showAttendance'])) {
+            $html .= '<tr style="height:'.$rowHeight.'px;"><th style="background-color:#004085!important;color:#fff;vertical-align:middle;">Attendance</th>';
+            
+            foreach ($exams as $exam) {
+                $present = $absent = $late = $early = 0;
+                $termSession = $this->db->table('terms_session')
+                    ->where('term_id', $exam['term_id'])
+                    ->where('session_id', $exam['session_id'])
+                    ->get()->getRow();
+
+                if ($termSession && $termSession->start_date && $termSession->end_date) {
+                    $attRows = $this->db->query("
+                        SELECT status, COUNT(*) AS cnt
+                          FROM attendance
+                         WHERE student_id = ? AND date BETWEEN ? AND ?
+                      GROUP BY status",
+                        [$studentinfo->student_id, $termSession->start_date, $termSession->end_date]
+                    )->getResult();
+                    foreach ($attRows as $a) {
+                        if ($a->status === 'P')  $present = (int)$a->cnt;
+                        if ($a->status === 'A')  $absent  = (int)$a->cnt;
+                        if ($a->status === 'LC') $late    = (int)$a->cnt;
+                        if ($a->status === 'EL') $early   = (int)$a->cnt;
+                    }
+                }
+
+                $html .= '<td colspan="'.$colPerExam.'" style="background-color:#fff3cd!important; padding:4px;">';
+                
+                // Create a table with fixed layout for equal columns
+                $html .= '<table style="width:100%; table-layout:fixed; border-collapse:collapse;">';
+                
+                // First row - SYMBOLS ONLY (larger)
+                $html .= '<tr>';
+                
+                // Present symbol
+                $html .= '<td style="width:25%; background:#e6ffed; color:#1a7f37; padding:8px 2px 2px 2px; text-align:center; border-radius:6px 0 0 0; font-size:24px;">✅</td>';
+                
+                // Absent symbol
+                $html .= '<td style="width:25%; background:#ffeaea; color:#c0392b; padding:8px 2px 2px 2px; text-align:center; font-size:24px;">❌</td>';
+                
+                // Late symbol
+                $html .= '<td style="width:25%; background:#fff8e1; color:#b9770e; padding:8px 2px 2px 2px; text-align:center; font-size:24px;">🕒</td>';
+                
+                // Early symbol
+                $html .= '<td style="width:25%; background:#f0f0f5; color:#34495e; padding:8px 2px 2px 2px; text-align:center; border-radius:0 6px 0 0; font-size:24px;">🚪</td>';
+                
+                $html .= '</tr>';
+                
+                // Second row - LABELS AND COUNTS
+                $html .= '<tr>';
+                
+                // Present label + count
+                $html .= '<td style="width:25%; background:#e6ffed; color:#1a7f37; padding:2px 2px 8px 2px; text-align:center; font-weight:bold; border-radius:0 0 0 6px;">';
+                $html .= '<div style="font-size:12px;">Present</div>';
+                $html .= '<div style="font-size:18px; font-weight:bold;">'.$present.'</div>';
+                $html .= '</td>';
+                
+                // Absent label + count
+                $html .= '<td style="width:25%; background:#ffeaea; color:#c0392b; padding:2px 2px 8px 2px; text-align:center; font-weight:bold;">';
+                $html .= '<div style="font-size:12px;">Absent</div>';
+                $html .= '<div style="font-size:18px; font-weight:bold;">'.$absent.'</div>';
+                $html .= '</td>';
+                
+                // Late label + count
+                $html .= '<td style="width:25%; background:#fff8e1; color:#b9770e; padding:2px 2px 8px 2px; text-align:center; font-weight:bold;">';
+                $html .= '<div style="font-size:12px;">Late</div>';
+                $html .= '<div style="font-size:18px; font-weight:bold;">'.$late.'</div>';
+                $html .= '</td>';
+                
+                // Early label + count
+                $html .= '<td style="width:25%; background:#f0f0f5; color:#34495e; padding:2px 2px 8px 2px; text-align:center; font-weight:bold; border-radius:0 0 6px 0;">';
+                $html .= '<div style="font-size:12px;">Early</div>';
+                $html .= '<div style="font-size:18px; font-weight:bold;">'.$early.'</div>';
+                $html .= '</td>';
+                
+                $html .= '</tr>';
+                $html .= '</table>';
+                $html .= '</td>';
+            }
+            $html .= '</tr>';
+        }
+    }
+
+    $html .= '</tbody></table>';
+    $html .= '</div>'; // Close table-responsive
+
+    if (!empty($ctx['showSignatureLine'])) {
+        $html .= '<div class="signature-section" style="display:flex;gap:40px;margin-top:20px;">'
+              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:30px 0 6px;"></div><strong>Class Teacher</strong></div>'
+              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:30px 0 6px;"></div><strong>Principal</strong></div>'
+              .  '</div>';
+    }
+
+    $html .= '</div>'; // result-card-wrapper
+}
+
+return $html;
+}
+
+    # =========================================================
+    # Sub-fn: Grade lookup (policy + grade name)
+    # =========================================================
+    protected function grade(int $marks)
+    {
+        $school = getSchoolInfo();
+        return $this->db->table('grading_policy gp')
+            ->select('gp.*, g.name AS grade_name, g.detail AS grade_detail')
+            ->join('grades g', 'g.gid = gp.gid', 'left')
+            ->where('gp.system_id', $school->system_id)
+            ->where("$marks BETWEEN gp.mark_from AND gp.mark_to", null, false)
+            ->get()->getRow();
+    }
+
+    protected function ordinal(int $n): string
+    {
+        if (!in_array($n % 100, [11, 12, 13], true)) {
+            switch ($n % 10) {
+                case 1: return $n.'st';
+                case 2: return $n.'nd';
+                case 3: return $n.'rd';
+            }
+        }
+        return $n.'th';
+    }
+
+     protected function asHtml(string $html)
+    {
+        return $this->response
+            ->setHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->setBody($html);
+    }
+}

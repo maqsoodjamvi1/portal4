@@ -1,0 +1,815 @@
+CRITICAL - 2026-04-24 07:51:40 --> ErrorException: Undefined array key "status"
+[Method: GET, Route: admin/students]
+in APPPATH/Views/admin/students.php on line 198.
+ 1 APPPATH/Views/admin/students.php(198): CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 SYSTEMPATH/View/View.php(224): include('/var/www/portal4/html/app/Views/admin/students.php')
+ 3 SYSTEMPATH/View/View.php(227): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 4 SYSTEMPATH/Common.php(1173): CodeIgniter\View\View->render()
+ 5 APPPATH/Controllers/Admin/Students.php(54): view()
+ 6 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Admin\Students->index()
+ 7 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 8 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 9 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+10 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+11 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 08:56:33 --> ErrorException: unlink(/var/www/portal4/html/writable/debugbar/debugbar_1777002855.167461.json): No such file or directory
+[Method: GET, Route: /]
+in SYSTEMPATH/Debug/Toolbar/Collectors/History.php on line 82.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 SYSTEMPATH/Debug/Toolbar/Collectors/History.php(82): unlink()
+ 3 SYSTEMPATH/Debug/Toolbar.php(517): CodeIgniter\Debug\Toolbar\Collectors\History->setFiles()
+ 4 SYSTEMPATH/Debug/Toolbar.php(496): CodeIgniter\Debug\Toolbar->format()
+ 5 APPPATH/Config/Events.php(47): CodeIgniter\Debug\Toolbar->respond()
+ 6 SYSTEMPATH/Events/Events.php(155): CodeIgniter\Events\Events::Config\{closure}()
+ 7 SYSTEMPATH/CodeIgniter.php(339): CodeIgniter\Events\Events::trigger()
+ 8 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+10 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 09:00:57 --> ErrorException: unlink(/var/www/portal4/html/writable/debugbar/debugbar_1777003185.662618.json): No such file or directory
+[Method: GET, Route: /]
+in SYSTEMPATH/Debug/Toolbar/Collectors/History.php on line 82.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 SYSTEMPATH/Debug/Toolbar/Collectors/History.php(82): unlink()
+ 3 SYSTEMPATH/Debug/Toolbar.php(517): CodeIgniter\Debug\Toolbar\Collectors\History->setFiles()
+ 4 SYSTEMPATH/Debug/Toolbar.php(496): CodeIgniter\Debug\Toolbar->format()
+ 5 APPPATH/Config/Events.php(47): CodeIgniter\Debug\Toolbar->respond()
+ 6 SYSTEMPATH/Events/Events.php(155): CodeIgniter\Events\Events::Config\{closure}()
+ 7 SYSTEMPATH/CodeIgniter.php(339): CodeIgniter\Events\Events::trigger()
+ 8 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+10 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:36 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:37 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:01:37 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:18:34 --> mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AND id IN (SELECT userID FROM user_roles WHERE roleID=5)' at line 1 in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/app/Controllers/Admin/TeacherSection.php(94): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+#5 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#6 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#7 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#8 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#9 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#10 {main}
+CRITICAL - 2026-04-24 09:18:34 --> Error: Call to a member function getResultArray() on bool
+[Method: GET, Route: admin/teacher_section/add]
+in APPPATH/Controllers/Admin/TeacherSection.php on line 94.
+ 1 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+ 2 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 3 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 4 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 5 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 6 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ERROR - 2026-04-24 09:18:34 --> mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AND id IN (SELECT userID FROM user_roles WHERE roleID=5)' at line 1 in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/app/Controllers/Admin/TeacherSection.php(94): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+#5 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#6 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#7 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#8 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#9 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#10 {main}
+CRITICAL - 2026-04-24 09:18:34 --> Error: Call to a member function getResultArray() on bool
+[Method: GET, Route: admin/teacher_section/add]
+in APPPATH/Controllers/Admin/TeacherSection.php on line 94.
+ 1 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+ 2 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 3 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 4 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 5 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 6 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ERROR - 2026-04-24 09:18:34 --> mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AND id IN (SELECT userID FROM user_roles WHERE roleID=5)' at line 1 in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/app/Controllers/Admin/TeacherSection.php(94): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+#5 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#6 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#7 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#8 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#9 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#10 {main}
+CRITICAL - 2026-04-24 09:18:34 --> Error: Call to a member function getResultArray() on bool
+[Method: GET, Route: admin/teacher_section/add]
+in APPPATH/Controllers/Admin/TeacherSection.php on line 94.
+ 1 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Admin\TeacherSection->add()
+ 2 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 3 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 4 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 5 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 6 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+ERROR - 2026-04-24 09:55:11 --> mysqli_sql_exception: Column 'student_id' in field list is ambiguous in /var/www/portal4/html/system/Database/MySQLi/Connection.php:327
+Stack trace:
+#0 /var/www/portal4/html/system/Database/MySQLi/Connection.php(327): mysqli->query()
+#1 /var/www/portal4/html/system/Database/BaseConnection.php(738): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /var/www/portal4/html/system/Database/BaseConnection.php(652): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /var/www/portal4/html/system/Database/BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query()
+#4 /var/www/portal4/html/app/Controllers/Admin/StudentsAbsentees.php(130): CodeIgniter\Database\BaseBuilder->get()
+#5 /var/www/portal4/html/system/CodeIgniter.php(933): App\Controllers\Admin\StudentsAbsentees->add()
+#6 /var/www/portal4/html/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /var/www/portal4/html/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /var/www/portal4/html/system/Boot.php(334): CodeIgniter\CodeIgniter->run()
+#9 /var/www/portal4/html/system/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+#10 /var/www/portal4/html/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+CRITICAL - 2026-04-24 10:49:37 --> Error: Call to undefined function App\Controllers\Admin\teacherSubjectSections()
+[Method: GET, Route: admin/weekly_planning/add]
+in APPPATH/Controllers/Admin/Weekly_planning.php on line 176.
+ 1 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Admin\Weekly_planning->add()
+ 2 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 3 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 4 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 5 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 6 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 18:41:56 --> ParseError: syntax error, unexpected end of file
+[Method: GET, Route: student/dashboard]
+in APPPATH/Views/frontend/dashboard/parent.php on line 3453.
+ 1 SYSTEMPATH/View/View.php(227): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 2 SYSTEMPATH/Common.php(1173): CodeIgniter\View\View->render()
+ 3 APPPATH/Controllers/Frontend/Dashboard.php(63): view()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Frontend\Dashboard->index()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 18:42:10 --> ParseError: syntax error, unexpected end of file
+[Method: GET, Route: student/dashboard]
+in APPPATH/Views/frontend/dashboard/parent.php on line 3453.
+ 1 SYSTEMPATH/View/View.php(227): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 2 SYSTEMPATH/Common.php(1173): CodeIgniter\View\View->render()
+ 3 APPPATH/Controllers/Frontend/Dashboard.php(63): view()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Frontend\Dashboard->index()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 18:42:14 --> ParseError: syntax error, unexpected end of file
+[Method: GET, Route: student/dashboard]
+in APPPATH/Views/frontend/dashboard/parent.php on line 3453.
+ 1 SYSTEMPATH/View/View.php(227): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 2 SYSTEMPATH/Common.php(1173): CodeIgniter\View\View->render()
+ 3 APPPATH/Controllers/Frontend/Dashboard.php(63): view()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Frontend\Dashboard->index()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 18:42:31 --> ParseError: syntax error, unexpected end of file
+[Method: GET, Route: student/dashboard]
+in APPPATH/Views/frontend/dashboard/parent.php on line 3453.
+ 1 SYSTEMPATH/View/View.php(227): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 2 SYSTEMPATH/Common.php(1173): CodeIgniter\View\View->render()
+ 3 APPPATH/Controllers/Frontend/Dashboard.php(63): view()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\Frontend\Dashboard->index()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:37:34 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:38:09 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:38:42 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:39:04 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "print_${type}"
+[Method: POST, Route: admin/students_print/print_$%7Btype%7D]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:39:22 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:39:34 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_04_57_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_04_57_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:44:49 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:45:42 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2023-10-10_at_9_05_00_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2023-10-10_at_9_05_00_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:46:27 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "print_${type}"
+[Method: POST, Route: admin/students_print/print_$%7Btype%7D]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:46:39 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "print_${type}"
+[Method: POST, Route: admin/students_print/print_$%7Btype%7D]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:46:53 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "hurain_(2).jpeg"
+[Method: GET, Route: uploads/profile_photos/hurain_%282%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-04-24 22:46:54 --> CodeIgniter\HTTP\Exceptions\BadRequestException: The URI you submitted has disallowed characters: "WhatsApp_Image_2025-05-12_at_9_18_43_AM_(1).jpeg"
+[Method: GET, Route: uploads/profile_photos/WhatsApp_Image_2025-05-12_at_9_18_43_AM_%281%29.jpeg]
+in SYSTEMPATH/Router/Router.php on line 741.
+ 1 SYSTEMPATH/Router/Router.php(207): CodeIgniter\Router\Router->checkDisallowedChars()
+ 2 SYSTEMPATH/CodeIgniter.php(832): CodeIgniter\Router\Router->handle()
+ 3 SYSTEMPATH/CodeIgniter.php(455): CodeIgniter\CodeIgniter->tryToRouteIt()
+ 4 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(334): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(67): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()

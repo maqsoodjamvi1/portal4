@@ -1,0 +1,9 @@
+.env writable/* vendor/ node_modules/ *.log git add .gitignore git commit -m "Add gitignore" git remote add origin 
+https://github.com/your-username/your-repo.git git push -u origin main
+git config --global core.autocrlf input
+git remote add origin https://github.com/your-username/your-repo.git
+git push -u origin main
+git remote add origin https://github.com/shafiqgondal/school-management-system
+git remote add origin https://github.com/shafiqgondal/school-management-system.git
+git push -u origin main
+

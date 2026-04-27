@@ -1,0 +1,799 @@
+<?= $this->extend('layouts/admin_template') ?>
+<?= $this->section('content') ?>
+
+<section class="content">
+    <div class="container-fluid">
+        <!-- Quick Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3 id="totalStudentsCount">0</h3>
+                        <p>Total Students</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="currentStudentsCount">0</h3>
+                        <p>Current Students</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 id="droppedStudentsCount">0</h3>
+                        <p>Dropped Students</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3 id="slcCount">0</h3>
+                        <p>SLC Issued</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       <!-- Filters -->
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-filter mr-2"></i>Filters
+        </h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Student Name</label>
+                    <input type="text" class="form-control" id="search_name" placeholder="Search by name...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label><i class="fas fa-male"></i> Father Name</label>
+                    <input type="text" class="form-control" id="search_father" placeholder="Search by father name...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label><i class="fas fa-chalkboard"></i> Class</label>
+                    <select id="class_id" class="form-control select2">
+                        <option value="">All Classes</option>
+                        <?php foreach (($classes ?? []) as $c): ?>
+                            <option value="<?= (int)$c['class_id'] ?>"><?= esc($c['class_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label><i class="fas fa-layer-group"></i> Class Section</label>
+                    <select id="cls_sec_id" class="form-control select2">
+                        <option value="">All Sections</option>
+                        <?php foreach (($classSections ?? []) as $sec): ?>
+                            <option value="<?= (int)$sec['cls_sec_id'] ?>">
+                                <?= esc($sec['label']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label><i class="fas fa-users"></i> Student Status</label>
+                    <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                        <label class="btn btn-outline-primary active" id="btnCurrentOnly">
+                            <input type="radio" name="status_filter" value="current" checked autocomplete="off">
+                            <i class="fas fa-user-check mr-1"></i> Current Only
+                        </label>
+                        <label class="btn btn-outline-secondary" id="btnAllStudents">
+                            <input type="radio" name="status_filter" value="all" autocomplete="off">
+                            <i class="fas fa-users mr-1"></i> All Students
+                        </label>
+                    </div>
+                    <small class="text-muted">Show only active students or all students</small>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="form-group text-right">
+                    <button type="button" id="applyFilters" class="btn btn-primary">
+                        <i class="fas fa-search mr-1"></i> Apply Filters
+                    </button>
+                    <button type="button" id="resetFilters" class="btn btn-default ml-2">
+                        <i class="fas fa-undo mr-1"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="btn-group view-presets">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="viewBasic">
+                <i class="fas fa-eye"></i> Basic
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success" id="viewContacts">
+                <i class="fas fa-phone"></i> Contacts
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" id="viewAcademic">
+                <i class="fas fa-graduation-cap"></i> Academic
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="viewAll">
+                <i class="fas fa-eye"></i> All
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6 text-right">
+        <small class="text-muted">
+            <i class="fas fa-info-circle"></i> 
+            <span class="badge badge-info">←→</span> Scroll horizontally | 
+            <span class="badge badge-info">⬆⬇</span> Scroll vertically | 
+            <span class="badge badge-info">📌</span> Sticky columns
+        </small>
+    </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="floating-actions">
+    <button class="btn btn-primary btn-floating" id="scrollToTop" title="Scroll to Top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <button class="btn btn-info btn-floating" id="scrollToRight" title="Scroll to Right">
+        <i class="fas fa-arrow-right"></i>
+    </button>
+    <button class="btn btn-info btn-floating" id="scrollToLeft" title="Scroll to Left">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+    <button class="btn btn-secondary btn-floating" id="showColumnMenu" title="Toggle Columns">
+        <i class="fas fa-columns"></i>
+    </button>
+</div>
+        <!-- Students Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-list mr-2"></i>Student List
+                </h3>
+                <div class="card-tools">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-sm" id="exportExcel">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button type="button" class="btn btn-default btn-sm" id="exportPDF">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button type="button" class="btn btn-default btn-sm" id="toggleColumns">
+                            <i class="fas fa-columns"></i> Columns
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="studentsTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Photo</th>
+                                <th>Student ID</th>
+                                <th>Actions</th>
+                                <th>Reg No</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Father</th>
+                                <th>Father CNIC</th>
+                                <th>Student CNIC</th>
+                                <th>Gender</th>
+                                <th>DOB</th>
+                                <th>Age</th>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>Discounted</th>
+                                <th>Admission Date</th>
+                                <th>Father Contact</th>
+                                <th>Mother Contact</th>
+                                <th>Emergency</th>
+                                <th>WhatsApp</th>
+                                <th>Address</th>
+                                <th>Previous School</th>
+                                <th>PS City</th>
+                                <th>Health Condition</th>
+                                <th>Major Injuries</th>
+                                <th>Admission Class</th>
+                                <th>Caste</th>
+                                <th>GR No</th>
+                                <th>GR Date</th>
+                                <th>Student Type</th>
+                                <th>Religion</th>
+                                <th>Father Email</th>
+                                <th>Father Occupation</th>
+                                <th>Mother Name</th>
+                                <th>City</th>
+                                <th>Heard From</th>
+                                <th>Emergency Person</th>
+                                <th>Relationship</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .dataTables_wrapper .dt-buttons {
+        float: left;
+        margin-bottom: 10px;
+    }
+    .dataTables_wrapper .dataTables_filter {
+        float: right;
+    }
+    .student-status-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .status-current {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-dropped {
+        background-color: #dc3545;
+        color: white;
+    }
+    .dt-button-collection {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .select2-container .select2-selection--single {
+        height: 38px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+
+    .dataTables_scrollBody {
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
+
+/* Sticky first column (Row number) */
+#studentsTable td:first-child,
+#studentsTable th:first-child {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 5;
+}
+
+#studentsTable th:first-child {
+    background: #f8f9fa;
+    z-index: 15;
+}
+
+/* Sticky action column (last column) */
+#studentsTable td:last-child,
+#studentsTable th:last-child {
+    position: sticky;
+    right: 0;
+    background: white;
+    z-index: 5;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+}
+
+#studentsTable th:last-child {
+    background: #f8f9fa;
+    z-index: 15;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+}
+
+/* Sticky name column (optional - keeps name visible) */
+#studentsTable td:nth-child(6),
+#studentsTable th:nth-child(6) {
+    position: sticky;
+    left: 40px;
+    background: white;
+    z-index: 4;
+}
+
+#studentsTable th:nth-child(6) {
+    background: #f8f9fa;
+    z-index: 14;
+}
+
+/* Scrollbar styling */
+.dataTables_scrollBody::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Floating actions */
+.floating-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-floating {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s;
+}
+
+.btn-floating:hover {
+    transform: scale(1.1);
+}
+
+/* Column visibility dropdown */
+.dt-button-collection {
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    columns: 2;
+    column-gap: 20px;
+}
+
+.dt-button-collection .dt-button {
+    width: 100%;
+    break-inside: avoid;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* View preset buttons */
+.view-presets .btn {
+    margin-right: 5px;
+}
+
+</style>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2-bootstrap4.min.css">
+
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+
+    // Get current status filter value
+    let showAllStudents = false; // Default: show only current students
+
+    // Handle status filter toggle
+    $('#btnCurrentOnly').on('click', function() {
+        showAllStudents = false;
+        table.ajax.reload();
+    });
+
+    $('#btnAllStudents').on('click', function() {
+        showAllStudents = true;
+        table.ajax.reload();
+    });
+
+    // Column configuration
+    const columnConfig = [
+        { data: 'rownum', title: '#', visible: true, orderable: false, searchable: false },
+        { data: 'profile_photo', title: 'Photo', visible: true, orderable: false, searchable: false },
+        { data: 'student_id', title: 'Student ID', visible: false, orderable: true },
+        { data: null, title: 'Actions', visible: true, orderable: false, searchable: false },
+        { data: 'reg_no', title: 'Reg No', visible: true, orderable: true },
+        { data: 'student_name', title: 'Name', visible: true, orderable: true },
+        { data: 'status_text', title: 'Status', visible: true, orderable: true },
+        { data: 'father_name', title: 'Father', visible: true, orderable: true },
+        { data: 'father_cnic', title: 'Father CNIC', visible: false, orderable: true },
+        { data: 'std_cnic', title: 'Student CNIC', visible: false, orderable: true },
+        { data: 'gender', title: 'Gender', visible: true, orderable: true },
+        { data: 'dob', title: 'DOB', visible: true, orderable: true },
+        { data: 'age', title: 'Age', visible: true, orderable: true },
+        { data: 'class_name', title: 'Class', visible: true, orderable: true },
+        { data: 'section_name', title: 'Section', visible: true, orderable: true },
+        { data: 'discounted_amount', title: 'Discounted', visible: false, orderable: true },
+        { data: 'date_of_admission', title: 'Admission Date', visible: true, orderable: true },
+        { data: 'father_contact', title: 'Father Contact', visible: true, orderable: true },
+        { data: 'mother_contact', title: 'Mother Contact', visible: false, orderable: true },
+        { data: 'emergency_contact', title: 'Emergency', visible: false, orderable: true },
+        { data: 'whatsapp_contact', title: 'WhatsApp', visible: false, orderable: true },
+        { data: 'address', title: 'Address', visible: false, orderable: true },
+        { data: 'previous_school', title: 'Previous School', visible: false, orderable: true },
+        { data: 'ps_city', title: 'PS City', visible: false, orderable: true },
+        { data: 'health_condition', title: 'Health Condition', visible: false, orderable: false },
+        { data: 'major_injuries', title: 'Major Injuries', visible: false, orderable: false },
+        { data: 'admission_class', title: 'Admission Class', visible: false, orderable: true },
+        { data: 'caste', title: 'Caste', visible: false, orderable: true },
+        { data: 'gr_no', title: 'GR No', visible: false, orderable: true },
+        { data: 'gr_date', title: 'GR Date', visible: false, orderable: true },
+        { data: 'std_type', title: 'Student Type', visible: false, orderable: true },
+        { data: 'religion', title: 'Religion', visible: false, orderable: true },
+        { data: 'father_email', title: 'Father Email', visible: false, orderable: true },
+        { data: 'father_occupation', title: 'Father Occupation', visible: false, orderable: true },
+        { data: 'm_name', title: 'Mother Name', visible: false, orderable: true },
+        { data: 'city', title: 'City', visible: false, orderable: true },
+        { data: 'hear_source', title: 'Heard From', visible: false, orderable: true },
+        { data: 'emergency_contact_person', title: 'Emergency Person', visible: false, orderable: true },
+        { data: 'relationship', title: 'Relationship', visible: false, orderable: true }
+    ];
+
+    // Action column renderer
+    function renderActions(data, type, row) {
+        const baseUrl = '<?= base_url('admin') ?>';
+        const hasSlc = parseInt(row.has_slc) > 0;
+        
+        return `
+            <div class="btn-group dropright">
+                <a href="${baseUrl}/students/edit?id=${row.student_id}" class="btn btn-sm btn-primary" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="${baseUrl}/students/view/${row.student_id}">
+                        <i class="fas fa-eye mr-2"></i> View Profile
+                    </a>
+                    <a class="dropdown-item" href="${baseUrl}/fee-chalan-single/download?id=${row.student_id}">
+                        <i class="fas fa-file-invoice mr-2"></i> Fee Challans
+                    </a>
+                    <a class="dropdown-item" href="${baseUrl}/fee-chalan/add?id=${row.student_id}">
+                        <i class="fas fa-plus-circle mr-2"></i> Create Challan
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    ${hasSlc ? 
+                        `<a class="dropdown-item" href="${baseUrl}/slc/view/${row.slc_id}" target="_blank">
+                            <i class="fas fa-certificate mr-2"></i> View SLC
+                        </a>` :
+                        `<a class="dropdown-item" href="#" onclick="generateSlc(${row.student_id}, event)">
+                            <i class="fas fa-file-pdf mr-2"></i> Generate SLC
+                        </a>`
+                    }
+                    <a class="dropdown-item" href="#" onclick="deleteStudent(${row.student_id}, event)">
+                        <i class="fas fa-trash-alt mr-2 text-danger"></i> Delete
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    // Status badge renderer
+    function renderStatus(data, type, row) {
+        if (row.status == 1) {
+            return '<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Current</span>';
+        } else if (row.status == 4) {
+            return '<span class="badge badge-danger"><i class="fas fa-exclamation-circle mr-1"></i> Dropped</span>';
+        }
+        return '<span class="badge badge-secondary">' + (data || 'Unknown') + '</span>';
+    }
+
+    // Initialize DataTable
+    const table = $('#studentsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        scrollX: true,
+        autoWidth: false,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        order: [[12, 'asc'], [13, 'asc'], [5, 'asc']],
+        ajax: {
+            url: "<?= site_url('admin/students_print/data') ?>",
+            type: "POST",
+            data: function(d) {
+                d.search_name = $('#search_name').val();
+                d.search_father = $('#search_father').val();
+                d.class_id = $('#class_id').val();
+                d.cls_sec_id = $('#cls_sec_id').val();
+                d.show_all = showAllStudents;
+                d.<?= csrf_token() ?> = '<?= csrf_hash() ?>';
+            },
+            dataSrc: function(json) {
+                // Update stats
+                if (json.recordsTotal) {
+                    $('#totalStudentsCount').text(json.recordsTotal);
+                }
+                return json.data;
+            }
+        },
+        columns: columnConfig.map((col, idx) => {
+            if (idx === 3) {
+                return { ...col, render: renderActions };
+            }
+            if (idx === 6) {
+                return { ...col, render: renderStatus };
+            }
+            return col;
+        }),
+        buttons: [
+            { extend: 'copy', text: '<i class="fas fa-copy"></i> Copy' },
+            { extend: 'csv', text: '<i class="fas fa-file-csv"></i> CSV' },
+            { extend: 'excel', text: '<i class="fas fa-file-excel"></i> Excel' },
+            { extend: 'pdf', text: '<i class="fas fa-file-pdf"></i> PDF', orientation: 'landscape', pageSize: 'A3' },
+            { extend: 'print', text: '<i class="fas fa-print"></i> Print' },
+            { extend: 'colvis', text: '<i class="fas fa-columns"></i> Columns', columns: ':gt(3)' }
+        ],
+        dom: '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language: {
+            processing: '<i class="fas fa-spinner fa-spin fa-2x"></i> Loading...',
+            search: '<i class="fas fa-search"></i> Search:',
+            lengthMenu: '_MENU_ records per page',
+            info: 'Showing _START_ to _END_ of _TOTAL_ students',
+            infoEmpty: 'No students found',
+            zeroRecords: 'No matching students found'
+        }
+    });
+
+    // Apply filters
+    $('#applyFilters').on('click', function() {
+        table.ajax.reload();
+    });
+
+    // Reset filters
+    $('#resetFilters').on('click', function() {
+        $('#search_name').val('');
+        $('#search_father').val('');
+        $('#class_id').val('').trigger('change');
+        $('#cls_sec_id').val('').trigger('change');
+        // Reset status filter to "Current Only"
+        $('#btnCurrentOnly').addClass('active');
+        $('#btnAllStudents').removeClass('active');
+        showAllStudents = false;
+        table.ajax.reload();
+    });
+
+    // Enter key search
+    $('#search_name, #search_father').on('keypress', function(e) {
+        if (e.which === 13) {
+            $('#applyFilters').click();
+        }
+    });
+
+    // Export buttons
+    $('#exportExcel').on('click', function() {
+        table.button('.buttons-excel').trigger();
+    });
+
+    $('#exportPDF').on('click', function() {
+        table.button('.buttons-pdf').trigger();
+    });
+
+    $('#toggleColumns').on('click', function() {
+        table.button('.buttons-colvis').trigger();
+    });
+
+    // Adjust columns on window resize
+    $(window).on('resize', function() {
+        table.columns.adjust();
+    });
+
+    // ========== FLOATING ACTION BUTTONS (INSIDE DOCUMENT READY) ==========
+    $('#scrollToTop').on('click', function() {
+        $('.dataTables_scrollBody').animate({ scrollTop: 0 }, 300);
+    });
+
+    $('#scrollToRight').on('click', function() {
+        var scrollBody = $('.dataTables_scrollBody');
+        scrollBody.animate({ scrollLeft: scrollBody[0].scrollWidth }, 300);
+    });
+
+    $('#scrollToLeft').on('click', function() {
+        $('.dataTables_scrollBody').animate({ scrollLeft: 0 }, 300);
+    });
+
+    $('#showColumnMenu').on('click', function() {
+        table.button('.buttons-colvis').trigger();
+    });
+
+    // ========== COLUMN VISIBILITY PRESETS ==========
+    const basicColumns = [0, 1, 3, 4, 5, 6, 12, 13];
+    const contactColumns = [0, 3, 4, 5, 15, 16, 17, 18, 19];
+    const academicColumns = [0, 3, 4, 5, 6, 12, 13, 14, 15, 21, 22];
+
+    $('#viewBasic').on('click', function() {
+        table.columns().every(function(idx) {
+            this.visible(basicColumns.includes(idx));
+        });
+        table.columns.adjust();
+        if (typeof toastr !== 'undefined') {
+            toastr.success('Basic view - showing essential columns only');
+        }
+    });
+
+    $('#viewContacts').on('click', function() {
+        table.columns().every(function(idx) {
+            this.visible(contactColumns.includes(idx));
+        });
+        table.columns.adjust();
+        if (typeof toastr !== 'undefined') {
+            toastr.success('Contact view - showing contact information');
+        }
+    });
+
+    $('#viewAcademic').on('click', function() {
+        table.columns().every(function(idx) {
+            this.visible(academicColumns.includes(idx));
+        });
+        table.columns.adjust();
+        if (typeof toastr !== 'undefined') {
+            toastr.success('Academic view - showing academic information');
+        }
+    });
+
+    $('#viewAll').on('click', function() {
+        table.columns().every(function(idx) {
+            this.visible(true);
+        });
+        table.columns.adjust();
+        if (typeof toastr !== 'undefined') {
+            toastr.success('All columns visible - use horizontal scroll');
+        }
+    });
+
+    // Add scroll position indicator
+    $('.dataTables_scrollBody').on('scroll', function() {
+        var scrollLeft = $(this).scrollLeft();
+        var maxScroll = this.scrollWidth - this.clientWidth;
+        var percentage = (scrollLeft / maxScroll) * 100;
+        
+        if (!$('#scrollIndicator').length && maxScroll > 0) {
+            $('.floating-actions').append('<div id="scrollIndicator" class="small text-muted text-center mt-2"></div>');
+        }
+        if ($('#scrollIndicator').length) {
+            $('#scrollIndicator').html(Math.round(percentage) + '% scrolled');
+        }
+    });
+});
+
+// ========== GLOBAL FUNCTIONS (OUTSIDE DOCUMENT READY) ==========
+// Generate SLC function
+function generateSlc(studentId, event) {
+    event.preventDefault();
+    
+    Swal.fire({
+        title: 'Generate School Leaving Certificate',
+        text: 'Are you sure you want to generate SLC for this student?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Generate',
+        cancelButtonText: 'Cancel',
+        showDenyButton: true,
+        denyButtonText: 'Generate & Drop Student'
+    }).then((result) => {
+        const action = result.isConfirmed ? 'generate_only' : (result.isDenied ? 'drop_with_slc' : null);
+        if (action) {
+            processSlcGeneration(studentId, action);
+        }
+    });
+}
+
+function processSlcGeneration(studentId, action) {
+    Swal.fire({
+        title: 'Processing...',
+        text: 'Generating School Leaving Certificate',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    fetch('<?= base_url('admin/addbulkstudents/generate-slc-ajax') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+            student_id: studentId,
+            action: action,
+            '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'SLC Generated Successfully',
+                html: `<p><strong>SLC Number:</strong> ${data.slc_no}</p>`,
+                confirmButtonText: 'View SLC'
+            }).then(() => {
+                window.open('<?= base_url('admin/slc/view/') ?>' + data.slc_id, '_blank');
+                $('#studentsTable').DataTable().ajax.reload();
+            });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Generation Failed', text: data.msg });
+        }
+    })
+    .catch(error => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'An error occurred' });
+    });
+}
+
+function deleteStudent(studentId, event) {
+    event.preventDefault();
+    Swal.fire({
+        title: 'Delete Student',
+        text: 'Are you sure you want to delete this student? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, Delete'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Implement delete logic here
+            Swal.fire('Deleted!', 'Student has been deleted.', 'success');
+        }
+    });
+}
+</script>
+<?= $this->endSection() ?>

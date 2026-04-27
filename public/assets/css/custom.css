@@ -1,0 +1,1162 @@
+body {
+  font-size: 14px; font-family: Arial, Helvetica, sans-serif !important;
+}
+
+  /* ===== Basics ===== */
+  .sidebar .nav-header{
+    letter-spacing:.04em; text-transform:uppercase;
+    color:#94a3b8; padding:8px 10px 4px; font-size:10.5px;
+  }
+  .sidebar .form-control-sidebar{
+    height:32px; border-radius:6px; font-size:13px;
+    background:#1f2937; border-color:#111827; color:#e5e7eb;
+  }
+  .sidebar .form-control-sidebar::placeholder{ color:#9aa0a6; }
+
+  /* ===== Row layout (critical fix) ===== */
+  /* Make every menu row a flex line with a reserved icon column */
+  .nav-sidebar .nav-link{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; min-height:36px; box-sizing:border-box;
+    font-size:13px; line-height:20px; color:#cbd5e1; background:transparent;
+    transition:background .12s ease, color .12s ease;
+  }
+  .nav-sidebar .nav-link:hover{ background:rgba(255,255,255,.05); color:#e8eef5; }
+
+  /* Icon column: fixed width so text never overlaps */
+  .nav-sidebar .nav-link .nav-icon{
+    flex:0 0 20px; width:20px; text-align:center;
+    font-size:14px; margin:0; color:#9aa0a6; line-height:1;
+  }
+  .nav-sidebar .nav-link:hover .nav-icon{ color:#e8eef5; }
+
+  /* Placeholder when no icon was provided (keeps text aligned) */
+  .nav-icon-blank{ flex:0 0 20px; width:20px; display:inline-block; }
+
+  /* Label area takes the rest of the row */
+  .nav-sidebar .nav-link p{
+    flex:1 1 auto; margin:0; display:flex; align-items:center;
+    gap:8px; min-width:0; /* allows truncation if needed */
+  }
+
+  /* Chevron on the right */
+  .nav-sidebar .nav-link .right{
+    margin-left:auto; font-size:10px; color:#7a8391; transition:transform .15s ease;
+  }
+  .nav-sidebar .nav-item.menu-open > .nav-link .right{ transform:rotate(90deg); }
+
+  /* ===== Active states ===== */
+  .nav-sidebar .nav-link.active{
+    background:linear-gradient(90deg,#3c8dbc1a,#3c8dbc2b); color:#fff; position:relative;
+  }
+  .nav-sidebar .nav-link.active::before{
+    content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px;
+    background:#3c8dbc; border-radius:0 2px 2px 0;
+  }
+  .sidebar .nav-sidebar .nav-item.has-treeview.menu-open > .nav-link{ background:#2b3440; }
+
+  /* ===== Submenus ===== */
+  .nav-treeview{ margin:4px 0 8px 26px !important; padding-left:10px; border-left:1px dashed rgba(255,255,255,.06); }
+  .nav-treeview > .nav-item > .nav-link{
+    padding:6px 10px; min-height:32px; font-size:12.5px;
+  }
+  /* Keep submenu icons visible & small (undo any previous "display:none") */
+  .nav-treeview .nav-link .nav-icon{ font-size:12.5px; flex:0 0 18px; width:18px; }
+  /* Light active for child */
+  .nav-sidebar .nav-treeview .nav-link.active{ background:rgba(60,141,188,.12); }
+
+  /* ===== Badges ===== */
+  .right.badge{
+    font-weight:600; font-size:10px; padding:2px 6px; border-radius:20px;
+    background:#334155; color:#e5e7eb;
+  }
+  .badge-danger{ background:#ef4444 !important; }
+  .badge-warning{ background:#f59e0b !important; color:#1f2937 !important; }
+  .badge-info{ background:#0ea5e9 !important; }
+
+  /* Label row alignment */
+  .nav-sidebar .nav-link p{ justify-content:space-between; width:100%; }
+
+  /* Keyboard focus (accessible) */
+  .nav-sidebar .nav-link:focus{
+    outline:none; box-shadow:0 0 0 2px rgba(60,141,188,.25) inset; border-radius:6px;
+  }
+
+  /* ===== Optional: if you keep "sidebar-slim" class, don't shrink too far ===== */
+  
+
+.error {
+  color: red !important;
+  clear: both;
+  display: block;
+}
+.no-padding {
+  padding: 10px 0 !important;
+}
+.pagebreak,
+.top_level_planing,
+.weekly_planing {
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: #000;
+  font-size: 16px;
+}
+@page {
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: #000;
+  font-size: 16px;
+}
+
+@font-face {
+  font-family: "nafees-nastaleeq";
+  src: url("fonts/nafees-nastaleeq-webfont.eot");
+  src: local("nafees-nastaleeq"),
+    url("fonts/nafees-nastaleeq-webfont.woff") format("woff"),
+    url("fonts/nafees-nastaleeq-webfont.eot.ttf") format("truetype");
+}
+input[type="text"],
+input[type="email"],
+input[type="date"],
+input[type="password"],
+select {
+  /*height:24px !important; padding:0px 12px !important;*/
+}
+.form-group {
+  /*margin-bottom: 4px !important;*/
+}
+.input-group-addon {
+  padding: 3px 8px !important;
+}
+.dropdown-menu {
+  right: 0 !important;
+  left: unset !important;
+}
+.navbar-nav > .user-menu > .dropdown-menu {
+  width: 230px !important;
+}
+
+.navbar-expand .navbar-nav .nav-link {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.btn-primary:not(:disabled):not(.disabled).active,
+.btn-primary,
+.btn-primary:not(:disabled):not(.disabled):active,
+.show > .btn-primary.dropdown-toggle {
+  background-color: #3c8dbc !important;
+}
+input[type="button"] {
+  border-radius: 0px !important;
+  height: 30px !important;
+  line-height: 15px;
+}
+.bootstrap-switch {
+  border: 0 none !important;
+}
+p {
+  margin-bottom: 0px !important;
+}
+.bootstrap-switch.bootstrap-switch-mini .bootstrap-switch-handle-off,
+.bootstrap-switch.bootstrap-switch-mini .bootstrap-switch-handle-on,
+.bootstrap-switch.bootstrap-switch-mini .bootstrap-switch-label {
+  font-size: 12px !important;
+}
+.bootstrap-switch-container {
+  width: 220px !important;
+}
+.bootstrap-switch-label {
+  background-color: #fff !important;
+}
+textarea.form-control {
+  height: auto !important;
+  margin-bottom: 5px;
+}
+table {
+  text-align: left;
+  position: relative;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.25rem;
+}
+tr.red th {
+  background: red;
+  color: white;
+}
+tr.green th {
+  background: green;
+  color: white;
+}
+tr.purple th {
+  background: purple;
+  color: white;
+}
+th {
+  /*background: white;
+  position: sticky;
+  top: 0; */
+  /*box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);*/
+}
+
+/*
+*
+* ==========================================
+* CUSTOM UTIL CLASSES
+* ==========================================
+*/
+.nav-pills-custom .nav-link {
+  color: #aaa;
+  background: #fff;
+  position: relative;
+}
+
+.nav-pills-custom .nav-link.active {
+  color: #45b649;
+  background: #fff;
+}
+
+/* Add indicator arrow for the active tab */
+@media (min-width: 992px) {
+  .nav-pills-custom .nav-link::before {
+    content: "";
+    display: block;
+    border-top: 8px solid transparent;
+    border-left: 10px solid #fff;
+    border-bottom: 8px solid transparent;
+    position: absolute;
+    top: 50%;
+    right: -10px;
+    transform: translateY(-50%);
+    opacity: 0;
+  }
+}
+
+.nav-pills-custom .nav-link.active::before {
+  opacity: 1;
+}
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: #3c8dbc !important;
+}
+.breadcrumb-item a {
+  color: #3c8dbc !important;
+}
+.card-primary.card-outline {
+  border-top: 3px solid #3c8dbc;
+}
+
+/*.card{
+    background: #ddd !important;
+    font-size: 16px;
+    font-family: times-new-roman;
+}*/
+.table-bordered {
+  border: 1px solid #000 !important;
+}
+
+.table-bordered td,
+.table-bordered th {
+  border: 1px solid #000;
+}
+
+.form-control {
+  color: #000 !important;
+  font-size: 18px !important;
+}
+
+.reportHeading {
+  color: #fff;
+  background: #3c8dbc;
+  text-align: center;
+  margin-bottom: 5px;
+  font-size: 35px;
+}
+.table td {
+  border-top: 1px solid #000;
+}
+.table-bordered td,
+.table-bordered th {
+  border: 1px solid #000;
+  padding: 5px 10px;
+  vertical-align: middle;
+  font-size: 18px !important;
+  color: #000;
+  font-weight: normal;
+}
+.table-bordered th {
+  font-weight: bold !important;
+}
+.resultReport th {
+  background: #494e53;
+  color: #fff;
+  text-align: left;
+}
+@media print {
+  .table-bordered td,
+  .table-bordered th {
+    border: 1px solid #000 !important;
+    font-size: 18px !important;
+    color: #000;
+    font-weight: normal;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .reportHeading {
+    color: #fff;
+    background: #3c8dbc;
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 35px;
+  }
+  .resultReport th {
+    background: #494e53;
+    color: #fff;
+    text-align: left;
+  }
+}
+
+
+
+
+
+@media (min-width: 992px) {
+  .main-sidebar { position: fixed; }
+  .content-wrapper, .main-header, .main-footer { margin-left: 250px; }
+  .sidebar-collapse .content-wrapper,
+  .sidebar-collapse .main-header,
+  .sidebar-collapse .main-footer { margin-left: 0; }
+}
+.card-body .dataTables_wrapper { overflow-x: auto; }
+/* Scrollable Columns menu (lots of fields) */
+.dt-button-collection{max-height:70vh!important;overflow-y:auto!important}
+.dt-button-collection .dt-button{white-space:normal}
+.dt-actions .dropdown-menu { z-index: 2000; }
+
+
+
+.required:after {
+    content: " *";
+    color: #dc3545;
+}
+
+.accordion-button {
+    font-weight: 500;
+}
+
+.attachment-preview {
+    max-height: 200px;
+    object-fit: contain;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+}
+
+.document-preview-container {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.badge-custom {
+    padding: 0.5em 0.75em;
+    font-size: 0.85em;
+}
+
+.children-info {
+    border-left: 3px solid #0dcaf0;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+}
+
+.children-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.child-badge {
+    font-size: 0.75rem;
+    font-weight: normal;
+    white-space: nowrap;
+    padding: 0.35em 0.65em;
+}
+
+.bg-light-primary {
+    background-color: #e7f5ff;
+}
+
+.bg-light-success {
+    background-color: #ebfbee;
+}
+
+.bg-light-info {
+    background-color: #e7f5ff;
+}
+
+.bg-light-warning {
+    background-color: #fff9db;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .document-preview-container {
+        height: 150px;
+    }
+}
+
+ 
+
+  .font-weight-600 { font-weight: 600; }
+  .input-group-text { background: #f8f9fa; }
+  .card .form-control-sm { min-height: 30px; }
+  #genderToggle .btn { white-space: nowrap; }
+
+/* Make complex rows behave like a responsive grid */
+.five-cols{
+  display:grid;
+  grid-template-columns: repeat(5, minmax(180px,1fr));
+  grid-gap: .75rem;
+}
+@media (max-width: 1199.98px){ .five-cols{ grid-template-columns: repeat(3, minmax(200px,1fr)); } }
+@media (max-width: 767.98px){  .five-cols{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 479.98px){  .five-cols{ grid-template-columns: 1fr; } }
+
+/* Keep inputs inside the card no matter what */
+.form-row, .row { flex-wrap: wrap; }
+.input-group { width:100%; min-width:0; }   /* allow shrink */
+.input-group .form-control { min-width:0; } /* prevent overflow */
+.select2 { width:100% !important; }         /* select2 width correction */
+
+/* Consistent column blocks for parent/class info */
+.info-grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(240px,1fr));
+  grid-gap: .75rem 1rem;
+}
+@media (max-width: 991.98px){ .info-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 575.98px){ .info-grid{ grid-template-columns: 1fr; } }
+
+/* Card borders and padding harmony */
+.section-card{
+  border: 1px solid #dee2e6;
+  border-radius: .5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.section-card .section-head{
+  background:#f8f9fa;
+  padding:.65rem .9rem;
+  font-weight:600;
+  border-bottom:1px solid #e9ecef;
+}
+.section-card .section-body{
+  padding: .9rem;
+}
+
+/* Prevent long content from pushing layout */
+.text-clip { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.word-wrap { word-break:break-word; }
+
+/* Small label spacing consistency */
+.font-weight-600 { font-weight:600; }
+.input-group-text { background:#f8f9fa; }
+
+
+
+
+
+
+
+/* ===============================
+   Urdu Font Support & Typography
+   =============================== */
+
+/* ===============================
+   Admit Card / Datesheet — Screen + Print (A4)
+   Clean, deduped, and print-optimized
+   =============================== */
+
+/* ---- Palette ---- */
+:root{
+  --ink:#0f172a; --ink-2:#111827; --muted:#475569;
+  --line:#94a3b8; --line-2:#cbd5e1; --chip:#cfd8e3;
+  --bg-soft:#f8fafc; --card:#ffffff; --accent:#1d4ed8;
+  --danger:#b91c1c; --danger-weak:#ef4444;
+}
+
+/* ---- Layout wrappers (AdminLTE safe) ---- */
+html, body, .content-wrapper, .content, .container-fluid{ background:#fff !important; }
+.content{ padding:0 !important; }
+
+/* ---- Typography ---- */
+.urdu-text {
+  font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', 'Nafees', 'Alvi', 'Urdu', serif !important;
+  font-size: 1.2em;
+  line-height: 1.8;
+  direction: rtl;
+  text-align: right;
+}
+
+.urdu-syllabus {
+  font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', 'Nafees', 'Alvi', 'Urdu', serif !important;
+  font-size: 1.3em;
+  line-height: 2.0;
+  direction: rtl;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+.english-text {
+  font-family: 'Times New Roman', Times, serif !important;
+  line-height: 1.4;
+}
+
+/* ---- Actions ---- */
+.page-actions{ 
+  position:sticky; 
+  top:0; 
+  z-index:5; 
+  background:#fff; 
+  padding:8px 0 0; 
+  margin-bottom:8px; 
+  border-bottom: 1px solid var(--line-2);
+}
+
+/* ---- Card ---- */
+.admit-card{
+  max-width:1100px; 
+  margin:16px auto; 
+  background:var(--card);
+  border-radius:12px; 
+  border:1px solid var(--line-2);
+  box-shadow:0 6px 18px rgba(0,0,0,.06); 
+  overflow:hidden;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+/* ---- Header ---- */
+.admit-header{
+  background:#fff; 
+  color:#111; 
+  padding:16px 16px 10px;
+  display:grid; 
+  grid-template-columns:96px 1fr; 
+  gap:16px; 
+  align-items:center;
+  border-bottom: 2px solid var(--accent);
+}
+
+.school-logo{
+  width:96px; height:96px;
+  display:flex; align-items:center; justify-content:center;
+  background:transparent !important;    /* no background */
+  border:none !important;
+  border-radius:50%;                    /* circle */
+  overflow:hidden;                      /* crop corners */
+  isolation:isolate;
+}
+.school-logo img{
+  width:100%; height:100%;
+  object-fit:contain !important;
+  background:transparent !important;
+  border-radius:50%;                    /* match container */
+  mix-blend-mode:normal !important;
+  filter:none !important;
+}
+.school-meta{ 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  justify-content:center; 
+  text-align:center; 
+}
+.school-meta h1{ 
+  font-size:42px; 
+  line-height:1.1; 
+  margin:0 0 4px; 
+  font-weight:800; 
+  letter-spacing:.3px; 
+  color:var(--ink-2); 
+  font-family: 'Times New Roman', Times, serif;
+}
+.school-meta .sub{ 
+  font-size:18px; 
+  line-height:1.2; 
+  margin:0; 
+  opacity:.95; 
+  white-space:nowrap; 
+  color:var(--muted); 
+  font-family: 'Times New Roman', Times, serif;
+}
+.school-meta .sub .dot{ margin:0 6px; color:#94a3b8; }
+
+.headline{ 
+  text-align:center; 
+  font-weight:800; 
+  color:var(--ink); 
+  margin:6px 16px 10px; 
+  font-size:18px; 
+  font-family: 'Times New Roman', Times, serif;
+}
+.headline .ribbon{ 
+  display:inline-block; 
+  padding:6px 14px; 
+  border:2px solid var(--accent); 
+  border-radius:999px; 
+  font-weight:800; 
+  letter-spacing:.2px; 
+  background: var(--bg-soft);
+}
+.header-sep{ border:0; border-top:2px dotted #b6c2d6; margin:6px 0 0; }
+
+/* ---- Body ---- */
+.admit-body{ padding:16px; position:relative; }
+
+/* Corner badge */
+.due-badge{
+  position:absolute; 
+  top:140px; 
+  right:40px; 
+  background:#fff;
+  border:1px dashed var(--danger-weak); 
+  color:var(--danger);
+  font-size:12px; 
+  padding:4px 8px; 
+  border-radius:8px; 
+  display:flex; 
+  align-items:center; 
+  gap:6px;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+/* ---- Student row ---- */
+.student-row{ 
+  display:grid; 
+  grid-template-columns:84px 1fr; 
+  column-gap:12px; 
+  align-items:start; 
+  margin-bottom:12px; 
+}
+.avatar{ 
+  width:84px; 
+  height:84px; 
+  border:1px solid #ddd; 
+  border-radius:6px; 
+  overflow:hidden; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  background:#f5f7fb; 
+  color:#90a4ae; 
+}
+.avatar img{ width:100%; height:100%; object-fit:cover; }
+.avatar i{ font-size:40px; opacity:.65; }
+
+/* Facts */
+.facts{ display:grid; grid-template-columns:repeat(2, minmax(240px,1fr)); gap:8px 24px; }
+
+.facts-compact{ 
+  display:grid; 
+  grid-template-columns:repeat(3, minmax(0,1fr)); 
+  gap:6px 12px; 
+  line-height:1.5; 
+  font-size:16px; 
+  padding-top:2px; 
+  font-family: 'Times New Roman', Times, serif;
+}
+.fact{
+  font-size:14px; 
+  background:var(--bg-soft); 
+  border:1px solid #e6ebf2;
+  padding:8px 10px; 
+  border-radius:8px; 
+  color:var(--ink);
+  font-family: 'Times New Roman', Times, serif;
+}
+.fact i{ color:#64748b; margin-right:6px; }
+.facts-compact .fact{
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;                 /* small, consistent space */
+  padding: 6px 8px;         /* a bit slimmer */
+}
+
+.facts-compact .fact b{
+  min-width: 0;             /* remove the big fixed width */
+  margin-right: 0;          /* no extra gap */
+  white-space: initial;     /* allow wrapping if needed */
+  font-weight: 700;
+}
+
+.facts-compact .fact b::after{
+  content: ":";             /* auto colon after label */
+  margin-left: 2px;
+}
+
+/* ---- Chips / badges ---- */
+.chips{ 
+  margin:6px 0 10px; 
+  display:flex; 
+  gap:10px; 
+  flex-wrap:wrap; 
+  justify-content:flex-start; 
+}
+.chip{ 
+  display:inline-flex; 
+  align-items:center; 
+  gap:8px; 
+  padding:6px 10px; 
+  border:1px solid var(--chip); 
+  border-radius:10px; 
+  background:#fff; 
+  font-size:13px; 
+  color:var(--ink); 
+  font-family: 'Times New Roman', Times, serif;
+}
+.chip i{ color:#0ea5e9; }
+.chip.badge-wd i{ color:#2563eb; }
+.chip.badge-A{ border-color:#fecaca; } .chip.badge-A i{ color:#dc2626; }
+.chip.badge-L{ border-color:#fde68a; } .chip.badge-L i{ color:#d97706; }
+.chip.badge-LC{ border-color:#bbf7d0; } .chip.badge-LC i{ color:#16a34a; }
+.chip.badge-EL{ border-color:#e9d5ff; } .chip.badge-EL i{ color:#7c3aed; }
+
+/* ---- Datesheet table ---- */
+.datesheet-wrap{ margin-top:6px; }
+.datesheet-table{ 
+  width:100%; 
+  border-collapse:collapse; 
+  table-layout:auto; 
+  border:2px solid var(--line); 
+  font-family: 'Times New Roman', Times, serif;
+}
+.datesheet-table thead th{
+  background:#fff; 
+  color:var(--ink); 
+  font-weight:800; 
+  padding:10px 12px; 
+  font-size:15px; 
+  text-align:left;
+  
+  border:1px solid var(--line-2);
+  vertical-align:middle;
+}
+.datesheet-table td{ 
+ border:1px solid var(--line-2);
+  padding:10px 12px; 
+  font-size:15px; 
+  vertical-align:middle; 
+}
+
+/* date/day in two lines */
+.date-day-cell .dd-date{ 
+  display:block; 
+  font-weight:800; 
+  color:var(--ink); 
+  line-height:1.05; 
+}
+.date-day-cell .dd-day{ 
+  display:block; 
+  color:#000; 
+  line-height:1.05; 
+}
+.dd-marks{ 
+  color:var(--ink); 
+  font-size:12px; 
+  margin-top:4px; 
+}
+
+/* subject trims, syllabus wraps */
+.subject-cell{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Neutral base – shared spacing/wrapping */
+.syll{
+  white-space: normal;
+  word-wrap: break-word;
+  font-size: 1.1em;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+/* Urdu: RTL + Nastaleeq + right aligned */
+.syll-ur{
+  direction: rtl;
+  text-align: right;
+  font-family: 'Jameel Noori Nastaleeq','Jameel Noori Nastaleeq Kasheeda','Nafees','Alvi','Urdu', serif !important;
+  font-size: 1.3em;
+  line-height: 2.0;
+  letter-spacing: 0.02em;
+}
+
+/* English: LTR + left aligned */
+.syll-en{
+  direction: ltr;
+  text-align: left;
+  font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Print: keep the same behavior */
+@media print{
+  .syll-ur{
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'Jameel Noori Nastaleeq','Jameel Noori Nastaleeq Kasheeda','Nafees','Alvi','Urdu', serif !important;
+  }
+  .syll-en{
+    direction: ltr !important;
+    text-align: left !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+}
+
+
+/* Compact variant */
+.datesheet-table.compact thead th,
+.datesheet-table.compact td{ 
+  padding:2px 6px !important; 
+  line-height:1.05 !important; 
+  vertical-align:middle !important; 
+}
+.datesheet-table.compact .date-day-cell,
+.datesheet-table.compact .subject-cell,
+.datesheet-table.compact .syll{ 
+  padding-top:0 !important; 
+  padding-bottom:0 !important; 
+}
+.datesheet-table.compact .dd-date,
+.datesheet-table.compact .dd-day,
+.datesheet-table.compact .dd-marks{ 
+  margin:0 !important; 
+  line-height:1.05 !important; 
+}
+
+
+/* Softer compact: add a bit more air without losing density */
+.datesheet-table.compact.relax thead th,
+.datesheet-table.compact.relax td{
+  padding: 6px 10px !important;
+  line-height: 1.5 !important;
+}
+
+.datesheet-table.compact.relax .date-day-cell,
+.datesheet-table.compact.relax .subject-cell,
+.datesheet-table.compact.relax .syll{
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.datesheet-table.compact.relax .dd-date,
+.datesheet-table.compact.relax .dd-day,
+.datesheet-table.compact.relax .dd-marks{
+  margin: 1px 0 !important;
+  line-height: 1.15 !important;
+}
+
+/* Better readability + subtle striping */
+.datesheet-table.compact.relax tbody tr:nth-child(odd) td{
+  background: #fbfcff;
+}
+.datesheet-table.compact.relax tbody tr:hover td{
+  background: #f3f7ff;
+}
+
+/* keep syllabus comfy (both urdu & english) */
+.datesheet-table.compact.relax .syll{
+  line-height: 1.6 !important;
+  font-size: 1.2em;              /* slightly larger for body */
+}
+
+/* print: mirror the relaxed feel */
+@media print{
+  .datesheet-table.compact.relax thead th,
+  .datesheet-table.compact.relax td{
+    padding: 6px 10px !important;
+    line-height: 1.28 !important;
+  }
+  .datesheet-table.compact.relax .syll{
+    line-height: 2.0 !important;
+  }
+}
+/* ---- Footer & sign ---- */
+.footer-lines{ 
+  margin-top:12px; 
+  color:var(--ink); 
+  font-size:14px; 
+  font-family: 'Times New Roman', Times, serif;
+}
+.sign-row{ 
+  display:grid; 
+  grid-template-columns:repeat(3,1fr); 
+  gap:16px; 
+  margin-top:18px; 
+}
+.sign-box{ 
+  height:64px; 
+  border-top:2px solid var(--line-2); 
+  text-align:center; 
+  padding-top:6px; 
+  font-size:12px; 
+  color:#475569; 
+  font-family: 'Times New Roman', Times, serif;
+}
+
+/* ---- Screen border normalization ---- */
+.datesheet-table, .datesheet-table th, .datesheet-table td{ border-color:var(--line) !important; }
+
+/* ---- Urdu specific improvements ---- */
+.urdu-header {
+  font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', 'Nafees', 'Alvi', 'Urdu', serif !important;
+  font-size: 1.4em;
+  text-align: center;
+  margin: 10px 0;
+  line-height: 2.0;
+  direction: rtl;
+}
+
+.urdu-footer {
+  font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', 'Nafees', 'Alvi', 'Urdu', serif !important;
+  font-size: 1.2em;
+  text-align: center;
+  margin: 10px 0;
+  direction: rtl;
+  line-height: 2.0;
+}
+
+/* ===============================
+   Print — mirror screen, but page-aware
+   =============================== */
+@media print{
+  /* Font & color fidelity */
+  html, body{
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+  .urdu-text, .urdu-header, .urdu-footer, .urdu-syllabus, .syll {
+    font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', 'Nafees', 'Alvi', 'Urdu', serif !important;
+  }
+  *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html, body, .content-wrapper, .content, .container-fluid{ background:#fff !important; }
+
+  /* Card: keep screen visuals, avoid splitting */
+  .admit-card{
+    max-width:1100px !important;
+    margin:16px auto !important;
+    background:#fff !important;
+    border:1px solid var(--line-2) !important;
+    border-radius:12px !important;
+    box-shadow:0 6px 18px rgba(0,0,0,.06) !important;
+    overflow:hidden !important;
+    page-break-inside:avoid; break-inside:avoid-page;
+  }
+  .admit-card + .admit-card{ page-break-before:always; break-before:page; }
+
+  /* Logo fidelity */
+  .school-logo{ background: transparent !important; border:none !important; }
+  .school-logo img{ background: transparent !important; mix-blend-mode: normal !important; }
+
+  /* Lock line-heights to screen */
+  .school-meta h1{ line-height:1.1 !important; }
+  .school-meta .sub{ line-height:1.2 !important; }
+  .facts, .facts-compact, .fact{ line-height:1.5 !important; }
+  .datesheet-table th, .datesheet-table td{ line-height:1.35 !important; }
+  .datesheet-table.compact thead th, .datesheet-table.compact td{ line-height:1.05 !important; }
+  .date-day-cell .dd-date, .date-day-cell .dd-day, .dd-marks{ line-height:1.05 !important; }
+  .syll, .urdu-syllabus { line-height: 2.0 !important; }
+  p, div, span, li, b, i, strong, em, small{ line-height:inherit !important; }
+
+  /* Repeat table header on each page & avoid row splits */
+  .datesheet-table thead{ display:table-header-group; }
+  .datesheet-table tfoot{ display:table-footer-group; }
+  .datesheet-table tr{ page-break-inside:avoid; break-inside:avoid; }
+
+  /* Keep borders tone */
+  .datesheet-table, .datesheet-table th, .datesheet-table 
+  td{ border-color:var(--line) !important; }
+
+  /* Compact paddings same as screen */
+  .datesheet-table.compact thead th, .datesheet-table.compact td{ padding:2px 6px !important; vertical-align:middle !important; }
+
+  /* Orphans/widows hint */
+  p, .fact{ orphans:2; widows:2; }
+
+  /* Hide only explicit */
+  .no-print{ display:none !important; }
+
+  /* Paper setup */
+  @page{ size:A4; margin:100mm; } /* Change to 'Letter' if needed */
+}
+
+
+/* ===============================
+   Solid black borders (scoped)
+   =============================== */
+
+/* All tables inside the admit card (datesheet, attendance, custom info tables) */
+.admit-card.solid-borders table{
+  border-collapse: collapse !important;
+  border: 2px solid #000 !important;        /* outer frame */
+}
+.admit-card.solid-borders table th,
+.admit-card.solid-borders table td{
+  border: 2px solid #000 !important;        /* inner grid */
+}
+
+/* Specific datesheet table (overrides earlier var(--line) rules) */
+.admit-card.solid-borders .datesheet-table,
+.admit-card.solid-borders .datesheet-table th,
+.admit-card.solid-borders .datesheet-table td{
+  border: 2px solid #000 !important;
+  color: inherit;                            /* keep your text color */
+}
+
+/* Student info “fact” boxes → solid black like the tables */
+.admit-card.solid-borders .fact{
+  border: 2px solid #000 !important;
+  background: #fff;                          /* cleaner on print */
+}
+
+/* Optional: sign boxes use same solid border on top */
+.admit-card.solid-borders .sign-box{
+  border-top: 2px solid #000 !important;
+}
+
+/* Hover/striping should NOT lighten borders */
+.admit-card.solid-borders .datesheet-table tbody tr:hover td{
+  background: #f3f7ff;
+  border-color: #000 !important;
+}
+
+/* Print: preserve solid black everywhere inside the card */
+@media print{
+  .admit-card.solid-borders table,
+  .admit-card.solid-borders table th,
+  .admit-card.solid-borders table td,
+  .admit-card.solid-borders .fact,
+  .admit-card.solid-borders .sign-box{
+    border-color: #000 !important;
+  }
+}
+
+.language-switcher {
+    margin-right: 15px;
+}
+.language-switcher .nav-link {
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 4px 12px;
+}
+.language-dropdown {
+    min-width: 200px;
+}
+.language-flag {
+    margin-right: 10px;
+}
+.language-option.active {
+    background-color: #e3f2fd;
+}
+
+  .content-header h1{font-size: 22px !important;}
+  .nav-sidebar .nav-treeview{
+    margin: 0 10px !important;
+  }
+  .heading3 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px !important;
+    font-weight: normal;
+  }
+  .content-header{
+    padding: 2px .5rem;
+  }
+  .dt-buttons{float: right;}
+  .main-header .navbar-nav li a{color: #fff; }
+  .card-body{
+    padding: 10px !important;
+  }
+.form-control{
+    height: 35px !important;
+    font-size: 16px !important;
+    line-height: 17px !important;
+    padding: 5px 15px;
+    border-radius: 0px;
+    border: 1px solid blue;
+}
+.input-group-addon {
+    padding: 1px 8px !important;
+  }
+.select2-container--default .select2-selection--single, .select2-selection .select2-selection--single {
+      border: 1px solid #d2d6de;
+      border-radius: 0;
+      padding: 6px 12px;
+      height: 30px !important;
+  }
+.select2-container--default .select2-selection--single .select2-selection__arrow{
+    height: 22px !important;
+    right: 3px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #444;
+    line-height: 24px !important;
+}
+@media print {
+  body {-webkit-print-color-adjust: exact;}
+  .resultReport th {
+    background: #494E53 !important;
+    print-color-adjust: exact; 
+    color: #fff;
+    text-align: left;
+}
+  .printable_result_header_width{width: 730px !important;}
+  .nav-tabs{ display: none; }
+  .card-primary.card-outline{    border-top: 0px none !important;}
+  .main-footer{display: none;}
+  .btn {display: none;}
+  .no-print,.nav-tabs,.main-footer,.no-print *{ display: none !important; }
+  #form-filter,.operation,.main-footer,.nav-tabs,.dt-buttons,.dataTables_info,.paging_simple_numbers,.no-print, .no-print *{display: none !important; }
+    @page { 
+        size: auto;
+    }
+}
+
+
+/* Layout polish */
+.nav-tabs-clean .nav-link { border: none; font-weight:600; color:#334155; }
+.nav-tabs-clean .nav-link.active { border-bottom:3px solid #2563eb; color:#0f172a; }
+
+.action-bar{
+  position: sticky; top: 64px; z-index: 9;
+  box-shadow: 0 4px 16px rgba(0,0,0,.06);
+  border: 1px solid #e5e7eb; border-left:0;border-right:0;
+  background: #fff; margin-bottom: 12px;
+}
+.g-3 > [class*="col-"]{ margin-bottom: 1rem; }
+.gap-2 > *{ margin-left:.25rem; margin-right:.25rem; }
+
+/* Inputs */
+.input-group-text{ background:#f8fafc; }
+
+/* Select2 compact */
+.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered{
+  line-height: 2.4rem;
+}
+.select2-container--bootstrap4 .select2-selection--single{
+  height: 2.6rem;
+}
+
+/* Autosize textarea (basic) */
+.autosize{ overflow:hidden; resize:vertical; }
+
+/* Mobile tweaks */
+@media (max-width: 575.98px){
+  .action-bar{ top: 56px; }
+  .nav-tabs-clean .nav-link{ padding:.5rem .75rem; }
+}
+
+/* Card hover */
+.card-primary.card-outline{ border-top: 3px solid #2563eb; }
+.card-primary.card-outline:hover{ box-shadow:0 8px 24px rgba(0,0,0,.08); }
+
+/* Validation states */
+.is-invalid + .invalid-feedback{ display:block; }
