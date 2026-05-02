@@ -177,7 +177,8 @@ $(document).ready(function() {
         $('#recordsTableBody').html('<tr><td colspan="10" class="text-center"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr>');
         
         // FIX: Use the correct base URL
-        const url = '<?= base_url("admin/health/bmi-records/data") ?>';
+        
+        const url = '<?= base_url("admin/health/bmi-records/getRecordsData") ?>';
         
         console.log('Loading records from:', url); // Debug log
         console.log('Filters:', { cls_sec_id: clsSecId, category: category, search: search });

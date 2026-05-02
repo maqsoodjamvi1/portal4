@@ -331,7 +331,7 @@ private function getBMICategoryDisplay($category)
     // -------------------------------------------------------------------------
     // Save ONLY DOB-related fields for ONE student (AJAX)
     // -------------------------------------------------------------------------
- public function save_student_info()
+ public function saveStudentInfo()
 {
     try {
         $student_id = $this->request->getPost('student_id');

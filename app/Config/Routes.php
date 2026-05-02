@@ -10,6 +10,7 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes = Services::routes();
 $routes->get('admin', 'Home::getAdmin');
+$routes->get('/', 'Home::index');
 
 // Default settings
 $routes->setDefaultNamespace('App\Controllers');
@@ -59,6 +60,11 @@ $routes->get('get-recent-attendance', 'Dashboard::getRecentAttendance');
     $routes->get('health/bmi-records/data', 'HealthBmi::getRecordsData');
     $routes->post('health/bmi-records/save', 'HealthBmi::saveRecord');
     $routes->get('health/bmi-records/delete/(:num)', 'HealthBmi::deleteRecord/$1');
+
+    // Add these lines to your Routes.php
+$routes->post('health/bmi-records/getRecordsData', 'HealthBmi::getRecordsData');
+$routes->post('health/bmi-records/saveRecord', 'HealthBmi::saveRecord');
+$routes->post('health/bmi-records/data', '\HealthBmi::getRecordsData'); // For backward compatibility
     
     // Bulk BMI Update (existing route)
   
