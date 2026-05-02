@@ -1,7 +1,9 @@
 .env
 writable/
+public/uploads/
+public/system-logo/
+public/assets/uploads/
 *.zip
 vendor/
 node_modules/
 *.log
-
