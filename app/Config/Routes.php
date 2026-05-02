@@ -10,6 +10,7 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes = Services::routes();
 $routes->get('admin', 'Home::getAdmin');
+$routes->get('/', 'Home::index');
 
 // Default settings
 $routes->setDefaultNamespace('App\Controllers');
@@ -922,8 +923,9 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     
     $routes->get('fee-chalan', 'FeeChalan::index');
     
-    // New unified chalan generator
+    // New unified chalan generator (GET = browser / links; POST = AJAX from student profile, etc.)
     $routes->get('fee-chalan/generate', 'FeeChalan::generate');
+    $routes->post('fee-chalan/generate', 'FeeChalan::generate');
     
     // AJAX search endpoints
     $routes->post('fee-chalan/search-students', 'FeeChalan::searchStudents');
@@ -1214,7 +1216,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], static functio
     
     // Attendance Monthly Report Routes
     $routes->get('attendance-monthly-report', 'AttendanceMonthlyReport::index');
-    $routes->post('attendance-monthly-report/get-students-byclass', 'AttendanceMonthlyReport::getStudentsByclass');
+    $routes->post('attendance-monthly-report/get-students-byclass', 'AttendanceMonthlyReport::get_students_byclass');
     
     // For Students Session Report
     // REMOVE THIS LINE: return view('attendance-monthly-report/student_session_report', $data);
@@ -1341,7 +1343,11 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     $routes->post('timetable/save-slot', 'Timetable::saveSlot');
     $routes->post('timetable/get-subjects', 'Timetable::getSubjects');
     $routes->post('timetable/get-subjects-timetable', 'Timetable::getSubjectsTimetable');
+    $routes->post('timetable/get-subject-constraints', 'Timetable::getSubjectConstraints');
     $routes->post('timetable/update-slot', 'Timetable::updateSlot');
+    $routes->get('timetable/report', 'Timetable::report');
+    $routes->post('timetable/report-data', 'Timetable::reportData');
+    $routes->get('timetable/report-export', 'Timetable::reportExport');
     $routes->get('timetable/teachers', 'Timetable::viewTeacherTimetable');
 $routes->get('timetable/teacher', 'Timetable::getTeacherTimetable');
 $routes->get('timetable/time-table-add-new', 'Timetable::timeTableAddNew');
@@ -1455,7 +1461,9 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], static functio
     $routes->post('face-attendance/mark', 'FaceAttendance::mark');
 
     $routes->get('face-management', 'FaceAttendance::management');
-    
+
+    $routes->get('face-management/get-students', 'FaceAttendance::getStudents');
+
     $routes->get('face-management/data', 'FaceAttendance::data');
     $routes->post('face-management/delete', 'FaceAttendance::delete');
     $routes->post('face-management/enroll', 'FaceAttendance::enroll');
@@ -1813,9 +1821,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     $routes->post('profile-student/update-password', 'ProfileStudent::updatePassword');
     $routes->post('profile-student/student-fee-data', 'ProfileStudent::singleStudentFeedata');
     $routes->post('profile-student/student-attendance-data', 'ProfileStudent::singleStudentAttendancedata');
-     $routes->post('profile-student/data', 'ProfileStudent::data');
-    $routes->post('profile-student/student-fee-data', 'ProfileStudent::studentFeeData');
-    $routes->post('profile-student/student-attendance-data', 'ProfileStudent::studentAttendanceData');
     $routes->post('profile-student/student-health-data', 'ProfileStudent::studentHealthData');
     $routes->post('profile-student/student-result-data', 'ProfileStudent::studentResultData');
 });
@@ -2136,15 +2141,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     $routes->post('test-result-card/delete-test', 'TestSeriesResultCard::deleteTest');
 });
 
-
-
-$routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
-    $routes->get('day_on_reset',               'DayOnReset::index');
-    $routes->post('day_on_reset/data',         'DayOnReset::data');
-    $routes->get('day_on_reset/add',           'DayOnReset::add');
-    $routes->get('day_on_reset/edit',          'DayOnReset::edit'); // expects ?id= in query
-    $routes->post('day_on_reset/save',         'DayOnReset::save');
-});
 
 // Admin Students Enroll routes
 $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {

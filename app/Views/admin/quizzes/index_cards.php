@@ -1549,7 +1549,7 @@ $(document).ready(function() {
         $button.prop('disabled', true);
         
         // Build URL with full path to avoid any issues
-        const deleteUrl = 'https://portal4.timesoftsol.com/index.php/admin/quizzes/delete-quiz/' + quizId;
+        const deleteUrl = '<?= site_url("admin/quizzes/delete-quiz") ?>/' + quizId;
         console.log("Redirecting to:", deleteUrl);
         
         // Redirect to confirmation page (GET request)

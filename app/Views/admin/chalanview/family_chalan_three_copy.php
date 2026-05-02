@@ -261,6 +261,8 @@ $show_payment_history = $show_payment_history ?? false;
                             'section_short_name' => '',
                             'display_rows' => $family['display_rows'] ?? [],
                             'total_payable' => $totalPayable,
+                            'payable_monthly' => (float) ($family['payable_monthly'] ?? 0),
+                            'payable_other' => (float) ($family['payable_other'] ?? 0),
                             'total_discount' => $totalDiscount,
                             'total_amount' => $totalAmount,
                             'payment_history' => $family['payment_history'] ?? ['monthly_totals' => []],

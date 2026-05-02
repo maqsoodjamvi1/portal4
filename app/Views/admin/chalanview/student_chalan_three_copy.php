@@ -17,8 +17,8 @@
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-bottom: 20px;
-            gap: 15px;
+            margin-bottom: 8px;
+            gap: 8px;
         }
         
         .slip-col {

@@ -20,7 +20,7 @@ class App extends BaseConfig
         ini_set('display_errors', 1);
     }
 }
-    public string $baseURL = 'http://localhost:8080/';
+    public string $baseURL = 'http://localhost/school-management-system/public/';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.

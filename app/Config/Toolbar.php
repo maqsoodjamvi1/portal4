@@ -23,6 +23,10 @@ use CodeIgniter\Debug\Toolbar\Collectors\Views;
  */
 class Toolbar extends BaseConfig
 {
+
+
+
+	public bool $enabled = false;
     /**
      * --------------------------------------------------------------------------
      * Toolbar Collectors

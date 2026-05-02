@@ -8,31 +8,16 @@
 ?>
 
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>Student Names</h1>
-      </div>
-     
-    </div>
-  </div>
-</section>
+<?= view('components/bulk_students_header', [
+  'title' => 'Student Names',
+  'subtitle' => 'Student Names'
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
     <div class="card card-primary card-outline shadow-sm">
       <div class="card-header pb-0">
-         <ul class="nav nav-tabs card-header-tabs" style="overflow-x: auto; flex-wrap: nowrap;">
-                    <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/addbulkstudents/add') ?>">Student Names</a></li>          
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Class Change</a></li>                    
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_info') ?>">Other Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_fee_info') ?>">Fee Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkparents') ?>">Parent Info</a></li>
-                     <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_info_date_of_birth') ?>">Date of Birth & BMI</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_make_current') ?>">Make Current</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkcsv/addbulk') ?>">Excel Import</a></li>
-                </ul>
+         <?= view('components/bulk_students_tabs', ['active' => 'names']) ?>
       </div>
 
       <div class="card-body">

@@ -24,69 +24,63 @@ $dueDate = $student['last_due_date'] ?? ($chalan['due_date_label'] ?? date('d-m-
 $feeMonthLabel = $student['last_fee_month'] ?? ($chalan['fee_month_label'] ?? $fee_month);
 
 $displayRows = $student['display_rows'] ?? $student['chalans'] ?? [];
-$totalPayable = $student['total_payable'] ?? 0;
-
-// Fixed number of rows in fee detail section
-$FIXED_ROWS = 7;
-
-// Show first 6 records as individual rows
-$firstSixRows = array_slice($displayRows, 0, 6);
-$remainingRows = array_slice($displayRows, 6);
-
-// Calculate total amount for remaining rows (7th row - Arrears)
-$arrearsTotal = 0;
-foreach ($remainingRows as $row) {
-    $amount = floatval($row['amount'] ?? $row['total_amount'] ?? 0);
-    $discount = floatval($row['discount'] ?? $row['total_discount'] ?? 0);
-    $arrearsTotal += ($amount - $discount);
+// Fixed layout: 4 particulars + 1 remainder row (5 body rows)
+while (count($displayRows) < 5) {
+    $displayRows[] = [
+        'is_blank'          => true,
+        'particulars_label' => '',
+        'amount'            => '',
+        'discount'          => '',
+        'net_amount'        => 0,
+        'fee_month_label'   => '',
+    ];
 }
+$displayRows = array_slice($displayRows, 0, 5);
 
-// Calculate how many rows we currently have
-$rowsWithData = count($firstSixRows);
-$hasArrears = $arrearsTotal > 0;
-
-// If we have arrears, it will be the 7th row
-// If no arrears, we need blank rows to fill up to 7
-$rowsNeeded = 7;
-$totalDisplayRows = $rowsWithData + ($hasArrears ? 1 : 0);
-$blankRowsNeeded = max(0, $rowsNeeded - $totalDisplayRows);
+$totalPayable = $student['total_payable'] ?? 0;
 
 // Ensure totalPayable is numeric
 $totalPayable = floatval($totalPayable);
 $fine_after_due_date = intval($fine_after_due_date);
 $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine']) : 0;
+
+$schoolNameDisplay = $student['system_name'] ?? 'SCHOOL NAME';
+$schoolNameFontPt    = school_name_fit_font_size((string) $schoolNameDisplay, 22, 11.0, 6.5);
+
+$accountsDisclaimerStd = 'If any mistakes are found in the challan, please contact the Accounts Office.';
+$payableMonthly        = (float) ($student['payable_monthly'] ?? 0);
+$payableOther          = (float) ($student['payable_other'] ?? 0);
+if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
+    foreach ($student['chalans'] as $c) {
+        $n = (float) ($c['net_amount'] ?? 0);
+        if ((int) ($c['is_monthly_fee'] ?? 0) === 1) {
+            $payableMonthly += $n;
+        } else {
+            $payableOther += $n;
+        }
+    }
+}
 ?>
 
 <div class="chalan-wrapper">
-    <!-- SECTION 1: HEADER SECTION -->
+    <!-- SECTION 1: HEADER — logo + school + campus in one balanced row -->
     <div class="chalan-header">
-        <!-- Top Row: School Name Only - Full Width -->
-        <div class="school-name-row">
-            <div class="school-name"><?= esc($student['system_name'] ?? 'SCHOOL NAME') ?></div>
-        </div>
-        
-        <!-- Middle Section: Logo and Campus Info Only -->
-        <div class="header-middle">
-            <div class="header-left">
-                <div class="header-logo">
-                    <?php if (!empty($student['logo'])): ?>
-                        <img src="<?= base_url('system-logo/' . $student['logo']) ?>" alt="Logo">
-                    <?php else: ?>
-                        <div class="logo-placeholder">SCHOOL</div>
-                    <?php endif; ?>
-                </div>
+        <div class="header-brand">
+            <div class="header-logo-box">
+                <?php if (!empty($student['logo'])): ?>
+                    <img src="<?= base_url('system-logo/' . $student['logo']) ?>" alt="Logo">
+                <?php else: ?>
+                    <div class="logo-placeholder">LOGO</div>
+                <?php endif; ?>
             </div>
-            
-            <div class="header-center">
-                <div class="campus-name"><?= esc($student['campus_name'] ?? 'Campus Address') ?></div>
+            <div class="header-brand-text">
+                <div class="school-name" style="font-size: <?= esc((string) $schoolNameFontPt, 'attr') ?>pt;"><?= esc($schoolNameDisplay) ?></div>
+                <div class="campus-line"><?= esc($student['campus_name'] ?? 'Campus Address') ?></div>
                 <?php if (!empty($student['bank_name'])): ?>
-                    <div class="bank-details">
-                        <?= esc($student['bank_name']) ?>
-                        <?= !empty($student['bank_address']) ? ', ' . esc($student['bank_address']) : '' ?>
-                    </div>
+                    <div class="bank-line"><?= esc($student['bank_name']) ?><?= !empty($student['bank_address']) ? ', ' . esc($student['bank_address']) : '' ?></div>
                 <?php endif; ?>
                 <?php if (!empty($student['bank_acc'])): ?>
-                    <div class="account-details">A/C: <?= esc($student['bank_acc']) ?></div>
+                    <div class="acc-line">A/C: <?= esc($student['bank_acc']) ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -103,7 +97,7 @@ $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine'
                 <div class="info-row-single">
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
-                        <strong><?= esc($head_student['student_name'] ?? '') ?></strong>
+                        <strong class="student-name-line"><?= esc($head_student['student_name'] ?? '') ?></strong>
                         <?php 
                         $headClass = $head_student['class_short_name'] ?? $head_student['class_name'] ?? '';
                         $headSection = $head_student['section_short_name'] ?? '';
@@ -147,19 +141,16 @@ $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine'
                     </div>
                 </div>
                 
-                <!-- Row 4: Issue Date, Due Date, Fee Month (all three in one row) -->
-                <div class="info-row-triple">
-                    <div class="info-item">
-                        <span class="info-label-inline">Issue:</span>
-                        <span class="info-value-inline"><?= esc($issueDate) ?></span>
+                <!-- Row 4: Issue (left) · Due (center) · Month (right) -->
+                <div class="info-row-dates-triple">
+                    <div class="date-cell date-cell-left">
+                        <span class="date-lbl">Iss:</span> <?= esc($issueDate) ?>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label-inline">Due:</span>
-                        <span class="info-value-inline due-date"><?= esc($dueDate) ?></span>
+                    <div class="date-cell date-cell-center">
+                        <span class="date-lbl">Due:</span> <span class="due-date"><?= esc($dueDate) ?></span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label-inline">Month:</span>
-                        <span class="info-value-inline"><?= esc($student['last_fee_month'] ?? $feeMonthLabel) ?></span>
+                    <div class="date-cell date-cell-right">
+                        <span class="date-lbl">Mo:</span> <?= esc($student['last_fee_month'] ?? $feeMonthLabel) ?>
                     </div>
                 </div>
             </div>
@@ -171,7 +162,7 @@ $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine'
                 <div class="info-row-single">
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
-                        <strong><?= esc($student['student_name'] ?? '') ?></strong>
+                        <strong class="student-name-line"><?= esc($student['student_name'] ?? '') ?></strong>
                         <?php 
                         $studentClass = $student['class_short_name'] ?? $student['class_name'] ?? '';
                         $studentSection = $student['section_short_name'] ?? '';
@@ -189,171 +180,149 @@ $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine'
                     <span class="family-id-right">F ID: <?= esc($student['parent_id'] ?? '') ?></span>
                 </div>
                 
-                <!-- Row 3: Issue Date, Due Date, Fee Month (all three in one row) -->
-                <div class="info-row-triple">
-                    <div class="info-item">
-                        <span class="info-label-inline">Issue:</span>
-                        <span class="info-value-inline"><?= esc($issueDate) ?></span>
+                <!-- Row 3: Issue (left) · Due (center) · Month (right) -->
+                <div class="info-row-dates-triple">
+                    <div class="date-cell date-cell-left">
+                        <span class="date-lbl">Iss:</span> <?= esc($issueDate) ?>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label-inline">Due:</span>
-                        <span class="info-value-inline due-date"><?= esc($dueDate) ?></span>
+                    <div class="date-cell date-cell-center">
+                        <span class="date-lbl">Due:</span> <span class="due-date"><?= esc($dueDate) ?></span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label-inline">Month:</span>
-                        <span class="info-value-inline"><?= esc($student['last_fee_month'] ?? $feeMonthLabel) ?></span>
+                    <div class="date-cell date-cell-right">
+                        <span class="date-lbl">Mo:</span> <?= esc($student['last_fee_month'] ?? $feeMonthLabel) ?>
                     </div>
                 </div>
             </div>
         <?php endif; ?>
     </div>
 
-    <!-- SECTION 3: FEE DETAIL TABLE - EXACTLY 7 ROWS -->
+    <!-- SECTION 3: FEE DETAIL TABLE — 5 rows (4 items + arrears) -->
     <div class="fee-detail-section">
-        <div class="section-title">FEE DETAILS</div>
+        <div class="section-title">FEES</div>
         <table class="fee-table">
             <thead>
                 <tr>
                     <th class="col-sr">#</th>
-                    <th class="col-particulars">PARTICULARS</th>
+                    <th class="col-particulars">Item</th>
                     <?php if ($show_discount): ?>
-                        <th class="col-amount">AMOUNT (Rs.)</th>
-                        <th class="col-discount">DISCOUNT (Rs.)</th>
-                        <th class="col-payable">PAYABLE (Rs.)</th>
+                        <th class="col-amount">Amt</th>
+                        <th class="col-discount">Disc</th>
+                        <th class="col-payable">Net</th>
                     <?php else: ?>
-                        <th class="col-payable-full">AMOUNT PAYABLE (Rs.)</th>
+                        <th class="col-payable-full">Payable</th>
                     <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
-                <?php 
-                $sr = 1;
-                $displayedRows = 0;
-                
-                // Display first 6 fee rows
-                foreach ($firstSixRows as $row): 
-                    if (!empty($row['is_blank'])) continue;
-                    
-                    // Get short name for fee type
+                <?php
+                foreach ($displayRows as $idx => $row):
+                    $isBlank = ! empty($row['is_blank']);
+                    $isAgg   = ! empty($row['is_arrears']) || ! empty($row['is_other']);
+                    $sr      = (int) $idx + 1;
+
                     $particulars = $row['particulars_label'] ?? '';
-                    $shortName = $row['short_name'] ?? $row['particulars_short'] ?? '';
-                    
-                    // Use short name if available, otherwise use full name
-                    $displayParticulars = !empty($shortName) ? $shortName : $particulars;
-                    
-                    // Convert to float to avoid string arithmetic errors
-                    $amount = floatval($row['amount'] ?? $row['total_amount'] ?? 0);
-                    $discount = floatval($row['discount'] ?? $row['total_discount'] ?? 0);
-                    $payable = $amount - $discount;
-                    $displayedRows++;
-                ?>
-                    <tr>
-                        <td class="text-center"><?= $sr++ ?></td>
+                    $shortName   = $row['short_name'] ?? $row['particulars_short'] ?? '';
+                    $displayParticulars = $shortName !== '' && $shortName !== null ? $shortName : $particulars;
+
+                    $amount   = (float) ($row['amount'] ?? $row['total_amount'] ?? 0);
+                    $discount = (float) ($row['discount'] ?? $row['total_discount'] ?? 0);
+                    $payable  = $isBlank ? 0.0 : (($row['net_amount'] ?? null) !== null && $row['net_amount'] !== ''
+                        ? (float) $row['net_amount']
+                        : ($amount - $discount));
+
+                    $trClass = $isBlank ? 'fee-detail-fixed blank-row' : 'fee-detail-fixed';
+                    ?>
+                    <tr class="<?= esc($trClass, 'attr') ?>">
+                        <td class="text-center"><?= $sr ?></td>
                         <td class="particulars-cell">
-                            <strong><?= esc($displayParticulars) ?></strong>
-                            <?php if (!empty($row['fee_month_label']) && empty($fee_month)): ?>
-                                <span class="fee-month-small">(<?= esc($row['fee_month_label']) ?>)</span>
+                            <?php if (!$isBlank): ?>
+                                <strong><?= esc($displayParticulars) ?></strong>
+                                <?php if (!$isAgg && !empty($row['fee_month_label']) && empty($fee_month)): ?>
+                                    <span class="fee-month-small">(<?= esc($row['fee_month_label']) ?>)</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <?php if ($show_discount): ?>
-                            <td class="text-right"><?= number_format($amount, 0) ?>/-</td>
-                            <td class="text-right"><?= $discount > 0 ? number_format($discount, 0) . '/-' : '-' ?></td>
-                            <td class="text-right payable-amount"><?= number_format($payable, 0) ?>/-</td>
+                            <td class="text-right"><?= $isBlank ? '' : number_format($amount, 0) . '/-' ?></td>
+                            <td class="text-right"><?= $isBlank ? '' : ($discount > 0 ? number_format($discount, 0) . '/-' : '-') ?></td>
+                            <td class="text-right payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
                         <?php else: ?>
-                            <td class="text-right payable-amount"><?= number_format($payable, 0) ?>/-</td>
+                            <td class="text-right payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
                         <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
-                
-                <!-- 7th Row: Arrears (if there are remaining rows) -->
-                <?php if ($arrearsTotal > 0): ?>
-                    <tr>
-                        <td class="text-center"><?= $sr++ ?></td>
-                        <td class="particulars-cell">
-                            <strong>Arrears</strong>
-                            <?php if (count($remainingRows) > 0): ?>
-                                <span class="fee-month-small">(<?= count($remainingRows) ?> items)</span>
-                            <?php endif; ?>
-                        </td>
-                        <?php if ($show_discount): ?>
-                            <td class="text-right"><?= number_format($arrearsTotal, 0) ?>/-</td>
-                            <td class="text-right">-</td>
-                            <td class="text-right payable-amount"><?= number_format($arrearsTotal, 0) ?>/-</td>
-                        <?php else: ?>
-                            <td class="text-right payable-amount"><?= number_format($arrearsTotal, 0) ?>/-</td>
-                        <?php endif; ?>
-                    </tr>
-                    <?php $displayedRows++; ?>
-                <?php endif; ?>
-                
-                <!-- Add blank rows to reach exactly 7 rows (completely empty) -->
-                <?php for ($i = 0; $i < $blankRowsNeeded; $i++): ?>
-                    <tr class="blank-row">
-                        <td class="text-center"></td>
-                        <td class="particulars-cell"></td>
-                        <?php if ($show_discount): ?>
-                            <td class="text-right"></td>
-                            <td class="text-right"></td>
-                            <td class="text-right"></td>
-                        <?php else: ?>
-                            <td class="text-right"></td>
-                        <?php endif; ?>
-                    </tr>
-                <?php endfor; ?>
             </tbody>
         </table>
     </div>
 
-    <!-- SECTION 4: FEE SUMMARY - Only Payable Block -->
-    <div class="fee-summary-section">
-        <div class="summary-item total">
-            <div class="summary-label">TOTAL PAYABLE AMOUNT</div>
-            <div class="summary-value">Rs. <?= number_format($totalPayable, 0) ?>/-</div>
+    <!-- SECTION 4: FEE SUMMARY — three columns on one row -->
+    <div class="fee-summary-section fee-summary-compact">
+        <div class="summary-strip" role="group" aria-label="Fee totals">
+            <div class="summary-col">
+                <div class="summary-col-label">Monthly fee</div>
+                <div class="summary-col-value">Rs. <?= number_format($payableMonthly, 0) ?>/-</div>
+            </div>
+            <div class="summary-col">
+                <div class="summary-col-label">Other fee</div>
+                <div class="summary-col-value">Rs. <?= number_format($payableOther, 0) ?>/-</div>
+            </div>
+            <div class="summary-col summary-col-total">
+                <div class="summary-col-label">Total fee</div>
+                <div class="summary-col-value summary-col-value-grand">Rs. <?= number_format($totalPayable, 0) ?>/-</div>
+            </div>
         </div>
         
         <?php if ($fine_after_due_date === 1 && $late_fee > 0): ?>
-            <?php 
-            // Calculate late fee based on type
+            <?php
             if (isset($student['fine_type']) && $student['fine_type'] === 'per_day_fine') {
                 $late_fee_total = $late_fee * 15;
             } else {
                 $late_fee_total = $late_fee;
             }
             ?>
-            <div class="summary-item warning-total">
-                <div class="summary-label">PAYABLE AFTER DUE DATE</div>
-                <div class="summary-value">Rs. <?= number_format($totalPayable + $late_fee_total, 0) ?>/-</div>
-                <div class="fine-note">(Including Late Fee: Rs. <?= number_format($late_fee_total, 0) ?>/-)</div>
+            <div class="summary-after-due">
+                <span class="summary-after-due-label">Payable after due date</span>
+                <span class="summary-after-due-value">Rs. <?= number_format($totalPayable + $late_fee_total, 0) ?>/-</span>
+                <span class="fine-note">(incl. late fee Rs. <?= number_format($late_fee_total, 0) ?>/-)</span>
             </div>
         <?php endif; ?>
     </div>
 
-    <!-- Payment History (if enabled) -->
-    <?php if ($show_payment_history && isset($payment_history) && !empty($payment_history['monthly_totals'])): ?>
+    <!-- Payment History (if enabled) — monthly vs other fee paid per month -->
+    <?php if ($show_payment_history && isset($payment_history) && !empty($payment_history['month_keys'])): ?>
         <?php
         $allMonthKeys = $payment_history['month_keys'] ?? [];
+        $mfByMonth    = $payment_history['monthly_fee_totals'] ?? [];
+        $oByMonth     = $payment_history['other_fee_totals'] ?? [];
         $allMonthlyTotals = $payment_history['monthly_totals'] ?? [];
         sort($allMonthKeys);
         $latestSixMonthKeys = array_slice($allMonthKeys, -6, 6);
-        
+
         $formattedMonths = [];
         foreach ($latestSixMonthKeys as $monthKey) {
-            $timestamp = strtotime($monthKey . '-01');
-            $formattedMonths[] = date('M y', $timestamp);
+            $formattedMonths[] = date('M y', strtotime($monthKey . '-01'));
         }
-        
-        $grandTotal = 0;
+
+        $grandM = 0.0;
+        $grandO = 0.0;
         foreach ($latestSixMonthKeys as $monthKey) {
-            $grandTotal += floatval($allMonthlyTotals[$monthKey] ?? 0);
+            if ($mfByMonth !== [] || $oByMonth !== []) {
+                $grandM += (float) ($mfByMonth[$monthKey] ?? 0);
+                $grandO += (float) ($oByMonth[$monthKey] ?? 0);
+            } else {
+                $grandM += (float) ($allMonthlyTotals[$monthKey] ?? 0);
+            }
         }
+        $useSplit = $mfByMonth !== [] || $oByMonth !== [];
+        $grandSumAll = $grandM + $grandO;
         ?>
-        
+
         <div class="payment-history-section">
             <div class="section-title">PAYMENT HISTORY (Last 6 Months)</div>
             <table class="history-table">
                 <thead>
                     <tr>
-                        <th>Month</th>
+                        <th class="history-corner-cell"></th>
                         <?php foreach ($formattedMonths as $month): ?>
                             <th><?= esc($month) ?></th>
                         <?php endforeach; ?>
@@ -362,34 +331,58 @@ $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine'
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="history-label">Amount Paid</td>
-                        <?php foreach ($latestSixMonthKeys as $monthKey): 
-                            $amount = floatval($allMonthlyTotals[$monthKey] ?? 0);
-                        ?>
-                            <td class="text-right"><?= $amount > 0 ? number_format($amount, 0) : '-' ?></td>
+                        <td class="history-label">Month</td>
+                        <?php foreach ($latestSixMonthKeys as $monthKey):
+                            $v = $useSplit ? (float) ($mfByMonth[$monthKey] ?? 0) : (float) ($allMonthlyTotals[$monthKey] ?? 0);
+                            ?>
+                            <td class="text-right"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
                         <?php endforeach; ?>
-                        <td class="text-right total-amount"><?= number_format($grandTotal, 0) ?></td>
+                        <td class="text-right total-amount"><?= number_format($useSplit ? $grandM : $grandM + $grandO, 0) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="history-label">Other</td>
+                        <?php foreach ($latestSixMonthKeys as $monthKey):
+                            $v = $useSplit ? (float) ($oByMonth[$monthKey] ?? 0) : 0.0;
+                            ?>
+                            <td class="text-right"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
+                        <?php endforeach; ?>
+                        <td class="text-right total-amount"><?= number_format($useSplit ? $grandO : 0, 0) ?></td>
+                    </tr>
+                    <tr class="history-row-sum">
+                        <td class="history-label history-label-sum">Total</td>
+                        <?php foreach ($latestSixMonthKeys as $monthKey):
+                            if ($useSplit) {
+                                $sumCol = (float) ($mfByMonth[$monthKey] ?? 0) + (float) ($oByMonth[$monthKey] ?? 0);
+                            } else {
+                                $sumCol = (float) ($allMonthlyTotals[$monthKey] ?? 0);
+                            }
+                            ?>
+                            <td class="text-right history-sum-cell"><?= $sumCol > 0 ? number_format($sumCol, 0) : '-' ?></td>
+                        <?php endforeach; ?>
+                        <td class="text-right total-amount history-sum-cell"><?= number_format($grandSumAll, 0) ?></td>
                     </tr>
                 </tbody>
             </table>
         </div>
     <?php endif; ?>
 
-    <!-- Footer Messages -->
-    <?php if (!empty($student['chalan_f_msg']) && !$single_copy): ?>
-        <div class="footer-note"><?= esc($student['chalan_f_msg']) ?></div>
-    <?php endif; ?>
-    
-    <?php if ((int)$show_line1 === 1 && !empty($footer_line1) && !$single_copy): ?>
+    <?php if ((int) $show_line1 === 1 && !empty($footer_line1) && !$single_copy): ?>
         <div class="footer-line"><?= esc($footer_line1) ?></div>
     <?php endif; ?>
-    
-    <?php if ((int)$show_line2 === 1 && !empty($footer_line2) && !$single_copy): ?>
+
+    <?php if ((int) $show_line2 === 1 && !empty($footer_line2) && !$single_copy): ?>
         <div class="footer-line"><?= esc($footer_line2) ?></div>
     <?php endif; ?>
-    
-    <!-- Copy Label -->
+
     <?php if ($show_copy_label && !empty($student['copy_label'])): ?>
         <div class="copy-label"><?= esc($student['copy_label']) ?></div>
+    <?php endif; ?>
+
+    <?php if (!$single_copy): ?>
+        <?php
+        $customFooter = trim((string) ($student['chalan_f_msg'] ?? ''));
+        $footerNotice = $customFooter !== '' ? $customFooter : $accountsDisclaimerStd;
+        ?>
+        <div class="chalan-accounts-disclaimer slip-footer-msg"><?= esc($footerNotice) ?></div>
     <?php endif; ?>
 </div>

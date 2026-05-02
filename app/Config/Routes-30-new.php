@@ -1280,14 +1280,6 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->post('test-result-card/delete-test', 'TestSeriesResultCard::deleteTest');
     });
 
-    $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
-        $routes->get('day_on_reset', 'DayOnReset::index');
-        $routes->post('day_on_reset/data', 'DayOnReset::data');
-        $routes->get('day_on_reset/add', 'DayOnReset::add');
-        $routes->get('day_on_reset/edit', 'DayOnReset::edit');
-        $routes->post('day_on_reset/save', 'DayOnReset::save');
-    });
-
     // Admin Students Enroll routes
     $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
         $routes->get('students_enroll', 'StudentsEnroll::index');

@@ -73,21 +73,24 @@ if(isset($info)){
 				</select>
 			</div> -->
 			<div class="form-group">
+				<label for="cls_sec_id">Class / section</label>
 				<select class="form-control" name="cls_sec_id" id="cls_sec_id">
-					<option value="">Select Class</option>
-					<option value="all">All</option>
+					<option value="">— Select class —</option>
+					<option value="all">All classes</option>
 				<?php if(isset($sectionsclassinfo)){
 					foreach ($sectionsclassinfo as  $sectionvalue) {
 				 ?>
-				<option value="<?php echo $sectionvalue['section_id']; ?>"><?php echo $sectionvalue['sectionclassname']; ?></option>
+				<option value="<?php echo esc($sectionvalue['section_id']); ?>"><?php echo esc($sectionvalue['sectionclassname']); ?></option>
 				<?php } ?>
 				<?php } ?>	
 				</select>
+				<small class="form-text text-muted">Choose a class or <strong>All classes</strong> to load unpaid fee balances for the current academic session.</small>
 			</div>
 			 <div class="col-md-12 bg">
 		      <div id="loader-1" class="overlay" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 		   </div> 
-		    <div id="termssessionarea" class="termssessionarea">
+		    <div id="termssessionarea" class="termssessionarea text-muted">
+				<p class="mb-0">Select a class above to generate the defaulter report.</p>
 			</div>	
 			  <!-- <div class="form-group">
                 <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
@@ -116,12 +119,24 @@ $("#cls_sec_id").change(function(){
             type: "POST",
             data:{cls_sec_id:cls_sec_id },
             success:function(res){
-            	//console.log(res);
- 			   $("#termssessionarea").html(res);
+ 			   $("#termssessionarea").removeClass('text-muted').html(res);
  			   $("#loader-1").css("display", "none");
-			 }
+			 },
+            error: function(xhr, status, err) {
+               $("#loader-1").css("display", "none");
+               var detail = '';
+               if (xhr.responseText && xhr.responseText.length && xhr.responseText.length < 800) {
+                  detail = xhr.responseText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+               }
+               if (!detail) {
+                  detail = (xhr.status ? ('HTTP ' + xhr.status + ' ' + (xhr.statusText || '')) : '') + (err ? (' — ' + err) : '');
+               }
+               $("#termssessionarea").html('<div class="alert alert-danger">Could not load report. ' + (detail || 'Unknown error; check the server log.') + '</div>');
+            }
          });
-	 }
+	 } else {
+        $("#termssessionarea").addClass('text-muted').html('<p class="mb-0">Select a class above to generate the defaulter report.</p>');
+     }
 });    
 
 $(function(){

@@ -1,6 +1,8 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
+<link rel="stylesheet" href="<?= base_url('assets/css/dashboard-ui.css?v=20260502') ?>">
+
 <style>
 /* Dashboard Layout Styles */
 .dashboard-section {
@@ -530,11 +532,19 @@ canvas {
 <!-- Content Header -->
 <section class="content-header">
     <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Dashboard</h1>
+        <div class="dashboard-hero">
+            <div class="row align-items-center">
+                <div class="col-sm-7">
+                    <h1>Dashboard</h1>
+                    <div class="hero-sub">Organized, responsive overview of academics, attendance, fee, and health metrics.</div>
+                </div>
+                <div class="col-sm-5 text-sm-right mt-2 mt-sm-0">
+                    <span class="badge badge-light p-2">Today: <?= date('d M Y') ?></span>
+                </div>
             </div>
-            <div class="col-sm-6">
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-12">
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
                 </ol>
@@ -545,9 +555,10 @@ canvas {
 
 <!-- Main content -->
 <section class="content">
-    
+    <div class="container-fluid dashboard-content">
     <!-- Configuration Steps (Visible to all) -->
     <div class="mb-4">
+        <div class="config-steps-wrap">
         <ul class="config_steps">
             <?php 
             $session = \Config\Services::session();
@@ -566,6 +577,7 @@ canvas {
                 </li>
             <?php endif; ?>
         </ul>  
+        </div>
     </div>
 
 
@@ -574,6 +586,9 @@ canvas {
 <!-- ============================================ -->
 <?php if ($isTeacher && !empty($teacherSections)): ?>
 <div class="dashboard-section">
+    <div class="section-heading">
+        <h2 class="title">My Classes & Subjects</h2><span class="line"></span>
+    </div>
     <div class="row">
         <div class="col-md-12">
             <div class="card">
@@ -677,11 +692,14 @@ canvas {
     <!-- SECTION 1: COMMON WIDGETS (Visible to All) -->
     <!-- ============================================ -->
     <div class="dashboard-section">
-        <div class="row">
+        <div class="section-heading">
+            <h2 class="title">Quick Overview</h2><span class="line"></span>
+        </div>
+        <div class="row kpi-grid">
             <!-- Widget 1: Students -->
             <?php if(hasPermission('admin-db-students')): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/students?status=1') ?>">  
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/students?status=1') ?>" class="kpi-card-link">  
                     <div class="info-box">
                         <span class="info-box-icon bg-primary"><i class="fas fa-user-graduate"></i></span>
                         <div class="info-box-content">
@@ -695,8 +713,8 @@ canvas {
 
             <!-- Widget 2: Teachers/Faculty -->
             <?php if(hasPermission('admin-db-teacher')): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/users') ?>">  
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/users') ?>" class="kpi-card-link">  
                     <div class="info-box">
                         <span class="info-box-icon bg-danger"><i class="fas fa-chalkboard-teacher"></i></span>
                         <div class="info-box-content">
@@ -710,8 +728,8 @@ canvas {
 
             <!-- Widget 3: Academic Session -->
             <?php if(hasPermission('admin-db-session') && isset($academic_session)): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/academic_session') ?>">  
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/academic_session') ?>" class="kpi-card-link">  
                     <div class="info-box">
                         <span class="info-box-icon bg-info"><i class="far fa-calendar-alt"></i></span>
                         <div class="info-box-content">
@@ -727,8 +745,8 @@ canvas {
 
             <!-- Widget 4: Current Term -->
             <?php if(hasPermission('admin-db-term') && isset($termInfo)): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/terms') ?>">  
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/terms') ?>" class="kpi-card-link">  
                     <div class="info-box">
                         <span class="info-box-icon bg-purple"><i class="fas fa-book"></i></span>
                         <div class="info-box-content">
@@ -743,11 +761,11 @@ canvas {
             <?php endif; ?>
         </div>
 
-        <div class="row mt-3">
+        <div class="row mt-3 kpi-grid">
             <!-- Widget 5: Current Week -->
             <?php if(hasPermission('admin-db-week') && isset($termWeeksInfo)): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/weeks') ?>"> 
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/weeks') ?>" class="kpi-card-link"> 
                     <div class="info-box">
                         <span class="info-box-icon bg-teal"><i class="fas fa-calendar-week"></i></span>
                         <div class="info-box-content">
@@ -763,8 +781,8 @@ canvas {
 
             <!-- Widget 6: Current Exam -->
             <?php if(hasPermission('admin-db-exam') && isset($examsInfo)): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/exams') ?>"> 
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/exams') ?>" class="kpi-card-link"> 
                     <div class="info-box">
                         <span class="info-box-icon bg-orange"><i class="fas fa-file-alt"></i></span>
                         <div class="info-box-content">
@@ -780,8 +798,8 @@ canvas {
 
             <!-- Widget 7: Today's Attendance (Student) -->
             <?php if(hasPermission('admin-db-attendance')): ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <a href="<?= base_url('admin/students_attendance/add') ?>"> 
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <a href="<?= base_url('admin/students_attendance/add') ?>" class="kpi-card-link"> 
                     <div class="info-box">
                         <span class="info-box-icon bg-warning"><i class="fas fa-receipt"></i></span> 
                         <div class="info-box-content">
@@ -803,9 +821,12 @@ canvas {
     <!-- SECTION 2: ATTENDANCE SECTION (Role Based) -->
     <!-- ============================================ -->
     <div class="dashboard-section">
+        <div class="section-heading">
+            <h2 class="title">Attendance Center</h2><span class="line"></span>
+        </div>
         <div class="row">
             <div class="col-md-12">
-                <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px;">
+                <div class="card attendance-hub-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px;">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="card-title mb-0">
@@ -836,26 +857,26 @@ canvas {
                                 <div class="col-md-12">
                                     <!-- Attendance Summary Stats -->
                                     <div class="row mb-4">
-                                        <div class="col-md-3">
-                                            <div class="bg-white text-dark rounded p-3 text-center">
+                                        <div class="col-6 col-md-3">
+                                            <div class="bg-white text-dark rounded p-3 text-center attendance-summary-tile">
                                                 <h4 class="mb-0"><?= $totalEmployees ?? 0 ?></h4>
                                                 <small>Total Staff</small>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="bg-white text-dark rounded p-3 text-center">
+                                        <div class="col-6 col-md-3">
+                                            <div class="bg-white text-dark rounded p-3 text-center attendance-summary-tile">
                                                 <h4 class="mb-0 text-success"><?= $presentCount ?? 0 ?></h4>
                                                 <small>Present</small>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="bg-white text-dark rounded p-3 text-center">
+                                        <div class="col-6 col-md-3">
+                                            <div class="bg-white text-dark rounded p-3 text-center attendance-summary-tile">
                                                 <h4 class="mb-0 text-warning"><?= $lateCount ?? 0 ?></h4>
                                                 <small>Late Arrivals</small>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="bg-white text-dark rounded p-3 text-center">
+                                        <div class="col-6 col-md-3">
+                                            <div class="bg-white text-dark rounded p-3 text-center attendance-summary-tile">
                                                 <h4 class="mb-0 text-danger"><?= ($totalEmployees - $presentCount) ?? 0 ?></h4>
                                                 <small>Absent</small>
                                             </div>
@@ -869,7 +890,7 @@ canvas {
                                             Present Today (<?= count($teacherAttendance ?? []) ?>)
                                         </h6>
                                         <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                            <table class="table table-sm table-hover">
+                                            <table class="table table-sm table-hover attendance-table">
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Employee</th>
@@ -940,7 +961,7 @@ canvas {
                                             Absent Today (<?= count($absentEmployees) ?>)
                                         </h6>
                                         <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
-                                            <table class="table table-sm table-hover">
+                                            <table class="table table-sm table-hover attendance-table">
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Employee</th>
@@ -974,7 +995,7 @@ canvas {
                                             </h6>
                                         </div>
                                         <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                            <table class="table table-sm table-hover">
+                                            <table class="table table-sm table-hover attendance-table">
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Date</th>
@@ -1060,6 +1081,9 @@ canvas {
     <!-- SECTION 3: HEALTH SECTION (Visible to All) -->
     <!-- ============================================ -->
     <div class="dashboard-section">
+        <div class="section-heading">
+            <h2 class="title">Health & Wellness</h2><span class="line"></span>
+        </div>
         <div class="row">
             <div class="col-md-6">
                 <div class="info-box bmi-widget">
@@ -1123,6 +1147,9 @@ canvas {
     <!-- ============================================ -->
     <?php if (!$isTeacher): // Only show for Admin/Director/Principal ?>
     <div class="dashboard-section">
+        <div class="section-heading">
+            <h2 class="title">Finance & Analytics</h2><span class="line"></span>
+        </div>
         <!-- Session Selector for Fee Collection -->
         <div class="row mb-3">
             <div class="col-md-12">
@@ -1212,7 +1239,7 @@ canvas {
         <!-- Charts Row 3: Today's Attendance (Student) -->
         <div class="row mt-4">
             <?php if (hasPermission('admin-db-attendance')): ?>
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card card-info h-100">
                     <div class="card-header">
                         <h3 class="card-title">Today's Attendance (<?= date('D j M Y') ?>)</h3>
@@ -1232,6 +1259,7 @@ canvas {
     </div>
     <?php endif; // End Admin Only Section ?>
     
+    </div>
 </section>
 
 

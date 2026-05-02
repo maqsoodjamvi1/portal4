@@ -10,7 +10,7 @@
 @media print {
     @page {
         size: A4 landscape;
-        margin: 0.3in;
+        margin: 0.2in;
     }
     
     body {
@@ -47,117 +47,113 @@
     border-right: none;
 }
 
-/* Chalan Wrapper */
+/* Chalan Wrapper — compact for A4 landscape + discount columns */
 .chalan-wrapper {
     border: 2px solid #000;
     background: #fff;
-    padding: 0.2in;
+    padding: 0.1in 0.12in;
     margin: 0;
     font-family: 'Arial', 'Helvetica', sans-serif;
-    font-size: 11pt; /* Increased by 2 points from 9pt */
+    font-size: 8.5pt;
+    line-height: 1.2;
     page-break-inside: avoid;
 }
 
-/* SECTION 1: HEADER SECTION */
+/* SECTION 1: HEADER — logo + text stack */
 .chalan-header {
     border-bottom: 2px solid #000;
-    margin-bottom: 0.15in;
+    margin-bottom: 0.1in;
+    padding-bottom: 0.05in;
 }
 
-/* Top Row: School Name Only - Full Width */
-.school-name-row {
-    width: 90%;
-    text-align: center;
-    padding: 0.03in 0 0.06in 0;
-    border-bottom: 1px solid #ddd;
-    margin-bottom: 0.08in;
-}
-
-.school-name {
-    font-size: 14pt; /* Increased by 2 points from 16pt */
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    white-space: nowrap;
-    overflow: visible;
-    width: 100%;
-    text-align: center;
-    line-height: 1.2;
-    color: #000;
-}
-
-/* Middle Section: Logo and Campus Info Only */
-.header-middle {
+.header-brand {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    gap: 0.1in;
     width: 100%;
-    padding: 0.03in 0;
-    gap: 0.2in;
+    padding: 0.04in 0;
 }
 
-.header-left {
-    width: 0.9in;
-    flex-shrink: 0;
+.header-logo-box {
+    flex: 0 0 0.58in;
+    width: 0.58in;
     text-align: center;
+    padding: 0.03in 0;
+    box-sizing: border-box;
 }
 
-.header-logo img {
-    max-width: 0.75in;
-    max-height: 0.75in;
+.header-logo-box img {
+    max-width: 0.52in;
+    max-height: 0.52in;
     object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
 
 .logo-placeholder {
-    width: 0.75in;
-    height: 0.75in;
+    width: 0.5in;
+    height: 0.5in;
     border: 1px solid #000;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 10pt; /* Increased */
+    font-size: 7pt;
+    margin: 0 auto;
     background: #fff;
     color: #000;
 }
 
-.header-center {
+.header-brand-text {
     flex: 1;
+    min-width: 0;
     text-align: center;
-    max-width: 70%;
+    padding-top: 0.02in;
 }
 
-.campus-name {
-    font-size: 11pt; /* Increased from 11pt */
+.school-name {
+    font-size: 11pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: visible;
+    line-height: 1.15;
+    color: #000;
+}
+
+.campus-line {
+    font-size: 8.5pt;
     font-weight: 600;
-    margin-bottom: 0.04in;
-    white-space: nowrap;
-    overflow: visible;
+    margin-top: 0.03in;
     color: #000;
+    line-height: 1.2;
 }
 
-.bank-details,
-.account-details {
-    font-size: 10pt; /* Increased from 8pt */
+.bank-line,
+.acc-line {
+    font-size: 7.5pt;
     color: #000;
-    margin-top: 0.02in;
-    white-space: nowrap;
-    overflow: visible;
+    margin-top: 0.015in;
+    line-height: 1.2;
 }
 
-/* SECTION 2: STUDENT INFORMATION */
+/* SECTION 2: STUDENT INFORMATION — one readable type scale */
 .student-info-section {
     border-bottom: 1px solid #000;
-    margin-bottom: 0.1in;
-    padding-bottom: 0.06in;
+    margin-bottom: 0.06in;
+    padding-bottom: 0.04in;
+    font-size: 8.25pt;
+    line-height: 1.25;
 }
 
 .section-title {
-    font-size: 12pt; /* Increased from 10pt */
+    font-size: 9pt;
     font-weight: bold;
     background: #fff;
-    padding: 0.03in 0.08in;
-    margin-bottom: 0.06in;
+    padding: 0.02in 0.06in;
+    margin-bottom: 0.04in;
     border-left: 3px solid #000;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -168,7 +164,7 @@
 .info-grid-student {
     display: flex;
     flex-direction: column;
-    gap: 0.04in;
+    gap: 0.02in;
 }
 
 /* Single Row Layout */
@@ -179,20 +175,26 @@
 }
 
 .info-row-single .info-label {
-    width: 20%;
+    width: 18%;
     font-weight: 600;
-    font-size: 10pt; /* Increased */
+    font-size: 8.25pt;
     flex-shrink: 0;
     color: #000;
 }
 
 .info-row-single .info-value {
-    width: 80%;
+    width: 82%;
     font-weight: normal;
-    font-size: 10pt; /* Increased */
+    font-size: 8.25pt;
     white-space: normal;
     word-wrap: break-word;
     color: #000;
+}
+
+.student-name-line {
+    font-weight: 700;
+    font-size: 8.75pt;
+    letter-spacing: 0.02em;
 }
 
 /* Father Name Row with Family ID Right Aligned */
@@ -206,7 +208,7 @@
 
 .info-label-inline {
     font-weight: 600;
-    font-size: 10pt; /* Increased */
+    font-size: 8.25pt;
     white-space: nowrap;
     color: #000;
 }
@@ -214,45 +216,86 @@
 .father-name-value {
     flex: 1;
     font-weight: normal;
-    font-size: 10pt; /* Increased */
+    font-size: 8.25pt;
     color: #000;
+    min-width: 0;
 }
 
 .family-id-right {
-    font-weight: normal;
-    font-size: 10pt; /* Increased */
+    font-weight: 600;
+    font-size: 8.25pt;
     color: #000;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Issue / Due / Month — left / center / right (dates stay LTR for readability) */
+.info-row-dates-triple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.02in;
+    align-items: baseline;
+    border-bottom: 1px dotted #ccc;
+    padding: 0.04in 0;
+    font-size: 8.25pt;
+    line-height: 1.2;
+    color: #000;
+    direction: ltr;
+    unicode-bidi: embed;
+}
+
+.info-row-dates-triple .date-cell {
+    min-width: 0;
     white-space: nowrap;
 }
 
-/* Triple Row Layout */
+.info-row-dates-triple .date-cell-left {
+    text-align: left;
+}
+
+.info-row-dates-triple .date-cell-center {
+    text-align: center;
+}
+
+.info-row-dates-triple .date-cell-right {
+    text-align: right;
+}
+
+.info-row-dates-triple .date-lbl {
+    font-weight: 600;
+    margin-right: 0.03in;
+}
+
+/* Triple row (legacy) — keep nowrap if used elsewhere */
 .info-row-triple {
     display: flex;
-    gap: 0.2in;
+    flex-wrap: nowrap;
+    gap: 0.08in;
     border-bottom: 1px dotted #ccc;
     padding: 0.02in 0;
+    font-size: 7.5pt;
 }
 
 .info-item {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
-    overflow: visible;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .info-value-inline {
     font-weight: normal;
-    font-size: 10pt; /* Increased */
-    word-wrap: break-word;
-    overflow: visible;
+    font-size: 7.5pt;
     color: #000;
 }
 
 .class-badge {
-    font-weight: normal;
-    margin-left: 0.06in;
-    font-size: 10pt; /* Increased */
+    font-weight: 600;
+    margin-left: 0.05in;
+    font-size: 8.25pt;
     white-space: nowrap;
-    color: #000;
+    color: #222;
 }
 
 .due-date {
@@ -264,20 +307,20 @@
 }
 /* SECTION 3: FEE DETAIL TABLE - Conditional Columns */
 .fee-detail-section {
-    margin-bottom: 0.1in;
+    margin-bottom: 0.06in;
 }
 
 .fee-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10pt;
+    font-size: 7.5pt;
     table-layout: fixed;
 }
 
 .fee-table th,
 .fee-table td {
     border: 1px solid #000;
-    padding: 0.05in 0.04in;
+    padding: 0.02in 0.03in;
     vertical-align: middle;
     color: #000;
 }
@@ -286,7 +329,8 @@
     background: #fff;
     font-weight: bold;
     text-align: center;
-    font-size: 10pt;
+    font-size: 7pt;
+    line-height: 1.1;
     color: #000;
 }
 
@@ -306,22 +350,27 @@
 
 /* Column widths when discount is shown */
 .col-sr {
-    width: 5%;
+    width: 4%;
 }
 
 .col-particulars {
-    width: 50%;
+    width: 44%;
 }
 
 .col-amount,
 .col-discount,
 .col-payable {
-    width: 15%;
+    width: 14%;
 }
 
 /* Column widths when discount is hidden - single column for payable */
 .col-payable-full {
-    width: 45%;
+    width: 46%;
+}
+
+.particulars-cell {
+    font-size: 7.5pt;
+    line-height: 1.15;
 }
 
 .particulars-cell strong {
@@ -329,8 +378,8 @@
 }
 
 .fee-month-small {
-    font-size: 9pt;
-    margin-left: 0.04in;
+    font-size: 6.5pt;
+    margin-left: 0.03in;
     color: #000;
 }
 
@@ -338,81 +387,124 @@
     font-weight: bold;
 }
 
+/* Uniform row height for fee detail body (5 rows, compact) */
+.fee-table tbody tr.fee-detail-fixed td {
+    border: 1px solid #000;
+    min-height: 0.26in;
+    height: 0.26in;
+    vertical-align: middle;
+}
+
 /* Blank rows - completely empty */
 .blank-row td {
     border: 1px solid #000;
-    height: 0.35in;
 }
 
-/* SECTION 4: FEE SUMMARY */
-.fee-summary-section {
+/* SECTION 4: FEE SUMMARY — horizontal 3 columns */
+.fee-summary-section.fee-summary-compact {
     border-top: 2px solid #000;
-    border-bottom: 2px solid #000;
-    padding: 0.08in 0;
-    margin-bottom: 0.1in;
-    text-align: right;
-}
-
-.summary-item {
-    display: inline-block;
-    min-width: 2.2in;
-    padding: 0.06in 0.12in;
+    border-bottom: 1px solid #000;
+    padding: 0.04in 0.04in;
+    margin-bottom: 0.05in;
     text-align: center;
-    background: #fff;
 }
 
-.summary-item.total {
-    background: #fff;
-    border: 2px solid #000;
-    font-weight: bold;
+.summary-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.04in;
+    width: 100%;
+    border: 1px solid #000;
+    background: #fafafa;
+    padding: 0.03in 0.04in;
+    align-items: stretch;
 }
 
-.summary-item.warning-total {
-    background: #fff;
-    border: 2px solid #000;
-    margin-left: 0.15in;
+.summary-col {
+    border-right: 1px dotted #ccc;
+    padding: 0.02in 0.03in;
+    text-align: center;
+    min-width: 0;
 }
 
-.summary-label {
-    font-size: 11pt; /* Increased */
-    margin-bottom: 0.03in;
+.summary-col:last-child {
+    border-right: 0;
+}
+
+.summary-col-label {
+    font-size: 6.5pt;
     font-weight: 600;
-    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
     color: #000;
+    margin-bottom: 0.015in;
+    line-height: 1.1;
 }
 
-.summary-value {
-    font-size: 14pt; /* Increased */
-    font-weight: bold;
-    white-space: nowrap;
+.summary-col-value {
+    font-size: 7.5pt;
+    font-weight: 600;
     color: #000;
+    white-space: nowrap;
+    line-height: 1.15;
+}
+
+.summary-col-total {
+    background: #fff;
+}
+
+.summary-col-value-grand {
+    font-size: 8.5pt;
+    font-weight: bold;
+}
+
+.summary-after-due {
+    margin-top: 0.04in;
+    text-align: right;
+    font-size: 7.5pt;
+}
+
+.summary-after-due-label {
+    font-weight: 600;
+    margin-right: 0.06in;
+}
+
+.summary-after-due-value {
+    font-weight: bold;
 }
 
 .fine-note {
-    font-size: 9pt; /* Increased */
-    margin-top: 0.03in;
+    display: block;
+    font-size: 7pt;
+    margin-top: 0.02in;
     font-weight: normal;
-    white-space: nowrap;
     color: #000;
 }
 
 /* Payment History Table */
 .payment-history-section {
-    margin-top: 0.1in;
-    margin-bottom: 0.06in;
+    margin-top: 0.06in;
+    margin-bottom: 0.04in;
 }
 
 .history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 8pt; /* Increased */
+    font-size: 7pt;
     table-layout: fixed;
+}
+
+.history-table th.history-corner-cell,
+.history-table td.history-label {
+    width: 11%;
+    max-width: 0.5in;
+    white-space: nowrap;
 }
 
 .history-table th,
 .history-table td {
     border: 1px solid #000;
-    padding: 0.03in;
+    padding: 0.02in;
     text-align: center;
     word-wrap: break-word;
     color: #000;
@@ -426,6 +518,18 @@
 .history-label {
     font-weight: bold;
     background: #fff;
+}
+
+.history-row-sum {
+    border-top: 1px solid #000;
+}
+
+.history-label-sum {
+    font-weight: bold;
+}
+
+.history-sum-cell {
+    font-weight: 700;
 }
 
 .total-amount {
@@ -452,6 +556,15 @@
     background: #fff;
     border: 1px solid #000;
     text-transform: uppercase;
+    color: #000;
+}
+
+.chalan-accounts-disclaimer {
+    font-size: 8pt;
+    text-align: center;
+    margin-top: 0.05in;
+    padding: 0.02in 0.04in;
+    clear: both;
     color: #000;
 }
 

@@ -710,7 +710,6 @@ $attendanceItems = [
     ['key'=>'attendance.student-monthly-report','label'=>'Students Monthly Report','icon'=>'fa fa-calendar-alt','url'=>$link('admin/attendance-monthly-report'),'match'=>'admin/attendance-monthly-report','perms'=>['admin-emp-attendance-monthly-report']],
     ['key'=>'attendance.student-session-report','label'=>'Students Session Report','icon'=>'fa fa-calendar','url'=>$link('admin/attendance-monthly-report/student-session-report'),'match'=>'admin/attendance-monthly-report/student-session-report','perms'=>['admin-attendance-monthly-report']],
     
-    ['key'=>'attendance.day-on-reset','label'=>'Day On Reset','icon'=>'fa fa-hourglass','url'=>$link('admin/day_on_reset/add'),'match'=>'admin/day_on_reset','perms'=>['admin-day-on-reset']],
     ['key'=>'attendance.absentees','label'=>'Absentees','icon'=>'far fa-clock','url'=>$link('admin/students_absentees/add'),'match'=>'admin/students_absentees','perms'=>['admin-add-student-absentees']],
     ['key'=>'attendance.std-leaves-add','label'=>'Create Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves/add'),'match'=>'admin/students_leaves/add','perms'=>['admin-add-student-leaves']],
     ['key'=>'attendance.std-leaves','label'=>'Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves'),'match'=>'admin/students_leaves','perms'=>['admin-student-leaves'],'badge'=>['key'=>'pending_std_leaves','class'=>'badge-danger']],

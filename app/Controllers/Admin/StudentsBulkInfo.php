@@ -745,6 +745,8 @@ public function data()
             'relationship' => ['rules'=>'permit_empty|max_length[50]', 'label'=>'Relationship', 'table'=>'students','type'=>'string'],
 
             // parents
+            // Keep both keys for backward compatibility; UI posts `address`.
+            'address'       => ['rules'=>'permit_empty|max_length[255]', 'label'=>'Address', 'table'=>'parents','type'=>'string'],
             'Address_line1' => ['rules'=>'permit_empty|max_length[255]', 'label'=>'Address_line1', 'table'=>'parents','type'=>'string'],
             'father_email' => ['rules'=>'permit_empty|valid_email|max_length[150]', 'label'=>'Father Email', 'table'=>'parents','type'=>'email'],
             'caste' => ['rules'=>'permit_empty|max_length[100]', 'label'=>'Caste', 'table'=>'parents','type'=>'string'],

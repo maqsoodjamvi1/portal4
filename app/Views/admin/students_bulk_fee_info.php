@@ -19,21 +19,10 @@
   $nextLbl = $nextMonth->format('F Y');
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>Bulk Fee Update</h1>
-      </div>
-      <div class="col-sm-6 text-right">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Bulk Fee Update</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/bulk_students_header', [
+  'title' => 'Bulk Fee Update',
+  'subtitle' => 'Bulk Fee Update'
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -41,19 +30,15 @@
 
       <!-- Tabs (optional, you can keep your original bar) -->
       <div class="card-header pb-0">
-        <ul class="nav nav-tabs card-header-tabs" style="overflow-x: auto; flex-wrap: nowrap;">
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/addbulkstudents/add') ?>">Student Names</a></li>          
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Class Change</a></li>                    
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_info') ?>">Other Info</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/students_bulk_fee_info') ?>">Fee Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkparents') ?>">Parent Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_make_current') ?>">Make Current</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkcsv/addbulk') ?>">Excel Import</a></li>
-                </ul>
+        <?= view('components/bulk_students_tabs', ['active' => 'fee']) ?>
       </div>
 
       <!-- Class picker -->
       <div class="p-3">
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center">
+          <span><strong>Fee Bulk Editor</strong> - Updated responsive view with full fee field save support.</span>
+          <span class="badge badge-primary">v2</span>
+        </div>
         <div class="row">
           <div class="col-lg-6 form-group">
             <label for="cls_sec_id"><strong>Class</strong></label>
@@ -89,6 +74,7 @@
               <div class="card-header py-2 d-flex justify-content-between align-items-center">
                 <strong>Fee Columns</strong>
                 <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" id="mobileCardModeBtn" class="btn btn-outline-secondary d-none">Expanded View</button>
                   <button type="button" id="applyColsBtn" class="btn btn-primary">Apply</button>
                 </div>
               </div>
@@ -97,7 +83,7 @@
                   <!-- Month toggles -->
                   <div class="custom-control custom-checkbox mr-3 mb-2">
                     <input type="checkbox" class="custom-control-input upd-col upd-month" id="col_month_prev"
-                           value="month_prev" data-ym="<?= esc($prevYm) ?>" data-target=".col-month_prev">
+                           value="month_prev" data-ym="<?= esc($prevYm) ?>" data-target=".col-month_prev" checked>
                     <label class="custom-control-label" for="col_month_prev"><?= esc($prevShort) ?></label>
                   </div>
                   <div class="custom-control custom-checkbox mr-3 mb-2">
@@ -107,7 +93,7 @@
                   </div>
                   <div class="custom-control custom-checkbox mr-3 mb-2">
                     <input type="checkbox" class="custom-control-input upd-col upd-month" id="col_month_next"
-                           value="month_next" data-ym="<?= esc($nextYm) ?>" data-target=".col-month_next">
+                           value="month_next" data-ym="<?= esc($nextYm) ?>" data-target=".col-month_next" checked>
                     <label class="custom-control-label" for="col_month_next"><?= esc($nextShort) ?></label>
                   </div>
 
@@ -209,13 +195,13 @@
 
   // ---- Endpoints (adjust to your routes) ----
   const URL_DATA = "<?= base_url('admin/students_bulk_fee_info/data') ?>";
-  const URL_SAVE = "<?= base_url('admin/students_bulk_fee_info/save_fee_info') ?>";
+  const URL_SAVE = "<?= base_url('admin/students_bulk_fee_info/save_student_info') ?>";
 
   const CSRF_NAME = "<?= csrf_token() ?>";
   let   CSRF_HASH = "<?= csrf_hash() ?>";
 
   // ----- Column selection state (fee-only) -----
-  let selectedColumns = new Set(["month_curr","student_fee","fee_plan"]);
+  let selectedColumns = new Set(["month_prev","month_curr","month_next","student_fee","fee_plan"]);
 
   function readSelectedColumns(){
     selectedColumns.clear();
@@ -236,6 +222,12 @@
 
   // ----- Build visible table based on selection -----
   function applySelectionToTable() {
+    const headerLabelMap = {};
+    document.querySelectorAll('#studentsTable thead [data-col]').forEach(th => {
+      const key = th.getAttribute('data-col');
+      headerLabelMap[key] = (th.textContent || '').trim() || key;
+    });
+
     // Toggle header visibility
     document.querySelectorAll('#studentsTable thead [data-col]').forEach(th => {
       const col = th.getAttribute('data-col');
@@ -246,10 +238,13 @@
       // Keep only fee-related cells
       tr.querySelectorAll('td[data-col]').forEach(td => {
         const key = td.getAttribute('data-col');
-        // If fee editable and empty, inject input
-        if ((key === 'student_fee' || key === 'fee_plan') && !td.dataset.inited) {
-          if (TPL[key]) td.innerHTML = TPL[key]();
-          td.dataset.inited = '1';
+        td.setAttribute('data-label', headerLabelMap[key] || key);
+        // Inject only when missing (do not overwrite server-filled values)
+        if (key === 'student_fee' && !td.querySelector('[name="student_fee"]')) {
+          td.innerHTML = TPL.student_fee();
+        }
+        if (key === 'fee_plan' && !td.querySelector('[name="fee_plan"]')) {
+          td.innerHTML = TPL.fee_plan();
         }
         td.classList.toggle('d-none', !selectedColumns.has(key));
       });
@@ -261,10 +256,36 @@
     document.querySelectorAll('#studentsTable tbody tr').forEach((tr, idx) => {
       const sno = tr.querySelector('td.sno-cell');
       if (!sno) return;
+      sno.setAttribute('data-label', 'S.No');
+      const nameCell = tr.querySelector('td.student-name-cell');
+      if (nameCell) nameCell.setAttribute('data-label', 'Student Name');
       const hid = sno.querySelector('[name="student_id"]');
       sno.textContent = String(idx+1);
       if (hid) sno.appendChild(hid);
+      const actionCell = tr.querySelector('td.action-cell');
+      if (actionCell) actionCell.setAttribute('data-label', 'Action');
     });
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  function refreshMobileCardModeUI() {
+    const $btn = $('#mobileCardModeBtn');
+    if (!$btn.length) return;
+
+    if (!isMobileViewport()) {
+      $('body').removeClass('mobile-card-compact');
+      $btn.addClass('d-none');
+      return;
+    }
+
+    $btn.removeClass('d-none');
+    const compact = $('body').hasClass('mobile-card-compact');
+    $btn.text(compact ? 'Expanded View' : 'Compact View');
+    $btn.toggleClass('btn-outline-secondary', compact);
+    $btn.toggleClass('btn-outline-primary', !compact);
   }
 
   // ----- Month helpers -----
@@ -368,16 +389,18 @@
     if (!sidInput){ window.toastr && toastr.error('Missing student_id in row.'); return; }
     fd.append('student_id', sidInput.value);
 
-    // Selected fields (only visible ones)
-    selectedColumns.forEach(c => fd.append('selected_fields[]', c));
+    // Selected backend fields (map UI "student_fee" -> students.discounted_amount)
+    if (selectedColumns.has('student_fee')) fd.append('selected_fields[]', 'discounted_amount');
+    if (selectedColumns.has('fee_plan'))    fd.append('selected_fields[]', 'fee_plan');
 
     // Fee fields
     const feeInp = row.querySelector('[name="student_fee"]');
     if (feeInp && selectedColumns.has('student_fee')){
-      const val = parseNum(feeInp.value);
-      fd.append('student_fee', val.toFixed(2));
-      // For backward compatibility if your backend expects discounted_amount as "Student Fee"
-      fd.append('discounted_amount', val.toFixed(2));
+      const studentFee = parseNum(feeInp.value);
+      const classFeeInp = row.querySelector('[name="class_fee"]');
+      const classFee = classFeeInp ? parseNum(classFeeInp.value) : 0;
+      const discount = Math.max(0, classFee - studentFee);
+      fd.append('discounted_amount', discount.toFixed(2));
     }
     const planSel = row.querySelector('[name="fee_plan"]');
     if (planSel && selectedColumns.has('fee_plan')){
@@ -451,6 +474,13 @@
     if ($('#cls_sec_id').val()) loadStudentsByClass();
   });
 
+  // Mobile compact/expanded toggle
+  $(document).on('click', '#mobileCardModeBtn', function () {
+    if (!isMobileViewport()) return;
+    $('body').toggleClass('mobile-card-compact');
+    refreshMobileCardModeUI();
+  });
+
   // Fee formatting on blur
   $(document).on('blur', '[name="student_fee"]', function(){
     this.value = parseNum(this.value).toFixed(2);
@@ -460,7 +490,81 @@
   if ($('#cls_sec_id').val()){
     loadStudentsByClass();
   }
+  if (isMobileViewport()) {
+    $('body').addClass('mobile-card-compact');
+  }
+  refreshMobileCardModeUI();
+  $(window).on('resize', function () { refreshMobileCardModeUI(); });
 })();
 </script>
+
+<style>
+  /* Mobile-first controls polish */
+  @media (max-width: 768px) {
+    .content .card-header .nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+    .content .card-header .nav .nav-item { float: none; display: inline-block; }
+    .content .row > [class*="col-"] { margin-bottom: .75rem; }
+    .content .btn-group { display: flex; width: 100%; }
+    .content .btn-group .btn { flex: 1 1 auto; }
+    #studentsTable td .form-control,
+    #studentsTable td select,
+    #studentsTable td .btn { width: 100%; max-width: 100%; }
+  }
+
+  /* Mobile card view */
+  @media (max-width: 768px) {
+    .table-sticky-wrap { max-height: none; overflow: visible !important; }
+    #studentsTable { min-width: 100%; width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0; }
+    #studentsTable thead { display: none; }
+    #studentsTable tbody, #studentsTable tr, #studentsTable td { display: block; width: 100%; }
+    #studentsTable tbody tr {
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      margin-bottom: .85rem;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+    #studentsTable tbody td {
+      border: 0;
+      border-bottom: 1px solid #f1f3f5;
+      padding: .6rem .75rem;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+      position: static !important;
+      left: auto !important;
+      z-index: auto !important;
+      max-width: 100% !important;
+    }
+    #studentsTable tbody td:last-child { border-bottom: 0; }
+    #studentsTable tbody td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6c757d;
+      margin-bottom: .3rem;
+      letter-spacing: .02em;
+    }
+    #studentsTable .sno-cell,
+    #studentsTable .student-name-cell { background: #f8f9fa; }
+    #studentsTable .sno-cell { font-weight: 600; }
+
+    /* Compact mode: keep key fee-editing fields visible */
+    body.mobile-card-compact #studentsTable tbody td[data-col] { display: none !important; }
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_prev"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_curr"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_next"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="student_fee"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="fee_plan"] {
+      display: block !important;
+    }
+    body.mobile-card-compact #studentsTable tbody td.action-cell {
+      display: block !important;
+    }
+  }
+</style>
 
 <?= $this->endSection() ?>

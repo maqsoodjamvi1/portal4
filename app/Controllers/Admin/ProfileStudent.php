@@ -16,12 +16,11 @@ class ProfileStudent extends BaseController
     {
         helper(['form', 'url', 'session']);
         $this->db = \Config\Database::connect();
-        log_message('debug', 'Reached Controller Method X');
     }
 
     public function index()
     {
-        $student_id = $this->request->getGet('id');
+        $student_id = $this->request->getGet('id') ?? $this->request->getGet('student_id');
         return view('admin/profile_student', ['student_id' => $student_id]);
     }
 
@@ -38,7 +37,11 @@ class ProfileStudent extends BaseController
             ->where('student_id', $student_id)
             ->get()
             ->getRow();
-        
+
+        if (!$student) {
+            return '<div class="alert alert-warning"><i class="fas fa-user-slash mr-1"></i> Student record not found.</div>';
+        }
+
         $bmiHistory = $this->db->table('bmi_history')
             ->where('student_id', $student_id)
             ->orderBy('recorded_date', 'DESC')
@@ -96,144 +99,113 @@ class ProfileStudent extends BaseController
         return $html;
     }
 
-  public function data()
-{
-    $student_id = $this->request->getPost('student_id');
-    $schoolinfo = getSchoolInfo();
+    public function data()
+    {
+        $student_id = (int) $this->request->getPost('student_id');
+        $schoolinfo = getSchoolInfo();
 
-    $student = $this->db->table('students')->where('student_id', $student_id)->get()->getRow();
-    if (!$student) {
-        return $this->response->setBody('<div class="alert alert-danger">Student not found</div>');
+        $student = $this->db->table('students')->where('student_id', $student_id)->get()->getRow();
+        if (!$student) {
+            return $this->response->setBody('<div class="alert alert-danger">Student not found.</div>');
+        }
+
+        $parent = null;
+        if (!empty($student->parent_id)) {
+            $parent = $this->db->table('parents')->where('parent_id', $student->parent_id)->get()->getRow();
+        }
+
+        $profile_photo = '';
+        $imgurl = FCPATH . 'uploads/' . ($student->profile_photo ?? '');
+        if (!empty($student->profile_photo) && file_exists($imgurl)) {
+            $profile_photo = '<img src="' . base_url('uploads/' . $student->profile_photo) . '" alt="" width="112" height="112">';
+        } else {
+            $profile_photo = '<i class="fa fa-user"></i>';
+        }
+
+        $currentClass = null;
+        $sessionName = null;
+        $sessionId = (int) session()->get('member_sessionid');
+        if ($sessionId > 0) {
+            $sessRow = $this->db->table('academic_session')->where('session_id', $sessionId)->get()->getRow();
+            $sessionName = $sessRow->session_name ?? null;
+
+            $classRow = $this->db->table('student_class sc')
+                ->select('c.class_name, sec.section_name')
+                ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+                ->join('classes c', 'c.class_id = cs.class_id')
+                ->join('sections sec', 'sec.section_id = cs.section_id')
+                ->where('sc.student_id', $student_id)
+                ->where('sc.session_id', $sessionId)
+                ->get()
+                ->getRow();
+
+            if ($classRow) {
+                $currentClass = trim(($classRow->class_name ?? '') . ' — ' . ($classRow->section_name ?? ''));
+            }
+        }
+
+        $html = view('admin/partials/profile_student_overview', [
+            'student' => $student,
+            'parent' => $parent ?: new \stdClass(),
+            'schoolinfo' => $schoolinfo,
+            'current_class_label' => $currentClass,
+            'current_session_name' => $sessionName,
+            'profile_photo_html' => $profile_photo,
+            'edit_student_url' => base_url('admin/students/edit?id=' . $student_id),
+        ]);
+
+        return $this->response->setBody($html);
     }
 
-    $parent = $this->db->table('parents')->where('parent_id', $student->parent_id)->get()->getRow();
-    $info = $student;
-    $parentInfo = $parent;
+    /**
+     * Subject-wise exam results for the Results tab (groups by exam).
+     */
+    public function studentResultData()
+    {
+        $student_id = (int) $this->request->getPost('student_id');
+        if ($student_id <= 0) {
+            return $this->response->setBody('<div class="alert alert-danger">Student ID required.</div>');
+        }
 
-    $system_name = $schoolinfo->system_name;
-    $address = $schoolinfo->address;
-    $city = $schoolinfo->city;
-    $state = $schoolinfo->state;
-    $zip = $schoolinfo->zip;
-    $country = $schoolinfo->country;
-    $owner_name = $schoolinfo->owner_name;
-    $landline_number = $schoolinfo->landline_number;
-    $mob_number = $schoolinfo->mob_number;
-    $reg_text = $schoolinfo->reg_text;
-    $logo = $schoolinfo->logo;
-    $slogan = $schoolinfo->slogan;
+        $exists = $this->db->table('students')->where('student_id', $student_id)->countAllResults();
+        if ($exists < 1) {
+            return $this->response->setBody('<div class="alert alert-danger">Student not found.</div>');
+        }
 
-    $profile_photo = '';
-    $imgurl = FCPATH . "uploads/" . $info->profile_photo;
+        $rows = $this->db->query(
+            'SELECT sr.result_id, sr.eid, sr.obtained_marks, sr.student_id, sr.session_id,
+                    e.exam_name,
+                    sub.subject_name AS subject_name,
+                    ac.session_name,
+                    ds.total_marks AS total_marks
+             FROM subject_results sr
+             LEFT JOIN exam e ON e.eid = sr.eid
+             LEFT JOIN datesheet ds ON ds.eid = sr.eid AND ds.sec_sub_id = sr.sec_sub_id
+             LEFT JOIN section_subjects ss ON ss.sec_sub_id = sr.sec_sub_id
+             LEFT JOIN allsubject sub ON sub.sid = ss.subject_id
+             LEFT JOIN academic_session ac ON ac.session_id = sr.session_id
+             WHERE sr.student_id = ?
+             ORDER BY sr.eid DESC, sub.subject_name ASC',
+            [$student_id]
+        )->getResult();
 
-    if ($info->profile_photo && file_exists($imgurl)) {
-        $profile_photo = "<img style='max-width:100%;text-align: center;display: block;margin: 0 auto;width: 100px;border-radius: 50px;height: 100px;' src='" . base_url("uploads/" . $info->profile_photo) . "' >";
-    } else {
-        $profile_photo = "<i style='font-size: 40px;text-align: center;display: block;' class='fa fa-user'></i>";
+        $exam_groups = [];
+        foreach ($rows as $r) {
+            $eid = (int) ($r->eid ?? 0);
+            if (! isset($exam_groups[$eid])) {
+                $exam_groups[$eid] = [
+                    'exam_name' => $r->exam_name ?: ('Exam #' . $eid),
+                    'session_name' => $r->session_name ?? '',
+                    'rows' => [],
+                ];
+            }
+            $exam_groups[$eid]['rows'][] = $r;
+        }
+
+        return $this->response->setBody(view('admin/partials/profile_student_results', [
+            'exam_groups' => $exam_groups,
+        ]));
     }
-
-    ob_start(); ?>
-    <div class="container form-container">
-        <div class="col-lg-12 mx-auto login-container">
-            <div class="row form-header">
-                <div class="col-md-2 logocol">
-                    <img src="<?= $logo ?>" alt="">
-                </div>
-                <div class="col-md-10 headcol">
-                    <h4><?= $system_name ?></h4>
-                    <p><?= $slogan ?></p>
-                    <p class="cinfo">
-                        <span><i class="fas fa-phone"></i> <?= $mob_number ?></span>
-                        <span><i class="fas fa-map-marker-alt"></i> <?= "$address, $city, $country" ?></span>
-                    </p>
-                </div>
-            </div>
-            <div class="form-body">
-                <div class="form-title row">
-                    <h4>Student Information</h4>
-                </div>
-                <div class="row">
-                    <div class="col-md-2"><?= $profile_photo ?></div>
-                    <div class="col-lg-10">
-                        <div class="form-row row">
-                            <div class="col-lg-2 col-md-4"><label>First Name</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $info->first_name ?? 'N/A' ?></span></div>
-                            <div class="col-lg-2 col-md-4"><label>Last Name</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $info->last_name ?? 'N/A' ?></span></div>
-                        </div>
-
-                        <div class="form-row row">
-                            <div class="col-lg-2 col-md-4"><label>Student CNIC</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $info->std_cnic ?? 'N/A' ?></span></div>
-                            <div class="col-lg-2 col-md-4"><label>Date of Birth</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $info->date_of_birth ?? 'N/A' ?></span></div>
-                        </div>
-
-                        <div class="form-row row">
-                            <div class="col-lg-2 col-md-4"><label>Gender</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8 pt-1"><span class="indc float-left text-capitalize"><?= $info->gender ?? 'N/A' ?></span></div>
-                            <div class="col-lg-2 col-md-4"><label>Date of Admission</label><span class="indc">:</span></div>
-                            <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $info->date_of_admission ?? 'N/A' ?></span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-title row">
-                    <h4>Parent Details</h4>
-                </div>
-
-                <div class="form-row row">
-                    <div class="col-lg-2 col-md-4"><label>Father Name</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->f_name ?? 'N/A' ?></span></div>
-                    <div class="col-lg-2 col-md-4"><label>Father CNIC</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->father_cnic ?? 'N/A' ?></span></div>
-                </div>
-
-                <div class="form-row row">
-                    <div class="col-lg-2 col-md-4"><label>Father Contact No</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->father_contact ?? 'N/A' ?></span></div>
-                    <div class="col-lg-2 col-md-4"><label>Father Profession</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->father_occupation ?? 'N/A' ?></span></div>
-                </div>
-
-                <div class="form-row row">
-                    <div class="col-lg-2 col-md-4"><label>Mother Name</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->m_name ?? 'N/A' ?></span></div>
-                    <div class="col-lg-2 col-md-4"><label>Mother Contact No</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->mother_contact ?? 'N/A' ?></span></div>
-                </div>
-
-                <div class="form-title row">
-                    <h4>Contact Information</h4>
-                </div>
-
-                <div class="form-row row">
-                    <div class="col-lg-2 col-md-4"><label>Whatsapp</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->whatsapp ?? 'N/A' ?></span></div>
-                    <div class="col-lg-2 col-md-4"><label>Email Address</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->father_email ?? 'N/A' ?></span></div>
-                </div>
-
-                <div class="form-row row">
-                    <div class="col-lg-2 col-md-4"><label>City</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->city ?? 'N/A' ?></span></div>
-                    <div class="col-lg-2 col-md-4"><label>Address</label><span class="indc">:</span></div>
-                    <div class="col-lg-4 col-md-8"><span class="indc float-left"><?= $parentInfo->address_line1 ?? 'N/A' ?></span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <style>
-        .indc { float: right; padding-left: 5px; }
-        .form-container { margin: 30px auto; }
-        .form-title h4 { font-size: 1.2rem; font-weight: 600; border-bottom: 1px solid #0e5cad; width: max-content; }
-        .form-row label { font-weight: bold; }
-    </style>
-    <?php
-
-    $output = ob_get_clean();
-    return $this->response->setBody($output);
-}
 
 public function singleStudentFeedata()
 {

@@ -8,12 +8,16 @@ use Config\Services;
 use CodeIgniter\I18n\Time;  
 use stdClass;
 use DateTime;
+use App\Libraries\FeeChalanDisplayRows;
 
 class FeeChalan extends BaseController
 { 
 
     protected $db;
     protected $session;
+
+    /** In-memory invoice sequence for SSE bulk generation (avoids repeated MAX queries). */
+    private ?array $bulkInvoiceSeq = null;
 
     public function __construct()
     {
@@ -78,38 +82,49 @@ class FeeChalan extends BaseController
    public function generate()
 {
     $request = service('request');
-    
-    // Get all filter parameters
-    $view_type = $request->getGet('view_type') ?? 'student_three_copy';
-    $show_discount = $request->getGet('show_discount') === 'yes';
-    $fee_month = $request->getGet('fee_month') ?? '';
-    $show_payment_history = $request->getGet('show_payment_history') == 1;
-    
-    // New message parameters
-    $message_text = $request->getGet('message_text') ?? '';
-    $message_position = $request->getGet('message_position') ?? 'none';
-    
-    // Parse view type to determine grouping and layout
-    $view_parts = explode('_', $view_type);
-    $group_by = $view_parts[0]; // 'student' or 'family'
-    $layout = $view_parts[1] . '_' . $view_parts[2]; // 'three_copy' or 'single_page'
-    
+    $g = static function (string $key, $default = null) use ($request) {
+        return $request->getGetPost($key) ?? $default;
+    };
+
+    // Get all filter parameters (GET or POST — profile student challan uses POST to avoid long URLs / 404s)
+    $view_type = $g('view_type', 'student_three_copy');
+    $show_discount = $g('show_discount') === 'yes';
+    $fee_month = (string) $g('fee_month', '');
+    $histRaw = $g('show_payment_history');
+    $show_payment_history = ($histRaw == 1 || $histRaw === '1');
+
+    $message_text = (string) $g('message_text', '');
+    $message_position = (string) $g('message_position', 'none');
+
+    $view_parts = explode('_', (string) $view_type);
+    if (count($view_parts) < 3) {
+        $view_type = 'student_three_copy';
+        $view_parts = explode('_', $view_type);
+    }
+    $group_by = $view_parts[0];
+    $layout = $view_parts[1] . '_' . $view_parts[2];
+
+    $search = $g('search');
+    $selected_student_id = $g('selected_student_id');
+    if (($search === null || $search === '') && $selected_student_id !== null && $selected_student_id !== '') {
+        $search = $selected_student_id;
+    }
+
     $params = [
         'group_by' => $group_by,
         'layout' => $layout,
         'show_discount' => $show_discount,
         'show_payment_history' => $show_payment_history,
         'fee_month' => $fee_month,
-        'class_id' => $request->getGet('class_id') ? (int) $request->getGet('class_id') : null,
-        'section_id' => $request->getGet('section_id') ? (int) $request->getGet('section_id') : null,
-        'search' => $request->getGet('search'),
-        'family_id' => $request->getGet('family_id') ? (int) $request->getGet('family_id') : null,
-        'footer_line1' => $footer_line1 ?? '',
-        'footer_line2' => $footer_line2 ?? '',
-        'show_line1' => $show_line1 ?? 0,
-        'show_line2' => $show_line2 ?? 0,
-        'fine_after_due_date' => $request->getGet('fine_after_due_date') ?? 0,
-        // Add message parameters
+        'class_id' => $g('class_id') ? (int) $g('class_id') : null,
+        'section_id' => $g('section_id') ? (int) $g('section_id') : null,
+        'search' => $search,
+        'family_id' => $g('family_id') ? (int) $g('family_id') : null,
+        'footer_line1' => (string) $g('footer_line1', ''),
+        'footer_line2' => (string) $g('footer_line2', ''),
+        'show_line1' => (int) $g('show_line1', 0),
+        'show_line2' => (int) $g('show_line2', 0),
+        'fine_after_due_date' => $g('fine_after_due_date') ?? 0,
         'message_text' => $message_text,
         'message_position' => $message_position,
     ];
@@ -205,9 +220,9 @@ private function fetchStudentChalans(array $params): array
         $builder->where('cs.class_id', $params['class_id']);
     }
     
-    // Apply section filter
+    // Apply section filter (value is class_section.cls_sec_id from dropdown — unique per class+section)
     if (!empty($params['section_id'])) {
-        $builder->where('cs.section_id', $params['section_id']);
+        $builder->where('cs.cls_sec_id', (int) $params['section_id']);
     }
 
     // Apply search filter
@@ -258,63 +273,72 @@ private function fetchStudentChalans(array $params): array
     }
     
     $students = $query->getResultArray();
-    log_message('debug', 'Found ' . count($students) . ' students from query');
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        log_message('debug', 'Found ' . count($students) . ' students from query');
+    }
 
-    // Fetch unpaid chalans and payment history for each student
+    $fee_month = $params['fee_month'] ?? '';
+    $show_discount = $params['show_discount'] ?? true;
+    $show_payment_history = !empty($params['show_payment_history']);
+    $studentIds = array_values(array_map(static fn ($r) => (int) $r['student_id'], $students));
+
+    $chalansByStudent = $this->getStudentUnpaidChalansBatch($studentIds, $fee_month, $show_discount);
+    $paymentByStudent = $show_payment_history
+        ? $this->getStudentPaymentHistoryBatch($studentIds)
+        : [];
+
     foreach ($students as &$studentData) {
-        $student_id = $studentData['student_id'];
-        log_message('debug', "Processing student ID: {$student_id}, Name: {$studentData['student_name']}");
-        
-        $fee_month = $params['fee_month'] ?? '';
-        
-        // Get unpaid chalans
-        $studentData['chalans'] = $this->getStudentUnpaidChalans(
-            $student_id, 
-            $fee_month,
-            $params['show_discount'] ?? true
-        );
-        
-        log_message('debug', "Student {$student_id} has " . count($studentData['chalans'] ?? []) . " unpaid chalans");
-        
-        // Get payment history if requested
-        if (!empty($params['show_payment_history'])) {
-            $studentData['payment_history'] = $this->getStudentPaymentHistory($student_id);
-            log_message('debug', "Student {$student_id} payment history: " . count($studentData['payment_history']['monthly_totals'] ?? []) . " months");
+        $student_id = (int) $studentData['student_id'];
+
+        $studentData['chalans'] = $chalansByStudent[$student_id] ?? [];
+
+        if ($show_payment_history) {
+            $studentData['payment_history'] = $paymentByStudent[$student_id] ?? [
+                'month_keys'         => [],
+                'monthly_totals'     => [],
+                'monthly_fee_totals' => [],
+                'other_fee_totals'   => [],
+            ];
         } else {
-            $studentData['payment_history'] = ['month_keys' => [], 'monthly_totals' => []];
+            $studentData['payment_history'] = [
+                'month_keys'         => [],
+                'monthly_totals'     => [],
+                'monthly_fee_totals' => [],
+                'other_fee_totals'   => [],
+            ];
         }
-        
-        // Process chalans to create exactly 7 display rows
+
         $studentData['display_rows'] = $this->processChalanRows($studentData['chalans'] ?? []);
-        
-        // Calculate totals
-        $studentData['total_payable'] = 0;
-        $studentData['total_discount'] = 0;
-        
+
+        $studentData['total_payable']   = 0;
+        $studentData['total_discount']  = 0;
+        $studentData['payable_monthly'] = 0.0;
+        $studentData['payable_other']   = 0.0;
         foreach ($studentData['chalans'] ?? [] as $chalan) {
-            $studentData['total_payable'] += $chalan['net_amount'] ?? 0;
+            $studentData['total_payable']  += $chalan['net_amount'] ?? 0;
             $studentData['total_discount'] += $chalan['discount'] ?? 0;
+            $netLine = (float) ($chalan['net_amount'] ?? 0);
+            if ((int) ($chalan['is_monthly_fee'] ?? 0) === 1) {
+                $studentData['payable_monthly'] += $netLine;
+            } else {
+                $studentData['payable_other'] += $netLine;
+            }
         }
-        
-        log_message('debug', "Student {$student_id} total_payable: {$studentData['total_payable']}, total_discount: {$studentData['total_discount']}");
-        
-        // Get the most recent chalan for header info
+
         if (!empty($studentData['chalans'])) {
             $latest = $studentData['chalans'][0];
-            $studentData['last_chalan_id'] = $latest['chalan_id'] ?? '';
-            $studentData['last_issue_date'] = $latest['issue_date_label'] ?? '';
-            $studentData['last_due_date'] = $latest['due_date_label'] ?? '';
-            
-            // Get the latest fee month from the most recent chalan
-            $studentData['last_fee_month'] = $latest['fee_month_label'] ?? '';
+            $studentData['last_chalan_id']   = $latest['chalan_id'] ?? '';
+            $studentData['last_issue_date']  = $latest['issue_date_label'] ?? '';
+            $studentData['last_due_date']    = $latest['due_date_label'] ?? '';
+            $studentData['last_fee_month']   = $latest['fee_month_label'] ?? '';
         } else {
-            // If no chalans, set default values
-            $studentData['last_chalan_id'] = 'N/A';
-            $studentData['last_issue_date'] = date('d-m-y');
-            $studentData['last_due_date'] = date('d-m-y', strtotime('+10 days'));
-            $studentData['last_fee_month'] = 'No Fee';
+            $studentData['last_chalan_id']   = 'N/A';
+            $studentData['last_issue_date']  = date('d-m-y');
+            $studentData['last_due_date']    = date('d-m-y', strtotime('+10 days'));
+            $studentData['last_fee_month']   = 'No Fee';
         }
     }
+    unset($studentData);
 
     // Filter out students with no payable amount
     $filteredStudents = array_filter($students, function($s) {
@@ -514,13 +538,22 @@ private function fetchFamilyChalans(array $params): array
         $family['total_discount'] = 0;
         $family['total_amount'] = 0;
         
+        $family['payable_monthly'] = 0.0;
+        $family['payable_other']   = 0.0;
         foreach ($family['fee_by_particular'] as $fee) {
             $amount = (float)($fee['total_amount'] ?? 0);
             $discount = (float)($fee['total_discount'] ?? 0);
-            
+            $netLine  = $amount - $discount;
+
             $family['total_amount'] += $amount;
             $family['total_discount'] += $discount;
-            $family['total_payable'] += ($amount - $discount);
+            $family['total_payable'] += $netLine;
+
+            if ((int) ($fee['is_monthly_fee'] ?? 0) === 1) {
+                $family['payable_monthly'] += $netLine;
+            } else {
+                $family['payable_other'] += $netLine;
+            }
         }
         
         // Process to create exactly 7 display rows
@@ -587,7 +620,12 @@ private function fetchFamilyChalans(array $params): array
         if (!empty($params['show_payment_history'])) {
             $family['payment_history'] = $this->getFamilyPaymentHistory($family['parent_id'], $campus_id);
         } else {
-            $family['payment_history'] = ['monthly_totals' => []];
+            $family['payment_history'] = [
+                'month_keys'         => [],
+                'monthly_totals'     => [],
+                'monthly_fee_totals' => [],
+                'other_fee_totals'   => [],
+            ];
         }
     }
 
@@ -607,43 +645,13 @@ private function fetchFamilyChalans(array $params): array
  */
 private function getStudentPaymentHistory(int $student_id): array
 {
-    $sql = "SELECT 
-                DATE_FORMAT(date_table.payment_date, '%Y-%m') AS month_key,
-                COALESCE(ROUND(SUM(fc.amount - fc.discount), 0), 0) AS monthly_total
-            FROM (
-                SELECT DATE_SUB(CURDATE(), INTERVAL n MONTH) AS payment_date
-                FROM (
-                    SELECT 0 AS n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 
-                    UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7
-                    UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11
-                ) numbers
-            ) date_table
-            LEFT JOIN fee_chalan fc ON DATE_FORMAT(fc.paid_date, '%Y-%m') = DATE_FORMAT(date_table.payment_date, '%Y-%m')
-                AND fc.student_id = ?
-                AND fc.status = 'paid'
-                AND fc.paid_date IS NOT NULL
-            GROUP BY date_table.payment_date
-            ORDER BY date_table.payment_date";
-    
-    $query = $this->db->query($sql, [$student_id]);
-    
-    if (!$query) {
-        return ['month_keys' => [], 'monthly_totals' => []];
-    }
-    
-    $results = $query->getResultArray();
-    
-    $monthKeys = [];
-    $monthlyTotals = [];
-    
-    foreach ($results as $row) {
-        $monthKeys[] = $row['month_key'];
-        $monthlyTotals[$row['month_key']] = (int)$row['monthly_total'];
-    }
-    
-    return [
-        'month_keys' => $monthKeys,
-        'monthly_totals' => $monthlyTotals
+    $map = $this->getStudentPaymentHistoryBatch([$student_id]);
+
+    return $map[$student_id] ?? [
+        'month_keys'         => [],
+        'monthly_totals'     => [],
+        'monthly_fee_totals' => [],
+        'other_fee_totals'   => [],
     ];
 }
 
@@ -671,6 +679,8 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
                 DATE_FORMAT(date_table.payment_date, '%m/%y') AS short_month,
                 DATE_FORMAT(date_table.payment_date, '%M %Y') AS display_month,
                 COALESCE(ROUND(SUM(fc.amount - fc.discount), 0), 0) AS family_total,
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(fc.is_monthly_fee, 0) = 1 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS family_monthly_fee,
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(fc.is_monthly_fee, 0) = 0 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS family_other_fee,
                 COALESCE(COUNT(DISTINCT fc.student_id), 0) AS students_count,
                 COALESCE(COUNT(fc.chalan_id), 0) AS transactions_count
             FROM (
@@ -682,13 +692,15 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
                 ) numbers
             ) date_table
             LEFT JOIN (
-                SELECT fc.*, s.parent_id, s.campus_id
-                FROM fee_chalan fc
-                INNER JOIN students s ON s.student_id = fc.student_id
+                SELECT fc_inner.*, s.parent_id, s.campus_id,
+                    COALESCE(ft.is_monthly_fee, 0) AS is_monthly_fee
+                FROM fee_chalan fc_inner
+                INNER JOIN students s ON s.student_id = fc_inner.student_id
+                LEFT JOIN fee_type ft ON ft.fee_type_id = fc_inner.fee_type_id
                 WHERE s.parent_id = ? 
                     AND s.campus_id = ?
-                    AND fc.status = 'paid'
-                    AND fc.paid_date IS NOT NULL
+                    AND fc_inner.status = 'paid'
+                    AND fc_inner.paid_date IS NOT NULL
             ) fc ON DATE_FORMAT(fc.paid_date, '%Y-%m') = DATE_FORMAT(date_table.payment_date, '%Y-%m')
             GROUP BY date_table.payment_date
             ORDER BY date_table.payment_date DESC";
@@ -702,6 +714,8 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
             'short_months' => [],
             'month_keys' => [],
             'monthly_totals' => [],
+            'monthly_fee_totals' => [],
+            'other_fee_totals' => [],
             'payments' => []
         ];
     }
@@ -713,6 +727,8 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
     $shortMonths = [];
     $monthKeys = [];
     $monthlyTotals = [];
+    $monthlyFeeTotals = [];
+    $otherFeeTotals = [];
     $formattedPayments = [];
     
     foreach ($results as $row) {
@@ -720,17 +736,23 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
         $shortMonth = $row['short_month'];
         $displayMonth = $row['display_month'];
         $amount = (int)$row['family_total']; // Already rounded by SQL
+        $mf = (int)($row['family_monthly_fee'] ?? 0);
+        $of = (int)($row['family_other_fee'] ?? 0);
         
         $monthKeys[] = $monthKey;
         $shortMonths[] = $shortMonth;
         $displayMonths[] = $displayMonth;
         $monthlyTotals[$monthKey] = $amount;
+        $monthlyFeeTotals[$monthKey] = $mf;
+        $otherFeeTotals[$monthKey] = $of;
         
         $formattedPayments[] = [
             'month_key' => $monthKey,
             'short_month' => $shortMonth,
             'display_month' => $displayMonth,
             'amount' => $amount,
+            'monthly_fee' => $mf,
+            'other_fee' => $of,
             'students_count' => (int)$row['students_count'],
             'transactions_count' => (int)$row['transactions_count']
         ];
@@ -741,124 +763,17 @@ private function getFamilyPaymentHistory(int $parent_id, int $campus_id): array
         'short_months' => $shortMonths,
         'month_keys' => $monthKeys,
         'monthly_totals' => $monthlyTotals,
+        'monthly_fee_totals' => $monthlyFeeTotals,
+        'other_fee_totals' => $otherFeeTotals,
         'payments' => $formattedPayments
     ];
 }
 /**
- * Process chalan rows to create exactly 7 display rows
- * If less than 7: add blank rows
- * If more than 7: first 6 rows + 1 arrears row with sum of remaining
+ * Five fee-table rows: 4 particulars + 1 remainder/arrears (see FeeChalanDisplayRows).
  */
-
 private function processChalanRows(array $chalans): array
 {
-    $displayRows = [];
-    $totalChalans = count($chalans);
-    
-    // If no chalans, return 7 blank rows
-    if ($totalChalans == 0) {
-        for ($i = 0; $i < 7; $i++) {
-            $displayRows[] = [
-                'is_blank' => true,
-                'particulars_label' => '',
-                'amount' => '',
-                'discount' => '',
-                'net_amount' => 0,
-                'fee_month_label' => '',
-                'amount_formatted' => '',
-                'discount_formatted' => ''
-            ];
-        }
-        return $displayRows;
-    }
-    
-    // If 7 or fewer rows, display all with blanks
-    if ($totalChalans <= 7) {
-        foreach ($chalans as $chalan) {
-            $netAmount = (float)($chalan['net_amount'] ?? 0);
-            $amount = (float)($chalan['amount'] ?? 0);
-            $discount = (float)($chalan['discount'] ?? 0);
-            
-            $displayRows[] = [
-                'particulars_label' => $chalan['particulars_label'] ?? '',
-                'amount' => $amount,
-                'discount' => $discount,
-                'net_amount' => $netAmount,
-                'fee_month_label' => $chalan['fee_month_label'] ?? '',
-                'amount_formatted' => number_format($amount, 0),
-                'discount_formatted' => $discount > 0 ? number_format($discount, 0) : ''
-            ];
-        }
-        
-        // Add blank rows to make total 7
-        for ($i = $totalChalans; $i < 7; $i++) {
-            $displayRows[] = [
-                'is_blank' => true,
-                'particulars_label' => '',
-                'amount' => '',
-                'discount' => '',
-                'net_amount' => 0,
-                'fee_month_label' => '',
-                'amount_formatted' => '',
-                'discount_formatted' => ''
-            ];
-        }
-    } 
-    // More than 7 rows - take first 6 and combine rest into arrears
-    else {
-        // Process first 6 rows
-        for ($i = 0; $i < 6; $i++) {
-            $chalan = $chalans[$i];
-            $netAmount = (float)($chalan['net_amount'] ?? 0);
-            $amount = (float)($chalan['amount'] ?? 0);
-            $discount = (float)($chalan['discount'] ?? 0);
-            
-            $displayRows[] = [
-                'particulars_label' => $chalan['particulars_label'] ?? '',
-                'amount' => $amount,
-                'discount' => $discount,
-                'net_amount' => $netAmount,
-                'fee_month_label' => $chalan['fee_month_label'] ?? '',
-                'amount_formatted' => number_format($amount, 0),
-                'discount_formatted' => $discount > 0 ? number_format($discount, 0) : ''
-            ];
-        }
-        
-        // Calculate arrears from remaining rows (indices 6 to end)
-        $arrearsTotal = 0;
-        $arrearsMonths = [];
-        
-        for ($i = 6; $i < $totalChalans; $i++) {
-            $chalan = $chalans[$i];
-            $netAmount = (float)($chalan['net_amount'] ?? 0);
-            $arrearsTotal += $netAmount;
-            
-            if (!empty($chalan['fee_month_label'])) {
-                $arrearsMonths[] = $chalan['fee_month_label'];
-            }
-        }
-        
-        // Create arrears row
-        $monthRange = !empty($arrearsMonths) 
-            ? min($arrearsMonths) . ' - ' . max($arrearsMonths)
-            : 'Previous Months';
-        
-        // Log for debugging (remove in production)
-        log_message('debug', "Arrears calculation: total rows = $totalChalans, arrears total = $arrearsTotal");
-        
-        $displayRows[] = [
-            'is_arrears' => true,
-            'particulars_label' => 'Arrears (' . $monthRange . ')',
-            'amount' => $arrearsTotal,
-            'discount' => 0,
-            'net_amount' => $arrearsTotal,
-            'fee_month_label' => 'Arrears',
-            'amount_formatted' => number_format($arrearsTotal, 0),
-            'discount_formatted' => ''
-        ];
-    }
-    
-    return $displayRows;
+    return FeeChalanDisplayRows::studentRows($chalans);
 }
     /**
      * Fetch family-wise chalans
@@ -974,140 +889,36 @@ private function getFamilyFeeByParticular(array $studentIds, ?string $fee_month)
             'total_amount' => $total_amount,
             'total_discount' => $total_discount,
             'net_amount' => $net_amount,
-            'month_display' => $row['month_display'] ?? ''
+            'month_display' => $row['month_display'] ?? '',
+            'is_monthly_fee' => (int) ($row['is_monthly_fee'] ?? 0),
         ];
     }
     
     return $formattedResults;
 }
-/**
- * Process family fee rows to create exactly 7 display rows
- */
 private function processFamilyFeeRows(array $feeByParticular): array
 {
-    $displayRows = [];
-    $totalRows = count($feeByParticular);
-    
-    // Log for debugging
-    log_message('debug', "processFamilyFeeRows: Processing $totalRows rows");
-    
-    if ($totalRows == 0) {
-        // No data - return 7 blank rows
-        for ($i = 0; $i < 7; $i++) {
-            $displayRows[] = [
-                'is_blank' => true,
-                'particulars_label' => '',
-                'amount' => '',
-                'discount' => '',
-                'net_amount' => 0,
-                'amount_formatted' => '',
-                'discount_formatted' => ''
-            ];
-        }
-        return $displayRows;
-    }
-    
-    if ($totalRows <= 7) {
-        // Case 1: Less than or equal to 7 rows - display all and pad with blanks
-        foreach ($feeByParticular as $row) {
-            $amount = (float)($row['total_amount'] ?? 0);
-            $discount = (float)($row['total_discount'] ?? 0);
-            $netAmount = $amount - $discount;
-            
-            $displayRows[] = [
-                'particulars_label' => $row['particulars_label'] ?? '',
-                'amount' => $amount,
-                'discount' => $discount,
-                'net_amount' => $netAmount,
-                'amount_formatted' => number_format($amount, 0),
-                'discount_formatted' => $discount > 0 ? number_format($discount, 0) : '',
-                'net_amount_formatted' => number_format($netAmount, 0),
-                'month_display' => $row['month_display'] ?? ''
-            ];
-        }
-        
-        // Add blank rows to make total 7
-        for ($i = $totalRows; $i < 7; $i++) {
-            $displayRows[] = [
-                'is_blank' => true,
-                'particulars_label' => '',
-                'amount' => '',
-                'discount' => '',
-                'net_amount' => 0,
-                'amount_formatted' => '',
-                'discount_formatted' => ''
-            ];
-        }
-    } else {
-        // Case 2: More than 7 rows - take first 6 and combine rest into arrears
-        // Process first 6 rows
-        for ($i = 0; $i < 6; $i++) {
-            $row = $feeByParticular[$i];
-            $amount = (float)($row['total_amount'] ?? 0);
-            $discount = (float)($row['total_discount'] ?? 0);
-            $netAmount = $amount - $discount;
-            
-            $displayRows[] = [
-                'particulars_label' => $row['particulars_label'] ?? '',
-                'amount' => $amount,
-                'discount' => $discount,
-                'net_amount' => $netAmount,
-                'amount_formatted' => number_format($amount, 0),
-                'discount_formatted' => $discount > 0 ? number_format($discount, 0) : '',
-                'net_amount_formatted' => number_format($netAmount, 0),
-                'month_display' => $row['month_display'] ?? ''
-            ];
-        }
-        
-        // Calculate arrears from remaining rows (indices 6 to end)
-        $arrearsAmount = 0;
-        $arrearsDiscount = 0;
-        $arrearsNet = 0;
-        $arrearsMonths = [];
-        
-        for ($i = 6; $i < $totalRows; $i++) {
-            $row = $feeByParticular[$i];
-            $amount = (float)($row['total_amount'] ?? 0);
-            $discount = (float)($row['total_discount'] ?? 0);
-            $netAmount = $amount - $discount;
-            
-            $arrearsAmount += $amount;
-            $arrearsDiscount += $discount;
-            $arrearsNet += $netAmount;
-            
-            if (!empty($row['month_display'])) {
-                $arrearsMonths[] = $row['month_display'];
-            }
-        }
-        
-        // Create month range for arrears label
-        $monthRange = '';
-        if (!empty($arrearsMonths)) {
-            // Sort months to get min and max
-            sort($arrearsMonths);
-            $monthRange = $arrearsMonths[0] . ' - ' . $arrearsMonths[count($arrearsMonths) - 1];
-        } else {
-            $monthRange = 'Previous Months';
-        }
-        
-        // Log for debugging
-        log_message('debug', "Family Arrears: amount=$arrearsAmount, discount=$arrearsDiscount, net=$arrearsNet, months=" . implode(', ', $arrearsMonths));
-        
-        // Create arrears row
-        $displayRows[] = [
-            'is_other' => true,
-            'particulars_label' => 'Arrears (' . $monthRange . ')',
-            'amount' => $arrearsAmount,
-            'discount' => $arrearsDiscount,
-            'net_amount' => $arrearsNet,
-            'amount_formatted' => number_format($arrearsAmount, 0),
-            'discount_formatted' => $arrearsDiscount > 0 ? number_format($arrearsDiscount, 0) : '',
-            'net_amount_formatted' => number_format($arrearsNet, 0)
-        ];
-    }
-    
-    return $displayRows;
+    return FeeChalanDisplayRows::familyRows($feeByParticular);
 }
+
+/**
+ * Non-monthly fee lines first, then monthly (same order as legacy PDF view).
+ */
+private function sortUnpaidChalansForDisplay(array $unpaid): array
+{
+    $other   = [];
+    $monthly = [];
+    foreach ($unpaid as $r) {
+        if ((int) ($r['is_monthly_fee'] ?? 0) === 1) {
+            $monthly[] = $r;
+        } else {
+            $other[] = $r;
+        }
+    }
+
+    return array_merge($other, $monthly);
+}
+
 /**
  * Get latest chalan date for family
  */
@@ -1271,74 +1082,159 @@ private function getFamilyStudentsWithChalans(int $parent_id, int $campus_id, in
      * Get unpaid chalans for a student
      */
    /**
- * Get unpaid chalans for a student
- * If fee_month is empty, returns ALL unpaid records
- * If fee_month is provided, returns only records for that month
+ * Unpaid chalans for many students in one (chunked) query; keys are student_id.
  */
-/**
- * Get unpaid chalans for a student
- * If fee_month is empty, returns ALL unpaid records
- * If fee_month is provided, returns only records for that month
- */
+private function getStudentUnpaidChalansBatch(array $studentIds, ?string $fee_month, bool $show_discount): array
+{
+    $studentIds = array_values(array_unique(array_filter(array_map('intval', $studentIds), static fn ($id) => $id > 0)));
+    if ($studentIds === []) {
+        return [];
+    }
+
+    $out = array_fill_keys($studentIds, []);
+    $chunkSize = 400;
+
+    foreach (array_chunk($studentIds, $chunkSize) as $chunk) {
+        $builder = $this->db->table('fee_chalan fc');
+        $builder->select("
+            fc.student_id,
+            fc.chalan_id,
+            fc.fee_month,
+            fc.issue_date,
+            fc.due_date,
+            fc.amount,
+            fc.discount,
+            (fc.amount - fc.discount) as net_amount,
+            ft.fee_type_name as particulars_label,
+            ft.is_monthly_fee,
+            fc.status
+        ");
+        $builder->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left');
+        $builder->whereIn('fc.student_id', $chunk);
+        $builder->where('fc.status', 'unpaid');
+
+        if ($fee_month !== null && $fee_month !== '') {
+            $builder->where('fc.fee_month', $fee_month);
+        }
+
+        $builder->orderBy('fc.student_id', 'ASC');
+        $builder->orderBy('fc.fee_month', 'DESC');
+        $builder->orderBy('fc.issue_date', 'DESC');
+
+        $query = $builder->get();
+        if (!$query) {
+            continue;
+        }
+
+        foreach ($query->getResultArray() as $row) {
+            $sid = (int) ($row['student_id'] ?? 0);
+            if ($sid === 0) {
+                continue;
+            }
+            unset($row['student_id']);
+            $this->decorateChalanRow($row, $show_discount);
+            $out[$sid][] = $row;
+        }
+    }
+
+    return $out;
+}
+
+private function decorateChalanRow(array &$chalan, bool $show_discount): void
+{
+    $chalan['net_amount'] = (float) ($chalan['amount'] ?? 0) - (float) ($chalan['discount'] ?? 0);
+
+    $chalan['issue_date_label'] = !empty($chalan['issue_date'])
+        ? date('d-m-y', strtotime((string) $chalan['issue_date']))
+        : '';
+    $chalan['due_date_label'] = !empty($chalan['due_date'])
+        ? date('d-m-y', strtotime((string) $chalan['due_date']))
+        : '';
+
+    $chalan['fee_month_label'] = $this->formatFeeMonthLabel($chalan['fee_month'] ?? '');
+
+    $chalan['amount_formatted'] = number_format((float) ($chalan['amount'] ?? 0), 0);
+    $chalan['discount_formatted'] = $show_discount && !empty($chalan['discount'])
+        ? number_format((float) $chalan['discount'], 0)
+        : '';
+    $chalan['net_amount_formatted'] = number_format($chalan['net_amount'], 0);
+}
 
 private function getStudentUnpaidChalans(int $student_id, ?string $fee_month, bool $show_discount): array
 {
-    $builder = $this->db->table('fee_chalan fc');
-    $builder->select("
-        fc.chalan_id,
-        fc.fee_month,
-        fc.issue_date,
-        fc.due_date,
-        fc.amount,
-        fc.discount,
-        (fc.amount - fc.discount) as net_amount,
-        ft.fee_type_name as particulars_label,
-        ft.is_monthly_fee,
-        fc.status
-    ");
-    
-    $builder->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left');
-    $builder->where('fc.student_id', $student_id);
-    $builder->where('fc.status', 'unpaid');
-    
-    if (!empty($fee_month)) {
-        $builder->where('fc.fee_month', $fee_month);
-    }
-    
-    $builder->orderBy('fc.fee_month', 'DESC');
-    $builder->orderBy('fc.issue_date', 'DESC');
-    
-    $query = $builder->get();
-    
-    if (!$query) {
+    $map = $this->getStudentUnpaidChalansBatch([$student_id], $fee_month, $show_discount);
+
+    return $map[$student_id] ?? [];
+}
+
+/**
+ * Last 12 calendar months of paid totals per student (batch).
+ */
+private function getStudentPaymentHistoryBatch(array $studentIds): array
+{
+    $studentIds = array_values(array_unique(array_filter(array_map('intval', $studentIds), static fn ($id) => $id > 0)));
+    if ($studentIds === []) {
         return [];
     }
-    
-    $chalans = $query->getResultArray();
-    
-    // Format dates and numbers
-    foreach ($chalans as &$chalan) {
-        // Ensure net_amount is properly calculated as float
-        $chalan['net_amount'] = (float)($chalan['amount'] ?? 0) - (float)($chalan['discount'] ?? 0);
-        
-        $chalan['issue_date_label'] = !empty($chalan['issue_date']) 
-            ? date('d-m-y', strtotime($chalan['issue_date'])) 
-            : '';
-        $chalan['due_date_label'] = !empty($chalan['due_date']) 
-            ? date('d-m-y', strtotime($chalan['due_date'])) 
-            : '';
-        
-        // Format fee month as MM/YYYY
-        $chalan['fee_month_label'] = $this->formatFeeMonthLabel($chalan['fee_month'] ?? '');
-        
-        $chalan['amount_formatted'] = number_format($chalan['amount'] ?? 0, 0);
-        $chalan['discount_formatted'] = $show_discount && !empty($chalan['discount']) 
-            ? number_format($chalan['discount'], 0) 
-            : '';
-        $chalan['net_amount_formatted'] = number_format($chalan['net_amount'], 0);
+
+    $monthSlots = [];
+    for ($i = 11; $i >= 0; $i--) {
+        $monthSlots[] = date('Y-m', strtotime('-' . $i . ' months'));
     }
-    
-    return $chalans;
+
+    $agg = [];
+    $chunkSize = 400;
+
+    foreach (array_chunk($studentIds, $chunkSize) as $chunk) {
+        $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+        $sql          = "SELECT fc.student_id,
+                DATE_FORMAT(fc.paid_date, '%Y-%m') AS month_key,
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 1 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS monthly_fee_total,
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 0 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS other_fee_total
+            FROM fee_chalan fc
+            LEFT JOIN fee_type ft ON ft.fee_type_id = fc.fee_type_id
+            WHERE fc.student_id IN ({$placeholders})
+                AND fc.status = 'paid'
+                AND fc.paid_date IS NOT NULL
+            GROUP BY fc.student_id, DATE_FORMAT(fc.paid_date, '%Y-%m')";
+
+        $q = $this->db->query($sql, $chunk);
+        if (!$q) {
+            continue;
+        }
+        foreach ($q->getResultArray() as $row) {
+            $sid = (int) $row['student_id'];
+            $mk  = $row['month_key'];
+            $agg[$sid][$mk] = [
+                'm' => (int) $row['monthly_fee_total'],
+                'o' => (int) $row['other_fee_total'],
+            ];
+        }
+    }
+
+    $out = [];
+    foreach ($studentIds as $sid) {
+        $monthKeys          = [];
+        $monthlyTotals      = [];
+        $monthlyFeeTotals   = [];
+        $otherFeeTotals     = [];
+        foreach ($monthSlots as $mk) {
+            $monthKeys[] = $mk;
+            $m           = $agg[$sid][$mk]['m'] ?? 0;
+            $o           = $agg[$sid][$mk]['o'] ?? 0;
+            $monthlyFeeTotals[$mk] = $m;
+            $otherFeeTotals[$mk]   = $o;
+            $monthlyTotals[$mk]    = $m + $o;
+        }
+        $out[$sid] = [
+            'month_keys'           => $monthKeys,
+            'monthly_totals'       => $monthlyTotals,
+            'monthly_fee_totals'   => $monthlyFeeTotals,
+            'other_fee_totals'     => $otherFeeTotals,
+        ];
+    }
+
+    return $out;
 }
     /**
      * Format fee month label
@@ -1443,7 +1339,7 @@ public function getSectionsByClass()
     }
     
     $builder = $this->db->table('class_section cs');
-    $builder->select('cs.section_id, sec.section_name');
+    $builder->select('cs.cls_sec_id, sec.section_name');
     $builder->join('sections sec', 'sec.section_id = cs.section_id');
     $builder->where('cs.campus_id', $campus_id);
     $builder->where('cs.class_id', $class_id);
@@ -1544,7 +1440,7 @@ public function searchStudents()
         }
 
         if (!empty($section_id)) {
-            $builder->where('cs.section_id', $section_id);
+            $builder->where('cs.cls_sec_id', (int) $section_id);
         }
 
         $builder->limit(20);
@@ -1576,6 +1472,15 @@ public function searchStudents()
         return $this->response->setJSON(['error' => $e->getMessage()]);
     }
 }
+
+    /**
+     * POST alias for bulk challan SSE (same handler as bulk_chalan_stream).
+     */
+    public function bulkChalanGeneration()
+    {
+        return $this->bulk_chalan_stream();
+    }
+
     /**
      * AJAX endpoint for family search
      */
@@ -1856,10 +1761,18 @@ public function searchFamilies()
                 return $net > 0;
             }));
 
-            // Total payable across unpaid
-            $totalAll = 0.0;
+            // Total payable across unpaid (+ monthly vs other split)
+            $totalAll      = 0.0;
+            $payableMonthly = 0.0;
+            $payableOther   = 0.0;
             foreach ($unpaid as $u) {
-                $totalAll += (float)($u['net_amount'] ?? ((float)($u['amount'] ?? 0) - (float)($u['discount'] ?? 0)));
+                $net = (float)($u['net_amount'] ?? ((float)($u['amount'] ?? 0) - (float)($u['discount'] ?? 0)));
+                $totalAll += $net;
+                if ((int)($u['is_monthly_fee'] ?? 0) === 1) {
+                    $payableMonthly += $net;
+                } else {
+                    $payableOther += $net;
+                }
             }
 
             // Skip student entirely if no payable
@@ -1872,40 +1785,12 @@ public function searchFamilies()
             $row['late_fee_fine'] = $late->late_fee_fine ?? null;
             $row['fine_type']     = $late->fine_type     ?? null;
 
-            // Build exactly 7 display rows:
-            if (count($unpaid) <= 5) {
-                $display = $unpaid;
-                for ($i = count($display); $i < 5; $i++) {
-                    $display[] = [
-                        'particulars_label' => '',
-                        'amount'            => '',
-                        'discount'          => '',
-                        'net_amount'        => 0,
-                        'is_blank'          => 1,
-                    ];
-                }
-            } else {
-                $latestSix = array_slice($unpaid, 0, 6);
-                $older     = array_slice($unpaid, 6);
-
-                $arrearsSum = 0.0;
-                foreach ($older as $o) {
-                    $arrearsSum += (float)($o['net_amount'] ?? ((float)($o['amount'] ?? 0) - (float)($o['discount'] ?? 0)));
-                }
-
-                $display = $latestSix;
-                $display[] = [
-                    'particulars_label' => 'Arrears',
-                    'amount'            => number_format($arrearsSum, 2, '.', ''),
-                    'discount'          => '',
-                    'net_amount'        => $arrearsSum,
-                    'is_arrears'        => 1,
-                ];
-            }
-
+            $unpaid                      = $this->sortUnpaidChalansForDisplay($unpaid);
             $row['unpaid_rows']          = $unpaid;
-            $row['unpaid_display_rows']  = $display;
+            $row['unpaid_display_rows']  = $this->processChalanRows($unpaid);
             $row['unpaid_total_payable'] = $totalAll;
+            $row['unpaid_payable_monthly'] = $payableMonthly;
+            $row['unpaid_payable_other']   = $payableOther;
         }
         unset($row);
 
@@ -2618,102 +2503,88 @@ public function saveEdit()
     }
 public function bulk_chalan_stream()
 {
-    // Initialize all variables
-    $processed = 0;
-    $totalStudents = 0;
-    $students = [];
-    $successCount = 0;
-    $skippedCount = 0;
-    $studentsRes = null;  // ← Initialize this!
-    $feeTypesRes = null;   // ← Initialize this too!
-    
-    error_log("SSE Started");
-    
-    // Increase execution time limits
-    set_time_limit(300);
-    ini_set('max_execution_time', 300);
+    $processed       = 0;
+    $totalStudents   = 0;
+    $students        = [];
+    $successCount    = 0;
+    $skippedCount    = 0;
+
+    set_time_limit(600);
+    ini_set('max_execution_time', '600');
     ini_set('memory_limit', '512M');
-    
-    // Disable output buffering completely
+
     if (ob_get_level()) {
         ob_end_clean();
     }
-    
-    // Set correct headers
+
     header('Content-Type: text/event-stream');
     header('Cache-Control: no-cache');
     header('Connection: keep-alive');
     header('X-Accel-Buffering: no');
-    
-    // Disable PHP output compression
-    ini_set('zlib.output_compression', 0);
-    
-    // Send initial message to test connection
+    ini_set('zlib.output_compression', '0');
+
     echo "retry: 1000\n\n";
     flush();
-    
-    // Release session lock to prevent blocking
-    session_write_close();
-    
-    $request = \Config\Services::request();
-    $db = \Config\Database::connect();
 
-    // ----------------- incoming params -----------------
+    session_write_close();
+
+    $request = \Config\Services::request();
+    $db      = \Config\Database::connect();
+
     $fee_type_ids = $request->getGet('fee_type_ids');
-    if (!is_array($fee_type_ids)) {
+    if (! is_array($fee_type_ids)) {
         $fee_type_ids = array_filter(array_map('trim', explode(',', (string) $fee_type_ids)));
     }
+    $fee_type_ids = array_values(array_filter(array_map('intval', $fee_type_ids), static fn ($id) => $id > 0));
 
-    $fee_month = $request->getGet('fee_month');
-    $issue_date_raw = $request->getGet('issue_date');
-    $due_date_raw = $request->getGet('due_date');
-    $force_month = (int) $request->getGet('force_month') === 1;
+    $fee_month       = (string) $request->getGet('fee_month');
+    $issue_date_raw  = $request->getGet('issue_date');
+    $due_date_raw    = $request->getGet('due_date');
+    $force_month     = (int) $request->getGet('force_month') === 1;
 
     $issue_date = DateTime::createFromFormat('d/m/Y', (string) $issue_date_raw);
-    $due_date = DateTime::createFromFormat('d/m/Y', (string) $due_date_raw);
+    $due_date   = DateTime::createFromFormat('d/m/Y', (string) $due_date_raw);
 
     $issue_date_formatted = $issue_date ? $issue_date->format('Y-m-d') : null;
-    $due_date_formatted = $due_date ? $due_date->format('Y-m-d') : null;
+    $due_date_formatted   = $due_date ? $due_date->format('Y-m-d') : null;
 
-    if (empty($fee_month) || empty($fee_type_ids) || !$issue_date_formatted || !$due_date_formatted) {
-        $this->sendEvent(['type' => 'error', 'message' => 'Missing or invalid required parameters']);
+    if ($fee_month === '' || $fee_type_ids === [] || ! $issue_date_formatted || ! $due_date_formatted) {
+        $msg = 'Missing or invalid parameters.';
+        if ($fee_type_ids === []) {
+            $msg = 'Select at least one fee type before generating challans.';
+        } elseif ($fee_month === '') {
+            $msg = 'Fee month is required.';
+        } elseif (! $issue_date_formatted || ! $due_date_formatted) {
+            $msg = 'Issue date and due date are required (use DD/MM/YYYY).';
+        }
+        $this->sendEvent(['type' => 'error', 'message' => $msg]);
         exit;
     }
 
     try {
-        // Get session variables with validation
         $session_id = (int) session('member_sessionid');
-        $campus_id = (int) session('member_campusid');
-        $user_id = (int) session('member_userid');
+        $campus_id  = (int) session('member_campusid');
+        $user_id    = (int) session('member_userid');
 
-        // Validate session variables
-        if ($session_id <= 0) {
-            throw new \Exception("Invalid session_id: $session_id");
-        }
-        if ($campus_id <= 0) {
-            throw new \Exception("Invalid campus_id: $campus_id");
+        if ($session_id <= 0 || $campus_id <= 0) {
+            throw new \RuntimeException('Invalid session or campus.');
         }
 
-        error_log("Query parameters - session_id: $session_id, campus_id: $campus_id");
-        
         $system_id = (int) (getSchoolInfo()->system_id ?? 0);
-        $date = date('Y-m-d');
+        $date      = date('Y-m-d');
 
-        // month "tokens" for fee_plan_months
-        $monthTs = strtotime($fee_month . '-01');
-        $monthFull = date('F', $monthTs);
-        $monthShort = date('M', $monthTs);
-        $monthNum2 = date('m', $monthTs);
-        $monthNum1 = date('n', $monthTs);
-        $monthKey = date('Y-m', $monthTs);
+        $monthTs         = strtotime($fee_month . '-01');
+        $monthFull       = date('F', $monthTs);
+        $monthShort      = date('M', $monthTs);
+        $monthNum2       = date('m', $monthTs);
+        $monthNum1       = date('n', $monthTs);
+        $monthKey        = date('Y-m', $monthTs);
         $monthCandidates = [$monthFull, $monthShort, $monthNum2, (string) $monthNum1, $monthKey];
 
-        // cache for plans
         $planCache = [];
 
-        // ----------------- load students (MOVED THIS UP) -----------------
         $studentsRes = $db->table('student_class sc')
-            ->select('sc.student_id, cs.class_id, s.std_type, s.discounted_amount, s.fee_plan')
+            ->select('sc.student_id, cs.class_id, s.std_type, s.discounted_amount, s.fee_plan, s.reg_no, s.first_name, s.last_name')
             ->join('students s', 's.student_id = sc.student_id')
             ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
             ->where('sc.session_id', $session_id)
@@ -2723,32 +2594,30 @@ public function bulk_chalan_stream()
 
         $this->dbError($db, 'fetch_students');
 
-        $students = $studentsRes ? $studentsRes->getResult() : [];
+        $students      = $studentsRes ? $studentsRes->getResult() : [];
         $totalStudents = count($students);
-        
-        error_log("Found $totalStudents students");
 
-        // Send initial progress
         $this->sendEvent([
-            'type' => 'progress',
-            'processed' => 0,
-            'total' => $totalStudents,
-            'success' => 0,
-            'skipped' => 0,
-            'current_student' => 'Initializing'
+            'type'            => 'progress',
+            'processed'       => 0,
+            'total'           => $totalStudents,
+            'success'         => 0,
+            'skipped'         => 0,
+            'current_student' => 'Initializing',
         ]);
 
-        // If no students found, exit early
-        if ($totalStudents == 0) {
+        if ($totalStudents === 0) {
             $this->sendEvent([
-                'type' => 'complete',
+                'type'    => 'complete',
                 'message' => 'No students found',
-                'total' => 0
+                'total'   => 0,
+                'success' => 0,
+                'skipped' => 0,
             ]);
-            exit;
+
+            return;
         }
 
-        // ----------------- load fee types -----------------
         $feeTypesRes = $db->table('fee_type')
             ->select('fee_type_id, fee_type_name, is_monthly_fee')
             ->where('system_id', $system_id)
@@ -2760,149 +2629,155 @@ public function bulk_chalan_stream()
 
         $feeTypes = $feeTypesRes ? $feeTypesRes->getResultArray() : [];
 
-        $successCount = 0;
-        $skippedCount = 0;
-        $processed = 0;
-        $batchSize = 10;
+        $preload  = $this->preloadBulkChalanData($db, $campus_id, $session_id, $students, $fee_type_ids, $monthCandidates);
+        $bulkCtx  = array_merge($preload, ['use_bulk_invoice' => true]);
 
-        // Process students in batches
-        foreach (array_chunk($students, $batchSize) as $batchIndex => $studentBatch) {
-            // Log progress every 50 students
-            if ($processed % 50 == 0 && $processed > 0) {
-                error_log("SSE Progress: $processed/$totalStudents processed");
-            }
-            
+        $this->primeBulkInvoiceSequence($fee_month);
+
+        $progressEvery = (int) round($totalStudents / 40);
+        $progressEvery = max(5, min(50, $progressEvery));
+
+        $skipDetails = [];
+        $maxSkipLog  = 200;
+
+        foreach ($students as $student) {
             if (connection_aborted()) {
-                error_log("Connection aborted by client");
                 exit;
             }
 
-            foreach ($studentBatch as $student) {
-                $insertable_fee_types = [];
+            $insertable_fee_types = [];
 
-                foreach ($feeTypes as $feeType) {
-                    $allowInsert = true;
-                    $thisPlanValue = 1;
+            foreach ($feeTypes as $feeType) {
+                $allowInsert   = true;
+                $thisPlanValue = 1;
 
-                    // only monthly fees need plan/month check
-                    if ((int) $feeType['is_monthly_fee'] === 1) {
+                if ((int) $feeType['is_monthly_fee'] === 1) {
+                    if ((int) $student->fee_plan === 0) {
+                        $thisPlanValue = 1;
+                    } else {
+                        $fp = (int) $student->fee_plan;
 
-                        if ((int) $student->fee_plan === 0) {
-                            $thisPlanValue = 1;
-                        } else {
-                            $fp = (int) $student->fee_plan;
+                        if (! array_key_exists($fp, $planCache)) {
+                            $planRow = $db->table('fee_plans')
+                                ->select('plan_value')
+                                ->where('plan_id', $fp)
+                                ->get()
+                                ->getRow();
+                            $planCache[$fp] = $planRow ? (int) $planRow->plan_value : 1;
+                        }
+                        $thisPlanValue = $planCache[$fp];
 
-                            // get plan_value once
-                            if (!array_key_exists($fp, $planCache)) {
-                                $planRow = $db->table('fee_plans')
-                                    ->select('plan_value')
-                                    ->where('plan_id', $fp)
-                                    ->get()
-                                    ->getRow();
-                                $planCache[$fp] = $planRow ? (int) $planRow->plan_value : 1;
-                            }
-                            $thisPlanValue = $planCache[$fp];
-
-                            // if month is not active → skip ONLY this fee type
-                            if (!$force_month) {
-                                $monthExists = $db->table('fee_plan_months')
-                                    ->where('campus_id', $campus_id)
-                                    ->where('fee_plan_id', $fp)
-                                    ->whereIn('month', $monthCandidates)
-                                    ->where('status', 1)
-                                    ->countAllResults();
-
-                                $this->dbError($db, 'check_plan_month');
-
-                                if ((int) $monthExists === 0) {
-                                    $allowInsert = false;
-                                }
-                            }
+                        if (! $force_month && ! isset($preload['plan_month_ok'][$fp])) {
+                            $allowInsert = false;
                         }
                     }
-
-                    if ($allowInsert) {
-                        $insertable_fee_types[] = [
-                            'fee_type_id' => (int) $feeType['fee_type_id'],
-                            'is_monthly_fee' => (int) $feeType['is_monthly_fee'],
-                            'plan_value' => (int) $thisPlanValue,
-                        ];
-                    }
                 }
 
-                // if after filtering there is NOTHING to insert → mark skipped
-                if (empty($insertable_fee_types)) {
-                    $processed++;
-                    $skippedCount++;
-
-                    $this->sendEvent([
-                        'type' => 'progress',
-                        'processed' => $processed,
-                        'total' => $totalStudents,
-                        'current_student' => (int) $student->student_id,
-                        'success' => $successCount,
-                        'skipped' => $skippedCount,
-                        'reason' => 'no_active_fee_types_for_month',
-                    ]);
-
-                    continue;
+                if ($allowInsert) {
+                    $insertable_fee_types[] = [
+                        'fee_type_id'    => (int) $feeType['fee_type_id'],
+                        'is_monthly_fee' => (int) $feeType['is_monthly_fee'],
+                        'plan_value'     => (int) $thisPlanValue,
+                    ];
                 }
-
-                // call insert logic
-                $result = $this->handleInvoiceAndFee(
-                    (int) $student->student_id,
-                    (int) $student->class_id,
-                    (int) $student->std_type,
-                    $campus_id,
-                    $session_id,
-                    $issue_date_formatted,
-                    $due_date_formatted,
-                    $fee_month,
-                    $user_id,
-                    $date,
-                    $insertable_fee_types,
-                    $student->discounted_amount
-                );
-
-                $processed++;
-                if ($result === true) {
-                    $successCount++;
-                } else {
-                    $skippedCount++;
-                }
-
-                $this->sendEvent([
-                    'type' => 'progress',
-                    'processed' => $processed,
-                    'total' => $totalStudents,
-                    'current_student' => (int) $student->student_id,
-                    'success' => $successCount,
-                    'skipped' => $skippedCount
-                ]);
             }
 
-            usleep(100000); // Small delay between batches
+            if ($insertable_fee_types === []) {
+                $processed++;
+                $skippedCount++;
+                if (count($skipDetails) < $maxSkipLog) {
+                    $skipDetails[] = [
+                        'student_id' => (int) $student->student_id,
+                        'reg_no'     => (string) ($student->reg_no ?? ''),
+                        'name'       => trim((string) ($student->first_name ?? '') . ' ' . (string) ($student->last_name ?? '')),
+                        'code'       => 'no_fee_lines_for_month',
+                        'detail'     => $force_month
+                            ? 'No billable fee lines could be built for this student (check fee types vs fee plan).'
+                            : 'Monthly fees skipped: this calendar month is not enabled on the student\'s fee plan for the selected fee types. Use “Force generation” on the form if you still want to bill this month.',
+                    ];
+                }
+                if ($processed % $progressEvery === 0 || $processed === $totalStudents) {
+                    $this->sendEvent([
+                        'type'            => 'progress',
+                        'processed'       => $processed,
+                        'total'           => $totalStudents,
+                        'current_student' => (int) $student->student_id,
+                        'success'         => $successCount,
+                        'skipped'         => $skippedCount,
+                        'reason'          => 'no_active_fee_types_for_month',
+                    ]);
+                }
+
+                continue;
+            }
+
+            $skipRow       = new stdClass();
+            $skipRow->reason = '';
+            $result        = $this->handleInvoiceAndFee(
+                (int) $student->student_id,
+                (int) $student->class_id,
+                (int) $student->std_type,
+                $campus_id,
+                $session_id,
+                $issue_date_formatted,
+                $due_date_formatted,
+                $fee_month,
+                $user_id,
+                $date,
+                $insertable_fee_types,
+                $student->discounted_amount,
+                $bulkCtx,
+                $skipRow
+            );
+
+            $processed++;
+            if ($result === true) {
+                $successCount++;
+            } else {
+                $skippedCount++;
+                if (count($skipDetails) < $maxSkipLog) {
+                    $skipDetails[] = [
+                        'student_id' => (int) $student->student_id,
+                        'reg_no'     => (string) ($student->reg_no ?? ''),
+                        'name'       => trim((string) ($student->first_name ?? '') . ' ' . (string) ($student->last_name ?? '')),
+                        'code'       => 'invoice_fee_failed',
+                        'detail'     => $skipRow->reason !== ''
+                            ? $skipRow->reason
+                            : 'No new challan lines were created for this student.',
+                    ];
+                }
+            }
+
+            if ($processed % $progressEvery === 0 || $processed === $totalStudents) {
+                $this->sendEvent([
+                    'type'            => 'progress',
+                    'processed'       => $processed,
+                    'total'           => $totalStudents,
+                    'current_student' => (int) $student->student_id,
+                    'success'         => $successCount,
+                    'skipped'         => $skippedCount,
+                ]);
+            }
         }
 
-        // Send completion event
         $this->sendEvent([
-            'type' => 'complete',
-            'total' => $totalStudents,
-            'success' => $successCount,
-            'skipped' => $skippedCount
+            'type'          => 'complete',
+            'total'         => $totalStudents,
+            'success'       => $successCount,
+            'skipped'       => $skippedCount,
+            'skip_details'  => $skipDetails,
+            'skip_truncated'=> $skippedCount > $maxSkipLog,
         ]);
-
     } catch (\Throwable $e) {
-        error_log("SSE Error: " . $e->getMessage());
-        error_log("File: " . $e->getFile() . " Line: " . $e->getLine());
         log_message('error', 'Bulk chalan generation failed: ' . $e->getMessage());
-        
         $this->sendEvent([
-            'type' => 'error',
-            'message' => 'Error: ' . $e->getMessage(),
+            'type'      => 'error',
+            'message'   => 'Error: ' . $e->getMessage(),
             'processed' => $processed ?? 0,
-            'total' => $totalStudents ?? 0
+            'total'     => $totalStudents ?? 0,
         ]);
+    } finally {
+        $this->resetBulkInvoiceSequence();
     }
 
     exit;
@@ -2923,16 +2798,146 @@ private function sendEvent(array $data, string $event = 'message'): void
     flush();
 }
 
+/**
+ * Preload fee_amount rows and fee-plan month eligibility for bulk generation (removes N+1 queries).
+ *
+ * @param list<object> $students Rows from student_class join (student_id, class_id, fee_plan, …)
+ *
+ * @return array{fee_amount_map: array<string, float>, plan_month_ok: array<int, true>}
+ */
+private function preloadBulkChalanData(
+    BaseConnection $db,
+    int $campus_id,
+    int $session_id,
+    array $students,
+    array $fee_type_ids_int,
+    array $monthCandidates
+): array {
+    $feeAmountMap = [];
+    $classIds     = [];
+
+    foreach ($students as $s) {
+        $cid = (int) ($s->class_id ?? 0);
+        if ($cid > 0) {
+            $classIds[$cid] = true;
+        }
+    }
+    $classIds = array_keys($classIds);
+
+    if ($classIds !== [] && $fee_type_ids_int !== []) {
+        $rows = $db->table('fee_amount')
+            ->select('class_id, fee_type_id, amount')
+            ->where('campus_id', $campus_id)
+            ->where('session_id', $session_id)
+            ->whereIn('class_id', $classIds)
+            ->whereIn('fee_type_id', $fee_type_ids_int)
+            ->get()
+            ->getResult();
+
+        foreach ($rows as $r) {
+            $feeAmountMap[(int) $r->class_id . '_' . (int) $r->fee_type_id] = (float) $r->amount;
+        }
+    }
+
+    $planMonthOk = [];
+    $planIds     = [];
+
+    foreach ($students as $s) {
+        $fp = (int) ($s->fee_plan ?? 0);
+        if ($fp > 0) {
+            $planIds[$fp] = true;
+        }
+    }
+    $planIds = array_keys($planIds);
+
+    if ($planIds !== [] && $monthCandidates !== []) {
+        $pHold = implode(',', array_fill(0, count($planIds), '?'));
+        $mHold = implode(',', array_fill(0, count($monthCandidates), '?'));
+        $sql   = "SELECT DISTINCT fee_plan_id FROM fee_plan_months
+            WHERE campus_id = ? AND status = 1 AND fee_plan_id IN ({$pHold}) AND month IN ({$mHold})";
+        $binds = array_merge([$campus_id], $planIds, $monthCandidates);
+        $rows  = $db->query($sql, $binds)->getResult();
+
+        foreach ($rows as $r) {
+            $planMonthOk[(int) $r->fee_plan_id] = true;
+        }
+    }
+
+    return [
+        'fee_amount_map' => $feeAmountMap,
+        'plan_month_ok'  => $planMonthOk,
+    ];
+}
+
+private function primeBulkInvoiceSequence(string $fee_month): void
+{
+    if ($fee_month === '' || ! preg_match('/^\d{4}-\d{2}$/', $fee_month)) {
+        return;
+    }
+
+    $feeDate = DateTime::createFromFormat('Y-m', $fee_month);
+    if (! $feeDate) {
+        return;
+    }
+
+    $yr = $feeDate->format('y');
+    $db = \Config\Database::connect();
+
+    $lastInvoice = $db->table('invoices')
+        ->select('invoice_no')
+        ->like('invoice_no', $yr . '-INV-', 'after')
+        ->orderBy('invoice_no', 'DESC')
+        ->get()
+        ->getRow();
+
+    $nextNumber = 1;
+    if ($lastInvoice) {
+        $parts      = explode('-', $lastInvoice->invoice_no);
+        $nextNumber = (int) end($parts) + 1;
+    }
+
+    $this->bulkInvoiceSeq = [
+        'fee_month' => $fee_month,
+        'yr'        => $yr,
+        'next'      => $nextNumber,
+    ];
+}
+
+private function resetBulkInvoiceSequence(): void
+{
+    $this->bulkInvoiceSeq = null;
+}
+
+private function takeNextBulkInvoiceNumber(string $fee_month): string
+{
+    if ($this->bulkInvoiceSeq === null || ($this->bulkInvoiceSeq['fee_month'] ?? '') !== $fee_month) {
+        return $this->generateInvoiceNumber($fee_month);
+    }
+
+    $n = (int) $this->bulkInvoiceSeq['next'];
+    $this->bulkInvoiceSeq['next'] = $n + 1;
+
+    return ($this->bulkInvoiceSeq['yr'] ?? '') . '-INV-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
+}
+
 
 private function handleInvoiceAndFee(
     int $student_id, int $class_id, int $std_type, int $campus_id, int $session_id,
     string $issue_date, string $due_date, string $fee_month, int $user_id, string $date,
-    array $feeTypes, $monthly_discount
+    array $feeTypes, $monthly_discount, array $bulkCtx = [], ?stdClass $skipDetailOut = null
 ) {
     $db = \Config\Database::connect();
     $db->transBegin();
 
     try {
+        $feeAmountMap = $bulkCtx['fee_amount_map'] ?? null;
+        $writeSkip    = $skipDetailOut instanceof stdClass;
+        $ftTotal      = count($feeTypes);
+        $nExisting    = 0;
+        $nNoAmount    = 0;
+        $nZeroNet     = 0;
+        $nNonPos      = 0;
+
         // Existing invoice?
         $invRes = $db->table('invoices')
             ->where('student_id', $student_id)
@@ -2942,7 +2947,15 @@ private function handleInvoiceAndFee(
         $this->dbError($db, 'invoice_lookup');
 
         $existingInvoice = $invRes ? $invRes->getRow() : null;
-        $invoice_no = $existingInvoice ? $existingInvoice->invoice_no : $this->generateInvoiceNumber($fee_month);
+        $useBulkInv      = ! empty($bulkCtx['use_bulk_invoice']);
+
+        if ($existingInvoice) {
+            $invoice_no = $existingInvoice->invoice_no;
+        } elseif ($useBulkInv) {
+            $invoice_no = $this->takeNextBulkInvoiceNumber($fee_month);
+        } else {
+            $invoice_no = $this->generateInvoiceNumber($fee_month);
+        }
 
         if (!$existingInvoice) {
             $db->table('invoices')->insert([
@@ -2957,9 +2970,25 @@ private function handleInvoiceAndFee(
             ]);
             if ($this->dbError($db, 'invoice_insert')) {
                 $db->transRollback();
+                if ($writeSkip) {
+                    $skipDetailOut->reason = 'Could not save the invoice header (database error).';
+                }
+
                 return false;
             }
             $this->debug('invoice_insert_ok', ['student_id' => $student_id, 'invoice_no' => $invoice_no]);
+        }
+
+        $existingFeeTypes = [];
+        $exRes            = $db->table('fee_chalan')
+            ->select('fee_type_id')
+            ->where('student_id', $student_id)
+            ->where('fee_month', $fee_month)
+            ->where('invoice_no', $invoice_no)
+            ->get()
+            ->getResultArray();
+        foreach ($exRes as $er) {
+            $existingFeeTypes[(int) $er['fee_type_id']] = true;
         }
 
         $insertedCount = 0;
@@ -2968,16 +2997,8 @@ private function handleInvoiceAndFee(
             $fee_type_id = (int)$fee['fee_type_id'];
             $isMonthly   = !empty($fee['is_monthly_fee']);  // THIS IS CORRECT - checking is_monthly_fee = 1
 
-            // Already exists?
-            $exists = $db->table('fee_chalan')
-                ->where('student_id', $student_id)
-                ->where('fee_month',  $fee_month)
-                ->where('fee_type_id',$fee_type_id)
-                ->where('invoice_no', $invoice_no)
-                ->countAllResults();
-            $this->dbError($db, 'chalan_exists_check');
-
-            if ((int)$exists > 0) {
+            if (isset($existingFeeTypes[$fee_type_id])) {
+                $nExisting++;
                 $this->debug('chalan_skip_exists', [
                     'student_id' => $student_id,
                     'fee_type_id'=> $fee_type_id,
@@ -2986,25 +3007,30 @@ private function handleInvoiceAndFee(
                 continue;
             }
 
-            // Amount lookup (allow default/null flag)
-            $amountRes = $db->table('fee_amount')->select('amount')
-                ->where('class_id',   $class_id)
-                ->where('campus_id',  $campus_id)
-                ->where('session_id', $session_id)
-                ->where('fee_type_id',$fee_type_id)
-                ->get();
-            $this->dbError($db, 'amount_lookup');
+            $amtKey = $class_id . '_' . $fee_type_id;
+            if (is_array($feeAmountMap) && array_key_exists($amtKey, $feeAmountMap)) {
+                $default_amount = (float) $feeAmountMap[$amtKey];
+            } else {
+                $amountRes = $db->table('fee_amount')->select('amount')
+                    ->where('class_id',   $class_id)
+                    ->where('campus_id',  $campus_id)
+                    ->where('session_id', $session_id)
+                    ->where('fee_type_id',$fee_type_id)
+                    ->get();
+                $this->dbError($db, 'amount_lookup');
 
-            $amountRow = $amountRes ? $amountRes->getRow() : null;
-            if (!$amountRow) {
-                $this->debug('amount_not_found', [
-                    'student_id' => $student_id, 'class_id' => $class_id,
-                    'fee_type_id'=> $fee_type_id, 
-                ]);
-                continue;
+                $amountRow = $amountRes ? $amountRes->getRow() : null;
+                if (!$amountRow) {
+                    $nNoAmount++;
+                    $this->debug('amount_not_found', [
+                        'student_id' => $student_id, 'class_id' => $class_id,
+                        'fee_type_id'=> $fee_type_id,
+                    ]);
+                    continue;
+                }
+
+                $default_amount = (float) $amountRow->amount;
             }
-
-            $default_amount = (float) $amountRow->amount;
             $pv             = max(1, (int) ($fee['plan_value'] ?? 1));   // plan value
             
             // FIX: Re-declare isMonthly from fee array to ensure it's properly set
@@ -3034,6 +3060,7 @@ private function handleInvoiceAndFee(
             
             // NEW: Skip insertion if net amount is zero or negative
             if ($net_amount <= 0) {
+                $nZeroNet++;
                 $this->debug('chalan_skip_zero_amount', [
                     'student_id'    => $student_id,
                     'fee_type_id'   => $fee_type_id,
@@ -3048,6 +3075,7 @@ private function handleInvoiceAndFee(
             }
 
             if ($final_amount <= 0) {
+                $nNonPos++;
                 $this->debug('amount_non_positive', [
                     'student_id' => $student_id,
                     'fee_type_id'=> $fee_type_id,
@@ -3067,8 +3095,8 @@ private function handleInvoiceAndFee(
                 'fee_month_old'  => date('F Y', strtotime($fee_month . '-01')),
                 'amount'         => $final_amount,
                 'discount'       => $discount,
-                'status'         => 'Unpaid',   // ensure matches ENUM casing if used
-                'payment_status' => 'Pending',
+                'status'         => 'unpaid',
+                'payment_status' => 'pending',
                 'fee_type_id'    => $fee_type_id,
                 'paid_date'      => '0000-00-00',       // FIX: Added quotes around date
                 'created_date'   => $date,
@@ -3080,6 +3108,10 @@ private function handleInvoiceAndFee(
             ]);
             if ($this->dbError($db, 'chalan_insert')) {
                 $db->transRollback();
+                if ($writeSkip) {
+                    $skipDetailOut->reason = 'Could not insert a fee challan line (database error).';
+                }
+
                 return false;
             }
 
@@ -3104,11 +3136,27 @@ private function handleInvoiceAndFee(
             'student_id' => $student_id,
             'invoice_no' => $invoice_no
         ]);
+        if ($writeSkip) {
+            if ($ftTotal === 0) {
+                $skipDetailOut->reason = 'No fee types were passed for insertion.';
+            } elseif ($nExisting === $ftTotal) {
+                $skipDetailOut->reason = 'All selected fee types already have challan lines for this fee month on this invoice.';
+            } elseif ($nNoAmount > 0 && ($nExisting + $nNoAmount + $nZeroNet + $nNonPos) >= $ftTotal) {
+                $skipDetailOut->reason = 'Missing fee amount for this class/session for one or more fee types (configure Fee Amount under fee setup).';
+            } elseif ($nZeroNet > 0 || $nNonPos > 0) {
+                $skipDetailOut->reason = 'Net payable is zero after discount, or gross amount is zero, for all applicable fee types.';
+            } else {
+                $skipDetailOut->reason = 'No new lines added (lines may already exist, amounts missing, or net is zero).';
+            }
+        }
         $db->transRollback();
         return false;
 
     } catch (\Throwable $e) {
         $db->transRollback();
+        if ($writeSkip) {
+            $skipDetailOut->reason = 'System error while generating challan: ' . $e->getMessage();
+        }
         log_message('error', 'handleInvoiceAndFee exception: ' . $e->getMessage());
         $this->sendEvent([
             'type'  => 'debug',

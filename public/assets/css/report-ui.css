@@ -1,0 +1,37 @@
+.report-filter-card {
+  border-radius: 10px;
+  border: 1px solid #dfe5ee;
+}
+
+.report-filter-card .card-header {
+  background: #f7f9fc;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.report-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #51606f;
+  margin-bottom: 4px;
+}
+
+.report-filter-card .form-control,
+.report-filter-card .select2-container--default .select2-selection--single {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.report-filter-card .btn {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.report-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 14px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}

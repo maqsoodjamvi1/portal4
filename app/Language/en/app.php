@@ -80,7 +80,6 @@ return [
     'create_emp_leaves' => 'Create Employee Leaves',
     'emp_leaves_apps' => 'Employee Leaves Applications',
     'emp_attendance_report' => 'Employees Attendance Report',
-    'day_on_reset' => 'Day On Reset',
     'absentees' => 'Absentees',
     'create_leaves_apps' => 'Create Leaves Applications',
     'leaves_applications' => 'Leaves Applications',

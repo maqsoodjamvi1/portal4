@@ -29,64 +29,55 @@ if(!empty($_GET['status'])){
 <section class="content">
     <div class="row">
         <div class="col-lg-12">
-            <div class="card card-primary card-outline">
+            <div class="card card-primary card-outline" id="balanceFeeFilterCard">
                 <div class="card-header bg-gradient-primary">
                     <h3 class="card-title text-white">
                         <i class="fas fa-filter mr-2"></i>Report Filters
                     </h3>
                     <div class="card-tools">
-                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
+                        <button type="button" class="btn btn-tool text-white" id="filterCollapseBtn" title="Hide/Show filters">
+                            <i class="fas fa-minus" id="filterCollapseIcon"></i>
                         </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row" id="filterOptionsWrap">
                         <!-- Class Selection -->
                         <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                <label class="form-label font-weight-bold">Select Class</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-graduation-cap"></i></span>
-                                    </div>
-                                    <select class="form-control select2" id="cls_sec_id" style="width: 100%;">
-                                        <option value="">All Classes</option>
-                                        <?php foreach ($sectionsclassinfo as $value) { ?>
-                                            <option value="<?= $value['section_id'] ?>"><?= $value['sectionclassname'] ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Display Options Card -->
-                            <div class="card card-outline card-info mt-3">
-                                <div class="card-header">
-                                    <h3 class="card-title">Display Options</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-group">
-                                          <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="monthly_fee" checked>
-                                            <label class="custom-control-label" for="monthly_fee">Show Monthly Balance</label>
-                                        </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="others_fee" checked>
-                                            <label class="custom-control-label" for="others_fee">Show Other Balance</label>
-                                        </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="show_projected" checked>
-                                            <label class="custom-control-label" for="show_projected">Projected Fees</label>
-                                        </div>
-                                      
-                                          <div class="custom-control custom-switch custom-switch-lg">
-                                            <input type="checkbox" class="custom-control-input" id="show_balance" checked>
-                                            <label class="custom-control-label" for="show_balance">Show Total Balance</label>
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                            </div>
+                            <?php
+                                $clsOptions = [['value' => '', 'label' => 'All Classes']];
+                                foreach ($sectionsclassinfo as $value) {
+                                    $clsOptions[] = [
+                                        'value' => $value['section_id'],
+                                        'label' => $value['sectionclassname'],
+                                    ];
+                                }
+                                echo view('components/report_filter_bar', [
+                                    'formId' => 'balanceFeeClassFilterForm',
+                                    'title' => 'Class & Display Options',
+                                    'fields' => [
+                                        [
+                                            'type' => 'select',
+                                            'id' => 'cls_sec_id',
+                                            'name' => 'cls_sec_id',
+                                            'label' => 'Select Class',
+                                            'class' => 'form-control select2 report-select2',
+                                            'options' => $clsOptions,
+                                            'col_class' => 'col-md-12 mb-2',
+                                        ],
+                                        [
+                                            'type' => 'raw',
+                                            'label' => 'Display Options',
+                                            'col_class' => 'col-md-12 mb-2',
+                                            'html' => '<div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="monthly_fee" checked><label class="custom-control-label" for="monthly_fee">Show Monthly Balance</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="others_fee" checked><label class="custom-control-label" for="others_fee">Show Other Balance</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="show_projected" checked><label class="custom-control-label" for="show_projected">Projected Fees</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg"><input type="checkbox" class="custom-control-input" id="show_balance" checked><label class="custom-control-label" for="show_balance">Show Total Balance</label></div>',
+                                        ],
+                                    ],
+                                    'actions' => [],
+                                ]);
+                            ?>
                         </div>
 
                         <!-- Month Selection -->
@@ -96,6 +87,9 @@ if(!empty($_GET['status'])){
                                     <h3 class="card-title">Select Months</h3>
                                     <div class="card-tools">
                                         <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary month-preset" data-count="3">3M</button>
+                                            <button type="button" class="btn btn-outline-primary month-preset" data-count="6">6M</button>
+                                            <button type="button" class="btn btn-outline-primary month-preset" data-count="12">12M</button>
                                             <button type="button" class="btn btn-success" id="select-all-months">
                                                 <i class="fas fa-check-circle mr-1"></i>All
                                             </button>
@@ -105,12 +99,12 @@ if(!empty($_GET['status'])){
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body compact-months-wrap">
                                     <div class="row">
                                         <?php for ($i = 0; $i < 12; $i++) {
                                             $month = date('Y-m', strtotime("-$i months"));
                                             $month_display = date('M y', strtotime($month)); ?>
-                                            <div class="col-md-3 col-4 mb-2">
+                                            <div class="col-lg-2 col-md-3 col-4 mb-2">
                                                 <div class="custom-control custom-checkbox">
                                                     <input class="custom-control-input month-checkbox" type="checkbox" 
                                                         name="months[]" value="<?= $month ?>" id="month_<?= $i ?>" checked>
@@ -132,7 +126,9 @@ if(!empty($_GET['status'])){
                                     <h3 class="card-title">Data Filters</h3>
                                 </div>
                                 <div class="card-body">
-                                    <div class="form-group">
+                                    <div class="form-group filter-switch-grid">
+                                        <label class="mb-1">Search Family</label>
+                                        <input type="text" class="form-control form-control-sm mb-2" id="family_search" placeholder="Search by parent name, family ID, student name...">
                                         <div class="custom-control custom-switch custom-switch-lg mb-2">
                                            <input type="checkbox" class="custom-control-input" id="include_monthly_paid" checked>
                                           <label class="custom-control-label" for="include_monthly_paid">Include Monthly Paid</label>
@@ -169,6 +165,14 @@ if(!empty($_GET['status'])){
                                         <button class="btn btn-success btn-lg btn-block" id="viewresult">
                                             <i class="fas fa-chart-bar mr-2"></i>Generate Report
                                         </button>
+                                        <div class="btn-group btn-group-sm mt-2" id="reportViewToggle" style="display:none;">
+                                            <button type="button" class="btn btn-outline-primary active" id="showCardViewBtn">
+                                                <i class="fas fa-th-large mr-1"></i>Card View
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" id="showTableViewBtn">
+                                                <i class="fas fa-table mr-1"></i>Table View
+                                            </button>
+                                        </div>
                                         <button class="btn btn-primary btn-lg btn-block" id="printBtn" style="display: none;">
                                             <i class="fas fa-print mr-2"></i>Print Report
                                         </button>
@@ -215,6 +219,35 @@ if(!empty($_GET['status'])){
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 1000;
+}
+.compact-months-wrap{
+    max-height: 180px;
+    overflow-y: auto;
+}
+.filter-switch-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+}
+.filter-switch-grid > label,
+.filter-switch-grid > input{
+    grid-column: 1 / -1;
+}
+.filter-switch-grid .custom-control{
+    min-height: 26px;
+    margin-bottom: 4px !important;
+}
+.card-header, .card-body{
+    padding-top: .65rem;
+    padding-bottom: .65rem;
+}
+@media (max-width: 992px){
+    .filter-switch-grid{
+        grid-template-columns: 1fr;
+    }
+    .compact-months-wrap{
+        max-height: 220px;
+    }
 }
 
 @keyframes spin {
@@ -277,6 +310,64 @@ if(!empty($_GET['status'])){
     padding: 8px 12px;
     border: 1px solid #e3e6f0;
     text-align: center;
+}
+
+.balance-report-wrap .report-summary-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:10px;
+}
+.balance-report-wrap .summary-card{
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    background:#fff;
+    padding:10px 12px;
+}
+.balance-report-wrap .summary-card .k{font-size:12px;color:#64748b;}
+.balance-report-wrap .summary-card .v{font-size:20px;font-weight:700;color:#0f172a;}
+.balance-card-grid{
+    margin-top:10px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(360px,1fr));
+    gap:12px;
+}
+#balanceCardView, #balanceTableView{margin-top:10px;}
+.balance-card{
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    background:#fff;
+    padding:10px;
+}
+.balance-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.balance-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.metric-chip{
+    font-size:11px;
+    background:#eef2ff;
+    color:#1e3a8a;
+    border:1px solid #c7d2fe;
+    padding:2px 8px;
+    border-radius:999px;
+}
+.month-chip-wrap{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;
+}
+.month-chip{
+    border:1px solid #e2e8f0;
+    border-radius:8px;
+    padding:6px;
+    text-align:center;
+    background:#fafafa;
+}
+.month-chip .month-title{font-size:11px;color:#334155;}
+.month-chip .month-amount{font-weight:700;font-size:12px;}
+.month-chip.chip-due{border-color:#f59e0b;background:#fffbeb;}
+.month-chip.chip-clear{border-color:#86efac;background:#f0fdf4;}
+.btn-xs{padding:.2rem .35rem;font-size:.7rem;line-height:1.2;}
+@media (max-width: 768px){
+    .balance-card-grid{grid-template-columns:1fr;}
+    .month-chip-wrap{grid-template-columns:repeat(3,minmax(0,1fr));}
 }
 
 .fee-table .text-left {
@@ -356,9 +447,25 @@ if(!empty($_GET['status'])){
 
 <script>
 $(function() {
+    const balanceViewStorageKey = 'parents_balancefee_view_mode';
+    
+    function setFilterCollapsed(collapsed) {
+        if (collapsed) {
+            $('#filterOptionsWrap').slideUp(150);
+            $('#filterCollapseIcon').removeClass('fa-minus').addClass('fa-plus');
+        } else {
+            $('#filterOptionsWrap').slideDown(150);
+            $('#filterCollapseIcon').removeClass('fa-plus').addClass('fa-minus');
+        }
+    }
     // Initialize select2
     $('.select2').select2({
         theme: 'bootstrap4'
+    });
+    
+    $('#filterCollapseBtn').on('click', function() {
+        const isVisible = $('#filterOptionsWrap').is(':visible');
+        setFilterCollapsed(isVisible);
     });
 
     // Month selection
@@ -370,6 +477,13 @@ $(function() {
     $('#deselect-all-months').click(() => {
         $('.month-checkbox').prop('checked', false).trigger('change');
         toastr.info('All months deselected');
+    });
+    
+    $('.month-preset').click(function() {
+        const count = parseInt($(this).data('count'), 10);
+        $('.month-checkbox').prop('checked', false);
+        $('.month-checkbox').slice(0, count).prop('checked', true);
+        toastr.info('Selected last ' + count + ' months');
     });
 
 
@@ -394,6 +508,7 @@ $(function() {
                 
                 // Save original button HTML
                 const originalHtml = $btn.html();
+                let okResponse = false;
                 
                 // Set loading state
                 $btn.prop('disabled', true);
@@ -411,6 +526,7 @@ $(function() {
                     },
                     success: function(response) {
                         if (response.success) {
+                            okResponse = true;
                             toastr.success(response.message);
                             
                             // Toggle button state and appearance
@@ -436,7 +552,7 @@ $(function() {
                     },
                     complete: function() {
                         $btn.prop('disabled', false);
-                        if (!response || !response.success) {
+                        if (!okResponse) {
                             $btn.html(originalHtml);
                         }
                     }
@@ -472,9 +588,14 @@ $(function() {
             method: 'POST',
             data: params,
             success: function(res) {
-                const printContent = createPrintContent(res, params);
-                $('#studentsList').html(printContent);
-                $('#printBtn, #exportBtn').show();
+                // Render full interactive report (card + table wrappers)
+                $('#studentsList').html(res);
+                applyFamilySearchFilter();
+                $('#printBtn, #exportBtn, #reportViewToggle').show();
+                const savedMode = localStorage.getItem(balanceViewStorageKey) || 'card';
+                setReportView(savedMode);
+                // Reduce post-filter blank space by collapsing filters after loading report
+                setFilterCollapsed(true);
                 $("#loader-1").hide();
                 
                 // Apply table styling
@@ -482,6 +603,7 @@ $(function() {
             },
             error: function(xhr) {
                 $('#studentsList').html('<div class="alert alert-danger">Error loading data</div>');
+                $('#reportViewToggle').hide();
                 $("#loader-1").hide();
             }
         });
@@ -622,26 +744,102 @@ $(function() {
             filtersText += `<div class="print-filter-item"><strong>Other Fee Only:</strong> Yes</div>`;
         }
         
-        // Show/hide grand total based on checkbox
-        let processedHtml = res;
-        if(!params.show_grand_total) {
-            processedHtml = res.replace(/<tr class="total-row.*?<\/tr>/g, '');
-        } else {
-            processedHtml = fixSumRowAlignment(res);
+        // Extract detailed table from returned report HTML for print
+        const $res = $('<div>').html(res);
+        let tableHtml = $res.find('table.balance-table').first().prop('outerHTML') || '';
+        if (!tableHtml) {
+            tableHtml = '<div class="alert alert-warning">No printable table found.</div>';
         }
+        let processedHtml = tableHtml;
+        if(!params.show_grand_total) {
+            processedHtml = processedHtml.replace(/<tr class="total-row.*?<\/tr>/g, '');
+        } else {
+            processedHtml = fixSumRowAlignment(processedHtml);
+        }
+        processedHtml = compactPrintableTable(processedHtml);
         
+        return {
+            generatedDate: generatedDate,
+            filtersText: filtersText,
+            tableHtml: processedHtml
+        };
+    }
+
+    // Make parent/students column print-friendly: 2 compact lines.
+    function compactPrintableTable(html) {
+        const $temp = $('<div>').html(html);
+        const $rows = $temp.find('table tbody tr').not('.total-row');
+        $rows.each(function() {
+            const $td = $(this).find('td').eq(2); // Parent/Students column
+            if (!$td.length) return;
+
+            const parentName = $.trim($td.clone().children().remove().end().text()).replace(/\s+/g, ' ');
+            const studentsText = $.trim($td.find('small').text());
+            const students = studentsText
+                ? studentsText.split(',').map(function(s){ return $.trim(s); }).filter(Boolean)
+                : [];
+
+            let secondLine = '-';
+            if (students.length > 0) {
+                const preview = students.slice(0, 2).join(', ');
+                const more = students.length - 2;
+                secondLine = preview + (more > 0 ? (' +' + more + ' more') : '');
+            }
+
+            const esc = function(v){ return $('<div/>').text(v || '').html(); };
+            $td.html(
+                '<div class="p-parent">' + esc(parentName || '-') + '</div>' +
+                '<div class="p-students">' + esc(secondLine) + '</div>'
+            );
+        });
+        return $temp.html();
+    }
+
+    function buildPrintableDocument(printData, isLandscape) {
+        const orientation = isLandscape ? 'landscape' : 'portrait';
+        const pageWidth = isLandscape ? '270mm' : '190mm';
         return `
-            <div id="printArea">
-                <div class="print-header">
-                    <div class="print-title">Fee Summary Report</div>
-                    <div class="print-subtitle">Generated: ${generatedDate}</div>
-                    <div class="print-filters">
-                        ${filtersText}
-                    </div>
-                </div>
-                <div class="table-responsive">${processedHtml}</div>
-            </div>
-        `;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Fee Summary Report</title>
+    <style>
+        @page { size: A4 ${orientation}; margin: 10mm; }
+        html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; }
+        .print-wrap { width: ${pageWidth}; margin: 0 auto; }
+        .print-header { text-align: center; border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 10px; }
+        .print-title { font-size: 20px; font-weight: 700; letter-spacing: .2px; }
+        .print-subtitle { font-size: 12px; color: #475569; margin-top: 3px; }
+        .print-filters { margin: 8px 0 12px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; }
+        .print-filter-item { margin-right: 12px; margin-bottom: 6px; display: inline-block; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10.5px; }
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
+        tr { page-break-inside: avoid; }
+        th, td { border: 1px solid #d1d5db; padding: 4px 5px; vertical-align: top; text-align: center; word-wrap: break-word; }
+        th { background: #e2e8f0; color: #0f172a; font-weight: 700; }
+        td small { color: #475569; font-size: 9px; }
+        th:nth-child(3), td:nth-child(3) { width: 22%; text-align: left !important; }
+        .p-parent { font-weight: 600; font-size: 10px; line-height: 1.25; margin-bottom: 2px; }
+        .p-students { font-size: 9px; line-height: 1.2; color: #475569; }
+        .text-left { text-align: left !important; }
+        .text-right { text-align: right !important; }
+        .total-row td { font-weight: 700; background: #f1f5f9 !important; }
+        .update-fee-btn, .btn { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="print-wrap">
+        <div class="print-header">
+            <div class="print-title">Fee Summary Report</div>
+            <div class="print-subtitle">Generated: ${printData.generatedDate}</div>
+        </div>
+        <div class="print-filters">${printData.filtersText}</div>
+        <div>${printData.tableHtml}</div>
+    </div>
+</body>
+</html>`;
     }
 
     // Fix sum row alignment
@@ -665,16 +863,53 @@ $(function() {
 
     // Print handling
     $('#printBtn').click(function() {
-        const printContent = $('#printArea').clone();
-        $('body').addClass('printing').html(printContent);
-        window.print();
-        location.reload();
+        const params = {
+            cls_sec_id: $('#cls_sec_id').val(),
+            months: $('.month-checkbox:checked').map((i, el) => el.value).get(),
+            show_projected: $('#show_projected').is(':checked') ? 1 : 0,
+            show_balance: $('#show_balance').is(':checked') ? 1 : 0,
+            hide_zero: $('#hide_zero').is(':checked') ? 1 : 0,
+            show_family_head: $('#show_family_head').is(':checked') ? 1 : 0,
+            monthly_fee: $('#monthly_fee').is(':checked') ? 1 : 0,
+            others_fee: $('#others_fee').is(':checked') ? 1 : 0,
+            include_monthly_paid: $('#include_monthly_paid').is(':checked') ? 1 : 0,
+            include_others_paid: $('#include_others_paid').is(':checked') ? 1 : 0,
+            monthly_fee_defaulter: $('#monthly_fee_defaulter').is(':checked') ? 1 : 0,
+            other_fee_defaulter: $('#other_fee_defaulter').is(':checked') ? 1 : 0,
+            show_grand_total: $('#show_grand_total').is(':checked') ? 1 : 0
+        };
+        const liveReportHtml = $('#studentsList').html() || '';
+        const printData = createPrintContent(liveReportHtml, params);
+        if (!printData.tableHtml || printData.tableHtml.indexOf('<table') === -1) {
+            toastr.error('No printable table found');
+            return;
+        }
+        const $tmp = $('<div>').html(printData.tableHtml);
+        const headerCount = $tmp.find('thead th').length;
+        const isLandscape = headerCount > 9;
+        const printableHtml = buildPrintableDocument(printData, isLandscape);
+        const w = window.open('', '_blank');
+        if (!w) {
+            toastr.error('Popup blocked. Please allow popups for printing.');
+            return;
+        }
+        w.document.open();
+        w.document.write(printableHtml);
+        w.document.close();
+        w.focus();
+        setTimeout(function() {
+            w.print();
+        }, 250);
     });
     
     // Export to Excel (basic implementation)
     $('#exportBtn').click(function() {
-        // Create a simple Excel export
-        let table = $('#printArea table').clone();
+        // Create a simple Excel export from detailed table
+        let table = $('#studentsList').find('table.balance-table').first().clone();
+        if (!table.length) {
+            toastr.error('No detailed table found to export');
+            return;
+        }
         
         // Remove any unwanted elements
         table.find('.no-export').remove();
@@ -710,6 +945,39 @@ $(function() {
         link.click();
         document.body.removeChild(link);
     });
+    
+    function setReportView(mode) {
+        const normalized = mode === 'table' ? 'table' : 'card';
+        const isCard = normalized === 'card';
+        $('#balanceCardView').toggle(isCard);
+        $('#balanceTableView').toggle(!isCard);
+        $('#showCardViewBtn').toggleClass('active', isCard);
+        $('#showTableViewBtn').toggleClass('active', !isCard);
+        localStorage.setItem(balanceViewStorageKey, normalized);
+    }
+    
+    $('#showCardViewBtn').on('click', function() { setReportView('card'); });
+    $('#showTableViewBtn').on('click', function() { setReportView('table'); });
+    
+    function applyFamilySearchFilter() {
+        const q = ($('#family_search').val() || '').trim().toLowerCase();
+        if (!q) {
+            $('.balance-card').show();
+            $('.balance-table tbody tr').show();
+            return;
+        }
+        $('.balance-card').each(function() {
+            const t = ($(this).attr('data-search') || '').toLowerCase();
+            $(this).toggle(t.indexOf(q) !== -1);
+        });
+        $('.balance-table tbody tr').each(function() {
+            const t = ($(this).text() || '').toLowerCase();
+            if ($(this).hasClass('total-row')) return;
+            $(this).toggle(t.indexOf(q) !== -1);
+        });
+    }
+    
+    $('#family_search').on('input', applyFamilySearchFilter);
 });
 </script>
 

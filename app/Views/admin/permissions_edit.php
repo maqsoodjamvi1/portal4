@@ -1,5 +1,31 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
+<style>
+.permission-form-card .form-group label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.field-hint {
+    font-size: 12px;
+    color: #64748b;
+}
+.meta-box {
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    margin-bottom: 12px;
+}
+.meta-box .k {
+    font-size: 12px;
+    color: #475569;
+}
+.meta-box .v {
+    font-family: monospace;
+    font-size: 13px;
+    color: #0f172a;
+}
+</style>
 
 <?php 
 if(isset($info)){
@@ -76,7 +102,7 @@ $perm_options = buildPermissionOptions($permissionGroups, 0, 0, $id, $parent_id)
 <section class="content">
     <div class="row">
         <div class="col-md-8">
-            <div class="card card-primary card-outline">
+            <div class="card card-primary card-outline permission-form-card">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-edit"></i> Permission Details
@@ -92,36 +118,38 @@ $perm_options = buildPermissionOptions($permissionGroups, 0, 0, $id, $parent_id)
                     <?= form_open('admin/permissions/save', 'class="bs-docs-example" id="permission-edit-form"') ?>
                     <?= form_hidden('id', $id) ?>
                     
+                    <div class="meta-box">
+                        <div class="k">Normalized Permission Key</div>
+                        <div class="v" id="permKeyPreview"><?= htmlspecialchars($permKey ?: 'example-key') ?></div>
+                    </div>
+
                     <div class="form-group">
-                        <label class="control-label">Parent Permission</label>
-                        <div class="controls">
-                            <select name="parent_id" id="parent_id" class="form-control select2">
-                                <option value="0">Top Level (Root)</option>
-                                <?= $perm_options ?>
-                            </select>
-                            <small class="form-text text-muted">Select parent permission to create hierarchy</small>
-                        </div>
+                        <label class="control-label"><i class="fas fa-sitemap text-muted"></i> Parent Permission</label>
+                        <select name="parent_id" id="parent_id" class="form-control select2">
+                            <option value="0">Top Level (Root)</option>
+                            <?= $perm_options ?>
+                        </select>
+                        <div class="field-hint">Choose where this permission appears in the tree.</div>
                     </div>
                     
                     <div class="form-group">
-                        <label class="control-label">Permission Name <span class="text-danger">*</span></label>
+                        <label class="control-label"><i class="fas fa-font text-muted"></i> Permission Name <span class="text-danger">*</span></label>
                         <input type="text" name="permName" value="<?= htmlspecialchars($permName) ?>" 
                                class="form-control" placeholder="e.g., Manage Users" required />
-                        <small class="form-text text-muted">Human-readable permission name</small>
+                        <div class="field-hint">Readable label shown in UI and permission tree.</div>
                     </div>
                     
                     <div class="form-group">
-                        <label class="control-label">Permission Key <span class="text-danger">*</span></label>
+                        <label class="control-label"><i class="fas fa-key text-muted"></i> Permission Key <span class="text-danger">*</span></label>
                         <input type="text" name="permKey" value="<?= htmlspecialchars($permKey) ?>" 
-                               class="form-control auto-slug" placeholder="e.g., manage-users" required />
-                        <small class="form-text text-muted">Unique identifier (use lowercase and hyphens)</small>
+                               class="form-control auto-slug" placeholder="e.g., users-manage" required />
+                        <div class="field-hint">Unique system key used in access checks. Use lowercase with hyphen.</div>
                     </div>
                     
                     <div class="form-group">
-                        <label class="control-label">Sort Order</label>
-                        <input type="number" name="sortid" value="<?= $sortid ?>" 
-                               class="form-control" placeholder="0" />
-                        <small class="form-text text-muted">Lower numbers appear first in the list</small>
+                        <label class="control-label"><i class="fas fa-sort-numeric-down text-muted"></i> Sort Order</label>
+                        <input type="number" name="sortid" value="<?= $sortid ?>" class="form-control" placeholder="0" />
+                        <div class="field-hint">Lower number appears first under same parent.</div>
                     </div>
                     
                     <div class="form-group">
@@ -151,13 +179,13 @@ $perm_options = buildPermissionOptions($permissionGroups, 0, 0, $id, $parent_id)
                     </h3>
                 </div>
                 <div class="card-body">
-                    <h5>Permission Naming Guidelines:</h5>
+                    <h5>Naming Guidelines</h5>
                     <ul>
                         <li>Use clear, descriptive names</li>
                         <li>Example: "Manage Users", "View Reports"</li>
                     </ul>
                     
-                    <h5>Permission Key Format:</h5>
+                    <h5>Key Format</h5>
                     <ul>
                         <li>Use lowercase letters only</li>
                         <li>Use hyphens for spaces</li>
@@ -165,14 +193,14 @@ $perm_options = buildPermissionOptions($permissionGroups, 0, 0, $id, $parent_id)
                         <li>Example: <code>users-manage</code>, <code>reports-view</code></li>
                     </ul>
                     
-                    <h5>Hierarchy Tips:</h5>
+                    <h5>Hierarchy Tips</h5>
                     <ul>
                         <li>Group related permissions under a parent</li>
                         <li>Parent permissions act as modules/groups</li>
                         <li>Child permissions inherit parent's access</li>
                     </ul>
                     
-                    <h5>Wildcard Support:</h5>
+                    <h5>Wildcard Support</h5>
                     <ul>
                         <li><code>admin-*</code> - All admin permissions</li>
                         <li><code>users-*</code> - All user-related permissions</li>
@@ -231,22 +259,41 @@ $(function(){
         }
     });
     
+    function normalizeKey(input) {
+        return String(input || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s\-_]/g, '')
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    function refreshKeyPreview() {
+        var key = $('input[name="permKey"]').val();
+        $('#permKeyPreview').text(key || 'example-key');
+    }
+
     // Auto-generate permission key from name
     $('input[name="permName"]').on('keyup', function() {
         var permKey = $(this).val();
-        permKey = permKey.toLowerCase()
-            .replace(/[^a-z0-9\s]/g, '')
-            .replace(/\s+/g, '-');
+        permKey = normalizeKey(permKey);
         
         var currentKey = $('input[name="permKey"]').val();
         if (currentKey === '' || currentKey === $('input[name="permKey"]').data('original')) {
             $('input[name="permKey"]').val(permKey);
             $('input[name="permKey"]').data('original', permKey);
+            refreshKeyPreview();
         }
+    });
+    
+    $('input[name="permKey"]').on('keyup blur', function() {
+        $(this).val(normalizeKey($(this).val()));
+        refreshKeyPreview();
     });
     
     // Store original value
     $('input[name="permKey"]').data('original', $('input[name="permKey"]').val());
+    refreshKeyPreview();
     
     // AJAX form submission - FIXED VERSION
     $('#permission-edit-form').on('submit', function(e) {

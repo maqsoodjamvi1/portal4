@@ -1070,7 +1070,7 @@ s0.parentNode.insertBefore(s1,s0);
            </ul>
         </li>
         <?php } ?>
-        <?php if(hasPermission('admin-add-student-attendance') || hasPermission('admin-add-student-absentees') || hasPermission('admin-add-student-latecomming') || hasPermission('admin-add-student-earlyleft') || hasPermission('admin-add-student-leaves') || hasPermission('admin-student-leaves') || hasPermission('admin-day-on-reset')){ ?>
+        <?php if(hasPermission('admin-add-student-attendance') || hasPermission('admin-add-student-absentees') || hasPermission('admin-add-student-latecomming') || hasPermission('admin-add-student-earlyleft') || hasPermission('admin-add-student-leaves') || hasPermission('admin-student-leaves')){ ?>
         <li class="nav-item">
           <a href="#" class="nav-link">
             <i class="nav-icon far fa-address-card"></i> 
@@ -1108,16 +1108,6 @@ s0.parentNode.insertBefore(s1,s0);
               <a href="<?= base_url('admin/emp_attendance_monthlyreport') ?>" class="nav-link"> 
                 <i class="nav-icon fa fa-cubes"></i> 
                 <p>Employees Attendance Report</p> 
-              </a> 
-            </li>
-            <?php } ?>
-           
-            
-            <?php if(hasPermission('admin-day-on-reset')){?>
-            <li class="nav-item"> 
-              <a href="<?= base_url('admin/day_on_reset/add') ?>"" class="nav-link"> 
-                <i class="nav-icon fa fa-hourglass" aria-hidden="true"></i>
-                <p>Day On Reset</p> 
               </a> 
             </li>
             <?php } ?>

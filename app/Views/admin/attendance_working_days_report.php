@@ -296,45 +296,42 @@
 
 <section class="content">
     <div class="container-fluid">
-        <!-- Filter Form -->
-        <div class="card no-print">
-            <div class="card-header">
-                <h3 class="card-title">Filter Report</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <form id="reportForm">
-                    <div class="row">
-                        <div class="col-md-4 mb-2">
-                            <div class="month-year-picker">
-                                <select name="month_year" id="month_year" class="form-control" required>
-                                    <option value="">Select Month & Year</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <select name="cls_sec_id" id="cls_sec_id" class="form-control">
-                                <option value="0">All Classes/Sections</option>
-                                <?php foreach ($class_sections as $section): ?>
-                                    <option value="<?= $section->cls_sec_id ?>">
-                                        <?= esc($section->class_name) ?> - <?= esc($section->section_name) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <button type="submit" class="btn btn-primary btn-block" id="btnGenerate">
-                                <i class="fas fa-chart-line"></i> Generate Report
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <?php
+            $workingSectionOptions = [['value' => '0', 'label' => 'All Classes/Sections']];
+            foreach ($class_sections as $section) {
+                $workingSectionOptions[] = [
+                    'value' => $section->cls_sec_id,
+                    'label' => $section->class_name . ' - ' . $section->section_name,
+                ];
+            }
+            echo view('components/report_filter_bar', [
+                'formId' => 'reportForm',
+                'title' => 'Working Days Filters',
+                'method' => 'post',
+                'fields' => [
+                    [
+                        'type' => 'select',
+                        'id' => 'month_year',
+                        'name' => 'month_year',
+                        'label' => 'Month & Year',
+                        'class' => 'form-control report-select2',
+                        'required' => true,
+                        'options' => [['value' => '', 'label' => 'Select Month & Year']],
+                        'col_class' => 'col-md-4 mb-2',
+                    ],
+                    [
+                        'type' => 'select',
+                        'id' => 'cls_sec_id',
+                        'name' => 'cls_sec_id',
+                        'label' => 'Class / Section',
+                        'class' => 'form-control report-select2',
+                        'options' => $workingSectionOptions,
+                        'col_class' => 'col-md-4 mb-2',
+                    ],
+                ],
+                'actions' => [],
+            ]);
+        ?>
 
         <!-- Report Container -->
         <div id="reportContainer"></div>
@@ -343,6 +340,10 @@
 
 <script>
 $(document).ready(function() {
+    if (window.ReportUI && window.ReportUI.initReportSelects) {
+        window.ReportUI.initReportSelects('#reportForm');
+    }
+
     // Populate month/year picker
     populateMonthYearPicker();
     
@@ -350,6 +351,16 @@ $(document).ready(function() {
         e.preventDefault();
         generateReport();
     });
+
+    var autoLoadWorkingDays = function () {
+        var monthYear = $('#month_year').val();
+        if (monthYear) {
+            generateReport();
+        }
+    };
+
+    $('#month_year').on('change', autoLoadWorkingDays);
+    $('#cls_sec_id').on('change', autoLoadWorkingDays);
 });
 
 function populateMonthYearPicker() {

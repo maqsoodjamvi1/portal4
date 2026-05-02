@@ -1,0 +1,94 @@
+/* Student profile overview — layout + print-friendly sections */
+
+.sp-overview .sp-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a2332;
+}
+
+.sp-photo-wrap {
+  min-width: 120px;
+}
+
+.sp-photo img {
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #e9ecef;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sp-photo .fa-user {
+  width: 112px;
+  height: 112px;
+  line-height: 112px;
+  border-radius: 50%;
+  background: #f1f3f5;
+  color: #adb5bd;
+}
+
+.sp-section-title {
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.sp-dl dt {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.sp-dl dd {
+  margin-bottom: 0.35rem;
+}
+
+.sp-session-banner {
+  border-radius: 6px;
+}
+
+.sp-school-logo {
+  max-height: 40px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.card-header .nav-pills .nav-link {
+  border-radius: 6px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.card-header .nav-pills .nav-link.active {
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .card-header .nav-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    white-space: nowrap;
+  }
+  .card-header .nav-pills .nav-item {
+    display: inline-block;
+    float: none;
+  }
+}
+
+@media print {
+  .no-print,
+  .main-sidebar,
+  .main-header,
+  .main-footer,
+  .content-header {
+    display: none !important;
+  }
+  .sp-overview,
+  .card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+}

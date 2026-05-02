@@ -92,6 +92,7 @@
     <div style="text-align:left; margin-left:5px;">
       <?= esc($student_info['chalan_f_msg'] ?? '') ?>
     </div>
+    <?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
   </div>
 
   <?php if ($show_line1 == 1): ?>

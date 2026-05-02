@@ -20,22 +20,10 @@
   $nextLbl = $nextMonth->format('F Y'); // e.g., September 2025
 ?>
 
-<!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>Student Other Info</h1>
-      </div>
-      <div class="col-sm-6 text-right">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Other Student Info</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/bulk_students_header', [
+  'title' => 'Student Other Info',
+  'subtitle' => 'Other Student Info'
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -44,15 +32,7 @@
 
       <!-- Nav tabs -->
        <div class="card-header pb-0">
-        <ul class="nav nav-tabs card-header-tabs" style="overflow-x: auto; flex-wrap: nowrap;">
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/addbulkstudents/add') ?>">Student Names</a></li>          
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Class Change</a></li>                    
-                    <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/students_bulk_info') ?>">Other Info</a></li>
-                    <li class="nav-item"><a class="nav-link " href="<?= base_url('admin/students_bulk_fee_info') ?>">Fee Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkparents') ?>">Parent Info</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_make_current') ?>">Make Current</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkcsv/addbulk') ?>">Excel Import</a></li>
-                </ul>
+        <?= view('components/bulk_students_tabs', ['active' => 'other']) ?>
       </div>
 
       <!-- Class picker (months are controlled via Columns selector) -->
@@ -218,7 +198,7 @@
               <label class="custom-control-label" for="col_father_occupation">Father Occupation</label>
             </div>
             <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_caste" value="caste" data-group="student">
+              <input type="checkbox" class="custom-control-input upd-col" id="col_caste" value="caste" data-group="parent">
               <label class="custom-control-label" for="col_caste">Caste</label>
             </div>
             <div class="custom-control custom-checkbox mr-3 mb-2">
@@ -335,9 +315,17 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
 
   </div>
 
-  <small class="text-muted d-block mt-1">
-    Only the checked columns will be shown, validated, and updated. Month columns here also control which months are loaded.
-  </small>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-1">
+    <small class="text-muted d-block mb-0">
+      Only checked columns are shown, validated, and updated. Month columns also control which months are loaded.
+    </small>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" id="mobileCardModeBtn" class="btn btn-sm btn-outline-secondary d-none">
+        Expanded View
+      </button>
+      <button type="button" id="applyColsBtn" class="btn btn-sm btn-primary">Apply Columns</button>
+    </div>
+  </div>
 </div>
 
       <!-- Table -->
@@ -594,6 +582,104 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
       max-width: clamp(140px, 55vw, 200px);
     }
   }
+
+  /* ===== Mobile-first polish for filters/controls ===== */
+  @media (max-width: 768px) {
+    .content .card-header .nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+    .content .card-header .nav .nav-item { float: none; display: inline-block; }
+    .content .form-row > [class*="col-"],
+    .content .row > [class*="col-"] { margin-bottom: .75rem; }
+    .content .btn-group { display: flex; width: 100%; }
+    .content .btn-group .btn { flex: 1 1 auto; }
+    #studentsTable td .form-control,
+    #studentsTable td .custom-select,
+    #studentsTable td select { min-width: 120px; }
+    #studentsTable .action-cell .btn,
+    #studentsTable td .saveStudentBtn { width: 100%; }
+  }
+
+  /* ===== Mobile card view (table -> stacked cards) ===== */
+  @media (max-width: 768px) {
+    .table-sticky-wrap { max-height: none; overflow: visible !important; }
+    #studentsTable {
+      min-width: 100%;
+      width: 100%;
+      table-layout: auto;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    #studentsTable thead { display: none; }
+    #studentsTable tbody,
+    #studentsTable tr,
+    #studentsTable td {
+      display: block;
+      width: 100%;
+    }
+    #studentsTable tbody tr {
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      margin-bottom: .85rem;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+    #studentsTable tbody td {
+      border: 0;
+      border-bottom: 1px solid #f1f3f5;
+      padding: .6rem .75rem;
+      max-width: 100% !important;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+      position: static !important;
+      left: auto !important;
+      z-index: auto !important;
+    }
+    #studentsTable tbody td:last-child { border-bottom: 0; }
+    #studentsTable tbody td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6c757d;
+      margin-bottom: .3rem;
+      letter-spacing: .02em;
+    }
+    #studentsTable td .form-control,
+    #studentsTable td select,
+    #studentsTable td .btn-group,
+    #studentsTable td .btn {
+      width: 100%;
+      max-width: 100%;
+    }
+    #studentsTable .sno-cell,
+    #studentsTable .student-name-cell {
+      background: #f8f9fa;
+    }
+    #studentsTable .sno-cell { font-weight: 600; }
+
+    /* Compact mode: keep only identity + common editable fields visible */
+    body.mobile-card-compact #studentsTable tbody td[data-col] { display: none !important; }
+    body.mobile-card-compact #studentsTable tbody td[data-col="first_name"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="last_name"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="date_of_birth"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="gender"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="f_name"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="father_contact"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="mother_contact"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="father_cnic"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="discounted_amount"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_prev"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_curr"],
+    body.mobile-card-compact #studentsTable tbody td[data-col="month_next"] {
+      display: block !important;
+    }
+
+    body.mobile-card-compact #studentsTable tbody td.action-cell {
+      display: block !important;
+    }
+  }
 </style>
 
 
@@ -848,6 +934,11 @@ father_cnic: () => `
       const headerColsOrdered = $('#studentsTable thead [data-col]').map(function () {
         return $(this).data('col');
       }).get();
+      const headerLabelMap = {};
+      $('#studentsTable thead [data-col]').each(function () {
+        const key = $(this).data('col');
+        headerLabelMap[key] = $.trim($(this).text()) || key;
+      });
 
       $('#studentsTable tbody tr').each(function () {
         const $tr = $(this);
@@ -877,8 +968,10 @@ father_cnic: () => `
         });
 
         const $snoTd  = $('<td class="sno-cell sticky-col" style="width:70px;"></td>');
+        $snoTd.attr('data-label', 'S.No');
         if ($studentIdInput && $studentIdInput.length) $snoTd.append($studentIdInput);
         const $nameTd = $('<td class="student-name-cell sticky-col-2"></td>').html(nameHTML || '');
+        $nameTd.attr('data-label', 'Student Name');
 
         const ordered = [];
         headerColsOrdered.forEach(function (key) {
@@ -887,12 +980,16 @@ father_cnic: () => `
             $cell = TPL[key] ? $(`<td data-col="${key}">${TPL[key]()}</td>`)
                              : $(`<td data-col="${key}"></td>`);
           }
+          $cell.attr('data-label', headerLabelMap[key] || key);
           ordered.push($cell);
         });
 
         $tr.empty().append($snoTd, $nameTd);
         ordered.forEach($c => $tr.append($c));
-        if ($actionTd) $tr.append($actionTd);
+        if ($actionTd) {
+          $actionTd.attr('data-label', 'Action');
+          $tr.append($actionTd);
+        }
 
         decorateParentLinkingUI($tr);
       });
@@ -907,6 +1004,28 @@ father_cnic: () => `
       });
 
       renumberRows();
+      refreshMobileCardModeUI();
+    }
+
+    function isMobileViewport() {
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function refreshMobileCardModeUI() {
+      const $btn = $('#mobileCardModeBtn');
+      if (!$btn.length) return;
+
+      if (!isMobileViewport()) {
+        $('body').removeClass('mobile-card-compact');
+        $btn.addClass('d-none');
+        return;
+      }
+
+      $btn.removeClass('d-none');
+      const compact = $('body').hasClass('mobile-card-compact');
+      $btn.text(compact ? 'Expanded View' : 'Compact View');
+      $btn.toggleClass('btn-outline-secondary', compact);
+      $btn.toggleClass('btn-outline-primary', !compact);
     }
 
     /* ======= Fee helpers ======= */
@@ -1243,7 +1362,7 @@ father_cnic: () => `
     syncMonthShimsForAllRows();
 
     // Apply columns → reload using active mode
-    $('#applyColsBtn').on('click', function () {
+    $(document).on('click', '#applyColsBtn', function () {
       readSelectedColumns();
       if (selectedColumns.size === 0) return window.toastr && toastr.warning('Select at least one column to show.');
       enforceFatherDependency();
@@ -1271,6 +1390,22 @@ father_cnic: () => `
         if (currentParentId) loadStudentsByParent(currentParentId);
         else if ($('#cls_sec_id').val()) loadStudentsByClass();
       }
+    });
+
+    // Mobile compact/expanded toggle (card view only)
+    $(document).on('click', '#mobileCardModeBtn', function () {
+      if (!isMobileViewport()) return;
+      $('body').toggleClass('mobile-card-compact');
+      refreshMobileCardModeUI();
+    });
+
+    // Default to compact mode on mobile, and keep button state synced.
+    if (isMobileViewport()) {
+      $('body').addClass('mobile-card-compact');
+    }
+    refreshMobileCardModeUI();
+    $(window).on('resize', function () {
+      refreshMobileCardModeUI();
     });
 
     /* ======= SAVE per row ======= */

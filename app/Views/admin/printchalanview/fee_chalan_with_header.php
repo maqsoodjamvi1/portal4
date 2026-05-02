@@ -255,6 +255,7 @@ if(isset($_GET['show_line2'])){
 					        </table>
                   <br>
                   <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+                  <?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
 
                 </div>
                  <?php if($show_line1 == 1){ ?>
@@ -386,6 +387,7 @@ if(isset($_GET['show_line2'])){
                   </table>
                   <br />
                   <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+                  <?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
                 </div>
                  <?php if($show_line1 == 1){ ?>
                   <div style="float:left;width:98%; border-bottom:1px solid;margin-top:20px;"><?php echo $footer_line1; ?>&nbsp;&nbsp;</div>
@@ -513,6 +515,7 @@ if(isset($_GET['show_line2'])){
                   </table>
                   <br />
                   <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+                  <?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
                 </div>
                  <?php if($show_line1 == 1){ ?>
                   <div style="float:left;width:98%; border-bottom:1px solid;margin-top:20px;"><?php echo $footer_line1; ?>&nbsp;&nbsp;</div>

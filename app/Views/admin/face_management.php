@@ -181,20 +181,60 @@ $(function () {
         cameraActive = false;
 
         $('#captureFace').prop('disabled', true);
+        $('#retryCamera').hide();
         $('#cameraStatus').html('');
     }
 
-    // 🔥 START CAMERA (SAFE)
+    const CONSTRAINT_CHAIN = [
+        { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } },
+        { video: { width: { ideal: 640 }, height: { ideal: 480 } } },
+        { video: { width: { max: 1280 } } },
+        { video: true }
+    ];
+
+    function humanReadableCameraError(err) {
+        if (!err) return 'Could not open camera.';
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            return 'Camera permission denied. Allow camera for this site.';
+        }
+        if (err.name === 'NotFoundError') {
+            return 'No camera found.';
+        }
+        if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            return 'Camera could not start. Check Windows Settings → Privacy → Camera, close other browser tabs using the camera, or replug a USB webcam. Use Retry below.';
+        }
+        if (err.name === 'OverconstrainedError') {
+            return 'This camera does not support the requested mode. Click Retry Camera.';
+        }
+        return err.message || 'Could not open camera.';
+    }
+
+    async function getUserMediaWithFallbacks() {
+        let lastErr = null;
+        for (let i = 0; i < CONSTRAINT_CHAIN.length; i++) {
+            try {
+                return await navigator.mediaDevices.getUserMedia(CONSTRAINT_CHAIN[i]);
+            } catch (e) {
+                if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+                    throw e;
+                }
+                lastErr = e;
+            }
+        }
+        throw lastErr || new Error('All camera modes failed.');
+    }
+
+    // START CAMERA: release first, then try relaxed constraints (USB cams often fail on facingMode)
     async function startCamera() {
         try {
             $('#cameraStatus').html('<i class="fas fa-spinner fa-spin"></i> Starting camera...');
+            $('#retryCamera').hide();
 
             stopCamera();
 
-            // delay to release hardware
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 400));
 
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream = await getUserMediaWithFallbacks();
 
             video.srcObject = stream;
             await video.play();
@@ -205,14 +245,9 @@ $(function () {
             $('#cameraStatus').html('<span class="text-success">Camera ready</span>');
 
         } catch (err) {
-
             console.error(err);
-
-            let msg = (err.name === 'NotReadableError')
-                ? 'Camera busy. Close Zoom/WhatsApp and retry.'
-                : err.message;
-
-            $('#cameraStatus').html('<span class="text-danger">'+msg+'</span>');
+            $('#cameraStatus').html('<span class="text-danger">' + humanReadableCameraError(err) + '</span>');
+            $('#retryCamera').show();
         }
     }
 

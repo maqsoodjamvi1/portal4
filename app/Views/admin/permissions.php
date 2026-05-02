@@ -2,12 +2,31 @@
 <?= $this->section('content') ?>
 
 <style type="text/css">
+    .permission-layout-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #fff;
+        overflow: hidden;
+    }
+    .permission-side {
+        background: #f8fafc;
+        border-right: 1px solid #e5e7eb;
+        min-height: 650px;
+        padding: 14px;
+    }
+    .permission-tree-wrap {
+        padding: 12px 14px;
+    }
     ul.ztree {
-        margin-top: 10px;
-        overflow-y: none;
+        margin-top: 0;
+        overflow-y: auto;
         overflow-x: auto;
-        min-height: 400px;
-        max-height: 600px;
+        min-height: 540px;
+        max-height: 650px;
+        border: 1px solid #edf2f7;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 10px 6px;
     }
     .ztree li span.button.add {
         margin-left: 2px;
@@ -17,13 +36,14 @@
         *vertical-align: middle;
     }
     .search-box {
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
     .tree-actions {
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         padding: 10px;
-        background: #f8f9fa;
-        border-radius: 4px;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
     }
     .badge-permission {
         background-color: #17a2b8;
@@ -36,12 +56,27 @@
     .alert-info {
         margin-top: 20px;
     }
+    .tree-stat {
+        font-size: 12px;
+        color: #475569;
+        margin-top: 8px;
+    }
+    .tree-help-list {
+        margin: 0;
+        padding-left: 16px;
+        color: #475569;
+        font-size: 12px;
+    }
+    .tree-help-list li {
+        margin-bottom: 6px;
+    }
 </style>
 
 <link rel="stylesheet" href="<?= base_url('resource/ztree/css/zTreeStyle/zTreeStyle.css') ?>" />
 <script type="text/javascript" src="<?= base_url('resource/ztree/js/jquery.ztree.core.js') ?>"></script>
 <script type="text/javascript" src="<?= base_url('resource/ztree/js/jquery.ztree.excheck.js') ?>"></script>
 <script type="text/javascript" src="<?= base_url('resource/ztree/js/jquery.ztree.exedit.js') ?>"></script>
+<script type="text/javascript" src="<?= base_url('resource/ztree/js/jquery.ztree.exhide.js') ?>"></script>
 
 <!-- Content Header -->
 <section class="content-header">
@@ -80,36 +115,55 @@
                     </ul>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="tree-actions">
-                                <div class="search-box">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="searchPermission" 
-                                               placeholder="Search permissions...">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button" id="searchBtn">
-                                                <i class="fas fa-search"></i>
+                    <div class="permission-layout-card">
+                        <div class="row no-gutters">
+                            <div class="col-md-3">
+                                <div class="permission-side">
+                                    <div class="tree-actions">
+                                        <div class="search-box">
+                                            <label class="small text-muted mb-1">Find Permission</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" id="searchPermission" placeholder="Name or key...">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-primary" type="button" id="searchBtn"><i class="fas fa-search"></i></button>
+                                                    <button class="btn btn-default" type="button" id="searchClearBtn">Clear</button>
+                                                </div>
+                                            </div>
+                                            <div id="searchResultInfo" class="tree-stat"></div>
+                                        </div>
+                                        <div class="btn-group w-100">
+                                            <button type="button" class="btn btn-default" id="expandAllBtn">
+                                                <i class="fas fa-expand-alt"></i> Expand
+                                            </button>
+                                            <button type="button" class="btn btn-default" id="collapseAllBtn">
+                                                <i class="fas fa-compress-alt"></i> Collapse
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="btn-group w-100">
-                                    <button type="button" class="btn btn-default" id="expandAllBtn">
-                                        <i class="fas fa-expand-alt"></i> Expand All
-                                    </button>
-                                    <button type="button" class="btn btn-default" id="collapseAllBtn">
-                                        <i class="fas fa-compress-alt"></i> Collapse All
-                                    </button>
-                                </div>
-                                <div class="mt-2 text-muted small">
-                                    <i class="fas fa-info-circle"></i> 
-                                    Hover over a permission to see <strong>+</strong> button to add child
+                                    <div class="tree-actions">
+                                        <div class="small text-muted mb-1">Permission Summary</div>
+                                        <div class="tree-stat">
+                                            Total permissions: <strong><?= (int)($total_permissions ?? 0) ?></strong>
+                                        </div>
+                                        <div class="tree-stat">
+                                            Total roles: <strong><?= (int)($total_roles ?? 0) ?></strong>
+                                        </div>
+                                    </div>
+                                    <div class="tree-actions">
+                                        <div class="small text-muted mb-2">Usage Tips</div>
+                                        <ul class="tree-help-list">
+                                            <li>Click node title to select the permission.</li>
+                                            <li>Hover a node to show the add-child <strong>+</strong> button.</li>
+                                            <li>Use edit icon to rename or details page to manage key/order.</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-9">
-                            <ul id="treeDemo" class="ztree"></ul>
+                            <div class="col-md-9">
+                                <div class="permission-tree-wrap">
+                                    <ul id="treeDemo" class="ztree"></ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -161,11 +215,9 @@ function initializePermissionTree() {
     $.ajax({
         url: '<?= base_url('admin/permissions/data') ?>',
         type: 'POST',
-        dataType: 'text',
-        success: function(res) {
+        dataType: 'json',
+        success: function(jsonData) {
             try {
-                var jsonData = eval('(' + res + ')');
-                
                 if(!jsonData || jsonData.length === 0) {
                     $('#treeDemo').html('<div class="alert alert-info">No permissions found. Click "Add Permissions" to create some.</div>');
                     return;
@@ -311,7 +363,10 @@ function searchPermissions() {
     
     if(keyword === '') {
         treeObj.expandAll(false);
-        treeObj.showNodes(treeObj.getNodes());
+        var rootNodes = treeObj.getNodes();
+        var flat = treeObj.transformToArray(rootNodes);
+        treeObj.showNodes(flat);
+        $('#searchResultInfo').text('');
         return;
     }
     
@@ -336,11 +391,18 @@ function searchPermissions() {
     }
     
     var allNodes = treeObj.transformToArray(nodes);
+    treeObj.hideNodes(allNodes);
     for(var i = 0; i < allNodes.length; i++) {
         var node = allNodes[i];
         if(matchedIds.indexOf(node.id) !== -1) {
             treeObj.showNode(node);
             treeObj.expandNode(node, true, false, false);
+            var p = node.getParentNode();
+            while (p) {
+                treeObj.showNode(p);
+                treeObj.expandNode(p, true, false, false);
+                p = p.getParentNode();
+            }
         } else {
             treeObj.hideNode(node);
         }
@@ -348,6 +410,9 @@ function searchPermissions() {
     
     if(matchedIds.length === 0) {
         toastr.info('No permissions found matching "' + keyword + '"');
+        $('#searchResultInfo').text('No matches');
+    } else {
+        $('#searchResultInfo').text('Matched ' + matchedIds.length + ' permission(s)');
     }
 }
 
@@ -368,6 +433,11 @@ $(document).ready(function() {
     // Search functionality
     $('#searchBtn, #searchPermission').on('click keyup', function(e) {
         if(e.type === 'keyup' && e.keyCode !== 13) return;
+        searchPermissions();
+    });
+    
+    $('#searchClearBtn').on('click', function() {
+        $('#searchPermission').val('');
         searchPermissions();
     });
 });

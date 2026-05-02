@@ -41,14 +41,15 @@ class AttendanceMonthlyReport extends BaseController
 public function get_students_byclass()
 {
    $eid = $this->request->getPost('eid');
-        $session_id = $this->request->getPost('session_id');
+        $session_id = $this->request->getPost('session_id') ?: session('member_sessionid');
         $campus_id = $this->request->getPost('campus_id');
-        $id = $this->request->getPost('section_id');
+        $class_id = (int)$this->request->getPost('class_id');
+        $id = (int)($this->request->getPost('cls_sec_id') ?? $this->request->getPost('section_id'));
         $subject_id = $this->request->getPost('subject_id');
         $datevalue = $this->request->getPost('date');
 
-        if (empty($id)) {
-            echo "<div style='background:red;color:#fff;padding:5px;'>Please Select Section</div>";
+        if (empty($class_id) && empty($id)) {
+            echo "<div style='background:red;color:#fff;padding:5px;'>Please Select Class</div>";
             exit;
         }
 
@@ -67,10 +68,28 @@ public function get_students_byclass()
         $studentsList = '';
 
         $studentsList .= '<input type="hidden" name="campus_id"  value="' . $campus_id . '">';
-        $studentsList .= '<input type="hidden" name="class_id"  value="' . $id . '">';
+        $studentsList .= '<input type="hidden" name="class_id"  value="' . $class_id . '">';
 
-        {
-            $db = \Config\Database::connect();
+        $db = \Config\Database::connect();
+        if (!empty($id)) {
+            $targetSectionIds = [$id];
+        } else {
+            $targetSectionIds = array_map(static function($row) {
+                return (int)$row['cls_sec_id'];
+            }, $db->table('class_section')
+                ->select('cls_sec_id')
+                ->where('class_id', $class_id)
+                ->where('campus_id', (int)$campus_id)
+                ->where('status', 1)
+                ->get()
+                ->getResultArray());
+        }
+
+        if (empty($targetSectionIds)) {
+            return $this->response->setBody("<div style='background:#ffc107;color:#000;padding:8px;'>No sections found for selected class.</div>");
+        }
+
+        foreach ($targetSectionIds as $id) {
 
             $classstudents = $db->query("select * from student_class where status=1 and cls_sec_id = " . $id)->getResult();
 
@@ -82,64 +101,182 @@ public function get_students_byclass()
             $timestamp = strtotime($datevalue);
             $monthyear = date('F Y', $timestamp);
 
-            $studentsList .= '<div class="">
+            // Active timing type for this campus (required for OFF/working day logic)
+            $activeTimingType = $db->table('school_timing_types')
+                ->select('type_id')
+                ->where('campus_id', (int)$campus_id)
+                ->where('status', 1)
+                ->orderBy('type_id', 'ASC')
+                ->get()
+                ->getRow();
+            $activeTypeId = $activeTimingType->type_id ?? 0;
+
+            // Timings by day name for selected section
+            $timingsByDay = [];
+            if ($activeTypeId > 0) {
+                $timings = $db->table('school_timings')
+                    ->select('dayname, checkin_timing, checkout_timing')
+                    ->where('cls_sec_id', (int)$id)
+                    ->where('type_id', (int)$activeTypeId)
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($timings as $timing) {
+                    $timingsByDay[strtolower($timing['dayname'])] = $timing;
+                }
+            }
+
+            // Dates where at least one attendance record exists for section
+            $attendanceDatesSql = "
+                SELECT DISTINCT a.date
+                FROM attendance a
+                INNER JOIN student_class sc ON sc.student_id = a.student_id AND sc.status = 1
+                WHERE sc.cls_sec_id = ?
+                AND a.date LIKE ?
+            ";
+            $attendanceDatesParams = [(int)$id, $datevalue . '-%'];
+            if (!empty($session_id)) {
+                $attendanceDatesSql .= " AND sc.session_id = ?";
+                $attendanceDatesParams[] = (int)$session_id;
+            }
+
+            $attendanceDatesRaw = $db->query($attendanceDatesSql, $attendanceDatesParams)->getResultArray();
+
+            $attendanceDatesMap = [];
+            foreach ($attendanceDatesRaw as $rowDate) {
+                $attendanceDatesMap[$rowDate['date']] = true;
+            }
+
+            $permanentOffDays = [];
+            $noRecordOffDays = [];
+            $workingDates = [];
+
+            foreach ($list as $eachDate) {
+                $timestampDate = strtotime($eachDate);
+                $currentday = strtotime(date('Y-m-d'));
+                if ($timestampDate > $currentday) {
+                    continue;
+                }
+
+                $dayName = strtolower(date('l', $timestampDate));
+                $timingInfo = $timingsByDay[$dayName] ?? null;
+                $isPermanentOff = true;
+
+                if ($timingInfo) {
+                    $checkin = trim((string)($timingInfo['checkin_timing'] ?? ''));
+                    $checkout = trim((string)($timingInfo['checkout_timing'] ?? ''));
+                    $isPermanentOff = ($checkin === '' || $checkout === '' || $checkin === $checkout);
+                }
+
+                if ($isPermanentOff) {
+                    $permanentOffDays[] = $eachDate;
+                    continue;
+                }
+
+                if (!isset($attendanceDatesMap[$eachDate])) {
+                    $noRecordOffDays[] = $eachDate;
+                    continue;
+                }
+
+                $workingDates[] = $eachDate;
+            }
+
+            $studentsList .= '<style>
+            .monthly-report-wrap{overflow-x:auto;max-width:100%;border:1px solid #d6d9de}
+            .monthly-report-table{width:max-content;min-width:100%;border-collapse:collapse}
+            .monthly-report-table th,.monthly-report-table td{padding:3px 4px;text-align:center;vertical-align:middle}
+            .monthly-report-table .student-photo-col{min-width:60px}
+            .monthly-report-table .student-name-col{min-width:230px;max-width:230px;text-align:left}
+            .monthly-report-table .day-col{min-width:34px;max-width:34px}
+            .monthly-report-table .total-col{min-width:36px;max-width:36px}
+            .monthly-report-table .student-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-weight:600}
+            .monthly-report-table .student-reg{white-space:nowrap;font-size:11px;color:#555}
+            .status-pill{display:inline-block;min-width:24px;padding:1px 4px;border-radius:3px;line-height:1.2;white-space:nowrap;font-size:11px}
+            .status-pill.status-p{background:#e9ecef;color:#111}
+            .status-pill.status-a{background:#dc3545;color:#fff}
+            .status-pill.status-lx{background:#ffc107;color:#111}
+            </style><div class="">
            <h1 style="text-align:center;font-size:24px;">Monthly Attendance Report</h1>
-           <div class="row"><div class="col-lg-4"><h6 style="text-align:center;margin-top:0px;margin-bottom:20px;">' . $sectionInfo["sectionclassname"] . '</h6></div><div class="col-lg-4"><h6 style="text-align:center;margin-top:0px;margin-bottom:20px;">' . $monthyear . '</h6></div><div class="col-lg-4"><h6  style="margin-top:0px;margin-bottom:20px;text-align:center">Total Students: ' . $classstudentsTotal->totalStudents . '</h6></div></div><table class="table table-bordered" style="width:98%;">';
+           <div class="row"><div class="col-lg-4"><h6 style="text-align:center;margin-top:0px;margin-bottom:20px;">' . $sectionInfo["sectionclassname"] . '</h6></div><div class="col-lg-4"><h6 style="text-align:center;margin-top:0px;margin-bottom:20px;">' . $monthyear . '</h6></div><div class="col-lg-4"><h6  style="margin-top:0px;margin-bottom:20px;text-align:center">Total Students: ' . $classstudentsTotal->totalStudents . '</h6></div></div>
+           <div class="row" style="margin:0 0 12px 0;">
+             <div class="col-lg-12">
+               <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+                 <span style="background:#17a2b8;color:#fff;padding:6px 10px;border-radius:16px;font-size:12px;">Working Days: ' . count($workingDates) . '</span>
+                 <span style="background:#6c757d;color:#fff;padding:6px 10px;border-radius:16px;font-size:12px;">Permanent Off (Timings Off): ' . count($permanentOffDays) . '</span>
+                 <span style="background:#ffc107;color:#000;padding:6px 10px;border-radius:16px;font-size:12px;">No-Record Off: ' . count($noRecordOffDays) . '</span>
+               </div>
+             </div>
+           </div>
+           <div class="monthly-report-wrap"><table class="table table-bordered monthly-report-table">';
             $studentsList .= '<tr>';
             $studentsList .= '<td colspan="2" style=" vertical-align:middle;">Presents Of The Day</td>';
-            foreach ($list as $key => $date) {
+            $presentDayTotal = 0;
+            foreach ($workingDates as $key => $date) {
 
                 $timestamp = strtotime($date);
-                $currentday = strtotime(date('d-m-Y'));
+                $currentday = strtotime(date('Y-m-d'));
                 $month = date('m', $timestamp);
                 $year = date('Y', $timestamp);
                 if ($timestamp > $currentday) break;
 
                 $resulttotalP = $db->query("select count(STATUS) as totalP from attendance where status = 'P' AND student_id IN(SELECT student_id FROM student_class WHERE status=1 AND cls_sec_id = " . $id . ") AND date = '" . $date . "'")->getRow();
 
-                $studentsList .= '<td><span style=" background: green;display: block;color: #fff;text-align: center;margin: 0 auto;">' . $resulttotalP->totalP . '</span></td>';
+                $presentDayTotal += (int)$resulttotalP->totalP;
+                $studentsList .= '<td class="day-col"><span class="status-pill status-p" style="background:green;color:#fff;">' . $resulttotalP->totalP . '</span></td>';
             }
+            $studentsList .= '<td class="total-col"><span class="status-pill status-p" style="background:#204d74;color:#fff;">' . $presentDayTotal . '</span></td>';
+            $studentsList .= '<td class="total-col"></td><td class="total-col"></td><td class="total-col"></td><td class="total-col"></td>';
             $studentsList .= '</tr>';
             $studentsList .= '<tr>';
             $studentsList .= '<td colspan="2" style=" vertical-align:middle;">Absents Of The Day</td>';
-            foreach ($list as $key => $date) {
+            $absentDayTotal = 0;
+            foreach ($workingDates as $key => $date) {
 
                 $timestamp = strtotime($date);
-                $currentday = strtotime(date('d-m-Y'));
+                $currentday = strtotime(date('Y-m-d'));
                 $month = date('m', $timestamp);
                 $year = date('Y', $timestamp);
                 if ($timestamp > $currentday) break;
 
                 $resulttotalA = $db->query("select count(STATUS) as totalA from attendance where status = 'A' AND student_id IN(SELECT student_id FROM student_class WHERE status=1 AND cls_sec_id=" . $id . ") AND date = '" . $date . "'")->getRow();
 
-                $studentsList .= '<td><span style=" background: red;display: block;color: #fff;text-align: center;margin: 0 auto;">' . $resulttotalA->totalA . '</span></td>';
+                $absentDayTotal += (int)$resulttotalA->totalA;
+                $studentsList .= '<td class="day-col"><span class="status-pill status-a">' . $resulttotalA->totalA . '</span></td>';
             }
+            $studentsList .= '<td class="total-col"></td><td class="total-col"><span class="status-pill status-p" style="background:#204d74;color:#fff;">' . $absentDayTotal . '</span></td>';
+            $studentsList .= '<td class="total-col"></td><td class="total-col"></td><td class="total-col"></td>';
             $studentsList .= '</tr>';
             $studentsList .= '<tr>';
             $studentsList .= '<td colspan="2" style=" vertical-align:middle;">Leaves Of The Day</td>';
-            foreach ($list as $key => $date) {
+            $leaveDayTotal = 0;
+            foreach ($workingDates as $key => $date) {
 
                 $timestamp = strtotime($date);
-                $currentday = strtotime(date('d-m-Y'));
+                $currentday = strtotime(date('Y-m-d'));
                 $month = date('m', $timestamp);
                 $year = date('Y', $timestamp);
                 if ($timestamp > $currentday) break;
 
                 $resulttotalL = $db->query("select count(STATUS) as totalL from attendance where status = 'L' AND student_id IN(SELECT student_id FROM student_class WHERE status=1 AND cls_sec_id = " . $id . ") AND date = '" . $date . "'")->getRow();
 
-                $studentsList .= '<td><span style=" background: #ffc107;display: block;color: #000;text-align: center;margin: 0 auto;">' . $resulttotalL->totalL . '</span></td>';
+                $leaveDayTotal += (int)$resulttotalL->totalL;
+                $studentsList .= '<td class="day-col"><span class="status-pill status-lx">' . $resulttotalL->totalL . '</span></td>';
             }
+            $studentsList .= '<td class="total-col"></td><td class="total-col"></td><td class="total-col"></td><td class="total-col"></td><td class="total-col"><span class="status-pill status-p" style="background:#204d74;color:#fff;">' . $leaveDayTotal . '</span></td>';
             $studentsList .= '</tr>';
-            $studentsList .= '<tr style="background: #204d74;color: #fff;"><th style="width: 6%; text-align: center;">Photo</th><th style="width:15%;">Name</th>';
-            foreach ($list as $key => $date) {
+            $reportMonth = (int)date('m', strtotime($datevalue . '-01'));
+            $reportYear = (int)date('Y', strtotime($datevalue . '-01'));
+
+            $studentsList .= '<tr style="background: #204d74;color: #fff;"><th class="student-photo-col">Photo</th><th class="student-name-col">Student</th>';
+            foreach ($workingDates as $key => $date) {
                 $timestamp = strtotime($date);
-                $currentday = strtotime(date('d-m-Y'));
+                $currentday = strtotime(date('Y-m-d'));
                 $daydate = date('d', $timestamp);
                 $dayName = date('D', $timestamp);
                 if ($timestamp > $currentday) break;
-                $studentsList .= '<th>' . $daydate . '<br>' . substr($dayName, 0, -1) . '</th>';
+                $studentsList .= '<th class="day-col">' . $daydate . '<br>' . substr($dayName, 0, -1) . '</th>';
             }
-            $studentsList .= '<th>P</th><th>A</th><th>LC</th><th>EL</th><th>L</th></tr>';
+            $studentsList .= '<th class="total-col">P</th><th class="total-col">A</th><th class="total-col">LC</th><th class="total-col">EL</th><th class="total-col">L</th></tr>';
             $i = 1;
 
             foreach ($classstudents as $row) {
@@ -164,12 +301,12 @@ public function get_students_byclass()
                         $profile_photo = "<i style='font-size:40px;text-align:center;display:block;' class='fa fa-user'></i>";
                     }
 
-                    $studentsList .= '<tr><td style=" vertical-align:middle; word-break: break-word;"> ' . $profile_photo . '</td>';
-                    $studentsList .= '<td style=" vertical-align:middle;">' . $studentName . '<br>' . $studentsinfo->reg_no . '</td>';
-                    foreach ($list as $key => $date) {
+                    $studentsList .= '<tr><td class="student-photo-col"> ' . $profile_photo . '</td>';
+                    $studentsList .= '<td class="student-name-col" title="' . esc($studentName . ' - ' . $studentsinfo->reg_no) . '"><span class="student-name">' . esc($studentName) . '</span><span class="student-reg">' . esc($studentsinfo->reg_no) . '</span></td>';
+                    foreach ($workingDates as $key => $date) {
 
                         $timestamp = strtotime($date);
-                        $currentday = strtotime(date('d-m-Y'));
+                        $currentday = strtotime(date('Y-m-d'));
                         $month = date('m', $timestamp);
                         $year = date('Y', $timestamp);
                         if ($timestamp > $currentday) break;
@@ -182,55 +319,50 @@ public function get_students_byclass()
                         if ($attendance_info) {
                             if (empty($attendance_info->el_duration) && empty($attendance_info->lc_duration)) {
                                 if ($attendance_info->status == 'A') {
-                                    $attendance_status = '<span style="background: red;display: block;color: #fff;width: 20px;
-    text-align: center;margin: 0 auto;">' . $attendance_info->status . '</span>';
+                                    $attendance_status = '<span class="status-pill status-a">' . $attendance_info->status . '</span>';
                                 } else {
                                     if ($attendance_info->status == 'P') {
-                                        $attendance_status = '<span style="display: block;width: 20px;
-    text-align: center;margin: 0 auto;">' . $attendance_info->status . '</span>';
+                                        $attendance_status = '<span class="status-pill status-p">' . $attendance_info->status . '</span>';
                                     }
                                 }
                             } else {
 
                                 if ($attendance_info->el_duration > 0 && empty($attendance_info->lc_duration)) {
-                                    $attendance_status = '<span style=" background: #ffc107;display: block;color: #000;width: 20px;
-    text-align: center;margin: 0 auto;">EL</span>';
+                                    $attendance_status = '<span class="status-pill status-lx">EL</span>';
                                 }
 
                                 if ($attendance_info->lc_duration > 0 && empty($attendance_info->el_duration)) {
-                                    $attendance_status = '<span style=" background: #ffc107;display: block;color: #000;width: 20px;
-    text-align: center;margin: 0 auto;">LC</span>';
+                                    $attendance_status = '<span class="status-pill status-lx">LC</span>';
                                 }
 
                                 if ($attendance_info->lc_duration > 0 && $attendance_info->el_duration > 0) {
-                                    $attendance_status = '<span style=" background: #ffc107;display: block;color: #000;width: 20px;
-    text-align: center;margin: 0 auto;">LE</span>';
+                                    $attendance_status = '<span class="status-pill status-lx">LE</span>';
                                 }
                             }
                         }
-                        $studentsList .= '<td>' . $attendance_status . '</td>';
+                        $studentsList .= '<td class="day-col">' . $attendance_status . '</td>';
                     }
 
-                    $resultP = $db->query("select count(STATUS) as totalP from attendance where student_id =" . $row->student_id . " and STATUS = 'P' and Month(date) = " . $month . " and Year(date) =" . $year)->getRow();
+                    $resultP = $db->query("select count(STATUS) as totalP from attendance where student_id =" . $row->student_id . " and STATUS = 'P' and Month(date) = " . $reportMonth . " and Year(date) =" . $reportYear)->getRow();
 
-                    $resultLC = $db->query("select count(STATUS) as totalLC from attendance where student_id =" . $row->student_id . " AND lc_duration > 0 AND STATUS = 'P' and Month(date) = " . $month . " and Year(date) =" . $year)->getRow();
+                    $resultLC = $db->query("select count(STATUS) as totalLC from attendance where student_id =" . $row->student_id . " AND lc_duration > 0 AND STATUS = 'P' and Month(date) = " . $reportMonth . " and Year(date) =" . $reportYear)->getRow();
 
-                    $resultL = $db->query("select count(STATUS) as totalL from attendance where student_id =" . $row->student_id . " and STATUS = 'L' and Month(date) = " . $month . " and Year(date) =" . $year)->getRow();
+                    $resultL = $db->query("select count(STATUS) as totalL from attendance where student_id =" . $row->student_id . " and STATUS = 'L' and Month(date) = " . $reportMonth . " and Year(date) =" . $reportYear)->getRow();
 
-                    $resultEL = $db->query("select count(STATUS) as totalEL from attendance where student_id =" . $row->student_id . " AND el_duration > 0 AND STATUS = 'P' and Month(date) = " . $month . " and Year(date) =" . $year)->getRow();
+                    $resultEL = $db->query("select count(STATUS) as totalEL from attendance where student_id =" . $row->student_id . " AND el_duration > 0 AND STATUS = 'P' and Month(date) = " . $reportMonth . " and Year(date) =" . $reportYear)->getRow();
 
-                    $resultA = $db->query("select count(STATUS) as totalA from attendance where student_id =" . $row->student_id . " and STATUS = 'A' and Month(date) = " . $month . " and Year(date) =" . $year)->getRow();
+                    $resultA = $db->query("select count(STATUS) as totalA from attendance where student_id =" . $row->student_id . " and STATUS = 'A' and Month(date) = " . $reportMonth . " and Year(date) =" . $reportYear)->getRow();
 
-                    $studentsList .= '<td><span style=" background: #204d74;display: block;color: #fff;width: 20px;text-align: center;margin: 0 auto;border-radius: 10px;">' . $resultP->totalP . '</span></td>
-    <td><span style=" background: #204d74;display: block;color: #fff;width: 20px;text-align: center;margin: 0 auto;border-radius: 10px;">' . $resultA->totalA . '</span></td>
-    <td><span style=" background: #204d74;display: block;color: #fff;width: 20px;text-align: center;margin: 0 auto;border-radius: 10px;">' . $resultLC->totalLC . '</span></td>
-    <td><span style=" background: #204d74;display: block;color: #fff;width: 20px;text-align: center;margin: 0 auto;border-radius: 10px;">' . $resultEL->totalEL . '</span></td>
-    <td><span style=" background: #204d74;display: block;color: #fff;width: 20px;text-align: center;margin: 0 auto;border-radius: 10px;">' . $resultL->totalL . '</span></td></tr>';
+                    $studentsList .= '<td class="total-col"><span style="background:#204d74;display:inline-block;color:#fff;min-width:24px;text-align:center;border-radius:10px;">' . $resultP->totalP . '</span></td>
+    <td class="total-col"><span style="background:#204d74;display:inline-block;color:#fff;min-width:24px;text-align:center;border-radius:10px;">' . $resultA->totalA . '</span></td>
+    <td class="total-col"><span style="background:#204d74;display:inline-block;color:#fff;min-width:24px;text-align:center;border-radius:10px;">' . $resultLC->totalLC . '</span></td>
+    <td class="total-col"><span style="background:#204d74;display:inline-block;color:#fff;min-width:24px;text-align:center;border-radius:10px;">' . $resultEL->totalEL . '</span></td>
+    <td class="total-col"><span style="background:#204d74;display:inline-block;color:#fff;min-width:24px;text-align:center;border-radius:10px;">' . $resultL->totalL . '</span></td></tr>';
                 }
                 $i++;
             }
         }
-        $studentsList .= '</table></div><script>
+        $studentsList .= '</table></div></div><script>
 $(function(){
 $(".clockpicker").clockpicker();
 });    

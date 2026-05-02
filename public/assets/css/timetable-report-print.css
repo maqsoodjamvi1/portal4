@@ -1,0 +1,199 @@
+/**
+ * Timetable report: screen + A4 print layout (optimized for browser Print dialog).
+ */
+
+/* ---- Screen (report container only; parent page may scope further) ---- */
+.tt-print-sheet {
+  max-width: 100%;
+}
+
+.tt-print-table-wrap {
+  overflow-x: auto;
+}
+
+/* ---- Print: A4 landscape, minimal margins, hide admin chrome ---- */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* AdminLTE / typical layout */
+  .main-sidebar,
+  .main-header,
+  .main-footer,
+  .control-sidebar,
+  .preloader,
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Some AdminLTE builds use brand-link / top nav extras */
+  .main-header .navbar,
+  .layout-navbar-fixed .wrapper .brand-link {
+    display: none !important;
+  }
+
+  .wrapper,
+  .content-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+
+  .content,
+  .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #reportContainer {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Section breaks (all classes / all teachers) */
+  .tt-report-section-break {
+    page-break-before: always;
+    break-before: page;
+    border: 0 !important;
+    margin: 0 !important;
+    height: 0 !important;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .tt-print-sheet {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  .tt-report-table-card {
+    border: 1px solid #333 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .tt-report-table-card .card-header {
+    background: #f0f0f0 !important;
+    border-bottom: 1px solid #333 !important;
+    padding: 6px 10px !important;
+    color: #000 !important;
+  }
+
+  .tt-report-table-card .card-body {
+    padding: 8px !important;
+  }
+
+  .tt-report-header {
+    border: 1px solid #333 !important;
+    background: #fafafa !important;
+    padding: 8px 10px !important;
+    margin-bottom: 8px !important;
+    border-radius: 0 !important;
+  }
+
+  .tt-report-header .left h4 {
+    font-size: 14pt !important;
+    color: #000 !important;
+  }
+
+  .tt-report-header .sub,
+  .tt-report-header .right {
+    color: #222 !important;
+    font-size: 9pt !important;
+  }
+
+  .tt-timing-banner,
+  .alert-info.tt-timing-banner {
+    border: 1px solid #999 !important;
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    padding: 6px 8px !important;
+    margin-bottom: 8px !important;
+    font-size: 8.5pt !important;
+  }
+
+  /* Table */
+  .tt-print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8.5pt !important;
+    line-height: 1.25;
+    color: #000 !important;
+  }
+
+  .tt-print-table thead {
+    display: table-header-group;
+  }
+
+  .tt-print-table thead th {
+    background: #e8e8e8 !important;
+    color: #000 !important;
+    border: 1px solid #333 !important;
+    padding: 5px 4px !important;
+    font-weight: 700 !important;
+    vertical-align: middle !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .tt-print-table tbody td {
+    border: 1px solid #444 !important;
+    padding: 4px !important;
+    vertical-align: top !important;
+  }
+
+  .tt-print-table tbody tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .tt-print-table .tt-slot-col {
+    background: #f5f5f5 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    width: 1%;
+  }
+
+  .tt-print-table .tt-cell-inner {
+    border: 1px solid #bbb !important;
+    border-radius: 0 !important;
+    padding: 4px 5px !important;
+    margin-bottom: 4px !important;
+    background: #fff !important;
+  }
+
+  .tt-print-table .tt-cell-inner:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .tt-print-table .text-primary,
+  .tt-print-table .font-weight-bold.text-primary {
+    color: #000 !important;
+  }
+
+  .tt-print-table .text-muted {
+    color: #333 !important;
+  }
+
+  .tt-print-table .small,
+  .tt-print-table span.small {
+    font-size: 8pt !important;
+  }
+}

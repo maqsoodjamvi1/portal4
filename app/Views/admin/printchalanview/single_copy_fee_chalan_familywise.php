@@ -170,6 +170,7 @@ td { text-align: left; padding-left: 10px; }
                                             <div style="text-align:left; margin-left: 5px; font-size: 13px;">
                                                 <strong>Note: </strong><?= htmlspecialchars($student_info['chalan_f_msg']) ?>
                                             </div>
+                                            <?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
                                         </div>
 
                                         <?php if ($show_line1): ?>

@@ -311,34 +311,109 @@ class ParentsBalancefee extends BaseController
             $count++;
         }
 
-        // Table Header
-        $output = '<table class="table table-striped table-bordered table-hover" style="font-size:12px;width:100%;">
+        // Table Header (kept for detailed view / print / export)
+        $tableHtml = '<table class="table table-striped table-bordered table-hover balance-table" style="font-size:12px;width:100%;">
             <thead><tr>
                 <th>#</th>
                 <th>F ID</th>
                 <th style="text-align: left;">Parent/Students</th>';
-        if ($show_monthly_balance) $output .= '<th>Monthly Bal.</th>';
-        if ($show_other_balance) $output .= '<th>Other Bal.</th>';
-        if ($show_balance) $output .= '<th>Total Bal.</th>';
-        if ($show_projected) $output .= '<th>Proj.</th>';
+        if ($show_monthly_balance) $tableHtml .= '<th>Monthly Bal.</th>';
+        if ($show_other_balance) $tableHtml .= '<th>Other Bal.</th>';
+        if ($show_balance) $tableHtml .= '<th>Total Bal.</th>';
+        if ($show_projected) $tableHtml .= '<th>Proj.</th>';
         foreach ($months as $m) {
-            $output .= '<th>'.date('M y', strtotime($m)).'</th>';
+            $tableHtml .= '<th>'.date('M y', strtotime($m)).'</th>';
         }
-        $output .= '</tr></thead><tbody>'.$rowsHtml;
+        $tableHtml .= '</tr></thead><tbody>'.$rowsHtml;
 
         // Grand Total Row
         if ($show_grand_total) {
-            $output .= '<tr class="total-row"><td colspan="3" class="text-right font-weight-bold">Grand Total</td>';
-            if ($show_monthly_balance) $output .= '<td>'.number_format($total_monthly_balance).'</td>';
-            if ($show_other_balance) $output .= '<td>'.number_format($total_other_balance).'</td>';
-            if ($show_balance) $output .= '<td>'.number_format($grand_total_balance).'</td>';
-            if ($show_projected) $output .= '<td>'.number_format($total_projected).'</td>';
+            $tableHtml .= '<tr class="total-row"><td colspan="3" class="text-right font-weight-bold">Grand Total</td>';
+            if ($show_monthly_balance) $tableHtml .= '<td>'.number_format($total_monthly_balance).'</td>';
+            if ($show_other_balance) $tableHtml .= '<td>'.number_format($total_other_balance).'</td>';
+            if ($show_balance) $tableHtml .= '<td>'.number_format($grand_total_balance).'</td>';
+            if ($show_projected) $tableHtml .= '<td>'.number_format($total_projected).'</td>';
             foreach ($months as $m) {
-                $output .= '<td>'.number_format($monthly_totals[$m]).'</td>';
+                $tableHtml .= '<td>'.number_format($monthly_totals[$m]).'</td>';
             }
-            $output .= '</tr>';
+            $tableHtml .= '</tr>';
         }
-        $output .= '</tbody></table>';
+        $tableHtml .= '</tbody></table>';
+
+        // Build card-first output to avoid very wide horizontal tables
+        $rowsCount = max(0, $count - 1);
+        $summaryHtml = '<div class="report-summary-cards mb-3">';
+        $summaryHtml .= '<div class="summary-card"><div class="k">Families</div><div class="v">'.number_format($rowsCount).'</div></div>';
+        if ($show_monthly_balance) {
+            $summaryHtml .= '<div class="summary-card"><div class="k">Monthly Balance</div><div class="v">'.number_format($total_monthly_balance).'</div></div>';
+        }
+        if ($show_other_balance) {
+            $summaryHtml .= '<div class="summary-card"><div class="k">Other Balance</div><div class="v">'.number_format($total_other_balance).'</div></div>';
+        }
+        if ($show_balance) {
+            $summaryHtml .= '<div class="summary-card"><div class="k">Total Balance</div><div class="v">'.number_format($grand_total_balance).'</div></div>';
+        }
+        if ($show_projected) {
+            $summaryHtml .= '<div class="summary-card"><div class="k">Projected</div><div class="v">'.number_format($total_projected).'</div></div>';
+        }
+        $summaryHtml .= '</div>';
+
+        // Build card rows again with same filters, but compact and readable
+        $cardHtml = '<div class="balance-card-grid">';
+        foreach ($parentsData as $p) {
+            $monthly_balance = $monthlyUnpaidMap[$p->parent_id] ?? 0;
+            $other_balance = $otherUnpaidMap[$p->parent_id] ?? 0;
+            $total_balance = $monthly_balance + $other_balance;
+            $projected_fee = $projectedFees[$p->parent_id] ?? 0;
+
+            if ($hide_zero && $monthly_balance == 0 && $other_balance == 0 && $projected_fee == 0) continue;
+            if ($monthly_fee_defaulter && $monthly_balance <= 0) continue;
+            if ($other_fee_defaulter && $other_balance <= 0) continue;
+            if ($monthly_fee_defaulter && $other_fee_defaulter && $total_balance <= 0) continue;
+
+            $cardHtml .= '<div class="balance-card" data-search="'.strtolower(htmlspecialchars($p->f_name.' '.$p->students.' '.$p->parent_id)).'">';
+            $cardHtml .= '<div class="balance-card-head">';
+            $cardHtml .= '<div><strong>'.htmlspecialchars($p->f_name).'</strong><div class="small text-muted">F-ID: '.$p->parent_id.'</div></div>';
+            $cardHtml .= '<div class="text-right">';
+            if ($show_balance) {
+                $cardHtml .= '<div class="badge badge-light border">Total: '.number_format($total_balance).'</div>';
+            }
+            $cardHtml .= '</div></div>';
+            $cardHtml .= '<div class="small text-muted mb-2">'.htmlspecialchars($p->students).'</div>';
+
+            $cardHtml .= '<div class="balance-metrics">';
+            if ($show_monthly_balance) $cardHtml .= '<span class="metric-chip">Monthly '.number_format($monthly_balance).'</span>';
+            if ($show_other_balance) $cardHtml .= '<span class="metric-chip">Other '.number_format($other_balance).'</span>';
+            if ($show_projected) $cardHtml .= '<span class="metric-chip">Projected '.number_format($projected_fee).'</span>';
+            $cardHtml .= '</div>';
+
+            $cardHtml .= '<div class="month-chip-wrap">';
+            foreach ($months as $m) {
+                $balance = $balanceMap[$p->parent_id][$m] ?? 0;
+                $paidToday = isset($paidTodayMap[$p->parent_id][$m]) ? $paidTodayMap[$p->parent_id][$m] : false;
+                $monthLabel = date('M y', strtotime($m));
+                $chipClass = $balance > 0 ? 'chip-due' : 'chip-clear';
+                $cardHtml .= '<div class="month-chip '.$chipClass.'">';
+                $cardHtml .= '<div class="month-title">'.$monthLabel.'</div>';
+                $cardHtml .= '<div class="month-amount">'.number_format($balance).'</div>';
+                if ($balance > 0) {
+                    if ($paidToday) {
+                        $cardHtml .= '<button class="btn btn-xs btn-warning update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'"><i class="fas fa-undo mr-1"></i>Undo</button>';
+                    } else {
+                        $cardHtml .= '<button class="btn btn-xs btn-success update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'" data-action="pay"><i class="fas fa-check-circle mr-1"></i>Paid</button>';
+                    }
+                }
+                $cardHtml .= '</div>';
+            }
+            $cardHtml .= '</div>';
+            $cardHtml .= '</div>';
+        }
+        $cardHtml .= '</div>';
+
+        $output = '<div class="balance-report-wrap">'.$summaryHtml;
+        $output .= '<div id="balanceCardView">'.$cardHtml.'</div>';
+        $output .= '<div id="balanceTableView" style="display:none;"><div class="table-responsive mt-2">'.$tableHtml.'</div></div>';
+        $output .= '</div>';
 
         return $this->response->setBody($output);
     }

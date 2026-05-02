@@ -6,18 +6,21 @@ use Aws\Rekognition\RekognitionClient;
 
 class RekognitionService
 {
-    protected $client;
+    protected RekognitionClient $client;
+
+    /** @var \Config\Aws */
+    protected $awsConfig;
 
     public function __construct()
     {
-        $config = new \Config\Aws();
+        $this->awsConfig = config('Aws');
 
         $this->client = new RekognitionClient([
-            'region' => $config->region,
+            'region' => $this->awsConfig->region,
             'version' => 'latest',
             'credentials' => [
-                'key' => $config->key,
-                'secret' => $config->secret,
+                'key' => $this->awsConfig->key,
+                'secret' => $this->awsConfig->secret,
             ],
         ]);
     }
@@ -48,6 +51,8 @@ class RekognitionService
             'CollectionId' => $this->collection($campusId),
             'Image' => ['Bytes' => $imageBytes],
             'ExternalImageId' => (string)$studentId,
+            'MaxFaces' => $this->awsConfig->rekognitionIndexMaxFaces,
+            'QualityFilter' => $this->awsConfig->rekognitionIndexQualityFilter,
         ]);
     }
 
@@ -56,8 +61,9 @@ class RekognitionService
         return $this->client->searchFacesByImage([
             'CollectionId' => $this->collection($campusId),
             'Image' => ['Bytes' => $imageBytes],
-            'MaxFaces' => 1,
-            'FaceMatchThreshold' => 85,
+            'MaxFaces' => $this->awsConfig->rekognitionSearchMaxFaces,
+            'FaceMatchThreshold' => $this->awsConfig->rekognitionFaceMatchThreshold,
+            'QualityFilter' => $this->awsConfig->rekognitionSearchQualityFilter,
         ]);
     }
 

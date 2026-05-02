@@ -69,136 +69,142 @@
 </section>
 
 <section class="content">
-    <!-- Filter Card - Hidden when printing -->
-    <div class="card card-primary no-print">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-filter"></i> Filter Report</h3>
-        </div>
-        <div class="card-body">
-            <form id="attendance-filter-form">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Report Type <span class="text-danger">*</span></label>
-                            <select name="filter_type" id="filter_type" class="form-control" required>
-                                <option value="">Select Report Type</option>
-                                <option value="month">Monthly Report</option>
-                                <option value="current_week">Current Week</option>
-                                <option value="current_session">Current Session</option>
-                                <option value="custom_range">Custom Date Range</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Month Picker (hidden by default) -->
-                    <div class="col-md-2 month-fields" style="display:none;">
-                        <div class="form-group">
-                            <label>Select Month</label>
-                            <input type="text" name="month_year" id="monthpicker" class="form-control" placeholder="Select Month & Year" autocomplete="off">
-                        </div>
-                    </div>
-                    
-                    <!-- Custom Date Range (hidden by default) -->
-                    <div class="col-md-3 custom-fields" style="display:none;">
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="date" name="start_date" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-2 custom-fields" style="display:none;">
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="date" name="end_date" class="form-control">
-                        </div>
-                    </div>
-                    
-                    <!-- Class Section Selection -->
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Class Section</label>
-                            <select name="cls_sec_id" id="cls_sec_id" class="form-control">
-                                <option value="">All Classes & Sections</option>
-                                <?php if (!empty($class_sections)): ?>
-                                    <?php foreach ($class_sections as $cs): ?>
-                                        <option value="<?= $cs->cls_sec_id ?>">
-                                            <?= $cs->class_name ?> <?= isset($cs->section_name) && $cs->section_name ? ' - ' . $cs->section_name : '' ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <option value="" disabled>No class sections available</option>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Skip Absent Filter -->
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Skip Absent &ge;</label>
-                            <select name="skip_absent" id="skip_absent" class="form-control">
-                                <option value="0">Show All</option>
-                                <option value="1">Skip 1+ absent (show &ge;1)</option>
-                                <option value="2">Skip 2+ absent (show &ge;2)</option>
-                                <option value="3">Skip 3+ absent (show &ge;3)</option>
-                                <option value="4">Skip 4+ absent (show &ge;4)</option>
-                                <option value="5">Skip 5+ absent (show &ge;5)</option>
-                                <option value="10">Skip 10+ absent (show &ge;10)</option>
-                            </select>
-                        </div>
-                    </div>
+    <?php
+        $classSectionOptions = [['value' => '', 'label' => 'All Classes & Sections']];
+        if (!empty($class_sections)) {
+            foreach ($class_sections as $cs) {
+                $classSectionOptions[] = [
+                    'value' => $cs->cls_sec_id,
+                    'label' => $cs->class_name . (isset($cs->section_name) && $cs->section_name ? ' - ' . $cs->section_name : ''),
+                ];
+            }
+        }
 
-                    <!-- Message Type Selection -->
-<div class="col-md-3">
-    <div class="form-group">
-        <label>WhatsApp Message Type</label>
-        <select name="message_type" id="message_type" class="form-control">
-            <option value="family">Family Message (All Children)</option>
-            <option value="student">Student Message (Individual)</option>
-        </select>
-    </div>
-</div>
-
-<!-- Include Absent Dates Toggle -->
-<div class="col-md-2">
-    <div class="form-group">
-        <label>Include Absent Dates</label>
-        <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="include_dates" checked>
-            <label class="custom-control-label" for="include_dates">Yes / No</label>
-        </div>
-    </div>
-</div>
-                    
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-search"></i> Generate Report
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <button type="button" id="print-report" class="btn btn-info btn-block" style="display:none;">
-                                <i class="fas fa-print"></i> Print Report
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <button type="button" id="export-excel" class="btn btn-success btn-block" style="display:none;">
-                                <i class="fas fa-file-excel"></i> Export
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+        echo view('components/report_filter_bar', [
+            'formId' => 'attendance-filter-form',
+            'title' => 'Attendance Filters',
+            'cardClass' => 'card card-primary no-print report-filter-card',
+            'fields' => [
+                [
+                    'type' => 'select',
+                    'id' => 'filter_type',
+                    'name' => 'filter_type',
+                    'label' => 'Report Type *',
+                    'class' => 'form-control report-select2',
+                    'required' => true,
+                    'options' => [
+                        ['value' => '', 'label' => 'Select Report Type'],
+                        ['value' => 'month', 'label' => 'Monthly Report'],
+                        ['value' => 'current_week', 'label' => 'Current Week'],
+                        ['value' => 'current_session', 'label' => 'Current Session'],
+                        ['value' => 'custom_range', 'label' => 'Custom Date Range'],
+                    ],
+                    'col_class' => 'col-md-3 mb-2',
+                ],
+                [
+                    'type' => 'text',
+                    'id' => 'monthpicker',
+                    'name' => 'month_year',
+                    'label' => 'Select Month',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select Month & Year',
+                    'attrs' => 'autocomplete="off"',
+                    'col_class' => 'col-md-2 month-fields mb-2',
+                    'col_style' => 'display:none;',
+                ],
+                [
+                    'type' => 'date',
+                    'id' => 'start_date',
+                    'name' => 'start_date',
+                    'label' => 'Start Date',
+                    'class' => 'form-control',
+                    'col_class' => 'col-md-3 custom-fields mb-2',
+                    'col_style' => 'display:none;',
+                ],
+                [
+                    'type' => 'date',
+                    'id' => 'end_date',
+                    'name' => 'end_date',
+                    'label' => 'End Date',
+                    'class' => 'form-control',
+                    'col_class' => 'col-md-2 custom-fields mb-2',
+                    'col_style' => 'display:none;',
+                ],
+                [
+                    'type' => 'select',
+                    'id' => 'cls_sec_id',
+                    'name' => 'cls_sec_id',
+                    'label' => 'Class Section',
+                    'class' => 'form-control report-select2',
+                    'options' => $classSectionOptions,
+                    'col_class' => 'col-md-3 mb-2',
+                ],
+                [
+                    'type' => 'select',
+                    'id' => 'skip_absent',
+                    'name' => 'skip_absent',
+                    'label' => 'Skip Absent >=',
+                    'class' => 'form-control report-select2',
+                    'options' => [
+                        ['value' => '0', 'label' => 'Show All'],
+                        ['value' => '1', 'label' => 'Skip 1+ absent (show >=1)'],
+                        ['value' => '2', 'label' => 'Skip 2+ absent (show >=2)'],
+                        ['value' => '3', 'label' => 'Skip 3+ absent (show >=3)'],
+                        ['value' => '4', 'label' => 'Skip 4+ absent (show >=4)'],
+                        ['value' => '5', 'label' => 'Skip 5+ absent (show >=5)'],
+                        ['value' => '10', 'label' => 'Skip 10+ absent (show >=10)'],
+                    ],
+                    'col_class' => 'col-md-2 mb-2',
+                ],
+                [
+                    'type' => 'select',
+                    'id' => 'message_type',
+                    'name' => 'message_type',
+                    'label' => 'WhatsApp Message Type',
+                    'class' => 'form-control report-select2',
+                    'options' => [
+                        ['value' => 'family', 'label' => 'Family Message (All Children)'],
+                        ['value' => 'student', 'label' => 'Student Message (Individual)'],
+                    ],
+                    'col_class' => 'col-md-3 mb-2',
+                ],
+                [
+                    'type' => 'raw',
+                    'label' => 'Include Absent Dates',
+                    'col_class' => 'col-md-2 mb-2',
+                    'html' => '<div class="custom-control custom-switch mt-1"><input type="checkbox" class="custom-control-input" id="include_dates" checked><label class="custom-control-label" for="include_dates">Yes / No</label></div>',
+                ],
+            ],
+            'actions' => [
+                [
+                    'type' => 'submit',
+                    'id' => 'btn-generate-report',
+                    'label' => 'Generate Report',
+                    'icon' => 'fas fa-search mr-1',
+                    'class' => 'btn btn-primary btn-block',
+                    'col_class' => 'col-md-2 mb-2',
+                ],
+                [
+                    'type' => 'button',
+                    'id' => 'print-report',
+                    'label' => 'Print Report',
+                    'icon' => 'fas fa-print mr-1',
+                    'class' => 'btn btn-info btn-block',
+                    'attrs' => 'style="display:none;"',
+                    'col_class' => 'col-md-2 mb-2',
+                ],
+                [
+                    'type' => 'button',
+                    'id' => 'export-excel',
+                    'label' => 'Export',
+                    'icon' => 'fas fa-file-excel mr-1',
+                    'class' => 'btn btn-success btn-block',
+                    'attrs' => 'style="display:none;"',
+                    'col_class' => 'col-md-2 mb-2',
+                ],
+            ],
+        ]);
+    ?>
     
     <!-- Summary Card -->
     <div class="card card-info no-print" id="summary-card" style="display:none;">
@@ -265,6 +271,10 @@
 
 <script>
 $(function () {
+    if (window.ReportUI && window.ReportUI.initReportSelects) {
+        window.ReportUI.initReportSelects('#attendance-filter-form');
+    }
+
     let dataTable = null;
     let currentReportData = null;
     let currentFilteredStudents = null;

@@ -46,6 +46,18 @@ $csrfHash  = csrf_hash();
 .loader span:nth-child(3){animation-delay:.3s}
 .loader span:nth-child(4){animation-delay:.45s}
 @keyframes b{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+
+/* Prevent page-level horizontal scroll; keep scroll inside report area only */
+.content-wrapper,
+.content,
+.card-body{
+    overflow-x:hidden;
+}
+#students_list_container{
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+}
 </style>
 
 <section class="content-header">
@@ -80,44 +92,68 @@ $csrfHash  = csrf_hash();
 <input type="hidden" id="campus_id" value="<?= esc($campus_id) ?>">
 
 <div class="col-lg-12">
-<div class="d-flex justify-content-center align-items-end">
+<?php
+$monthlyClassOptions = [['value' => '', 'label' => 'Select Class']];
+$monthlySectionOptions = [['value' => '', 'label' => 'All Sections of selected class']];
+$monthlySectionsMeta = [];
+if (!empty($sectionsclassinfo)) {
+    foreach ($sectionsclassinfo as $row) {
+        $classId = $row['class_id'] ?? null;
+        $className = $row['class_name'] ?? '';
+        if ($classId !== null && $className !== '') {
+            $monthlyClassOptions[(string)$classId] = ['value' => $classId, 'label' => $className];
+        }
 
-<div class="form-group mr-3">
-<label>Sections</label>
-<select class="form-control select2"
-        name="section_id"
-        id="section_id"
-        style="height:32px;padding:0 8px;min-width:220px">
-<option value="">Select Section</option>
-<?php if (!empty($sectionsclassinfo)): ?>
-<?php foreach ($sectionsclassinfo as $row): ?>
-<option value="<?= esc($row['section_id']) ?>">
-    <?= esc($row['sectionclassname']) ?>
-</option>
-<?php endforeach ?>
-<?php endif ?>
-</select>
-</div>
-
-<div class="form-group mr-3">
-<label>Month</label>
-<input type="month"
-       id="date"
-       value="<?= esc(date('Y-m')) ?>"
-       class="form-control"
-       style="height:32px">
-</div>
-
-<div class="form-group">
-<button type="button"
-        onclick="getstudents()"
-        class="btn btn-sm btn-primary"
-        style="margin-top:24px;height:32px">
-View
-</button>
-</div>
-
-</div>
+        $clsSecId = $row['cls_sec_id'] ?? $row['section_id'];
+        $monthlySectionsMeta[] = [
+            'value' => $clsSecId,
+            'label' => $row['sectionclassname'],
+            'class_id' => $classId,
+        ];
+        $monthlySectionOptions[] = [
+            // Always send class_section id; some helpers also include raw section_id.
+            'value' => $clsSecId,
+            'label' => $row['sectionclassname'],
+        ];
+    }
+}
+$monthlyClassOptions = array_values($monthlyClassOptions);
+echo view('components/report_filter_bar', [
+    'formId' => 'monthlyAttendanceFilterForm',
+    'title' => 'Attendance Filters',
+    'method' => 'post',
+    'fields' => [
+        [
+            'type' => 'select',
+            'id' => 'class_id',
+            'name' => 'class_id',
+            'label' => 'Class',
+            'class' => 'form-control report-select2',
+            'options' => $monthlyClassOptions,
+            'col_class' => 'col-md-4 mb-2',
+        ],
+        [
+            'type' => 'select',
+            'id' => 'section_id',
+            'name' => 'section_id',
+            'label' => 'Section',
+            'class' => 'form-control report-select2',
+            'options' => $monthlySectionOptions,
+            'col_class' => 'col-md-4 mb-2',
+        ],
+        [
+            'type' => 'month',
+            'id' => 'date',
+            'name' => 'date',
+            'label' => 'Month',
+            'value' => date('Y-m'),
+            'class' => 'form-control',
+            'col_class' => 'col-md-4 mb-2',
+        ],
+    ],
+    'actions' => [],
+]);
+?>
 </div>
 </div>
 
@@ -135,12 +171,13 @@ View
 
 <script>
 function getstudents(){
+    var class_id   = $('#class_id').val();
     var section_id = $('#section_id').val();
     var campus_id  = $('#campus_id').val();
     var date       = $('#date').val();
 
-    if(!section_id){
-        alert('Please select section');
+    if(!class_id){
+        alert('Please select class');
         return;
     }
 
@@ -151,6 +188,7 @@ function getstudents(){
         type: "POST",
         data: {
             <?= $csrfName ?>: "<?= $csrfHash ?>",
+            class_id: class_id,
             section_id: section_id,
             campus_id: campus_id,
             date: date
@@ -168,7 +206,43 @@ function getstudents(){
 }
 
 $(function(){
-    $('.select2').select2();
+    var sectionsMeta = <?= json_encode($monthlySectionsMeta) ?>;
+    var $section = $('#section_id');
+    function populateSectionsByClass(classId) {
+        $section.empty();
+        $section.append('<option value="">All Sections of selected class</option>');
+        if (!classId) return;
+        sectionsMeta.forEach(function (item) {
+            if (String(item.class_id) === String(classId)) {
+                $section.append('<option value="' + item.value + '">' + item.label + '</option>');
+            }
+        });
+    }
+
+    if (window.ReportUI && window.ReportUI.initReportSelects) {
+        window.ReportUI.initReportSelects('#monthlyAttendanceFilterForm');
+    } else if ($.fn.select2) {
+        $('#class_id, #section_id').select2({ width: '100%' });
+    }
+
+    var autoLoadMonthly = function () {
+        var class_id = $('#class_id').val();
+        var section_id = $('#section_id').val();
+        var date = $('#date').val();
+        if (class_id && date) {
+            getstudents();
+        }
+    };
+
+    $('#class_id').on('change', function() {
+        populateSectionsByClass($(this).val());
+        if ($.fn.select2) {
+            $section.trigger('change.select2');
+        }
+        autoLoadMonthly();
+    });
+    $('#section_id').on('change', autoLoadMonthly);
+    $('#date').on('change', autoLoadMonthly);
 });
 </script>
 

@@ -5,11 +5,11 @@
 <link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
 <style>
   :root{
-    --row-h: 34px;            /* table & info rows */
-    --row-h-header: 34px;     /* header lines (baseline; we tighten with padding/line-height) */
-    --pad-x: 5px;
-    --font-main: 14px;
-    --font-small: 14px;
+    --row-h: 26px;
+    --row-h-header: 28px;
+    --pad-x: 4px;
+    --font-main: 11px;
+    --font-small: 10px;
     --border: 1px solid #000;
   }
 
@@ -57,13 +57,11 @@
     border: 0 !important;               /* ensure borderless header lines */
   }
   .header-line.school{
-    font-size: 20px;
+    font-size: 20px;                     /* default; inline style overrides for long names */
     font-weight: 800;
     line-height: 1.15;                  /* compact large text */
     padding-bottom: 0;                  /* reduce space under school */
-  }
-  .header-line.school.is-long{          /* auto-applied in markup when name > 20 chars */
-    font-size: 16px;
+    white-space: nowrap;
   }
   .header-line.campus{
     font-size: 16px;
@@ -124,10 +122,19 @@
     border: 1px solid #000;
     padding: 0 var(--pad-x);
     min-height: var(--row-h); height: var(--row-h);
-    line-height: var(--row-h);
+    line-height: 1.15;
     vertical-align: middle; text-align: left;
     overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-size: var(--font-small);
   }
+  .feetable th:first-child,
+  .feetable td:first-child{
+    white-space: normal;
+    word-break: break-word;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+  .feetable thead th{ white-space: nowrap; font-size: 9px; }
   /* avoid double outer border with slip box */
   .feetable thead tr th{ border-top: 0; }
   .feetable tbody tr:last-child td{ border-bottom: 0; }
@@ -138,9 +145,13 @@
 
   .feetable thead th{ font-weight: 600; }
 
-  /* strong underline right under the “Payable …” total row */
+  .feetable .fee-summary-mini-row td {
+    font-size: 10px;
+  }
   .feetable .total-row td{
     border-bottom: 2px solid #000 !important;
+    font-size: 12px;
+    font-weight: 700;
   }
 
   .copy-label {
@@ -150,6 +161,11 @@
   }
   .slip-footer-msg { text-align: left; padding: 6px var(--pad-x); font-size: var(--font-small); }
   .filter-card { margin-bottom: 12px; }
+  .feetable tbody tr.fee-pdf-detail-row td {
+    min-height: var(--row-h);
+    height: var(--row-h);
+    vertical-align: middle;
+  }
 </style>
 
 
@@ -241,6 +257,18 @@ $show_line2 = $show_line2 ?? '';
                 $hdr_issue     = $student_info['last_issue_date_label'] ?? ($student_info['last_issue_date'] ?? '');
                 $hdr_due       = $student_info['last_due_date_label'] ?? ($student_info['last_due_date'] ?? '');
                 $payableTotal  = (float)($student_info['unpaid_total_payable'] ?? 0);
+                $payableMonthly = (float) ($student_info['unpaid_payable_monthly'] ?? 0);
+                $payableOther   = (float) ($student_info['unpaid_payable_other'] ?? 0);
+                if (($payableMonthly + $payableOther) <= 0 && ! empty($student_info['unpaid_rows'])) {
+                    foreach ($student_info['unpaid_rows'] as $u) {
+                        $net = (float) ($u['net_amount'] ?? ((float) ($u['amount'] ?? 0) - (float) ($u['discount'] ?? 0)));
+                        if ((int) ($u['is_monthly_fee'] ?? 0) === 1) {
+                            $payableMonthly += $net;
+                        } else {
+                            $payableOther += $net;
+                        }
+                    }
+                }
 
                 // Strict MM/YYYY for fee month
                 $hdr_fee_month_compact = '';
@@ -256,26 +284,17 @@ $show_line2 = $show_line2 ?? '';
                   $hdr_fee_month_compact = $student_info['last_fee_month_label'] ?? ($student_info['last_fee_month'] ?? '');
                 }
 
-                /* Re-order display rows: other fees first (is_monthly = 0), then monthly (is_monthly = 1)
-                   Keep blanks and arrears in place at the end.
-                   Works if controller provided any of the keys: is_monthly_fee | is_monthly | monthly_flag. */
-                $displayRowsRaw = $student_info['unpaid_display_rows'] ?? [];
-                $other = $monthly = $blanks = $arrears = [];
-
-                foreach ($displayRowsRaw as $dr) {
-                  if (!empty($dr['is_blank'])) { $blanks[] = $dr; continue; }
-                  if (!empty($dr['is_arrears'])) { $arrears[] = $dr; continue; }
-
-                  $flag = null;
-                  if (isset($dr['is_monthly_fee'])) { $flag = (int)$dr['is_monthly_fee']; }
-                  elseif (isset($dr['is_monthly'])) { $flag = (int)$dr['is_monthly']; }
-                  elseif (isset($dr['monthly_flag'])) { $flag = (int)$dr['monthly_flag']; }
-
-                  if ($flag === 1) { $monthly[] = $dr; }       // monthly last
-                  elseif ($flag === 0) { $other[] = $dr; }     // other first
-                  else { $other[] = $dr; }                     // fallback: treat as other
+                $displayRows = $student_info['unpaid_display_rows'] ?? [];
+                while (count($displayRows) < 5) {
+                  $displayRows[] = [
+                    'is_blank' => true,
+                    'particulars_label' => '',
+                    'amount' => '',
+                    'discount' => '',
+                    'net_amount' => 0,
+                  ];
                 }
-                $displayRows = array_merge($other, $monthly, $blanks, $arrears);
+                $displayRows = array_slice($displayRows, 0, 5);
               ?>
 
               <div class="pagebreak" style="overflow:hidden; clear:both;">
@@ -294,10 +313,9 @@ $show_line2 = $show_line2 ?? '';
                         <div class="header-lines">
                           <?php
   $schoolName = trim($student_info['system_name'] ?? '');
-  // Use mb_strlen for UTF-8 (Urdu/Arabic characters count correctly)
-  $isLong = (mb_strlen($schoolName, 'UTF-8') > 20);
+  $schoolNameFontPx = school_name_fit_font_size($schoolName, 22, 20.0, 8.0);
 ?>
-<div class="header-line school<?= $isLong ? ' is-long' : '' ?>"><?= esc($schoolName) ?></div>
+<div class="header-line school" style="font-size: <?= esc((string) $schoolNameFontPx, 'attr') ?>px;"><?= esc($schoolName) ?></div>
                           <div class="header-line campus"><?= esc($student_info['campus_name'] ?? '') ?><?= !empty($student_info['location']) ? '، ' . esc($student_info['location']) : '' ?></div>
                           <div class="header-line bank">
                             <?php if (!empty($student_info['bank_name'])): ?>
@@ -358,29 +376,39 @@ $show_line2 = $show_line2 ?? '';
                         </colgroup>
                         <thead>
                           <tr>
-                            <th>Particulars</th>
-                            <th>Amount</th>
-                            <th>Discount</th>
+                            <th>Item</th>
+                            <th>Amt</th>
+                            <th>Disc</th>
                           </tr>
                         </thead>
                         <tbody>
                           <?php foreach ($displayRows as $dr): ?>
                             <?php
                               $isBlank = !empty($dr['is_blank']);
-                              $amt     = $isBlank ? '' : number_format((float)($dr['amount'] ?? ($dr['net_amount'] ?? 0)), 0);
-                              $disc    = $isBlank ? '' : (isset($dr['discount']) && $dr['discount'] !== '' ? number_format((float)$dr['discount'], 0) : '');
+                              $amt     = $isBlank ? '' : number_format((float) ($dr['amount'] ?? 0), 0);
+                              $disc    = $isBlank ? '' : (((float) ($dr['discount'] ?? 0)) > 0 ? number_format((float) $dr['discount'], 0) : '');
                               $part    = $isBlank ? '' : ($dr['particulars_label'] ?? '');
                             ?>
-                            <tr>
+                            <tr class="fee-pdf-detail-row">
                               <td><?= esc($part) ?></td>
                               <td><?= money_from_base($amt) ?><?= $amt !== '' ? '/-' : '' ?></td>
                               <td><?= money_from_base($disc) ?></td>
                             </tr>
                           <?php endforeach; ?>
 
-                          <!-- Totals -->
-                         <tr class="total-row">
-  <td><strong>Payable</strong></td>
+                          <!-- Totals — monthly / other / grand -->
+                         <tr class="fee-summary-mini-row">
+  <td>Monthly fee (unpaid)</td>
+  <td><?= money_from_base(number_format($payableMonthly, 0)) ?>/-</td>
+  <td></td>
+</tr>
+<tr class="fee-summary-mini-row">
+  <td>Other fee (unpaid)</td>
+  <td><?= money_from_base(number_format($payableOther, 0)) ?>/-</td>
+  <td></td>
+</tr>
+<tr class="total-row">
+  <td><strong>Total payable</strong></td>
   <td><strong><?= money_from_base(number_format($payableTotal, 0)) ?>/-</strong></td>
   <td></td>
 </tr>
@@ -408,9 +436,12 @@ $show_line2 = $show_line2 ?? '';
                         </tbody>
                       </table>
 
-                      <?php if (!empty($student_info['chalan_f_msg'])): ?>
-                        <div class="slip-footer-msg"><?= esc($student_info['chalan_f_msg']) ?></div>
-                      <?php endif; ?>
+                      <?php
+                      $accountsDisclaimerStd = 'If any mistakes are found in the challan, please contact the Accounts Office.';
+                      $customFoot = trim((string) ($student_info['chalan_f_msg'] ?? ''));
+                      $footerNotice = $customFoot !== '' ? $customFoot : $accountsDisclaimerStd;
+                      ?>
+                      <div class="slip-footer-msg chalan-accounts-disclaimer"><?= esc($footerNotice) ?></div>
                     </div>
 
                     <?php if ((int)$show_line1 === 1): ?>

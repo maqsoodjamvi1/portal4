@@ -629,7 +629,6 @@ s0.parentNode.insertBefore(s1,s0);
   'badge'=>['key'=>'pending_emp_leaves','class'=>'badge-danger'] // 👈
 ],
     ['label'=>'Employees Attendance Report','icon'=>'fa fa-cubes','url'=>$link('admin/emp_attendance_monthlyreport'),'match'=>'admin/emp_attendance_monthlyreport','perms'=>['admin-emp-attendance-monthly-report']],
-    ['label'=>'Day On Reset','icon'=>'fa fa-hourglass','url'=>$link('admin/day_on_reset/add'),      'match'=>'admin/day_on_reset',     'perms'=>['admin-day-on-reset']],
     ['label'=>'Absentees','icon'=>'far fa-clock','url'=>$link('admin/students_absentees/add'),       'match'=>'admin/students_absentees','perms'=>['admin-add-student-absentees']],
     ['label'=>'Create Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves/add'),'match'=>'admin/students_leaves/add','perms'=>['admin-add-student-leaves']],
    ['label'=>'Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves'),'match'=>'admin/students_leaves','perms'=>['admin-student-leaves'],

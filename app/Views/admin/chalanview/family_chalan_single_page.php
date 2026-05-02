@@ -363,6 +363,8 @@
                             // Fee data
                             'display_rows' => $family['display_rows'] ?? [],
                             'total_payable' => $totalPayable,
+                            'payable_monthly' => (float) ($family['payable_monthly'] ?? 0),
+                            'payable_other' => (float) ($family['payable_other'] ?? 0),
                             'total_discount' => $totalDiscount,
                             'total_amount' => $totalAmount,
                             

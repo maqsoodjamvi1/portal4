@@ -52,6 +52,19 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="form-group mt-4 mt-md-0 pt-md-4">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="allowSameSubjectPerDay">
+                                    <label class="custom-control-label" for="allowSameSubjectPerDay">
+                                        Allow same subject multiple times in the same day
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Keep OFF to enforce one subject per day for this class. Teacher conflict checks are always enforced.
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="row mt-3">
@@ -110,6 +123,16 @@ $(document).ready(function () {
     let timetableData = {};
     let dragulaInstance = null;
     let selectedSubject = null;
+    let allowSameSubjectPerDay = false;
+    let blockedSlotsMap = {};
+    let constraintsLoading = false;
+
+    $('#allowSameSubjectPerDay').on('change', function () {
+        allowSameSubjectPerDay = $(this).is(':checked');
+        if (selectedSubject) {
+            fetchAndPaintConstraints(selectedSubject);
+        }
+    });
 
     // On class section change
     $('#clsSecSelect').change(function () {
@@ -201,8 +224,7 @@ $(document).ready(function () {
             // Add selection to clicked subject
             $(this).addClass('selected-subject');
             selectedSubject = $(this).data('subject-id');
-            
-            console.log("Selected subject:", selectedSubject);
+            fetchAndPaintConstraints(selectedSubject);
         });
     }
 
@@ -287,7 +309,16 @@ $(document).ready(function () {
             },
             accepts: function (el, target, source, sibling) {
                 // Only allow dropping into timetable cells (not other subject cards)
-                return target.classList.contains('timetable-cell') || target.id === 'subjectPool';
+                if (target.id === 'subjectPool') return true;
+                if (!target.classList.contains('timetable-cell')) return false;
+
+                // While constraints are loading, don't allow drop into table.
+                if (constraintsLoading) return false;
+
+                const day = target.getAttribute('data-day');
+                const slotId = target.getAttribute('data-slot-id');
+                if (isBlockedCell(day, slotId)) return false;
+                return true;
             }
         });
 
@@ -302,8 +333,14 @@ $(document).ready(function () {
                 const conflict = checkForConflicts(subjectId, day, slotId);
                 
                 if (conflict) {
-                    toastr.warning('This subject is already scheduled at another time today');
+                    // Only local same-day duplicate check (when toggle is OFF)
+                    toastr.warning('This subject is already scheduled at another time today.');
                     dragulaInstance.cancel(true); // Revert the drag
+                    return;
+                }
+                if (isBlockedCell(day, slotId)) {
+                    // Blocked slots are now visually restricted and non-droppable.
+                    dragulaInstance.cancel(true);
                     return;
                 }
                 
@@ -337,6 +374,9 @@ $(document).ready(function () {
             toastr.info('Please select a subject first');
             return;
         }
+        if (constraintsLoading) {
+            return;
+        }
 
         const day = cell.getAttribute('data-day');
         const slotId = cell.getAttribute('data-slot-id');
@@ -346,6 +386,10 @@ $(document).ready(function () {
         const conflict = checkForConflicts(subjectId, day, slotId);
         if (conflict) {
             toastr.warning('This subject is already scheduled at another time today');
+            return;
+        }
+        if (isBlockedCell(day, slotId)) {
+            // Keep blocked slots silent; they are already visually marked as restricted.
             return;
         }
 
@@ -383,6 +427,9 @@ $(document).ready(function () {
 
     // Check for scheduling conflicts
     function checkForConflicts(subjectId, day, slotId) {
+        if (allowSameSubjectPerDay) {
+            return false;
+        }
         // Check if this subject is already scheduled on this day
         for (const [existingSlotId, data] of Object.entries(timetableData[day] || {})) {
             if (data.subject_id == subjectId && existingSlotId != slotId) {
@@ -402,7 +449,8 @@ $(document).ready(function () {
                 cls_sec_id: currentClsSecId,
                 day: day,
                 slot_id: slotId,
-                subject_id: subjectId
+                subject_id: subjectId,
+                allow_same_subject_day: allowSameSubjectPerDay ? 1 : 0
             },
             success: function (response) {
 
@@ -427,8 +475,15 @@ $(document).ready(function () {
                     if (response.teacherLoad) {
             updateTeacherLoadUI(response.teacherLoad);
         }
+                    if (selectedSubject) {
+                        fetchAndPaintConstraints(selectedSubject);
+                    }
                 } else {
                     toastr.error(response.msg || "Failed to update timetable");
+                    // Re-sync from server to avoid UI/DB mismatch after conflict rejection
+                    if (currentClsSecId) {
+                        loadTimetableData(currentClsSecId);
+                    }
                 }
             },
             error: function () {
@@ -470,7 +525,8 @@ $(document).ready(function () {
             dataType: "json",
             data: {
                 cls_sec_id: currentClsSecId,
-                timetable: JSON.stringify(timetableData)
+                timetable: JSON.stringify(timetableData),
+                allow_same_subject_day: allowSameSubjectPerDay ? 1 : 0
             },
             success: function(response) {
                 if (response.success) {
@@ -530,6 +586,76 @@ $(document).ready(function () {
         console.error("Error:", message);
         $('#timetableContainer').html(`<div class="alert alert-danger">${message}</div>`);
     }
+
+    function makeSlotKey(day, slotId) {
+        return `${day}|${slotId}`;
+    }
+
+    function isBlockedCell(day, slotId) {
+        return !!blockedSlotsMap[makeSlotKey(day, slotId)];
+    }
+
+    function getBlockedReason(day, slotId) {
+        const item = blockedSlotsMap[makeSlotKey(day, slotId)];
+        return item ? item.reason : '';
+    }
+
+    function clearConstraintPaint() {
+        $('.timetable-cell').removeClass('slot-blocked slot-allowed').removeAttr('title');
+    }
+
+    function paintConstraints() {
+        clearConstraintPaint();
+        if (!selectedSubject) return;
+
+        $('.timetable-cell').each(function () {
+            const day = $(this).data('day');
+            const slotId = $(this).data('slot-id');
+            if (isBlockedCell(day, slotId)) {
+                $(this).addClass('slot-blocked').attr('title', getBlockedReason(day, slotId));
+            } else {
+                $(this).addClass('slot-allowed').attr('title', 'Recommended slot');
+            }
+        });
+    }
+
+    function fetchAndPaintConstraints(subjectId) {
+        if (!currentClsSecId || !subjectId) {
+            blockedSlotsMap = {};
+            clearConstraintPaint();
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('admin/timetable/get-subject-constraints') ?>",
+            method: "POST",
+            dataType: "json",
+            data: {
+                cls_sec_id: currentClsSecId,
+                subject_id: subjectId,
+                allow_same_subject_day: allowSameSubjectPerDay ? 1 : 0
+            },
+            beforeSend: function () {
+                constraintsLoading = true;
+            },
+            success: function (response) {
+                blockedSlotsMap = {};
+                if (response && response.success && Array.isArray(response.blocked)) {
+                    response.blocked.forEach(function (b) {
+                        blockedSlotsMap[makeSlotKey(b.day, b.slot_id)] = b;
+                    });
+                }
+                paintConstraints();
+            },
+            error: function () {
+                blockedSlotsMap = {};
+                clearConstraintPaint();
+            },
+            complete: function () {
+                constraintsLoading = false;
+            }
+        });
+    }
 });
 </script>
 
@@ -558,6 +684,16 @@ $(document).ready(function () {
 
 .timetable-cell:hover {
     background-color: rgba(0,0,0,0.05);
+}
+
+.timetable-cell.slot-blocked {
+    background: rgba(220, 53, 69, 0.16) !important;
+    border: 2px dashed rgba(220, 53, 69, 0.8) !important;
+    cursor: not-allowed !important;
+}
+
+.timetable-cell.slot-allowed {
+    background: rgba(40, 167, 69, 0.08) !important;
 }
 
 .gu-mirror {

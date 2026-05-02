@@ -4,10 +4,14 @@
 <style type="text/css">
 ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 .ztree li span.button.add {margin-left:2px; margin-right: -1px; background-position:-144px 0; vertical-align:top; *vertical-align:middle}
+.role-perm-search-wrap { max-width: 420px; margin-bottom: 10px; }
+.role-perm-search-wrap .form-control { border-radius: 8px; }
+#rolePermSearchHint { display: block; margin-top: 4px; }
 </style>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/ztree/css/zTreeStyle/zTreeStyle.css" />
-<script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.core-3.5.js"></script>
-<script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.excheck-3.5.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.core.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.excheck.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.exhide.js"></script>
 <?php 
 	if(isset($info)){
 		$header = 'Edit Role';
@@ -80,6 +84,16 @@ ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 	</div>			
 	<div class="form-group">
 	<label for="">Role Permissions</label>
+	<div class="role-perm-search-wrap">
+		<div class="input-group input-group-sm">
+			<div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+			<input type="search" class="form-control" id="rolePermSearchInput" placeholder="Search name or permission key…" autocomplete="off">
+			<div class="input-group-append">
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="rolePermSearchClear">Clear</button>
+			</div>
+		</div>
+		<small class="text-muted" id="rolePermSearchHint"></small>
+	</div>
 	All Node <a href="javascript:;" id="expandAllBtn">expand</a> | <a href="javascript:;" id="collapseAllBtn">collapse</a> | <a href="javascript:;" class="checkall" data-type="1">All Allow</a> | <a href="javascript:;" class="checkall" data-type="0">All Deny</a> | <a href="javascript:;" class="checkall" data-type="x">All Ignore</a>
 	<ul id="treeDemo" class="ztree"></ul>
 	</div>
@@ -122,8 +136,55 @@ autoParam:[],
 otherParam:{'action':'<?php echo $action;?>', 'roleid':'<?php echo $id;?>'}
 },
 callback:{
+	onAsyncSuccess: function(event, treeId, treeNode, msg) {
+		if (!treeNode) {
+			applyRoleZTreeSearch($('#rolePermSearchInput').val());
+		}
+	}
 }
 };
+
+function applyRoleZTreeSearch(raw) {
+	var zTree = $.fn.zTree.getZTreeObj('treeDemo');
+	if (!zTree) return;
+	var q = (raw || '').trim().toLowerCase();
+	var nodes = zTree.transformToArray(zTree.getNodes());
+	var i, node, p, j, sub;
+	if (!q) {
+		for (i = 0; i < nodes.length; i++) {
+			zTree.showNode(nodes[i]);
+		}
+		$('#rolePermSearchHint').text('');
+		return;
+	}
+	for (i = 0; i < nodes.length; i++) {
+		zTree.hideNode(nodes[i]);
+	}
+	var matchCount = 0;
+	for (i = 0; i < nodes.length; i++) {
+		node = nodes[i];
+		var name = (node.name || '').toLowerCase();
+		var key = (node.permKey || '').toLowerCase();
+		if (name.indexOf(q) === -1 && key.indexOf(q) === -1) {
+			continue;
+		}
+		matchCount++;
+		zTree.showNode(node);
+		p = node.getParentNode();
+		while (p) {
+			zTree.showNode(p);
+			zTree.expandNode(p, true, false, false);
+			p = p.getParentNode();
+		}
+		sub = zTree.transformToArray(node);
+		for (j = 0; j < sub.length; j++) {
+			zTree.showNode(sub[j]);
+		}
+	}
+	$('#rolePermSearchHint').text(matchCount ? ('Matched ' + matchCount + ' node(s)') : 'No matching permissions.');
+}
+
+var rolePermSearchTimer = null;
 
 function addDiyDom(treeId, treeNode){
 	var aObj = $('#' + treeNode.tId + IDMark_A);
@@ -141,6 +202,18 @@ $(document).ready(function(){
 $('#collapseAllBtn').on('click', function(){
 	var zTree = $.fn.zTree.getZTreeObj('treeDemo');
 	zTree.expandAll(false);
+});
+
+$('#rolePermSearchInput').on('input', function(){
+	var v = $(this).val();
+	clearTimeout(rolePermSearchTimer);
+	rolePermSearchTimer = setTimeout(function(){
+		applyRoleZTreeSearch(v);
+	}, 200);
+});
+$('#rolePermSearchClear').on('click', function(){
+	$('#rolePermSearchInput').val('');
+	applyRoleZTreeSearch('');
 });
 });
 

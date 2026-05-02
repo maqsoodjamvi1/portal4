@@ -414,10 +414,22 @@ public function data()
             // months (read-only display cells)
             'prev_net'     => $PM['net'], 'curr_net' => $CM['net'], 'next_net' => $NM['net'],
             'prev_key'     => $pKey,      'curr_key' => $cKey,      'next_key' => $nKey,
+            'pAmt'         => $PM['amount'], 'cAmt'  => $CM['amount'], 'nAmt'  => $NM['amount'],
+            'monthly_fee_type_id' => (int)$monthlyFeeTypeId,
         ]);
     }
 
     return $this->response->setBody($tbodyHtml);
+}
+
+protected function allowedStudentFields(): array
+{
+    // Fee screen only needs these student columns.
+    return [
+        // stored as discount in students table (not net fee)
+        'discounted_amount' => ['rules' => 'permit_empty|decimal', 'label' => 'Discounted Amount', 'table' => 'students', 'type' => 'decimal'],
+        'fee_plan'          => ['rules' => 'permit_empty|in_list[0,1,2,3]', 'label' => 'Fee Plan', 'table' => 'students', 'type' => 'int'],
+    ];
 }
 
 
@@ -1062,6 +1074,10 @@ if (is_array($monthsPost)) {
             if ($val === '' || $val === null) return null;
             $ts = strtotime($val);
             return $ts ? date('Y-m-d', $ts) : null;
+        }
+        if ($type === 'decimal') {
+            if ($val === '' || $val === null) return null;
+            return (float) $val;
         }
         return $val;
     }

@@ -1,0 +1,283 @@
+/* ===== Dashboard Refresh (organized + responsive) ===== */
+.content-wrapper .content {
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+}
+
+.dashboard-content.container-fluid {
+    max-width: 1600px;
+}
+
+.dashboard-hero {
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #1d4ed8, #4f46e5 60%, #7c3aed);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.2);
+}
+
+.dashboard-hero h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.dashboard-hero .hero-sub {
+    opacity: 0.92;
+    font-size: 0.92rem;
+}
+
+.dashboard-section {
+    margin-bottom: 18px;
+}
+
+.dashboard-section .card {
+    border: 0;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.dashboard-section .card .card-header {
+    border-bottom: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+/* Keep chart/card headings readable on light headers */
+.dashboard-section .card:not(.attendance-hub-card):not(.teacher-section-card) .card-header,
+.dashboard-section .card:not(.attendance-hub-card):not(.teacher-section-card) .card-header .card-title,
+.dashboard-section .card:not(.attendance-hub-card):not(.teacher-section-card) .card-header .card-tools .btn {
+    color: #1f2937 !important;
+}
+
+.dashboard-section .card.card-success .card-header {
+    border-left: 4px solid #16a34a;
+}
+
+.dashboard-section .card.card-danger .card-header {
+    border-left: 4px solid #dc2626;
+}
+
+.dashboard-section .card.card-primary .card-header {
+    border-left: 4px solid #2563eb;
+}
+
+.dashboard-section .card.card-info .card-header {
+    border-left: 4px solid #0891b2;
+}
+
+.dashboard-section .card-header {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.dashboard-section .card-title {
+    font-weight: 600;
+}
+
+.dashboard-section .row > [class*="col-"] {
+    margin-bottom: 14px;
+}
+
+/* Equal-height KPI cards */
+.kpi-grid > [class*="col-"] {
+    display: flex;
+}
+
+.kpi-grid .kpi-card-link {
+    width: 100%;
+    height: 100%;
+}
+
+.config-steps-wrap {
+    border-radius: 10px;
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    padding: 10px 12px;
+}
+
+.config-steps-wrap .config_steps {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.config-steps-wrap .config_steps li {
+    color: #92400e;
+    margin-bottom: 0.2rem;
+}
+
+.kpi-card-link {
+    display: block;
+    color: inherit;
+    text-decoration: none !important;
+}
+
+.kpi-card-link:hover {
+    color: inherit;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.section-heading .title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.section-heading .line {
+    flex: 1;
+    height: 1px;
+    margin-left: 10px;
+    background: linear-gradient(90deg, #cbd5e1, rgba(203, 213, 225, 0));
+}
+
+.info-box {
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 100px !important;
+    border: 1px solid #e5e7eb;
+    background: #fff !important;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+}
+
+.info-box .info-box-icon {
+    width: 72px;
+    color: #fff;
+}
+
+.info-box .info-box-content {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 88px;
+}
+
+.info-box .info-box-text {
+    color: #475569;
+    font-weight: 600;
+}
+
+.info-box .info-box-number {
+    font-size: 1.2rem;
+    color: #0f172a;
+}
+
+.attendance-hub-card .card-header {
+    border-bottom: 0 !important;
+}
+
+.attendance-hub-card .card-body {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.attendance-hub-card .bg-white {
+    border: 1px solid #e5e7eb;
+}
+
+.dashboard-section .table-responsive {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.dashboard-section .table {
+    margin-bottom: 0;
+}
+
+.dashboard-section .table thead th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+}
+
+/* Keep same height where h-100 is used */
+.dashboard-section .card.h-100 {
+    height: 100% !important;
+}
+
+/* Health cards: align to same visual height */
+.bmi-widget {
+    height: 100%;
+    min-height: 185px !important;
+}
+
+.table thead th {
+    white-space: nowrap;
+}
+
+.table tbody td {
+    vertical-align: middle;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-hero {
+        padding: 12px 14px;
+    }
+
+    .dashboard-hero h1 {
+        font-size: 1.15rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-section .card-body {
+        padding: 0.75rem !important;
+    }
+
+    .dashboard-section .table-responsive {
+        font-size: 12px;
+    }
+
+    .dashboard-section .btn {
+        margin-bottom: 0.35rem;
+    }
+
+    .section-heading .title {
+        font-size: 0.9rem;
+    }
+
+    .attendance-table {
+        font-size: 12px;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+        white-space: nowrap;
+        padding: 0.4rem 0.45rem;
+    }
+
+    .attendance-summary-tile {
+        margin-bottom: 0.55rem;
+    }
+
+    .dashboard-hero .hero-sub {
+        font-size: 0.82rem;
+    }
+
+    .info-box {
+        min-height: 88px !important;
+    }
+
+    .info-box .info-box-icon {
+        width: 58px;
+        font-size: 1.1rem;
+    }
+
+    .info-box .info-box-number {
+        font-size: 1rem;
+    }
+
+    .kpi-grid .info-box .info-box-content {
+        min-height: 74px;
+    }
+}

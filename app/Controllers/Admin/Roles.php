@@ -240,7 +240,8 @@ public function edit($id = null)
 public function permData()
 {
     $roleId = (int) $this->request->getPost('roleid');
-    $action = $this->request->getPost('action');
+    // Enforce two-state model in DB: Allow(1) / Deny(0).
+    $this->normalizeRolePermValuesToBinary();
     
     // Get all permissions
     $permissions = $this->db->table('permissions')
@@ -250,30 +251,78 @@ public function permData()
         ->getResult();
     
     if (empty($permissions)) {
-        return $this->response->setBody('[]');
+        return $this->response->setJSON([]);
     }
     
-    // Get role permissions - CRITICAL: This needs to include ALL permissions, not just value=1
+    // Get role permissions - ALL rows for this role (allow / deny / ignore stored explicitly)
     $rolePerms = [];
     if ($roleId > 0) {
-        // Get ALL permissions for this role, including denied ones
         $rolePermsResult = $this->db->table('role_perms')
             ->where('roleID', $roleId)
             ->get()
             ->getResult();
             
         foreach ($rolePermsResult as $rp) {
-            $rolePerms[$rp->permID] = $rp->value; // Store actual value (0, 1, or x)
+            $rolePerms[(int) $rp->permID] = $rp->value;
         }
     }
     
-    // Build tree structure with proper values
     $tree = $this->buildSimpleTreeWithValues($permissions, 0, $rolePerms);
     
-    // Convert to JSON
-    $json = json_encode($tree);
-    
-    return $this->response->setBody($json);
+    return $this->response->setJSON($tree);
+}
+
+/**
+ * Map DB role_perms.value to UI flag '1' | '0' (Allow / Deny).
+ */
+private function mapRolePermValueToChk($value): string
+{
+    if ($value === null || $value === '') {
+        return '0';
+    }
+    if (is_bool($value)) {
+        return $value ? '1' : '0';
+    }
+    if (is_int($value) || is_float($value)) {
+        if ((int) $value === 1) {
+            return '1';
+        }
+        if ((int) $value === 0) {
+            return '0';
+        }
+
+        return '0';
+    }
+    $s = strtolower(trim((string) $value));
+    if ($s === '1' || $s === 'true' || $s === 'yes' || $s === 'allow') {
+        return '1';
+    }
+    if ($s === '0' || $s === 'false' || $s === 'no' || $s === 'deny') {
+        return '0';
+    }
+    if ($s === 'x' || $s === 'ignore' || $s === 'null') {
+        return '0';
+    }
+    return '0';
+}
+
+/**
+ * One-way normalization for legacy data: treat Ignore as Deny.
+ */
+private function normalizeRolePermValuesToBinary(): void
+{
+    $this->db->table('role_perms')
+        ->set('value', 0)
+        ->groupStart()
+            ->where('value IS NULL', null, false)
+            ->orWhere('value', '')
+            ->orWhere('LOWER(CAST(value AS CHAR))', 'x')
+            ->orWhere('LOWER(CAST(value AS CHAR))', 'ignore')
+            ->orWhere('LOWER(CAST(value AS CHAR))', 'null')
+            ->orWhere('LOWER(CAST(value AS CHAR))', 'false')
+            ->orWhere('LOWER(CAST(value AS CHAR))', 'deny')
+        ->groupEnd()
+        ->update();
 }
 
 private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [], $level = 0)
@@ -282,22 +331,12 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
     
     foreach ($items as $item) {
         if ($item->parent_id == $parentId) {
-            // Determine the permission value
-            $chk = 'x'; // Default to ignore
+            $chk = '0';
             
-            if (isset($rolePerms[$item->id])) {
-                // Permission exists in role_perms table
-                $value = $rolePerms[$item->id];
-                if ($value == 1) {
-                    $chk = '1'; // Allow
-                } elseif ($value == 0) {
-                    $chk = '0'; // Deny
-                } else {
-                    $chk = 'x'; // Ignore
-                }
+            if (array_key_exists((int) $item->id, $rolePerms)) {
+                $chk = $this->mapRolePermValueToChk($rolePerms[(int) $item->id]);
             } else {
-                // No entry in role_perms means ignore (x)
-                $chk = 'x';
+                $chk = '0';
             }
             
             $node = [
@@ -330,41 +369,52 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
 
     public function get_role_by_name()
 {
-    $roleNameId = $this->request->getPost('role_name_id');
-    
-    if (!$roleNameId) {
+    $roleNameId = (int) $this->request->getPost('role_name_id');
+    $planIdRaw = $this->request->getPost('plan_id');
+    $planId = ($planIdRaw === null || $planIdRaw === '') ? null : (int) $planIdRaw;
+
+    if ($roleNameId <= 0) {
         return $this->response->setJSON([
             'success' => false,
             'message' => 'No role name provided'
         ]);
     }
-    
-    // Check if role already exists with this role_name_id
-    $role = $this->db->table('roles')
-        ->where('role_name_id', $roleNameId)
+
+    // Find exact role by role_name + plan so edit screen can switch context in-place.
+    $builder = $this->db->table('roles')
+        ->where('role_name_id', $roleNameId);
+
+    if ($planId === null) {
+        $builder->where('plan_id IS NULL', null, false);
+    } else {
+        $builder->where('plan_id', $planId);
+    }
+
+    $role = $builder
+        ->orderBy('id', 'DESC')
         ->get()
         ->getRow();
-    
-    // Get role name
+
     $roleName = $this->db->table('role_name')
         ->where('role_name_id', $roleNameId)
         ->get()
         ->getRow();
-    
+
     if ($role) {
         return $this->response->setJSON([
             'success' => true,
-            'role_id' => $role->id,
+            'role_id' => (int) $role->id,
             'role_name' => $roleName ? $roleName->rolename : '',
+            'plan_id' => $role->plan_id,
             'message' => 'Role exists'
         ]);
-    } else {
-        return $this->response->setJSON([
-            'success' => false,
-            'role_id' => 0,
-            'message' => 'New role'
-        ]);
     }
+
+    return $this->response->setJSON([
+        'success' => false,
+        'role_id' => 0,
+        'message' => 'No role found for selected role name and plan'
+    ]);
 }
 
     /**
@@ -406,15 +456,13 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
         if ($permissions && is_array($permissions)) {
             $insertData = [];
             foreach ($permissions as $permId => $value) {
-                // Only store if value is not 'x' (ignore)
-                if ($value !== 'x') {
-                    $insertData[] = [
-                        'roleID' => $roleId,
-                        'permID' => $permId,
-                        'value' => $value,
-                        'add_date' => date('Y-m-d H:i:s')
-                    ];
-                }
+                $normalized = $this->mapRolePermValueToChk($value);
+                $insertData[] = [
+                    'roleID' => $roleId,
+                    'permID' => $permId,
+                    'value' => ($normalized === '1' ? 1 : 0),
+                    'add_date' => date('Y-m-d H:i:s')
+                ];
             }
             
             if (!empty($insertData)) {
@@ -434,7 +482,8 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
     
     return $this->response->setJSON([
         'success' => true,
-        'msg' => $id ? 'Role updated successfully' : 'Role created successfully'
+        'msg' => $id ? 'Role updated successfully' : 'Role created successfully',
+        'role_id' => (int) $roleId
     ]);
 }
 

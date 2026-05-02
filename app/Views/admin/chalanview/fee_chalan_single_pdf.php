@@ -145,6 +145,7 @@ td{ text-align:left; padding-left:10px;}
                     <br />
                     <!-- <div style="text-align:center; padding-top:50px;"><strong>Note: </strong>After Due Date Rs. 10/day fine will be charged</div> -->
                     <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+<?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
                   </div>
                   </div>
                   <div style="width:32%; float:left; margin-left:1%;">
@@ -248,6 +249,7 @@ td{ text-align:left; padding-left:10px;}
 </table>
 <br />
 <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+<?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
 </div>
 </div>
 <div style="width:32%; float:left; margin-left:1%;">
@@ -348,6 +350,7 @@ td{ text-align:left; padding-left:10px;}
 </table>
 <br />
 <div style="text-align:left;margin-left: 5px;"><?php echo $student_info['chalan_f_msg']; ?></div>
+<?= view('admin/chalanview/partials/chalan_accounts_disclaimer') ?>
 </div>
 </div>
 </div>

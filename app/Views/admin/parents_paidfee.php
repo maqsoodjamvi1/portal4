@@ -44,49 +44,40 @@ if(!empty($_GET['status'])){
                     <div class="row">
                         <!-- Class Selection -->
                         <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                <label class="form-label font-weight-bold">Select Class</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-graduation-cap"></i></span>
-                                    </div>
-                                    <select class="form-control select2" id="cls_sec_id" style="width: 100%;">
-                                        <option value="">All Classes</option>
-                                        <?php foreach ($sectionsclassinfo as $value) { ?>
-                                            <option value="<?= $value['section_id'] ?>"><?= $value['sectionclassname'] ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Display Options Card -->
-                            <div class="card card-outline card-info mt-3">
-                                <div class="card-header">
-                                    <h3 class="card-title">Display Options</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-group">
-                                          <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="monthly_fee" checked>
-                                            <label class="custom-control-label" for="monthly_fee">Show Monthly Balance</label>
-                                        </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="others_fee" checked>
-                                            <label class="custom-control-label" for="others_fee">Show Other Balance</label>
-                                        </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="show_projected" checked>
-                                            <label class="custom-control-label" for="show_projected">Projected Fees</label>
-                                        </div>
-                                      
-                                          <div class="custom-control custom-switch custom-switch-lg">
-                                            <input type="checkbox" class="custom-control-input" id="show_balance" checked>
-                                            <label class="custom-control-label" for="show_balance">Show Total Balance</label>
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                            </div>
+                            <?php
+                                $clsOptions = [['value' => '', 'label' => 'All Classes']];
+                                foreach ($sectionsclassinfo as $value) {
+                                    $clsOptions[] = [
+                                        'value' => $value['section_id'],
+                                        'label' => $value['sectionclassname'],
+                                    ];
+                                }
+                                echo view('components/report_filter_bar', [
+                                    'formId' => 'paidFeeClassFilterForm',
+                                    'title' => 'Class & Display Options',
+                                    'fields' => [
+                                        [
+                                            'type' => 'select',
+                                            'id' => 'cls_sec_id',
+                                            'name' => 'cls_sec_id',
+                                            'label' => 'Select Class',
+                                            'class' => 'form-control select2 report-select2',
+                                            'options' => $clsOptions,
+                                            'col_class' => 'col-md-12 mb-2',
+                                        ],
+                                        [
+                                            'type' => 'raw',
+                                            'label' => 'Display Options',
+                                            'col_class' => 'col-md-12 mb-2',
+                                            'html' => '<div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="monthly_fee" checked><label class="custom-control-label" for="monthly_fee">Show Monthly Balance</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="others_fee" checked><label class="custom-control-label" for="others_fee">Show Other Balance</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="show_projected" checked><label class="custom-control-label" for="show_projected">Projected Fees</label></div>
+                                            <div class="custom-control custom-switch custom-switch-lg"><input type="checkbox" class="custom-control-input" id="show_balance" checked><label class="custom-control-label" for="show_balance">Show Total Balance</label></div>',
+                                        ],
+                                    ],
+                                    'actions' => [],
+                                ]);
+                            ?>
                         </div>
 
                         <!-- Month Selection -->

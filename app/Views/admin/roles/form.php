@@ -40,17 +40,23 @@
         overflow-y: auto;
     }
     .permission-group-body.show {
-        display: block;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        align-items: start;
     }
     .permission-item {
-        display: inline-block;
-        width: 280px;
-        margin: 5px;
-        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 7px 9px;
         background: #fefefe;
         border: 1px solid #e0e0e0;
         border-radius: 4px;
-        vertical-align: top;
     }
     .permission-item:hover {
         background: #f8f9fa;
@@ -58,14 +64,25 @@
     }
     .permission-item label {
         font-weight: 500;
-        margin-bottom: 5px;
+        margin-bottom: 0;
         display: block;
         font-size: 13px;
     }
-    .permission-item select {
-        width: 100%;
-        font-size: 12px;
-        padding: 4px 8px;
+    .permission-main {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .perm-controls {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .perm-choice-btn {
+        min-width: 58px;
+    }
+    .perm-choice-btn.active {
+        font-weight: 600;
     }
     .perm-key {
         font-size: 10px;
@@ -119,6 +136,51 @@
         padding: 10px 15px;
         margin-bottom: 15px;
         border-radius: 4px;
+    }
+    .perm-search-wrap {
+        max-width: 420px;
+        margin-bottom: 10px;
+    }
+    .perm-search-wrap .form-control {
+        border-radius: 8px;
+    }
+    .permission-item.perm-nested { max-width: 100%; }
+    .permission-item[data-depth="0"] {
+        border-left: 3px solid #17a2b8;
+    }
+    .permission-item[data-depth="1"] {
+        border-left: 3px solid #6f42c1;
+    }
+    .permission-item[data-depth="2"],
+    .permission-item[data-depth="3"],
+    .permission-item[data-depth="4"] {
+        border-left: 3px solid #6c757d;
+    }
+    @media (max-width: 1600px) {
+        .permission-group-body.show {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 1200px) {
+        .permission-group-body.show {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 768px) {
+        .permission-group-body.show {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 560px) {
+        .permission-group-body.show {
+            grid-template-columns: 1fr;
+        }
+    }
+    .permission-group.no-search-match {
+        display: none !important;
+    }
+    .permission-item.no-search-match {
+        display: none !important;
     }
 </style>
 
@@ -206,18 +268,30 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
                             </div>
                         </div>
                         
-                        <?php if ($id > 0 && $current_role_name): ?>
                         <div class="role-info-box">
                             <i class="fas fa-info-circle"></i> 
-                            <strong>Editing Role:</strong> <?= $current_role_name ?>
+                            <strong>Editing Role:</strong> <span id="editingRoleNameText"><?= $current_role_name ?: '-' ?></span>
                             <span class="float-right">
-                                <i class="fas fa-key"></i> Role ID: <?= $id ?>
+                                <i class="fas fa-key"></i> Role ID: <span id="editingRoleIdText"><?= $id ?: 0 ?></span>
                             </span>
+                            <div class="mt-2 text-muted" id="switchRoleHint">Change Role Name + Plan to load another existing role on this page.</div>
                         </div>
-                        <?php endif; ?>
                         
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> Role Permissions</label>
+                            <div class="perm-search-wrap">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    </div>
+                                    <input type="search" class="form-control" id="permSearchInput"
+                                           placeholder="Search by permission name or key…" autocomplete="off">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" id="permSearchClear" title="Clear search">Clear</button>
+                                    </div>
+                                </div>
+                                <small class="text-muted" id="permSearchHint"></small>
+                            </div>
                             <div class="action-buttons">
                                 <button type="button" class="btn btn-sm btn-success" id="allowAllBtn">
                                     <i class="fas fa-check-double"></i> Allow All
@@ -257,127 +331,222 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
 </section>
 
 <script>
-var currentRoleId = <?= $id ?>;
+/** Always use the role row id from the form (editing), not role_name_id / plan. */
+function getEditingRoleId() {
+    var v = parseInt($('#roleId').val(), 10);
+    return isNaN(v) ? 0 : v;
+}
+
+function hasUnsavedPermissionChanges() {
+    return $('#roleForm').data('permDirty') === true;
+}
+
+function markPermissionDirty() {
+    $('#roleForm').data('permDirty', true);
+}
+
+function clearPermissionDirty() {
+    $('#roleForm').data('permDirty', false);
+}
+
+function updateRoleInfoBar(roleId) {
+    var roleName = $('#role_name_id option:selected').text() || '-';
+    $('#editingRoleNameText').text(roleName);
+    $('#editingRoleIdText').text(roleId || 0);
+}
 
 function updateStats() {
     var total = 0;
     var allowed = 0;
     var denied = 0;
-    var ignored = 0;
     
-    $('select[name*="perms["]').each(function() {
+    $('input.perm-input').each(function() {
         total++;
         var val = $(this).val();
         if (val == '1') allowed++;
-        else if (val == '0') denied++;
-        else if (val == 'x') ignored++;
+        else denied++;
     });
     
-    $('#permStats').html('Total: ' + total + ' | <span class="text-success">Allow: ' + allowed + '</span> | <span class="text-danger">Deny: ' + denied + '</span> | <span class="text-secondary">Ignore: ' + ignored + '</span>');
+    $('#permStats').html('Total: ' + total + ' | <span class="text-success">Allow: ' + allowed + '</span> | <span class="text-danger">Deny: ' + denied + '</span>');
 }
 
 function loadPermissions(roleId) {
+    roleId = parseInt(roleId, 10);
+    if (isNaN(roleId)) {
+        roleId = 0;
+    }
     $('#permissionsContainer').html('<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading permissions...</p></div>');
     
     $.ajax({
         url: '<?= base_url('admin/roles/perm_data') ?>',
         type: 'POST',
-        data: { 
-            roleid: roleId, 
-            action: roleId > 0 ? 'edit' : 'add'
+        data: {
+            roleid: roleId,
+            action: roleId > 0 ? 'edit' : 'add',
+            <?= json_encode(csrf_token()) ?>: <?= json_encode(csrf_hash()) ?>
         },
-        dataType: 'text',
-        success: function(response) {
-            try {
-                var cleanResponse = response.trim();
-                var data = eval('(' + cleanResponse + ')');
-                
-                if (data && data.length > 0) {
-                    renderPermissions(data);
-                    updateStats();
-                } else {
-                    $('#permissionsContainer').html('<div class="alert alert-warning">No permissions found in the system.</div>');
-                }
-            } catch(e) {
-                console.error('Parse error:', e);
-                $('#permissionsContainer').html('<div class="alert alert-danger">Error parsing permissions data. Please refresh the page.</div>');
+        dataType: 'json',
+        success: function(data) {
+            if ($.isArray(data) && data.length > 0) {
+                renderPermissions(data);
+                updateStats();
+                clearPermissionDirty();
+            } else if ($.isArray(data)) {
+                $('#permissionsContainer').html('<div class="alert alert-warning">No permissions found in the system.</div>');
+            } else {
+                $('#permissionsContainer').html('<div class="alert alert-danger">Unexpected response loading permissions.</div>');
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX Error:', error);
-            $('#permissionsContainer').html('<div class="alert alert-danger">Failed to load permissions. Please refresh the page.</div>');
+            console.error('AJAX Error:', error, xhr.responseText);
+            var msg = 'Failed to load permissions. Please refresh the page.';
+            if (xhr.status === 403) {
+                msg = 'Permission load was blocked (403). Check login / CSRF.';
+            }
+            $('#permissionsContainer').html('<div class="alert alert-danger">' + msg + '</div>');
         }
+    });
+}
+
+function permSearchText(node) {
+    return ((node.name || '') + ' ' + (node.permKey || '')).trim();
+}
+
+function escapeAttr(s) {
+    if (!s) return '';
+    return String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function renderPermissionItem(node, depth) {
+    depth = depth || 0;
+    var selectedValue = (node.chk == '1') ? '1' : '0';
+    var pad = Math.min(depth, 2) * 8;
+    var searchBlob = escapeAttr(permSearchText(node));
+    var html = '<div class="permission-item perm-nested" data-depth="' + depth + '" data-perm-id="' + node.id + '" data-perm-search="' + searchBlob + '">';
+    html += '<div class="permission-main" style="padding-left:' + pad + 'px">';
+    html += '<label>' + (depth === 0 ? '<strong><i class="fas fa-cog"></i> ' : '') + escapeHtml(node.name) + (depth === 0 ? '</strong>' : '') + '</label>';
+    if (node.permKey) {
+        html += '<div class="perm-key">' + escapeHtml(node.permKey) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="perm-controls">';
+    html += '<input type="hidden" name="perms[' + node.id + ']" class="perm-input" value="' + selectedValue + '">';
+    html += '<div class="btn-group btn-group-sm">';
+    html += buildChoiceButton('1', selectedValue, 'Allow', 'success');
+    html += buildChoiceButton('0', selectedValue, 'Deny', 'danger');
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    if (node.children && node.children.length > 0) {
+        for (var k = 0; k < node.children.length; k++) {
+            html += renderPermissionItem(node.children[k], depth + 1);
+        }
+    }
+    return html;
+}
+
+function buildChoiceButton(value, selectedValue, text, color) {
+    var active = (String(value) === String(selectedValue)) ? ' active' : '';
+    return '<button type="button" class="btn btn-outline-' + color + ' perm-choice-btn' + active + '" data-value="' + value + '">' + text + '</button>';
+}
+
+function setPermissionChoice($item, value) {
+    $item.find('input.perm-input').val(value);
+    $item.find('.perm-choice-btn').removeClass('active');
+    $item.find('.perm-choice-btn[data-value="' + value + '"]').addClass('active');
+}
+
+function setAllPermissionChoices(value) {
+    $('.permission-item[data-perm-id]').each(function () {
+        setPermissionChoice($(this), value);
+    });
+    markPermissionDirty();
+    updateStats();
+}
+
+function bindPermissionChoiceEvents() {
+    $('#permissionsContainer').off('click', '.perm-choice-btn').on('click', '.perm-choice-btn', function () {
+        var $btn = $(this);
+        var $item = $btn.closest('.permission-item[data-perm-id]');
+        var value = $btn.attr('data-value');
+        setPermissionChoice($item, value);
+        markPermissionDirty();
+        updateStats();
     });
 }
 
 function renderPermissions(data) {
     var html = '';
     var moduleCount = 0;
-    
+
     for (var i = 0; i < data.length; i++) {
         var node = data[i];
         var groupId = 'group_' + node.id;
         moduleCount++;
-        
+
         var statusText = '';
         var statusClass = '';
         if (node.chk == '1') {
             statusText = 'Allow';
             statusClass = 'badge-allow';
-        } else if (node.chk == '0') {
+        } else {
             statusText = 'Deny';
             statusClass = 'badge-deny';
-        } else {
-            statusText = 'Ignore';
-            statusClass = 'badge-ignore';
         }
-        
-        html += '<div class="permission-group">';
+
+        var groupSearch = escapeAttr(permSearchText(node));
+
+        html += '<div class="permission-group" data-group-search="' + groupSearch + '">';
         html += '<div class="permission-group-header" onclick="toggleGroup(\'' + groupId + '\')">';
         html += '<div><i class="fas fa-folder-open"></i> ' + escapeHtml(node.name) + '</div>';
         html += '<span class="badge ' + statusClass + '">' + statusText + '</span>';
         html += '</div>';
         html += '<div id="' + groupId + '" class="permission-group-body">';
-        
-        var selectedValue = node.chk || 'x';
-        html += '<div class="permission-item">';
-        html += '<label><strong><i class="fas fa-cog"></i> ' + escapeHtml(node.name) + '</strong></label>';
-        html += '<select name="perms[' + node.id + ']" class="form-control perm-select" onchange="updateStats()">';
-        html += '<option value="1" ' + (selectedValue == '1' ? 'selected' : '') + '>✓ Allow</option>';
-        html += '<option value="0" ' + (selectedValue == '0' ? 'selected' : '') + '>✗ Deny</option>';
-        html += '<option value="x" ' + (selectedValue == 'x' ? 'selected' : '') + '>○ Ignore</option>';
-        html += '</select>';
-        if (node.permKey) {
-            html += '<div class="perm-key">' + escapeHtml(node.permKey) + '</div>';
-        }
-        html += '</div>';
-        
-        if (node.children && node.children.length > 0) {
-            for (var j = 0; j < node.children.length; j++) {
-                var child = node.children[j];
-                var childValue = child.chk || 'x';
-                html += '<div class="permission-item">';
-                html += '<label>' + escapeHtml(child.name) + '</label>';
-                html += '<select name="perms[' + child.id + ']" class="form-control perm-select" onchange="updateStats()">';
-                html += '<option value="1" ' + (childValue == '1' ? 'selected' : '') + '>✓ Allow</option>';
-                html += '<option value="0" ' + (childValue == '0' ? 'selected' : '') + '>✗ Deny</option>';
-                html += '<option value="x" ' + (childValue == 'x' ? 'selected' : '') + '>○ Ignore</option>';
-                html += '</select>';
-                if (child.permKey) {
-                    html += '<div class="perm-key">' + escapeHtml(child.permKey) + '</div>';
-                }
-                html += '</div>';
-            }
-        }
-        
+        html += renderPermissionItem(node, 0);
         html += '</div></div>';
     }
-    
+
     $('#permissionsContainer').html(html);
-    
+    bindPermissionChoiceEvents();
+
     if (moduleCount > 0) {
         $('.permission-group-body').first().addClass('show');
     }
+    applyPermissionSearch($('#permSearchInput').val());
+}
+
+var permSearchTimer = null;
+function applyPermissionSearch(raw) {
+    var q = (raw || '').trim().toLowerCase();
+    var $groups = $('.permission-group');
+    var $items = $('.permission-item[data-perm-search]');
+    if (!q) {
+        $groups.removeClass('no-search-match');
+        $items.removeClass('no-search-match');
+        $('#permSearchHint').text('');
+        return;
+    }
+    var visibleGroups = 0;
+    var visibleItems = 0;
+    $groups.each(function () {
+        var $g = $(this);
+        var headerMatch = (($g.attr('data-group-search') || '').toLowerCase().indexOf(q) !== -1);
+        var anyItem = false;
+        $g.find('.permission-item[data-perm-search]').each(function () {
+            var t = ($(this).attr('data-perm-search') || '').toLowerCase();
+            var m = t.indexOf(q) !== -1;
+            $(this).toggleClass('no-search-match', !m);
+            if (m) anyItem = true;
+        });
+        var show = headerMatch || anyItem;
+        $g.toggleClass('no-search-match', !show);
+        if (show) {
+            visibleGroups++;
+            visibleItems += $g.find('.permission-item[data-perm-search]:not(.no-search-match)').length;
+            $g.find('.permission-group-body').first().addClass('show');
+        }
+    });
+    $('#permSearchHint').text(visibleItems ? ('Showing ' + visibleItems + ' permission(s) in ' + visibleGroups + ' group(s)') : 'No matching permissions.');
 }
 
 function toggleGroup(groupId) {
@@ -394,18 +563,79 @@ function escapeHtml(text) {
     });
 }
 
+function switchToSelectedRole(forceSwitch) {
+    var roleNameId = $('#role_name_id').val();
+    var planId = $('#plan_id').val();
+    if (!roleNameId) {
+        return;
+    }
+    if (!forceSwitch && hasUnsavedPermissionChanges()) {
+        var ok = window.confirm('You have unsaved permission changes. Switch role and discard those unsaved changes?');
+        if (!ok) {
+            return;
+        }
+    }
+    $.ajax({
+        url: '<?= base_url('admin/roles/get_role_by_name') ?>',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            role_name_id: roleNameId,
+            plan_id: planId,
+            <?= json_encode(csrf_token()) ?>: <?= json_encode(csrf_hash()) ?>
+        },
+        success: function(resp) {
+            if (!resp || !resp.success || !resp.role_id) {
+                $('#switchRoleHint').text('No existing role found for selected role name + plan.');
+                return;
+            }
+            var newRoleId = parseInt(resp.role_id, 10);
+            if (isNaN(newRoleId) || newRoleId <= 0) {
+                $('#switchRoleHint').text('Invalid role selected.');
+                return;
+            }
+            $('#roleId').val(newRoleId);
+            updateRoleInfoBar(newRoleId);
+            loadPermissions(newRoleId);
+            $('#switchRoleHint').text('Loaded role #' + newRoleId + ' permissions.');
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, '', '<?= base_url('admin/roles/edit') ?>/' + newRoleId);
+            }
+        },
+        error: function() {
+            $('#switchRoleHint').text('Unable to load selected role. Please try again.');
+        }
+    });
+}
+
 $(document).ready(function() {
-    loadPermissions(currentRoleId);
+    clearPermissionDirty();
+    updateRoleInfoBar(getEditingRoleId());
+    loadPermissions(getEditingRoleId());
+    
+    $('#role_name_id, #plan_id').on('change', function() {
+        switchToSelectedRole(false);
+    });
+
+    $('#permSearchInput').on('input', function () {
+        clearTimeout(permSearchTimer);
+        var v = $(this).val();
+        permSearchTimer = setTimeout(function () {
+            applyPermissionSearch(v);
+        }, 200);
+    });
+    $('#permSearchClear').on('click', function () {
+        $('#permSearchInput').val('');
+        applyPermissionSearch('');
+    });
     
     $('#allowAllBtn').click(function() {
-        $('select[name*="perms["]').val('1');
-        updateStats();
+        setAllPermissionChoices('1');
         toastr.success('All permissions set to Allow');
     });
     
     $('#denyAllBtn').click(function() {
-        $('select[name*="perms["]').val('0');
-        updateStats();
+        setAllPermissionChoices('0');
         toastr.success('All permissions set to Deny');
     });
     
@@ -439,8 +669,14 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     toastr.success(response.msg);
+                    clearPermissionDirty();
                     setTimeout(function() {
-                        window.location.href = '<?= base_url('admin/roles') ?>';
+                        var savedRoleId = parseInt(response.role_id || getEditingRoleId(), 10);
+                        if (!isNaN(savedRoleId) && savedRoleId > 0) {
+                            window.location.href = '<?= base_url('admin/roles/edit') ?>/' + savedRoleId;
+                        } else {
+                            window.location.href = '<?= base_url('admin/roles') ?>';
+                        }
                     }, 1500);
                 } else {
                     if (response.errors) {

@@ -1,9 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
+
+<?= $this->section('pageStyles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/student-profile.css') ?>">
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 
 <?php
-if (!isset($student_id)) {
-    echo "<div class='alert alert-danger m-5'>No Student ID Provided</div>";
+if (! isset($student_id) || $student_id === '' || $student_id === null) {
+    echo '<div class="alert alert-danger m-5"><i class="fas fa-exclamation-circle mr-2"></i>Open this profile from the student list, or use <code>?id=STUDENT_ID</code> in the URL.</div>';
+
     return;
 }
 ?>
@@ -29,33 +35,35 @@ if (!isset($student_id)) {
 <section class="content">
     <div class="row">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header p-2">
-                    <ul class="nav nav-pills">
+            <div class="card card-outline card-primary shadow-sm sp-main-card">
+                <div class="card-header p-2 bg-white border-bottom">
+                    <ul class="nav nav-pills flex-nowrap sp-tab-nav">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#profile" data-toggle="tab">Profile</a>
+                            <a class="nav-link active" href="#profile" data-toggle="tab"><i class="fas fa-user d-none d-sm-inline mr-1"></i>Profile</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#fee" data-toggle="tab">Fee</a>
+                            <a class="nav-link" href="#fee" data-toggle="tab"><i class="fas fa-money-check-alt d-none d-sm-inline mr-1"></i>Fee</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#result" data-toggle="tab">Result</a>
+                            <a class="nav-link" href="#result" data-toggle="tab"><i class="fas fa-chart-line d-none d-sm-inline mr-1"></i>Results</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#attendance" data-toggle="tab">Attendance</a>
+                            <a class="nav-link" href="#attendance" data-toggle="tab"><i class="fas fa-calendar-check d-none d-sm-inline mr-1"></i>Attendance</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#health" data-toggle="tab">
-                                <i class="fas fa-heartbeat mr-1"></i> Health & BMI
+                                <i class="fas fa-heartbeat mr-1"></i><span class="d-md-none">Health</span><span class="d-none d-md-inline">Health &amp; BMI</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#chalan" data-toggle="tab">
-                                <i class="fas fa-file-invoice mr-1"></i> Chalan Generator
+                                <i class="fas fa-file-invoice mr-1"></i><span class="d-none d-md-inline">Challan</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" target="_blank" href="<?= base_url('admin/leaving-certificate/edit?id='.$student_id) ?>">Certificate</a>
+                            <a class="nav-link" target="_blank" rel="noopener" href="<?= base_url('admin/leaving-certificate/edit?id='.$student_id) ?>" title="Leaving certificate">
+                                <i class="fas fa-certificate mr-1"></i><span class="d-none d-lg-inline">Certificate</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -133,7 +141,8 @@ if (!isset($student_id)) {
                                 </div>
                                 <div class="card-body">
                                     <form id="chalanOptionsForm">
-                                        <input type="hidden" name="student_id" id="student_id" value="<?= $student_id ?>">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="student_id" id="chalan_form_student_id" value="<?= (int) $student_id ?>">
                                         
                                         <!-- View Type Selection -->
                                         <div class="row">
@@ -244,11 +253,10 @@ if (!isset($student_id)) {
                                 </div>
                                 <div class="card-body p-0">
                                     <div id="chalanInfo" class="chalan-container">
-                                        <div class="text-center p-5">
-                                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                                <span class="sr-only">Loading...</span>
-                                            </div>
-                                            <p class="mt-2 text-muted">Select options and click Generate Challan</p>
+                                        <div class="text-center text-muted p-5 border rounded bg-light">
+                                            <i class="fas fa-file-invoice fa-3x mb-3 text-secondary"></i>
+                                            <p class="mb-1 font-weight-bold text-dark">No preview yet</p>
+                                            <p class="mb-0 small">Set options above, then click <strong>Generate Challan</strong> — the preview appears here.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -293,7 +301,7 @@ if (!isset($student_id)) {
                     </div>
                     <div class="form-group">
                         <label>Notes (Optional)</label>
-                        <textarea name="notes" class="form-control" rows="2" 
+                        <textarea name="notes" id="bmi_notes" class="form-control" rows="2" 
                                   placeholder="Any additional notes about this measurement..."></textarea>
                     </div>
                     
@@ -348,6 +356,12 @@ if (!isset($student_id)) {
 </div>
 
 <script>
+function studentPost(extra) {
+    var d = $.extend({ student_id: <?= (int) $student_id ?> }, extra || {});
+    d['<?= csrf_token() ?>'] = '<?= csrf_hash() ?>';
+    return d;
+}
+
 // BMI Calculation Helper
 function calculateBMI(height, weight) {
     if (height <= 0 || weight <= 0) return null;
@@ -393,145 +407,162 @@ function getCategoryEmoji(category) {
 }
 
 $(document).ready(function() {
-    // Load profile data on page load
-    loadProfileData();
-    
-    // Initialize Select2
+    var tabLoaded = { profile: false, fee: false, result: false, attendance: false, health: false };
+
+    // Delegated: fee/health HTML is injected via AJAX
+    $(document).on('click', '#recordBmiBtn', function() {
+        $('#height, #weight, #bmi_notes').val('');
+        $('#bmiModal').modal('show');
+    });
+
+    $(document).on('click', '.view-chalan-btn', function() {
+        var chalanId = $(this).data('chalan-id');
+        var studentName = $(this).data('student-name');
+        loadFeeChalan(chalanId, studentName);
+    });
+
+    $(document).on('click', '#generateChalanBtn', function() {
+        generateNewChalan();
+    });
+
+    // Profile loads once on entry; other tabs load once when first opened
+    loadProfileData(function () { tabLoaded.profile = true; });
+
     $('.select2').select2({
         theme: 'bootstrap',
         width: '100%'
     });
-    
-    // Character counter for message text
+
     $('#message_text').on('input', function() {
-        const count = $(this).val().length;
-        $('#charCount').text(count);
+        $('#charCount').text($(this).val().length);
     });
-    
-    // BMI Form Submission
+
     $('#bmiForm').on('submit', function(e) {
         e.preventDefault();
-        
-        const height = parseFloat($('#height').val());
-        const weight = parseFloat($('#weight').val());
-        
+
+        var height = parseFloat($('#height').val());
+        var weight = parseFloat($('#weight').val());
+
         if (!height || !weight) {
             toastr.error('Please enter both height and weight');
             return;
         }
-        
-        const bmi = calculateBMI(height, weight);
-        
+
+        var bmi = calculateBMI(height, weight);
+
+        var payload = studentPost({
+            height: height,
+            weight: weight,
+            bmi: bmi,
+            notes: $('#bmi_notes').val()
+        });
+        payload.student_id = $('#bmi_student_id').val();
+
         $.ajax({
             url: '<?= base_url("admin/students/update-bmi") ?>',
             type: 'POST',
-            data: {
-                student_id: $('#bmi_student_id').val(),
-                height: height,
-                weight: weight,
-                bmi: bmi,
-                notes: $('textarea[name="notes"]').val(),
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
-            },
+            data: payload,
             dataType: 'json',
             beforeSend: function() {
                 $('#bmiModal .btn-primary').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
             },
             success: function(response) {
                 if (response.success) {
-                    toastr.success(response.message || 'BMI recorded successfully');
+                    toastr.success(response.message || response.msg || 'BMI recorded successfully');
                     $('#bmiModal').modal('hide');
-                    loadHealthData();
+                    tabLoaded.health = false;
+                    loadHealthData(function () { tabLoaded.health = true; });
                 } else {
-                    toastr.error(response.message || 'Failed to save BMI data');
+                    toastr.error(response.message || response.msg || 'Failed to save BMI data');
                 }
             },
-            error: function() {
-                toastr.error('Error saving BMI data');
+            error: function(xhr) {
+                var msg = 'Error saving BMI data';
+                try {
+                    var j = JSON.parse(xhr.responseText);
+                    if (j.message) msg = j.message;
+                    if (j.msg) msg = j.msg;
+                } catch (err) { /* ignore */ }
+                toastr.error(msg);
             },
             complete: function() {
                 $('#bmiModal .btn-primary').prop('disabled', false).html('Save & Calculate BMI');
             }
         });
     });
-    
-    // Tab click handlers
+
     $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         var target = $(e.target).attr('href');
-        
-        if (target == '#profile') {
-            loadProfileData();
-        } else if (target == '#fee') {
-            loadFeeData();
-        } else if (target == '#result') {
-            loadResultData();
-        } else if (target == '#attendance') {
-            loadAttendanceData();
-        } else if (target == '#health') {
-            loadHealthData();
+
+        if (target === '#profile') {
+            if (!tabLoaded.profile) {
+                loadProfileData(function () { tabLoaded.profile = true; });
+            }
+        } else if (target === '#fee') {
+            if (!tabLoaded.fee) {
+                loadFeeData(function () { tabLoaded.fee = true; });
+            }
+        } else if (target === '#result') {
+            if (!tabLoaded.result) {
+                loadResultData(function () { tabLoaded.result = true; });
+            }
+        } else if (target === '#attendance') {
+            if (!tabLoaded.attendance) {
+                loadAttendanceData(function () { tabLoaded.attendance = true; });
+            }
+        } else if (target === '#health') {
+            if (!tabLoaded.health) {
+                loadHealthData(function () { tabLoaded.health = true; });
+            }
         }
     });
 });
 
-function loadProfileData() {
+function loadProfileData(done) {
     $.ajax({
         url: '<?= base_url("admin/profile-student/data") ?>',
-        type: "POST",
-        data: { student_id: <?= $student_id ?> },
+        type: 'POST',
+        data: studentPost(),
         success: function(res) {
-            $("#studentInfo").html(res);
+            $('#studentInfo').html(res);
+            if (typeof done === 'function') done();
         },
         error: function() {
-            $("#studentInfo").html('<div class="alert alert-danger">Error loading profile data</div>');
+            $('#studentInfo').html('<div class="alert alert-danger">Error loading profile data</div>');
+            if (typeof done === 'function') done();
         }
     });
 }
 
-function loadFeeData() {
+function loadFeeData(done) {
     $.ajax({
         url: '<?= base_url("admin/profile-student/student-fee-data") ?>',
-        type: "POST",
-        data: { student_id: <?= $student_id ?> },
+        type: 'POST',
+        data: studentPost(),
         success: function(res) {
-            $("#feeInfo").html(res);
-            initializeFeeButtons();
+            $('#feeInfo').html(res);
+            if (typeof done === 'function') done();
         },
         error: function() {
-            $("#feeInfo").html('<div class="alert alert-danger">Error loading fee data</div>');
+            $('#feeInfo').html('<div class="alert alert-danger">Error loading fee data</div>');
+            if (typeof done === 'function') done();
         }
     });
 }
 
-function loadHealthData() {
+function loadHealthData(done) {
     $.ajax({
         url: '<?= base_url("admin/profile-student/student-health-data") ?>',
-        type: "POST",
-        data: { student_id: <?= $student_id ?> },
+        type: 'POST',
+        data: studentPost(),
         success: function(res) {
-            $("#healthInfo").html(res);
-            initializeHealthButtons();
+            $('#healthInfo').html(res);
+            if (typeof done === 'function') done();
         },
         error: function() {
-            $("#healthInfo").html('<div class="alert alert-danger">Error loading health data</div>');
+            $('#healthInfo').html('<div class="alert alert-danger">Error loading health data</div>');
+            if (typeof done === 'function') done();
         }
-    });
-}
-
-function initializeHealthButtons() {
-    $('#recordBmiBtn').click(function() {
-        $('#bmiModal').modal('show');
-    });
-}
-
-function initializeFeeButtons() {
-    $('.view-chalan-btn').click(function() {
-        const chalanId = $(this).data('chalan-id');
-        const studentName = $(this).data('student-name');
-        loadFeeChalan(chalanId, studentName);
-    });
-    
-    $('#generateChalanBtn').click(function() {
-        generateNewChalan();
     });
 }
 
@@ -696,34 +727,10 @@ function displayPaymentHistory(history) {
 }
 
 function generateNewChalan() {
-    if (!confirm('Generate new fee challan for this student?')) return;
-    
-    $.ajax({
-        url: '<?= base_url("admin/fee-chalan/generate-single") ?>',
-        type: 'POST',
-        data: { 
-            student_id: <?= $student_id ?>,
-            fee_month: prompt('Enter fee month (MM/YYYY):', new Date().toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' }))
-        },
-        dataType: 'json',
-        beforeSend: function() {
-            $('#generateChalanBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Generating...');
-        },
-        success: function(response) {
-            if (response.success) {
-                toastr.success('Chalan generated successfully');
-                loadFeeData();
-            } else {
-                toastr.error(response.message || 'Failed to generate chalan');
-            }
-        },
-        error: function() {
-            toastr.error('Error generating chalan');
-        },
-        complete: function() {
-            $('#generateChalanBtn').prop('disabled', false).html('<i class="fas fa-plus mr-2"></i> Generate New Challan');
-        }
-    });
+    if (!confirm('Open the single challan screen to create fee challans for this student?')) {
+        return;
+    }
+    window.open('<?= base_url('admin/fee-chalan-single/add') ?>?id=<?= (int) $student_id ?>', '_blank', 'noopener,noreferrer');
 }
 
 function printModalChalan() {
@@ -759,81 +766,82 @@ function formatCurrency(amount) {
     }).format(amount) + '/-';
 }
 
-function loadAttendanceData() {
+function loadAttendanceData(done) {
     $.ajax({
         url: '<?= base_url("admin/profile-student/student-attendance-data") ?>',
-        type: "POST",
-        data: { student_id: <?= $student_id ?> },
+        type: 'POST',
+        data: studentPost(),
         success: function(res) {
-            $("#attendanceInfo").html(res);
+            $('#attendanceInfo').html(res);
+            if (typeof done === 'function') done();
         },
         error: function() {
-            $("#attendanceInfo").html('<div class="alert alert-danger">Error loading attendance data</div>');
+            $('#attendanceInfo').html('<div class="alert alert-danger">Error loading attendance data</div>');
+            if (typeof done === 'function') done();
         }
     });
 }
 
-function loadResultData() {
-    $("#loader-1").css("display", "block");
-    var academic_result = [];
-    var student_id = <?= $student_id ?>;
-    
+function loadResultData(done) {
     $.ajax({
-        url: '<?= base_url("admin/student-results/data") ?>',
-        type: "POST",
-        data: { academic_result: academic_result, student_id: student_id },
+        url: '<?= base_url("admin/profile-student/student-result-data") ?>',
+        type: 'POST',
+        data: studentPost(),
         success: function(res) {
-            $("#resultInfo").html(res);
-            $("#loader-1").css("display", "none");
+            $('#resultInfo').html(res);
+            if (typeof done === 'function') done();
         },
         error: function() {
-            $("#resultInfo").html('<div class="alert alert-danger">Error loading result data</div>');
-            $("#loader-1").css("display", "none");
+            $('#resultInfo').html('<div class="alert alert-danger">Error loading result data</div>');
+            if (typeof done === 'function') done();
         }
     });
 }
 
 function loadChalanData() {
-    const studentId = <?= $student_id ?>;
-    const formData = $('#chalanOptionsForm').serialize();
-    
+    const studentId = <?= (int) $student_id ?>;
+    let formData = $('#chalanOptionsForm').serialize();
+    formData += '&search=' + encodeURIComponent(studentId) + '&selected_student_id=' + encodeURIComponent(studentId);
+
     $('#chalanInfo').html(`
         <div class="text-center p-5">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                 <span class="sr-only">Loading...</span>
             </div>
-            <p class="mt-2 text-muted">Generating challan...</p>
+            <p class="mt-2 text-muted">Generating challan preview…</p>
         </div>
     `);
-    
-    let url = '<?= base_url("admin/fee-chalan/generate") ?>?' + formData + 
-              '&selected_student_id=' + studentId + 
-              '&search=' + studentId;
-    
+
     $.ajax({
-        url: url,
-        type: 'GET',
+        url: '<?= base_url('admin/fee-chalan/generate') ?>',
+        type: 'POST',
+        data: formData,
+        dataType: 'html',
+        timeout: 120000,
         success: function(response) {
             $('#chalanInfo').html(response);
             $('#printChalanBtn, #downloadChalanBtn').show();
-            
+
             if (typeof initializeChalanView === 'function') {
                 initializeChalanView();
             }
         },
-        error: function(xhr, status, error) {
-            console.error('Error loading challan:', error);
-            $('#chalanInfo').html(`
-                <div class="alert alert-danger m-3">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    Error loading fee challan. Please try again.
-                    <div class="mt-3">
-                        <button class="btn btn-primary" onclick="loadChalanData()">
-                            <i class="fas fa-sync mr-1"></i> Retry
-                        </button>
-                    </div>
-                </div>
-            `);
+        error: function(xhr, status, err) {
+            console.error('Challan preview error:', status, err, xhr.status);
+            var hint = '';
+            if (xhr.status === 404) {
+                hint = ' The server returned 404 — check that <code>admin/fee-chalan/generate</code> is routed.';
+            } else if (status === 'timeout') {
+                hint = ' Request timed out — try again or narrow the fee month.';
+            }
+            $('#chalanInfo').html(
+                '<div class="alert alert-danger m-3">' +
+                '<i class="fas fa-exclamation-circle mr-2"></i>' +
+                '<strong>Could not load challan preview.</strong> ' + (xhr.responseText ? '' : '') + hint +
+                '<div class="mt-3">' +
+                '<button type="button" class="btn btn-primary" onclick="loadChalanData()">' +
+                '<i class="fas fa-sync mr-1"></i> Retry</button></div></div>'
+            );
         }
     });
 }
@@ -883,14 +891,13 @@ function printChalan() {
 }
 
 function downloadChalan() {
-    const studentId = <?= $student_id ?>;
-    const formData = $('#chalanOptionsForm').serialize();
-    
-    const url = '<?= base_url("admin/fee-chalan/generate") ?>?' + formData + 
-                '&selected_student_id=' + studentId + 
-                '&search=' + studentId;
-    
-    window.open(url, '_blank');
+    const studentId = <?= (int) $student_id ?>;
+    let formData = $('#chalanOptionsForm').serialize();
+    formData += '&search=' + encodeURIComponent(studentId) + '&selected_student_id=' + encodeURIComponent(studentId);
+
+    var url = '<?= base_url('admin/fee-chalan/generate') ?>?' + formData;
+
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function resetChalanOptions() {
@@ -904,11 +911,10 @@ function resetChalanOptions() {
     $('#charCount').text('0');
     
     $('#chalanInfo').html(`
-        <div class="text-center p-5">
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
-            <p class="mt-2 text-muted">Select options and click Generate Challan</p>
+        <div class="text-center text-muted p-5 border rounded bg-light">
+            <i class="fas fa-file-invoice fa-3x mb-3 text-secondary"></i>
+            <p class="mb-1 font-weight-bold text-dark">No preview yet</p>
+            <p class="mb-0 small">Set options above, then click <strong>Generate Challan</strong>.</p>
         </div>
     `);
     $('#printChalanBtn, #downloadChalanBtn').hide();

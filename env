@@ -2,13 +2,13 @@
 # ENVIRONMENT
 #--------------------------------------------------------------------
 
-CI_ENVIRONMENT = development
+CI_ENVIRONMENT = production
 
 #--------------------------------------------------------------------
 # DEBUGGING
 #--------------------------------------------------------------------
 
-CI_DEBUG = 1
+CI_DEBUG = 0
 error_reporting = E_ALL
 display_errors = 1
 log_threshold = 4
@@ -17,7 +17,7 @@ log_threshold = 4
 # APP
 #--------------------------------------------------------------------
 
-# app.baseURL = ''
+# app.baseURL = 'http://localhost/school-management-system/public/'
 # app.forceGlobalSecureRequests = false
 # app.CSPEnabled = false
 

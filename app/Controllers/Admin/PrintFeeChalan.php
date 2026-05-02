@@ -8,6 +8,7 @@ use Config\Services;
 use CodeIgniter\I18n\Time;  
 use stdClass;
 use DateTime;
+use App\Libraries\FeeChalanDisplayRows;
 
 class PrintFeeChalan extends BaseController
 { 
@@ -620,10 +621,18 @@ public function get_studentinfo()
             return $net > 0;
         }));
 
-        // Total payable across unpaid
-        $totalAll = 0.0;
+        // Total payable across unpaid (+ monthly vs other split)
+        $totalAll       = 0.0;
+        $payableMonthly = 0.0;
+        $payableOther   = 0.0;
         foreach ($unpaid as $u) {
-            $totalAll += (float)($u['net_amount'] ?? ((float)($u['amount'] ?? 0) - (float)($u['discount'] ?? 0)));
+            $net = (float)($u['net_amount'] ?? ((float)($u['amount'] ?? 0) - (float)($u['discount'] ?? 0)));
+            $totalAll += $net;
+            if ((int)($u['is_monthly_fee'] ?? 0) === 1) {
+                $payableMonthly += $net;
+            } else {
+                $payableOther += $net;
+            }
         }
 
         // Skip student entirely if no payable
@@ -636,42 +645,12 @@ public function get_studentinfo()
         $row['late_fee_fine'] = $late->late_fee_fine ?? null;
         $row['fine_type']     = $late->fine_type     ?? null;
 
-        // Build exactly 7 display rows:
-        // <=7 -> pad blanks; >7 -> first 6 latest, 7th = Arrears (sum of the rest)
-        if (count($unpaid) <= 5) {
-            $display = $unpaid;
-            for ($i = count($display); $i < 5; $i++) {
-                $display[] = [
-                    'particulars_label' => '',
-                    'amount'            => '',
-                    'discount'          => '',
-                    'net_amount'        => 0,
-                    'is_blank'          => 1,
-                ];
-            }
-        } else {
-            $latestSix = array_slice($unpaid, 0, 6);
-            $older     = array_slice($unpaid, 6);
-
-            $arrearsSum = 0.0;
-            foreach ($older as $o) {
-                $arrearsSum += (float)($o['net_amount'] ?? ((float)($o['amount'] ?? 0) - (float)($o['discount'] ?? 0)));
-            }
-
-            $display = $latestSix;
-            $display[] = [
-                'particulars_label' => 'Arrears',
-                'amount'            => number_format($arrearsSum, 2, '.', ''),
-                'discount'          => '',
-                'net_amount'        => $arrearsSum,
-                'is_arrears'        => 1,
-            ];
-        }
-
-        // Save for the view
-        $row['unpaid_rows']          = $unpaid;    // raw list (if needed)
-        $row['unpaid_display_rows']  = $display;   // exactly 7 rows for rendering
+        $unpaidSorted                = $this->sortUnpaidChalansForDisplay($unpaid);
+        $row['unpaid_rows']          = $unpaid;
+        $row['unpaid_display_rows']  = FeeChalanDisplayRows::studentRows($unpaidSorted);
         $row['unpaid_total_payable'] = $totalAll;  // for "Payable Within Due Date"
+        $row['unpaid_payable_monthly'] = $payableMonthly;
+        $row['unpaid_payable_other']   = $payableOther;
         $row['unpaid_last12'] = $this->buildLast12MonthsStatus((int)$row['student_id']);
     }
     unset($row);
@@ -692,7 +671,7 @@ private function getUnpaidChalansByStudent(int $student_id): array
     $qb->select('
         fc.chalan_id, fc.fee_type_id, fc.fee_month, fc.issue_date, fc.due_date,
         fc.amount, fc.discount, fc.status,
-        ft.fee_type_name
+        ft.fee_type_name, ft.is_monthly_fee
     ', false);
     $qb->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left');
 
@@ -730,6 +709,7 @@ private function getUnpaidChalansByStudent(int $student_id): array
             }
         }
         $r['fee_month_compact'] = $compact ?: ($r['fee_month'] ?? '');
+        $r['fee_month_label']   = $r['fee_month_compact'];
         $r['particulars_label'] = trim(($r['fee_type_name'] ?? 'Fee') . ' (' . $r['fee_month_compact'] . ')');
         $r['net_amount']        = (float)($r['amount'] ?? 0) - (float)($r['discount'] ?? 0);
     }
@@ -743,6 +723,23 @@ private function getUnpaidChalansByStudent(int $student_id): array
     return $rows;
 }
 
+/**
+ * Non-monthly fee lines first, then monthly (aligned with FeeChalan PDF output).
+ */
+private function sortUnpaidChalansForDisplay(array $unpaid): array
+{
+    $other   = [];
+    $monthly = [];
+    foreach ($unpaid as $r) {
+        if ((int) ($r['is_monthly_fee'] ?? 0) === 1) {
+            $monthly[] = $r;
+        } else {
+            $other[] = $r;
+        }
+    }
+
+    return array_merge($other, $monthly);
+}
 
 /**
  * Turn YYYY-MM or MM-YYYY into "Month-YYYY". Otherwise returns input.

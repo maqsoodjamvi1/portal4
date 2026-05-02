@@ -366,22 +366,10 @@
     }
 </style>
 
-<!-- Content Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-3 align-items-center">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-calendar-alt mr-2"></i>Bulk Update (DOB & BMI)</h1>
-            </div>
-            <div class="col-sm-6 text-sm-right">
-                <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">DOB & BMI</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/bulk_students_header', [
+    'title' => 'Bulk Update (DOB & BMI)',
+    'subtitle' => 'DOB & BMI'
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -390,16 +378,7 @@
             
             <!-- Nav Tabs - Responsive -->
             <div class="card-header pb-0">
-                <ul class="nav nav-tabs card-header-tabs" style="overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;">
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/addbulkstudents/add') ?>"><i class="fas fa-user-plus"></i> <span class="d-none d-sm-inline">Student Names</span></a></li>          
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>"><i class="fas fa-exchange-alt"></i> <span class="d-none d-sm-inline">Class Change</span></a></li>                    
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_info') ?>"><i class="fas fa-info-circle"></i> <span class="d-none d-sm-inline">Other Info</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_fee_info') ?>"><i class="fas fa-dollar-sign"></i> <span class="d-none d-sm-inline">Fee Info</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkparents') ?>"><i class="fas fa-users"></i> <span class="d-none d-sm-inline">Parent Info</span></a></li>
-                    <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/students_bulk_info_date_of_birth') ?>"><i class="fas fa-calendar"></i> <span class="d-none d-sm-inline">DOB & BMI</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_make_current') ?>"><i class="fas fa-arrow-right"></i> <span class="d-none d-sm-inline">Make Current</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkcsv/addbulk') ?>"><i class="fas fa-file-excel"></i> <span class="d-none d-sm-inline">Excel Import</span></a></li>
-                </ul>
+                <?= view('components/bulk_students_tabs', ['active' => 'dob']) ?>
             </div>
 
             <!-- Filter Bar -->

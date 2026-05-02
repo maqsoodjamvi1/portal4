@@ -55,10 +55,11 @@ $today_chalans = $today_chalans ?? [];
             </div>
             
             <!-- ========== FEE TYPE SELECTION ========== -->
-            <div class="form-group mb-4">
+            <div class="form-group mb-4" id="feeTypeSelectionBlock">
               <label class="font-weight-bold">
                 <i class="fas fa-tags mr-1"></i> Select Fee Types <span class="text-danger">*</span>
               </label>
+              <p class="text-muted small mb-2">You must tick at least one fee type before generating challans. Generation cannot run with zero fee types selected.</p>
               
               <div class="floating-checkbox-container">
                 <?php if (!empty($fee_type_info)) : ?>
@@ -77,10 +78,15 @@ $today_chalans = $today_chalans ?? [];
                       </label>
                     </div>
                   <?php endforeach; ?>
+                <?php else : ?>
+                  <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> No fee types are configured for this campus. Configure fee types before generating challans.
+                  </div>
                 <?php endif; ?>
                 
                 <!-- Add other fee types similarly... -->
               </div>
+              <div id="fee-type-validation-msg" class="text-danger small mt-2 font-weight-bold" style="display:none;" role="alert"></div>
             </div>
             <!-- ========== END FEE TYPE SELECTION ========== -->
 
@@ -142,6 +148,17 @@ $today_chalans = $today_chalans ?? [];
         </div>
     </div>
 </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="custom-control custom-checkbox mb-3">
+                  <input type="checkbox" class="custom-control-input" id="force_fee_month" name="force_fee_month" value="1">
+                  <label class="custom-control-label" for="force_fee_month">
+                    <strong>Force generation</strong> — ignore fee-plan month rules for monthly fees (use when you intentionally bill this month even if it is not marked active on the student’s fee plan).
+                  </label>
+                  <small class="form-text text-muted d-block ml-4">Optional. Keeps one-off or corrective billing fast without editing fee-plan calendars.</small>
+                </div>
+              </div>
+            </div>
             <!-- Row 3: Fine Type & Fine Amount -->
             <div class="row">
               <div class="col-md-6">
@@ -585,15 +602,37 @@ $(document).ready(function() {
     let isProcessing = false;
     let cancelRequested = false;
 
-    // Custom validation method for fee types
-    $.validator.addMethod("feeTypesRequired", function(value, element) {
-        return $('input[name="fee_type_ids[]"]:checked').length > 0;
-    }, "Please select at least one fee type");
+    function getCheckedFeeTypeCount() {
+        return $('input[name="fee_type_ids[]"]:checked').length;
+    }
+
+    function alertFeeTypesRequired() {
+        var msg = 'Please select at least one fee type before generating challans.';
+        $('#fee-type-validation-msg').text(msg).show();
+        var el = document.getElementById('feeTypeSelectionBlock');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fee types required',
+                text: msg,
+                confirmButtonColor: '#3085d6'
+            });
+        }
+    }
+
+    $(document).on('change', 'input[name="fee_type_ids[]"]', function() {
+        $('#fee-type-validation-msg').hide().empty();
+    });
 
     // Update selected count
     function updateSelectedCount() {
-        const count = $('.fee-card-checkbox-modern:checked').length;
-        $('#selectedCount').text(count + ' selected');
+        const count = $('input[name="fee_type_ids[]"]:checked').length;
+        if ($('#selectedCount').length) {
+            $('#selectedCount').text(count + ' selected');
+        }
     }
     
     // Card click handler
@@ -602,7 +641,9 @@ $(document).ready(function() {
         checkbox.prop('checked', !checkbox.prop('checked'));
         $(this).toggleClass('selected', checkbox.prop('checked'));
         updateSelectedCount();
-        $('#chalanForm').validate().element($('select[name="fee_type_ids[]"]'));
+        if ($('#chalanForm').data('validator')) {
+            $('#chalanForm').valid();
+        }
     });
     
     // Select All
@@ -610,7 +651,9 @@ $(document).ready(function() {
         $('.fee-card-checkbox-modern').prop('checked', true);
         $('.fee-card-modern').addClass('selected');
         updateSelectedCount();
-        $('#chalanForm').validate().element($('select[name="fee_type_ids[]"]'));
+        if ($('#chalanForm').data('validator')) {
+            $('#chalanForm').valid();
+        }
     });
     
     // Deselect All
@@ -618,7 +661,9 @@ $(document).ready(function() {
         $('.fee-card-checkbox-modern').prop('checked', false);
         $('.fee-card-modern').removeClass('selected');
         updateSelectedCount();
-        $('#chalanForm').validate().element($('select[name="fee_type_ids[]"]'));
+        if ($('#chalanForm').data('validator')) {
+            $('#chalanForm').valid();
+        }
     });
     
     // Select Standard Only
@@ -630,7 +675,9 @@ $(document).ready(function() {
             $(this).addClass('selected');
         });
         updateSelectedCount();
-        $('#chalanForm').validate().element($('select[name="fee_type_ids[]"]'));
+        if ($('#chalanForm').data('validator')) {
+            $('#chalanForm').valid();
+        }
     });
     
     // Select Academy Only
@@ -642,7 +689,9 @@ $(document).ready(function() {
             $(this).addClass('selected');
         });
         updateSelectedCount();
-        $('#chalanForm').validate().element($('select[name="fee_type_ids[]"]'));
+        if ($('#chalanForm').data('validator')) {
+            $('#chalanForm').valid();
+        }
     });
     
     // Initialize date pickers
@@ -659,32 +708,39 @@ $(document).ready(function() {
     }, 100);
     // ========== END RE-ENSURE ==========
 
-    // Form validation and confirmation
+    // Form validation and confirmation (fee types validated explicitly — jQuery Validate does not reliably validate checkbox groups named fee_type_ids[])
     $('#chalanForm').validate({
         rules: {
             fee_month: { required: true },
             issue_date: { required: true },
-            due_date: { required: true },
-            'fee_type_ids[]': { feeTypesRequired: true }
+            due_date: { required: true }
         },
         messages: {
             fee_month: 'Please select fee month',
             issue_date: 'Please select issue date',
-            due_date: 'Please select due date',
-            'fee_type_ids[]': 'Please select at least one fee type'
+            due_date: 'Please select due date'
         },
         submitHandler: function(form) {
             if (IS_EDIT) {
                 form.submit();
-            } else {
-                showConfirmationModal(form);
+                return false;
             }
+            if (getCheckedFeeTypeCount() === 0) {
+                alertFeeTypesRequired();
+                return false;
+            }
+            $('#fee-type-validation-msg').hide().empty();
+            showConfirmationModal(form);
             return false;
         }
     });
 
     // Show confirmation modal with selected values
     function showConfirmationModal(form) {
+        if (getCheckedFeeTypeCount() === 0) {
+            alertFeeTypesRequired();
+            return;
+        }
         // Get form values
         const issueDate = $('input[name="issue_date"]').val();
         const dueDate = $('input[name="due_date"]').val();
@@ -727,6 +783,11 @@ $(document).ready(function() {
     }
 
  $('#confirmGenerateBtn').off('click').on('click', function() {
+        if (getCheckedFeeTypeCount() === 0) {
+            $('#confirmGenerationModal').modal('hide');
+            alertFeeTypesRequired();
+            return;
+        }
         // Close the confirmation modal
         $('#confirmGenerationModal').modal('hide');
         
@@ -749,6 +810,11 @@ $(document).ready(function() {
     // Start SSE generation
     function startGeneration() {
         if (isProcessing) return;
+
+        if (getCheckedFeeTypeCount() === 0) {
+            alertFeeTypesRequired();
+            return;
+        }
         
         cancelRequested = false;
         isProcessing = true;
@@ -761,12 +827,21 @@ $(document).ready(function() {
         $('input[name="fee_type_ids[]"]:checked').each(function() {
             feeTypeIds.push($(this).val());
         });
+
+        if (feeTypeIds.length === 0) {
+            isProcessing = false;
+            alertFeeTypesRequired();
+            return;
+        }
         
         const params = new URLSearchParams();
         params.append('fee_month', feeMonth);
         params.append('issue_date', issueDate);
         params.append('due_date', dueDate);
         feeTypeIds.forEach(id => params.append('fee_type_ids[]', id));
+        if ($('#force_fee_month').is(':checked')) {
+            params.append('force_month', '1');
+        }
         
         const streamUrl = '<?= base_url('admin/fee-chalan/bulk_chalan_stream') ?>?' + params.toString();
         
@@ -799,15 +874,61 @@ $(document).ready(function() {
                 
                 setTimeout(() => {
                     $('#progressModal').modal('hide');
+                    const skipped = parseInt(data.skipped, 10) || 0;
+                    const success = parseInt(data.success, 10) || 0;
+                    const skipDetails = Array.isArray(data.skip_details) ? data.skip_details : [];
+                    const truncated = !!data.skip_truncated;
+
+                    function escapeHtml(str) {
+                        if (str == null || str === '') return '';
+                        return String(str).replace(/[&<>"']/g, function(ch) {
+                            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+                        });
+                    }
+
+                    let skipBlock = '';
+                    if (skipped > 0 && skipDetails.length) {
+                        let rows = '';
+                        skipDetails.forEach(function(row) {
+                            const sid = escapeHtml(row.student_id);
+                            const reg = row.reg_no ? '<span class="text-muted small ml-1">Reg ' + escapeHtml(row.reg_no) + '</span>' : '';
+                            const nm = escapeHtml(row.name || '—');
+                            const det = escapeHtml(row.detail || '');
+                            rows += '<tr><td class="align-top text-nowrap"><strong>#' + sid + '</strong>' + reg + '</td>' +
+                                '<td class="align-top">' + nm + '</td>' +
+                                '<td class="align-top small text-left">' + det + '</td></tr>';
+                        });
+                        const truncNote = truncated
+                            ? '<p class="text-warning small mb-0 mt-2"><i class="fas fa-info-circle mr-1"></i>Showing the first ' + skipDetails.length + ' skipped students only.</p>'
+                            : '';
+                        skipBlock =
+                            '<div class="mt-3 text-left">' +
+                            '<p class="font-weight-bold text-secondary mb-2"><i class="fas fa-user-slash mr-1"></i>Why students were skipped</p>' +
+                            '<div class="table-responsive border rounded" style="max-height:320px;overflow:auto;">' +
+                            '<table class="table table-sm table-striped table-bordered mb-0">' +
+                            '<thead class="thead-light"><tr><th style="width:22%">Student</th><th style="width:28%">Name</th><th style="width:50%">Explanation</th></tr></thead>' +
+                            '<tbody>' + rows + '</tbody></table></div>' + truncNote + '</div>';
+                    } else if (skipped > 0) {
+                        skipBlock = '<p class="text-muted small mt-2 mb-0">Skipped count is ' + skipped + ' but no detailed rows were returned.</p>';
+                    }
+
+                    const summary =
+                        '<p class="mb-2">' +
+                        '<span class="text-success font-weight-bold">' + success + '</span> student(s) had new challan lines created.' +
+                        (skipped > 0 ? ' <span class="text-warning font-weight-bold">' + skipped + '</span> student(s) were skipped.' : '') +
+                        '</p>';
+
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Generation Complete!',
-                        html: `Generated ${data.success} chalans successfully<br>Skipped: ${data.skipped}`,
-                        timer: 3000,
-                        showConfirmButton: false
+                        icon: skipped > 0 ? 'warning' : 'success',
+                        title: 'Generation complete',
+                        html: '<div class="text-left" style="max-width:100%">' + summary + skipBlock + '</div>',
+                        width: '720px',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false
+                    }).then(function() {
+                        location.reload();
                     });
-                    setTimeout(() => location.reload(), 3000);
-                }, 2000);
+                }, 600);
             } 
             else if (data.type === 'error') {
                 eventSource.close();

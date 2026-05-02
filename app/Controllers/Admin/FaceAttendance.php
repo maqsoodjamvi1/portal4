@@ -4,6 +4,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Libraries\RekognitionService;
+use Aws\Exception\AwsException;
 
 class FaceAttendance extends BaseController
 {
@@ -11,11 +12,15 @@ class FaceAttendance extends BaseController
     protected $session;
     protected $rekognition;
 
+    /** @var \Config\Aws */
+    protected $awsConfig;
+
     public function __construct()
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
         $this->rekognition = new RekognitionService();
+        $this->awsConfig = config('Aws');
 
         helper(['form']);
         check_permission('admin-emp-attendance-monthly-report');
@@ -64,16 +69,26 @@ public function getStudents()
         $studentId = (int)$this->request->getPost('student_id');
         $campusId = $this->session->get('member_campusid');
 
-        if (!$file || !$studentId) {
+        if (!$file || !$file->isValid() || !$studentId) {
             return json_response(['success' => false, 'msg' => 'Missing data']);
         }
 
         $imageBytes = file_get_contents($file->getTempName());
+        $maxBytes = $this->awsConfig->rekognitionMaxImageBytes;
+        if ($maxBytes > 0 && strlen($imageBytes) > $maxBytes) {
+            return json_response(['success' => false, 'msg' => 'Image too large; use a smaller photo.']);
+        }
 
-        $result = $this->rekognition->indexFace($imageBytes, $studentId, $campusId);
+        try {
+            $result = $this->rekognition->indexFace($imageBytes, $studentId, $campusId);
+        } catch (AwsException $e) {
+            log_message('error', 'Rekognition indexFace: ' . $e->getAwsErrorMessage());
+
+            return json_response(['success' => false, 'msg' => 'Face service error. Try again or check AWS settings.']);
+        }
 
         if (empty($result['FaceRecords'])) {
-            return json_response(['success' => false, 'msg' => 'No face detected']);
+            return json_response(['success' => false, 'msg' => 'No usable face detected. Face the camera with good light.']);
         }
 
         $faceId = $result['FaceRecords'][0]['Face']['FaceId'];
@@ -101,21 +116,54 @@ public function getStudents()
         }
 
         $file = $this->request->getFile('image');
-        $campusId = $this->session->get('member_campusid');
+        $campusId = (int)$this->session->get('member_campusid');
 
-        if (!$file) {
+        if (!$file || !$file->isValid()) {
             return json_response(['success' => false, 'msg' => 'Image required']);
         }
 
         $imageBytes = file_get_contents($file->getTempName());
-
-        $result = $this->rekognition->searchFace($imageBytes, $campusId);
-
-        if (empty($result['FaceMatches'])) {
-            return json_response(['success' => false, 'msg' => 'Face not recognized']);
+        $maxBytes = $this->awsConfig->rekognitionMaxImageBytes;
+        if ($maxBytes > 0 && strlen($imageBytes) > $maxBytes) {
+            return json_response(['success' => false, 'msg' => 'Image too large.']);
         }
 
-        $studentId = $result['FaceMatches'][0]['Face']['ExternalImageId'];
+        try {
+            $result = $this->rekognition->searchFace($imageBytes, $campusId);
+        } catch (AwsException $e) {
+            log_message('error', 'Rekognition searchFace: ' . $e->getAwsErrorMessage());
+
+            return json_response(['success' => false, 'msg' => 'Face service unavailable. Try again shortly.']);
+        }
+
+        if (empty($result['FaceMatches'])) {
+            return json_response(['success' => false, 'msg' => 'Face not recognized. Ensure you are enrolled and lighting is good.']);
+        }
+
+        $match = $result['FaceMatches'][0];
+        $similarity = (float)($match['Similarity'] ?? 0);
+        if ($similarity < $this->awsConfig->rekognitionMinSimilarityPercent) {
+            return json_response(['success' => false, 'msg' => 'Low confidence match. Move closer to the camera.']);
+        }
+
+        $studentId = (int)($match['Face']['ExternalImageId'] ?? 0);
+        if ($studentId < 1) {
+            return json_response(['success' => false, 'msg' => 'Invalid match data']);
+        }
+
+        $student = $this->db->table('students')
+            ->select('student_id, first_name, last_name, reg_no')
+            ->where('student_id', $studentId)
+            ->where('campus_id', $campusId)
+            ->where('status', 1)
+            ->get()
+            ->getRow();
+
+        if (!$student) {
+            return json_response(['success' => false, 'msg' => 'Student not found for this campus.']);
+        }
+
+        $displayName = trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? ''));
 
         $today = date('Y-m-d');
 
@@ -124,7 +172,9 @@ public function getStudents()
             ->where('date', $today)
             ->get()->getRow();
 
-        if (!$exists) {
+        $alreadyPresent = $exists !== null;
+
+        if (!$alreadyPresent) {
             $this->db->table('attendance')->insert([
                 'student_id' => $studentId,
                 'date' => $today,
@@ -135,7 +185,17 @@ public function getStudents()
             ]);
         }
 
-        return json_response(['success' => true, 'msg' => 'Attendance marked']);
+        return json_response([
+            'success' => true,
+            'msg' => $alreadyPresent
+                ? ('Already marked present today: ' . $displayName)
+                : ('Attendance marked: ' . $displayName),
+            'student_id' => $studentId,
+            'student_name' => $displayName,
+            'reg_no' => $student->reg_no ?? '',
+            'similarity' => round($similarity, 2),
+            'already_present' => $alreadyPresent,
+        ]);
     }
 
     // ?? LIST FACES
@@ -143,18 +203,25 @@ public function getStudents()
     {
         $campusId = $this->session->get('member_campusid');
 
-        $rows = $this->db->table('student_faces')
-            ->where('campus_id', $campusId)
-            ->get()->getResult();
+        $rows = $this->db->table('student_faces sf')
+            ->select('sf.student_id, sf.face_id, sf.image_path, s.first_name, s.last_name, s.reg_no')
+            ->join('students s', 's.student_id = sf.student_id', 'left')
+            ->where('sf.campus_id', $campusId)
+            ->orderBy('sf.student_id', 'ASC')
+            ->get()
+            ->getResult();
 
         $data = [];
         $i = 1;
 
         foreach ($rows as $row) {
+            $name = trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''));
             $data[] = [
                 'sno' => $i++,
                 'student_id' => $row->student_id,
-                'image' => base_url($row->image_path),
+                'student_name' => $name !== '' ? $name : ('ID ' . $row->student_id),
+                'reg_no' => $row->reg_no ?? '',
+                'image' => !empty($row->image_path) ? base_url($row->image_path) : '',
                 'face_id' => $row->face_id
             ];
         }
@@ -168,7 +235,13 @@ public function getStudents()
         $faceId = $this->request->getPost('face_id');
         $campusId = $this->session->get('member_campusid');
 
-        $this->rekognition->deleteFace($faceId, $campusId);
+        try {
+            $this->rekognition->deleteFace($faceId, $campusId);
+        } catch (AwsException $e) {
+            log_message('error', 'Rekognition deleteFace: ' . $e->getAwsErrorMessage());
+
+            return json_response(['success' => false, 'msg' => 'Could not remove face from AWS.']);
+        }
 
         $this->db->table('student_faces')->where('face_id', $faceId)->delete();
 
