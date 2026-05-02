@@ -843,7 +843,7 @@
                 date_of_birth_age: student.date_of_birth_age
             });
             toastr.success('Student information saved successfully');
-            loadStudentsByClass(); // Reload to refresh
+          
         } catch(e) {
             toastr.error('Failed to save: ' + e);
         } finally {
@@ -952,14 +952,7 @@ $(function() {
     $('#expandAllBtn').on('click', () => $('.student-card').addClass('active'));
     $('#collapseAllBtn').on('click', () => $('.student-card').removeClass('active'));
     
-    // Add Save All button to filter bar if not already there
-    if ($('.filter-actions .btn-success').length === 0) {
-        $('.filter-actions').append(`
-            <button class="btn btn-success btn-block mt-2" onclick="saveAllStudents()">
-                <i class="fas fa-save"></i> Save All
-            </button>
-        `);
-    }
+    
     
     // REMOVE the automatic load on page load
     // Only show empty state message
