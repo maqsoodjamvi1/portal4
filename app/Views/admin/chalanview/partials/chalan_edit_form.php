@@ -1,118 +1,211 @@
+<?php
+$scope            = $scope ?? 'student';
+$headline         = $headline ?? '';
+$student          = $student ?? [];
+$parent_id        = (int) ($parent_id ?? 0);
+$chalans          = $chalans ?? [];
+$fee_types        = $fee_types ?? [];
+$family_students  = $family_students ?? [];
+$isFamily         = $scope === 'family';
+
+$feeMonthInput = static function (?string $fm): string {
+    $fm = trim((string) $fm);
+    if ($fm === '') {
+        return date('Y-m');
+    }
+    if (preg_match('/^(\d{4})-(\d{2})/', $fm, $m)) {
+        return $m[1] . '-' . $m[2];
+    }
+    if (preg_match('/^(\d{1,2})[\/\-](\d{4})$/', $fm, $m)) {
+        return sprintf('%04d-%02d', (int) $m[2], (int) $m[1]);
+    }
+
+    return date('Y-m');
+};
+
+$defaultStudentId = $isFamily && ! empty($family_students)
+    ? (int) $family_students[0]['student_id']
+    : (int) ($student['student_id'] ?? 0);
+?>
 <div class="container-fluid">
-    <h6 class="mb-3">Editing Chalans for: <strong><?= esc($student['first_name'] . ' ' . $student['last_name']) ?></strong> (<?= esc($student['reg_no'] ?? 'No Reg No') ?>)</h6>
-    
+    <h6 class="mb-3"><?= esc($headline) ?></h6>
+
     <form id="chalan-edit-form">
-        <input type="hidden" name="student_id" value="<?= $student['student_id'] ?>">
-        
+        <?= csrf_field() ?>
+        <input type="hidden" name="edit_scope" value="<?= esc($scope) ?>">
+        <input type="hidden" name="student_id" value="<?= $isFamily ? 0 : (int) ($student['student_id'] ?? 0) ?>">
+        <input type="hidden" name="parent_id" value="<?= $parent_id ?>">
+
+        <div class="mb-2 d-flex flex-wrap align-items-center">
+            <button type="button" class="btn btn-sm btn-primary mr-2 mb-1" id="chalan-add-row">+ Add new fee item</button>
+            <span class="text-muted small">Pick student (family) and fee type: <strong>Amount</strong> comes from class fee setup. For <strong>monthly</strong> fee types, <strong>discount</strong> is the student monthly discount multiplied by fee plan units (same rules as bulk challan).</span>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover">
+            <table class="table table-bordered table-striped table-hover table-sm">
                 <thead class="thead-light">
                     <tr>
+                        <?php if ($isFamily): ?>
+                            <th>Student</th>
+                        <?php endif; ?>
                         <th>ID</th>
-                        <th>Fee Type</th>
-                        <th>Fee Month</th>
-                        <th>Issue Date</th>
-                        <th>Due Date</th>
+                        <th>Fee type</th>
+                        <th>Fee month</th>
+                        <th>Issue</th>
+                        <th>Due</th>
                         <th>Amount</th>
                         <th>Discount</th>
-                        <th>Net Amount</th>
+                        <th>Net</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($chalans as $chalan): ?>
-                    <tr>
+                    <?php foreach ($chalans as $chalan):
+                        $sid = (int) ($chalan['line_student_id'] ?? $chalan['student_id'] ?? 0);
+                        $issueVal = ! empty($chalan['issue_date']) ? date('Y-m-d', strtotime((string) $chalan['issue_date'])) : date('Y-m-d');
+                        $dueVal   = ! empty($chalan['due_date']) ? date('Y-m-d', strtotime((string) $chalan['due_date'])) : date('Y-m-d');
+                        $ftId     = (int) ($chalan['fee_type_id'] ?? 0);
+                        ?>
+                        <tr class="chalan-data-row">
+                            <?php if ($isFamily): ?>
+                                <td>
+                                    <?= esc(trim(($chalan['first_name'] ?? '') . ' ' . ($chalan['last_name'] ?? ''))) ?>
+                                    <small class="text-muted"><?= esc($chalan['reg_no'] ?? '') ?></small>
+                                    <input type="hidden" name="line_student_id[]" value="<?= $sid ?>">
+                                </td>
+                            <?php endif; ?>
+                            <td>
+                                <?= (int) ($chalan['chalan_id'] ?? 0) ?>
+                                <input type="hidden" name="chalan_id[]" value="<?= (int) ($chalan['chalan_id'] ?? 0) ?>">
+                                <?php if (! $isFamily): ?>
+                                    <input type="hidden" name="line_student_id[]" value="<?= $sid ?>">
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?= esc($chalan['fee_type_name'] ?? 'N/A') ?>
+                                <input type="hidden" name="fee_type_id[]" value="<?= $ftId ?>">
+                            </td>
+                            <td>
+                                <input type="month" class="form-control form-control-sm" name="fee_month[]"
+                                       value="<?= esc($feeMonthInput($chalan['fee_month'] ?? '')) ?>" required>
+                            </td>
+                            <td>
+                                <input type="date" class="form-control form-control-sm" name="issue_date[]"
+                                       value="<?= esc($issueVal) ?>" required>
+                            </td>
+                            <td>
+                                <input type="date" class="form-control form-control-sm" name="due_date[]"
+                                       value="<?= esc($dueVal) ?>" required>
+                            </td>
+                            <td>
+                                <input type="number" name="amount[]" class="form-control form-control-sm amount-input"
+                                       value="<?= esc($chalan['amount'] ?? '0') ?>" step="0.01" min="0" required>
+                            </td>
+                            <td>
+                                <input type="number" name="discount[]" class="form-control form-control-sm discount-input"
+                                       value="<?= esc($chalan['discount'] ?? '0') ?>" step="0.01" min="0" required>
+                            </td>
+                            <td class="net-amount-cell text-right">0.00</td>
+                            <td>
+                                <select name="status[]" class="form-control form-control-sm">
+                                    <?php $st = (string) ($chalan['status'] ?? 'unpaid'); ?>
+                                    <option value="unpaid" <?= $st === 'unpaid' ? 'selected' : '' ?>>Unpaid</option>
+                                    <option value="paid" <?= $st === 'paid' ? 'selected' : '' ?>>Paid</option>
+                                    <option value="discounted" <?= $st === 'discounted' ? 'selected' : '' ?>>Discounted</option>
+                                </select>
+                            </td>
+                            <td></td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <?php
+                    /* Template row: disabled so it is not submitted (avoids ghost chalan_id=0 + empty fee type). Clone enables fields in JS. */
+                    $tplDisabled = ' disabled';
+                    ?>
+                    <tr class="chalan-new-template d-none">
+                        <?php if ($isFamily): ?>
+                            <td>
+                                <select name="line_student_id[]" class="form-control form-control-sm chalan-student-select" required<?= $tplDisabled ?>>
+                                    <?php foreach ($family_students as $fs):
+                                        $optId = (int) $fs['student_id'];
+                                        $optLb = trim(($fs['first_name'] ?? '') . ' ' . ($fs['last_name'] ?? '')) . ' (' . ($fs['reg_no'] ?? '') . ')';
+                                        ?>
+                                        <option value="<?= $optId ?>" <?= $optId === $defaultStudentId ? 'selected' : '' ?>><?= esc($optLb) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        <?php endif; ?>
                         <td>
-                            <?= $chalan['chalan_id'] ?>
-                            <input type="hidden" name="chalan_id[]" value="<?= $chalan['chalan_id'] ?>">
-                        </td>
-                        <td><?= esc($chalan['fee_type_name'] ?? 'N/A') ?></td>
-                        <td><?= date('M Y', strtotime($chalan['fee_month'] . '-01')) ?></td>
-                        <td><?= date('d-m-Y', strtotime($chalan['issue_date'])) ?></td>
-                        <td><?= date('d-m-Y', strtotime($chalan['due_date'])) ?></td>
-                        <td>
-                            <input type="number" name="amount[]" class="form-control form-control-sm amount-input" 
-                                   value="<?= $chalan['amount'] ?>" step="0.01" min="0" required>
+                            <span class="text-muted">New</span>
+                            <input type="hidden" name="chalan_id[]" value="0"<?= $tplDisabled ?>>
+                            <?php if (! $isFamily): ?>
+                                <input type="hidden" name="line_student_id[]" value="<?= $defaultStudentId ?>"<?= $tplDisabled ?>>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <input type="number" name="discount[]" class="form-control form-control-sm discount-input" 
-                                   value="<?= $chalan['discount'] ?>" step="0.01" min="0" max="<?= $chalan['amount'] ?>">
-                        </td>
-                        <td class="net-amount">
-                            <?= number_format($chalan['amount'] - $chalan['discount'], 2) ?>
-                        </td>
-                        <td>
-                            <select name="status[]" class="form-control form-control-sm">
-                                <option value="unpaid" <?= $chalan['status'] == 'unpaid' ? 'selected' : '' ?>>Unpaid</option>
-                                <option value="paid" <?= $chalan['status'] == 'paid' ? 'selected' : '' ?>>Paid</option>
-                                <option value="discounted" <?= $chalan['status'] == 'discounted' ? 'selected' : '' ?>>Discounted</option>
+                            <select name="fee_type_id[]" class="form-control form-control-sm chalan-fee-type-select" required<?= $tplDisabled ?>>
+                                <option value="" data-is-monthly="0">— Fee type —</option>
+                                <?php foreach ($fee_types as $ft):
+                                    $fid = (int) ($ft['fee_type_id'] ?? 0);
+                                    $fn  = (string) ($ft['fee_type_name'] ?? '');
+                                    $mo  = ((int) ($ft['is_monthly_fee'] ?? 0) === 1) ? '1' : '0';
+                                    ?>
+                                    <option value="<?= $fid ?>" data-is-monthly="<?= $mo ?>"><?= esc($fn) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </td>
+                        <td>
+                            <input type="month" class="form-control form-control-sm" name="fee_month[]"
+                                   value="<?= esc(date('Y-m')) ?>" required<?= $tplDisabled ?>>
+                        </td>
+                        <td>
+                            <input type="date" class="form-control form-control-sm" name="issue_date[]"
+                                   value="<?= esc(date('Y-m-d')) ?>" required<?= $tplDisabled ?>>
+                        </td>
+                        <td>
+                            <input type="date" class="form-control form-control-sm" name="due_date[]"
+                                   value="<?= esc(date('Y-m-d', strtotime('+10 days'))) ?>" required<?= $tplDisabled ?>>
+                        </td>
+                        <td>
+                            <input type="number" name="amount[]" class="form-control form-control-sm amount-input"
+                                   value="0" step="0.01" min="0" required<?= $tplDisabled ?>>
+                        </td>
+                        <td>
+                            <input type="number" name="discount[]" class="form-control form-control-sm discount-input"
+                                   value="0" step="0.01" min="0" required<?= $tplDisabled ?>>
+                        </td>
+                        <td class="net-amount-cell text-right">0.00</td>
+                        <td>
+                            <select name="status[]" class="form-control form-control-sm"<?= $tplDisabled ?>>
+                                <option value="unpaid" selected>Unpaid</option>
+                                <option value="paid">Paid</option>
+                                <option value="discounted">Discounted</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger chalan-remove-row" title="Remove">&times;</button>
+                        </td>
                     </tr>
-                    <?php endforeach; ?>
                 </tbody>
                 <tfoot class="table-info">
                     <tr>
-                        <th colspan="5" class="text-right">Totals:</th>
+                        <th colspan="<?= $isFamily ? 6 : 5 ?>" class="text-right">Totals:</th>
                         <th id="total-amount">0</th>
                         <th id="total-discount">0</th>
                         <th id="total-net">0</th>
-                        <th></th>
+                        <th colspan="2"></th>
                     </tr>
                 </tfoot>
             </table>
         </div>
-        
-        <div class="alert alert-info mt-3">
-            <i class="fas fa-info-circle mr-2"></i>
-            Changes will be applied immediately. The page will reload to show updated data.
+
+        <?php if (empty($fee_types)): ?>
+            <div class="alert alert-warning mt-2">No fee types found for this campus system. You cannot add new lines until fee types exist.</div>
+        <?php endif; ?>
+
+        <div class="alert alert-info mt-3 mb-0">
+            Only unpaid lines appear here. Save, then reload the print page to refresh amounts.
         </div>
     </form>
 </div>
-
-<script>
-$(function() {
-    // Calculate net amount and totals
-    function calculateTotals() {
-        let totalAmount = 0;
-        let totalDiscount = 0;
-        
-        $('.amount-input').each(function(index) {
-            const amount = parseFloat($(this).val()) || 0;
-            const discount = parseFloat($('.discount-input').eq(index).val()) || 0;
-            const netAmount = amount - discount;
-            
-            $('.net-amount').eq(index).text(netAmount.toFixed(2));
-            
-            totalAmount += amount;
-            totalDiscount += discount;
-        });
-        
-        $('#total-amount').text(totalAmount.toFixed(2));
-        $('#total-discount').text(totalDiscount.toFixed(2));
-        $('#total-net').text((totalAmount - totalDiscount).toFixed(2));
-    }
-    
-    // Update max discount when amount changes
-    $('.amount-input').on('input', function() {
-        const $row = $(this).closest('tr');
-        const amount = parseFloat($(this).val()) || 0;
-        $row.find('.discount-input').attr('max', amount);
-        calculateTotals();
-    });
-    
-    $('.discount-input').on('input', function() {
-        const $row = $(this).closest('tr');
-        const amount = parseFloat($row.find('.amount-input').val()) || 0;
-        let discount = parseFloat($(this).val()) || 0;
-        
-        if (discount > amount) {
-            $(this).val(amount);
-        }
-        calculateTotals();
-    });
-    
-    // Initial calculation
-    calculateTotals();
-});
-</script>

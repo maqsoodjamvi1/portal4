@@ -221,11 +221,12 @@
         }
     </style>
 </head>
-<body>
+<body class="chalan-preview-a4">
     <?php if (!empty($families)): ?>
-        <?php 
-        // Split families into groups of 3 for each page
-        $familyGroups = array_chunk($families, 3);
+        <?php
+        // Taller slips with payment history: fewer families per row to avoid clipping on A4 landscape
+        $perRow       = ! empty($show_payment_history) ? 2 : 3;
+        $familyGroups = array_chunk($families, $perRow);
         foreach ($familyGroups as $groupIndex => $familyGroup): 
         ?>
             <?php if ($groupIndex > 0): ?>

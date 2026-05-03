@@ -17,7 +17,12 @@ log_threshold = 4
 # APP
 #--------------------------------------------------------------------
 
-# app.baseURL = 'http://localhost/school-management-system/public/'
+# Required on production: full URL to the public entry point, with trailing slash.
+# Examples:
+#   app.baseURL = 'https://portal4.timesoftsol.com/'
+#   app.baseURL = 'http://localhost/school-management-system/public/'
+app.baseURL = 'http://localhost/school-management-system/public/'
+
 # app.forceGlobalSecureRequests = false
 # app.CSPEnabled = false
 

@@ -885,7 +885,7 @@ if (!function_exists('check_permission')) {
     function check_permission($permKey, $json = true)
     {
         $user = \App\Libraries\MemberCurrentUser::user();
-        $perms = $user->userPerms ?? [];
+        $perms = (is_object($user) && isset($user->userPerms)) ? $user->userPerms : [];
 
         if (isset($perms[$permKey]) && $perms[$permKey]) {
             return;

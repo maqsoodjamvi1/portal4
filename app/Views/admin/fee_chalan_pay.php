@@ -1,6 +1,8 @@
 <?php echo $this->extend('layouts/admin_template') ?>
 <?php echo $this->section('content') ?>
 
+<meta id="csrf-meta-pay-chalan" name="<?= esc(csrf_token()) ?>" content="<?= esc(csrf_hash()) ?>">
+
 <link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
 <link rel="stylesheet" href="<?= base_url('assets/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css'); ?>">
 
@@ -126,6 +128,99 @@
 /* Also remove dotted outline on label itself */
 .custom-control-label:focus {
     outline: none !important;
+}
+
+/* Family payment history (grouped by paid date, non-tabular) */
+#familyHistoryContainer .family-payment-history .fph-day-card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e3e6ea !important;
+}
+#familyHistoryContainer .fph-day-header {
+    background: linear-gradient(135deg, #f8f9fb 0%, #eef1f5 100%);
+    border-bottom: 1px solid #dee2e6;
+}
+#familyHistoryContainer .fph-day-title {
+    font-size: 1.05rem;
+    color: #2c3e50;
+}
+#familyHistoryContainer .fph-day-total-pill {
+    font-size: 0.9rem;
+    padding: 0.35em 0.85em;
+}
+#familyHistoryContainer .fph-day-body {
+    background: #fff;
+}
+#familyHistoryContainer .fph-day-fee-list {
+    padding: 0.5rem 1rem 0.75rem;
+    margin: 0;
+}
+#familyHistoryContainer .fph-inline-student {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 0.88rem;
+}
+#familyHistoryContainer .fph-inline-student::after {
+    content: "·";
+    margin: 0 0.4rem;
+    color: #cfd4d8;
+    font-weight: 400;
+}
+#familyHistoryContainer .fph-fee-item {
+    padding: 0.45rem 0;
+    border-top: 1px solid #f0f2f4;
+    font-size: 0.875rem;
+    gap: 0.5rem;
+}
+#familyHistoryContainer .fph-fee-item:first-child {
+    border-top: none;
+    padding-top: 0.15rem;
+}
+#familyHistoryContainer .fph-fee-item-continue .fph-fee-item-left {
+    padding-left: 0.65rem;
+    margin-left: 0.35rem;
+    border-left: 3px solid #e8ecef;
+}
+#familyHistoryContainer .fph-fee-type-pill {
+    display: inline-block;
+    background: #e8f4fc;
+    color: #1a6fa8;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    margin-right: 0.35rem;
+}
+#familyHistoryContainer .fph-fee-period::before {
+    content: "·";
+    margin: 0 0.35rem;
+    color: #ccc;
+}
+#familyHistoryContainer .fph-fee-inv::before {
+    content: "·";
+    margin: 0 0.35rem;
+    color: #ccc;
+}
+#familyHistoryContainer .fph-fee-when {
+    font-size: 0.75rem;
+    color: #888;
+}
+#familyHistoryContainer .fph-fee-when::before {
+    content: "·";
+    margin: 0 0.35rem;
+    color: #ccc;
+}
+#familyHistoryContainer .fph-fee-amt-note-wrap {
+    width: 100%;
+    flex-basis: 100%;
+    margin-top: 0.15rem;
+}
+#familyHistoryContainer .fph-fee-amt-note {
+    font-size: 0.72rem;
+    color: #6c757d;
+}
+#familyHistoryContainer .fph-summary {
+    border-radius: 8px;
 }
 </style>
 
@@ -269,6 +364,34 @@
         </div>
     </div>
 
+<!-- Family paid-fee history (modal) -->
+<div class="modal fade" id="familyFeeHistoryModal" tabindex="-1" role="dialog" aria-labelledby="familyFeeHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header py-2 bg-light">
+        <h5 class="modal-title mb-0" id="familyFeeHistoryModalLabel"><i class="fas fa-history mr-1"></i> Family payment history</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body p-2">
+        <div class="form-row align-items-end mb-2">
+          <div class="col-sm-4 col-md-3">
+            <label class="small text-muted mb-0" for="fhStart">From</label>
+            <input type="date" class="form-control form-control-sm" id="fhStart" />
+          </div>
+          <div class="col-sm-4 col-md-3">
+            <label class="small text-muted mb-0" for="fhEnd">To</label>
+            <input type="date" class="form-control form-control-sm" id="fhEnd" />
+          </div>
+          <div class="col-sm-4 col-md-auto">
+            <button type="button" class="btn btn-primary btn-sm" id="fhApplyFilter"><i class="fas fa-filter mr-1"></i> Apply</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="fhClearFilter">Clear</button>
+          </div>
+        </div>
+        <div id="familyHistoryContainer" class="border rounded bg-white"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
     
 <!-- Edit Fee Modal -->
@@ -337,6 +460,10 @@
 
 <?= $this->include('admin/pay_fee_modal') ?>
 <?= $this->include('admin/fee_scripts') ?>
+<?= $this->include('admin/chalanview/partials/chalan_edit_modal_shared', [
+    'csrfMetaId' => 'csrf-meta-pay-chalan',
+    'chalanEditAfterSave' => 'refresh_pay_card',
+]) ?>
 
 <script>
   $(function(){ $('[data-toggle="tooltip"]').tooltip({container:'body'}); });

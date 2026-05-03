@@ -706,6 +706,7 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->post('timetable/get-subjects', 'Timetable::getSubjects');
         $routes->post('timetable/get-subjects-timetable', 'Timetable::getSubjectsTimetable');
         $routes->post('timetable/update-slot', 'Timetable::updateSlot');
+        $routes->post('timetable/bulk-update-slot-row', 'Timetable::bulkUpdateSlotRow');
         $routes->get('timetable/teachers', 'Timetable::viewTeacherTimetable');
         $routes->get('timetable/teacher', 'Timetable::getTeacherTimetable');
         $routes->get('timetable/time-table-add-new', 'Timetable::timeTableAddNew');

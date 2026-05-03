@@ -18,6 +18,10 @@ $elder_class_display = $elder_class_display ?? '';
 $show_payment_history = $show_payment_history ?? false;
 $payment_history = $payment_history ?? [];
 
+$hasPaymentHistoryBlock = $show_payment_history
+    && is_array($payment_history)
+    && ! empty($payment_history['month_keys']);
+
 $chalan = $student['chalans'][0] ?? [];
 $issueDate = $student['last_issue_date'] ?? ($chalan['issue_date_label'] ?? date('d-m-y'));
 $dueDate = $student['last_due_date'] ?? ($chalan['due_date_label'] ?? date('d-m-y', strtotime('+10 days')));
@@ -45,7 +49,13 @@ $fine_after_due_date = intval($fine_after_due_date);
 $late_fee = isset($student['late_fee_fine']) ? floatval($student['late_fee_fine']) : 0;
 
 $schoolNameDisplay = $student['system_name'] ?? 'SCHOOL NAME';
-$schoolNameFontPt    = school_name_fit_font_size((string) $schoolNameDisplay, 22, 11.0, 6.5);
+/* refChars 18: narrow slip (1/3 page) — scale down sooner so full name fits without clipping */
+$schoolNameFontPt = school_name_fit_font_size(
+    (string) $schoolNameDisplay,
+    18,
+    $hasPaymentHistoryBlock ? 10.0 : 12.0,
+    $hasPaymentHistoryBlock ? 6.5 : 8.0
+);
 
 $accountsDisclaimerStd = 'If any mistakes are found in the challan, please contact the Accounts Office.';
 $payableMonthly        = (float) ($student['payable_monthly'] ?? 0);
@@ -62,7 +72,7 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
 }
 ?>
 
-<div class="chalan-wrapper">
+<div class="chalan-wrapper chalan-a4-fill<?= $hasPaymentHistoryBlock ? ' chalan-has-payment-history' : '' ?>">
     <!-- SECTION 1: HEADER — logo + school + campus in one balanced row -->
     <div class="chalan-header">
         <div class="header-brand">
@@ -98,12 +108,12 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
                         <strong class="student-name-line"><?= esc($head_student['student_name'] ?? '') ?></strong>
-                        <?php 
-                        $headClass = $head_student['class_short_name'] ?? $head_student['class_name'] ?? '';
-                        $headSection = $head_student['section_short_name'] ?? '';
-                        if (!empty($headClass)):
+                        <?php
+                        $headClass    = fee_chalan_class_badge_text($head_student['class_short_name'] ?? null, $head_student['class_name'] ?? null);
+                        $headSection  = trim((string) ($head_student['section_short_name'] ?? ''));
+                        if ($headClass !== ''):
                         ?>
-                            <span class="class-badge">(<?= esc($headClass) ?><?= !empty($headSection) ? ' ' . esc($headSection) : '' ?>)</span>
+                            <span class="class-badge">(<?= esc($headClass) ?><?= $headSection !== '' ? ' ' . esc($headSection) : '' ?>)</span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -123,17 +133,13 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                             <?php 
                             $otherNames = [];
                             foreach ($other_students as $s) {
-                                $name = $s['student_name'] ?? '';
-                                $classShort = $s['class_short_name'] ?? $s['class_name'] ?? '';
-                                $sectionShort = $s['section_short_name'] ?? '';
-                                if (!empty($classShort)) {
-                                    $name .= ' (' . esc($classShort);
-                                    if (!empty($sectionShort)) {
-                                        $name .= ' ' . esc($sectionShort);
-                                    }
-                                    $name .= ')';
+                                $line        = trim((string) ($s['student_name'] ?? ''));
+                                $classLabel  = fee_chalan_class_badge_text($s['class_short_name'] ?? null, $s['class_name'] ?? null);
+                                $sectionPart = trim((string) ($s['section_short_name'] ?? ''));
+                                if ($classLabel !== '') {
+                                    $line .= ' (' . $classLabel . ($sectionPart !== '' ? ' ' . $sectionPart : '') . ')';
                                 }
-                                $otherNames[] = $name;
+                                $otherNames[] = $line;
                             }
                             echo esc(implode(', ', $otherNames));
                             ?>
@@ -163,12 +169,12 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
                         <strong class="student-name-line"><?= esc($student['student_name'] ?? '') ?></strong>
-                        <?php 
-                        $studentClass = $student['class_short_name'] ?? $student['class_name'] ?? '';
-                        $studentSection = $student['section_short_name'] ?? '';
-                        if (!empty($studentClass)):
+                        <?php
+                        $studentClass   = fee_chalan_class_badge_text($student['class_short_name'] ?? null, $student['class_name'] ?? null);
+                        $studentSection = trim((string) ($student['section_short_name'] ?? ''));
+                        if ($studentClass !== ''):
                         ?>
-                            <span class="class-badge">(<?= esc($studentClass) ?><?= !empty($studentSection) ? ' ' . esc($studentSection) : '' ?>)</span>
+                            <span class="class-badge">(<?= esc($studentClass) ?><?= $studentSection !== '' ? ' ' . esc($studentSection) : '' ?>)</span>
                         <?php endif; ?>
                     </div>
                 </div>

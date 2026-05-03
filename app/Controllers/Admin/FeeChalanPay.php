@@ -223,8 +223,13 @@ foreach ($siblings as $sibling) {
 
                                   <button type="button" class="btn btn-warning btn-icon-only"
                         onclick="showFamilyFeeHistoryPage(' . (int)$student->parent_id . ')"
-                        data-toggle="tooltip" title="Show Family Fee History">
+                        data-toggle="tooltip" title="Family payment history">
                   <i class="fas fa-file-invoice-dollar"></i>
+                </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-icon-only"
+                        onclick="openChalanEditForPay(' . (int)$student->parent_id . ', 0)"
+                        data-toggle="tooltip" title="Edit challan / add fee lines">
+                  <i class="fas fa-plus-circle"></i>
                 </button>
                 </div>
                 
@@ -442,14 +447,6 @@ return '
                             title="Move all unpaid fees to cart" aria-label="Move to cart">
                         <i class="fas fa-cart-plus"></i>
                     </button>
-
-                    <!-- Icon-only: Generate Chalan -->
-                    <a class="btn btn-info btn-icon-only"
-                       href="' . base_url('admin/fee_chalan_single?m=add&id=' . esc($student->student_id)) . '"
-                       data-toggle="tooltip" data-placement="bottom"
-                       title="Generate Chalan" aria-label="Generate Chalan">
-                        <i class="fas fa-file-invoice"></i>
-                    </a>
                 </div>
             </div>
         </div>
@@ -861,11 +858,23 @@ public function makeUnpaid()
     $end       = $this->request->getPost('end_date');   // optional: 'YYYY-MM-DD'
     $limit     = (int) ($this->request->getPost('limit') ?? 0); // optional: 0 = all
     $page      = (int) ($this->request->getPost('page') ?? 1);   // optional
+    $campusId  = (int) (session('member_campusid') ?? 0);
 
     if (!$parent_id) {
         return $this->response->setJSON([
             'success' => false,
-            'html'    => '<div class="alert alert-danger mb-0">Parent not specified.</div>'
+            'html'    => '<div class="alert alert-danger mb-0">Parent not specified.</div>',
+            'csrfName' => csrf_token(),
+            'csrfHash' => csrf_hash(),
+        ]);
+    }
+
+    if (!$campusId) {
+        return $this->response->setJSON([
+            'success' => false,
+            'html'    => '<div class="alert alert-danger mb-0">Campus not set in session.</div>',
+            'csrfName' => csrf_token(),
+            'csrfHash' => csrf_hash(),
         ]);
     }
 
@@ -877,13 +886,14 @@ public function makeUnpaid()
             'fc.discount',
             'fc.fee_month',
             'fc.paid_date',
-            
+            'fc.invoice_no',
             'ft.fee_type_name',
             'CONCAT(s.first_name, " ", COALESCE(s.last_name, "")) AS student_name'
         ])
         ->join('students s', 's.student_id = fc.student_id')
         ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left')
         ->where('s.parent_id', $parent_id)
+        ->where('s.campus_id', $campusId)
         ->where('fc.status', 'paid');
 
     // Optional date filter on paid_date
@@ -905,73 +915,181 @@ public function makeUnpaid()
         return $this->response->setJSON([
             'success' => true,
             'html'    => '<div class="alert alert-info mb-0">No paid fees found for this family.</div>',
-            'family_total' => '0'
+            'family_total' => '0',
+            'count'   => 0,
+            'days_count' => 0,
+            'csrfName' => csrf_token(),
+            'csrfHash' => csrf_hash(),
         ]);
     }
 
-    // Build table rows
-    $family_total = 0;
-    $tbody = '';
+    // Group lines by calendar day (paid_date)
+    $byDay = [];
+    $family_total = 0.0;
+
     foreach ($rows as $r) {
-        $amount     = (float) $r->amount;
-        $discount   = (float) $r->discount;
-        $net        = $amount - $discount;
+        $amount   = (float) $r->amount;
+        $discount = (float) $r->discount;
+        $net      = $amount - $discount;
         $family_total += $net;
 
-        // Format month using your existing helper if available
-        $feeMonth = method_exists($this, 'formatFeeMonth')
-            ? $this->formatFeeMonth($r->fee_month)
-            : (string) $r->fee_month;
+        $ts = ! empty($r->paid_date) ? strtotime((string) $r->paid_date) : false;
+        $dayKey = $ts ? date('Y-m-d', $ts) : '_nodate';
 
-        $paid_date = $r->paid_date ? date('d M Y', strtotime($r->paid_date)) : '-';
-
-        $tbody .= '
-        <tr>
-            <td>'.esc($r->chalan_id).'</td>
-            <td>'.esc($r->student_name).'</td>
-            <td>'.esc($r->fee_type_name ?? 'N/A').'</td>
-            <td>'.esc($feeMonth).'</td>
-            <td class="text-right">Rs '.number_format($amount, 0).'</td>
-            <td class="text-right text-muted">Rs '.number_format($discount, 0).'</td>
-            <td class="text-right font-weight-bold">Rs '.number_format($net, 0).'</td>
-            <td><span class="badge badge-success" data-toggle="tooltip" title="Paid on">'.$paid_date.'</span></td>
-        </tr>';
+        if (! isset($byDay[$dayKey])) {
+            $byDay[$dayKey] = [
+                'day_total' => 0.0,
+                'lines'     => [],
+            ];
+        }
+        $byDay[$dayKey]['day_total'] += $net;
+        $byDay[$dayKey]['lines'][]    = [
+            'r'   => $r,
+            'net' => $net,
+            'amount' => $amount,
+            'discount' => $discount,
+        ];
     }
 
-    // Optional: family total row
-    $tfoot = '
-    <tr>
-        <th colspan="6" class="text-right">Family Total</th>
-        <th class="text-right">Rs '.number_format($family_total, 0).'</th>
-        <th></th>
-    </tr>';
+    krsort($byDay, SORT_STRING);
 
-    // Final HTML (Bootstrap 4 friendly)
-    $html = '
-    <div class="table-responsive">
-      <table class="table table-sm table-striped table-hover mb-0">
-        <thead class="thead-light">
-            <tr>
-                <th>Ref#</th>
-                <th>Student</th>
-                <th>Fee Type</th>
-                <th>Month</th>
-                <th class="text-right">Amount</th>
-                <th class="text-right">Discount</th>
-                <th class="text-right">Net</th>
-                <th>Paid Date</th>
-            </tr>
-        </thead>
-        <tbody>'.$tbody.'</tbody>
-        <tfoot>'.$tfoot.'</tfoot>
-      </table>
+    $blocks = '';
+    foreach ($byDay as $dayKey => $bundle) {
+        if ($dayKey === '_nodate') {
+            $titleMain = 'Date not recorded';
+            $titleSub  = '';
+        } else {
+            $ts        = strtotime($dayKey);
+            $titleMain = date('j F Y', $ts);
+            $titleSub  = date('l', $ts);
+        }
+
+        $dayTotal = $bundle['day_total'];
+        $nLines   = count($bundle['lines']);
+
+        $studentKeys = [];
+        foreach ($bundle['lines'] as $item) {
+            $r   = $item['r'];
+            $sid = (int) ($r->student_id ?? 0);
+            $studentKeys[$sid > 0 ? 's' . $sid : 'n' . md5((string) ($r->student_name ?? ''))] = true;
+        }
+        $nStudents = count($studentKeys);
+        $dayMeta   = (int) $nLines . ' fee line' . ($nLines === 1 ? '' : 's')
+            . ' · ' . $nStudents . ' student' . ($nStudents === 1 ? '' : 's');
+
+        $dayLines = $bundle['lines'];
+        usort($dayLines, static function ($a, $b) {
+            $na = (string) ($a['r']->student_name ?? '');
+            $nb = (string) ($b['r']->student_name ?? '');
+            $c  = strcasecmp($na, $nb);
+            if ($c !== 0) {
+                return $c;
+            }
+
+            return ((int) ($a['r']->chalan_id ?? 0)) <=> ((int) ($b['r']->chalan_id ?? 0));
+        });
+
+        $linesHtml       = '';
+        $prevStudentKey  = null;
+        foreach ($dayLines as $item) {
+            $r        = $item['r'];
+            $net      = $item['net'];
+            $amount   = $item['amount'];
+            $discount = $item['discount'];
+
+            $sid    = (int) ($r->student_id ?? 0);
+            $skey   = $sid > 0 ? 's' . $sid : 'n' . md5((string) ($r->student_name ?? ''));
+            $stuName = esc((string) ($r->student_name ?? 'Student'));
+
+            $feeMonth = method_exists($this, 'formatFeeMonth')
+                ? $this->formatFeeMonth($r->fee_month)
+                : (string) $r->fee_month;
+
+            $invShort = ! empty($r->invoice_no)
+                ? esc($r->invoice_no)
+                : '#' . esc($r->chalan_id);
+
+            $paidAt = '';
+            if (! empty($r->paid_date)) {
+                $pt = strtotime((string) $r->paid_date);
+                if ($pt && date('H:i:s', $pt) !== '00:00:00') {
+                    $paidAt = '<span class="fph-fee-when">' . esc(date('g:i A', $pt)) . '</span>';
+                }
+            }
+
+            $amtDetail = $discount > 0
+                ? '<span class="fph-fee-amt-note">Gross ' . number_format($amount, 0) . ' · off ' . number_format($discount, 0) . '</span>'
+                : '';
+
+            if ($prevStudentKey !== null && $skey === $prevStudentKey) {
+                $studentPrefix = '';
+                $liExtraClass  = ' fph-fee-item-continue';
+            } else {
+                $studentPrefix = '<span class="fph-inline-student">' . $stuName . '</span>';
+                $liExtraClass  = '';
+                $prevStudentKey = $skey;
+            }
+
+            $linesHtml .= '
+            <li class="fph-fee-item d-flex flex-wrap justify-content-between align-items-baseline' . $liExtraClass . '">
+                <div class="fph-fee-item-left pr-2">
+                    ' . $studentPrefix . '
+                    <span class="fph-fee-type-pill">' . esc($r->fee_type_name ?? 'N/A') . '</span>
+                    <span class="fph-fee-period text-muted">' . esc($feeMonth) . '</span>
+                    <span class="fph-fee-inv text-muted">' . $invShort . '</span>
+                    ' . ($paidAt !== '' ? $paidAt : '') . '
+                    ' . ($amtDetail !== '' ? '<div class="fph-fee-amt-note-wrap">' . $amtDetail . '</div>' : '') . '
+                </div>
+                <div class="fph-fee-item-net text-success font-weight-bold text-nowrap">Rs ' . number_format($net, 0) . '</div>
+            </li>';
+        }
+
+        $linesHtml = '<ul class="list-unstyled fph-day-fee-list mb-0">' . $linesHtml . '</ul>';
+
+        $blocks .= '
+        <div class="fph-day-card card mb-3 shadow-sm border-0">
+            <div class="card-header fph-day-header d-flex flex-wrap justify-content-between align-items-center py-2">
+                <div>
+                    <div class="fph-day-title mb-0 font-weight-bold">' . esc($titleMain) . '</div>
+                    ' . ($titleSub !== '' ? '<div class="fph-day-weekday small text-muted">' . esc($titleSub) . '</div>' : '') . '
+                </div>
+                <div class="text-right mt-2 mt-sm-0">
+                    <span class="badge badge-success badge-pill fph-day-total-pill">Day total: Rs ' . number_format($dayTotal, 0) . '</span>
+                    <div class="small text-muted mt-1">' . esc($dayMeta) . '</div>
+                </div>
+            </div>
+            <div class="card-body p-0 fph-day-body">
+                ' . $linesHtml . '
+            </div>
+        </div>';
+    }
+
+    $daysCount = count($byDay);
+    $html      = '
+    <div class="family-payment-history">
+        <div class="fph-summary alert alert-light border mb-3 py-2 px-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <span class="font-weight-bold text-dark">Overall in this view</span>
+                    <div class="small text-muted">' . count($rows) . ' fee payment line(s) across ' . $daysCount . ' payment day(s)</div>
+                </div>
+                <div class="text-right mt-2 mt-md-0">
+                    <div class="small text-muted">Combined net paid</div>
+                    <div class="h5 mb-0 text-success font-weight-bold">Rs ' . number_format($family_total, 0) . '</div>
+                </div>
+            </div>
+        </div>
+        ' . $blocks . '
     </div>';
 
     return $this->response->setJSON([
         'success'       => true,
         'html'          => $html,
         'family_total'  => number_format($family_total, 0),
-        'count'         => count($rows)
+        'count'         => count($rows),
+        'days_count'    => $daysCount,
+        'csrfName'      => csrf_token(),
+        'csrfHash'      => csrf_hash(),
     ]);
 }
 

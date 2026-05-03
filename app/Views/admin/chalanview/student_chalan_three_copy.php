@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Fee Challan - 3 Copies (A4 Landscape)</title>
+    <meta name="<?= esc(csrf_token()) ?>" content="<?= esc(csrf_hash()) ?>" id="csrf-meta-print-chalan">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <?php include 'chalan_print_styles.php'; ?>
     <style>
         /* Any view-specific styles can go here */
@@ -19,6 +21,7 @@
             width: 100%;
             margin-bottom: 8px;
             gap: 8px;
+            position: relative;
         }
         
         .slip-col {
@@ -80,119 +83,61 @@
             font-weight: 500;
             background: #fafafa;
         }
-        
-        /* Edit button styles - only visible on screen, not in print */
-        .edit-chalan-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,123,255,0.3);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .edit-chalan-btn:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,123,255,0.4);
-        }
-        
-        .edit-chalan-btn i {
-            font-size: 18px;
-        }
-        
+
         @media print {
-            .edit-chalan-btn {
-                display: none !important;
+            .slip-row {
+                margin-bottom: 0;
+                gap: 2px;
             }
-        }
-        
-        /* Edit mode styles */
-        .edit-mode-highlight {
-            outline: 3px solid #ffc107;
-            outline-offset: 5px;
-            position: relative;
-        }
-        
-        .edit-mode-highlight::after {
-            content: 'EDIT MODE';
-            position: absolute;
-            top: -25px;
-            left: 10px;
-            background: #ffc107;
-            color: #000;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
         }
     </style>
 </head>
-<body>
+<body class="chalan-preview-a4">
     <?php if (!empty($students)): ?>
-        <?php 
-        $studentIds = [];
-        foreach ($students as $student) {
-            $studentIds[] = $student['student_id'];
-        }
-        $studentIdsJson = json_encode($studentIds);
-        ?>
-        
-        <!-- Edit Button -->
-        <button class="edit-chalan-btn no-print" onclick="openEditMode()">
-            <i class="fas fa-edit"></i> Edit Selected Chalans
-        </button>
-        
-        <?php foreach ($students as $index => $student): ?>
-            <?php if ($index > 0 && $index % 2 == 0): // 2 students per page in landscape ?>
-                <div class="pagebreak"></div>
-            <?php endif; ?>
-            
-            <div class="slip-row" data-student-id="<?= $student['student_id'] ?>">
-                <?php foreach (['Bank Copy', 'School Copy', 'Student Copy'] as $copyType): ?>
-                    <div class="slip-col">
-                        <?php 
-                        // Get student payment history if available
-                        $studentPaymentHistory = [];
-                        if (isset($student['payment_history'])) {
-                            $studentPaymentHistory = $student['payment_history'];
-                        } elseif (isset($student['student_payment_history'])) {
-                            $studentPaymentHistory = $student['student_payment_history'];
-                        }
-                        
-                        // Add copy type to student data
-                        $studentWithCopy = $student;
-                        $studentWithCopy['copy_label'] = $copyType;
-                        
-                        $data = [
-                            'student' => $studentWithCopy,
-                            'show_discount' => $show_discount,
-                            'fine_after_due_date' => $fine_after_due_date ?? 0,
-                            'footer_line1' => $footer_line1 ?? '',
-                            'footer_line2' => $footer_line2 ?? '',
-                            'show_line1' => $show_line1 ?? 0,
-                            'show_line2' => $show_line2 ?? 0,
-                            'fee_month' => $fee_month ?? '',
-                            'show_copy_label' => true,
-                            'show_payment_history' => $show_payment_history ?? false,
-                            'payment_history' => $studentPaymentHistory,
-                            'is_family' => false
-                        ];
-                        echo view('admin/chalanview/partials/chalan_template', $data);
-                        ?>
-                    </div>
-                <?php endforeach; ?>
+        <div class="no-print" style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">Print</button>
+            <span class="text-muted small">Use <strong>Edit fees</strong> on each slip to change amounts or add lines, then print.</span>
+        </div>
+        <?php foreach ($students as $student): ?>
+            <div class="chalan-slip-page">
+                <div class="slip-row" data-student-id="<?= (int) ($student['student_id'] ?? 0) ?>">
+                    <button type="button"
+                            class="no-print btn btn-sm btn-light border chalan-edit-fees-btn"
+                            style="position:absolute;top:2px;right:6px;z-index:10;font-size:11px;padding:2px 8px;"
+                            data-student-id="<?= (int) ($student['student_id'] ?? 0) ?>"
+                            data-parent-id="0">Edit fees</button>
+                    <?php foreach (['Bank Copy', 'School Copy', 'Student Copy'] as $copyType): ?>
+                        <div class="slip-col">
+                            <?php
+                            $studentPaymentHistory = [];
+                            if (isset($student['payment_history'])) {
+                                $studentPaymentHistory = $student['payment_history'];
+                            } elseif (isset($student['student_payment_history'])) {
+                                $studentPaymentHistory = $student['student_payment_history'];
+                            }
+
+                            $studentWithCopy            = $student;
+                            $studentWithCopy['copy_label'] = $copyType;
+
+                            $data = [
+                                'student' => $studentWithCopy,
+                                'show_discount' => $show_discount,
+                                'fine_after_due_date' => $fine_after_due_date ?? 0,
+                                'footer_line1' => $footer_line1 ?? '',
+                                'footer_line2' => $footer_line2 ?? '',
+                                'show_line1' => $show_line1 ?? 0,
+                                'show_line2' => $show_line2 ?? 0,
+                                'fee_month' => $fee_month ?? '',
+                                'show_copy_label' => true,
+                                'show_payment_history' => $show_payment_history ?? false,
+                                'payment_history' => $studentPaymentHistory,
+                                'is_family' => false,
+                            ];
+                            echo view('admin/chalanview/partials/chalan_template', $data);
+                            ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         <?php endforeach; ?>
     <?php else: ?>
@@ -201,180 +146,8 @@
             <p class="no-print">Please try different filters.</p>
         </div>
     <?php endif; ?>
-    
-    <!-- Edit Modal -->
-    <div class="modal fade no-print" id="editChalanModal" tabindex="-1" role="dialog" aria-labelledby="editChalanModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editChalanModalLabel">
-                        <i class="fas fa-edit mr-2"></i> Edit Fee Chalan
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div id="edit-loading" class="text-center py-4">
-                        <div class="spinner-border text-primary mb-3" role="status"></div>
-                        <p>Loading chalan details...</p>
-                    </div>
-                    <div id="edit-content" style="display: none;"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="save-chalan-btn" onclick="saveChalanEdit()">
-                        <i class="fas fa-save mr-2"></i> Save Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
-    
-    <script>
-        let selectedStudentIds = <?= $studentIdsJson ?? '[]' ?>;
-        let currentEditStudentId = null;
-        
-        function openEditMode() {
-            if (selectedStudentIds.length === 0) {
-                toastr.warning('No students to edit');
-                return;
-            }
-            
-            if (selectedStudentIds.length > 1) {
-                // If multiple students, show selection dialog
-                showStudentSelection();
-            } else {
-                // If single student, open edit directly
-                loadEditForm(selectedStudentIds[0]);
-            }
-        }
-        
-        function showStudentSelection() {
-            const selectHtml = `
-                <div class="form-group">
-                    <label for="student-select">Select Student to Edit:</label>
-                    <select class="form-control" id="student-select">
-                        ${generateStudentOptions()}
-                    </select>
-                </div>
-            `;
-            
-            // Show in a simple modal or use SweetAlert
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Select Student',
-                    html: selectHtml,
-                    showCancelButton: true,
-                    confirmButtonText: 'Edit',
-                    preConfirm: () => {
-                        const studentId = document.getElementById('student-select').value;
-                        loadEditForm(studentId);
-                    }
-                });
-            } else {
-                // Fallback to custom modal
-                const modal = $('#editChalanModal');
-                $('#edit-loading').hide();
-                $('#edit-content').html(selectHtml).show();
-                modal.modal('show');
-                $('#save-chalan-btn').hide();
-            }
-        }
-        
-        function generateStudentOptions() {
-            let options = '';
-            <?php foreach ($students as $student): ?>
-                options += `<option value="<?= $student['student_id'] ?>"><?= esc($student['student_name']) ?> (<?= esc($student['reg_no'] ?? '') ?>)</option>`;
-            <?php endforeach; ?>
-            return options;
-        }
-        
-        function loadEditForm(studentId) {
-            currentEditStudentId = studentId;
-            
-            $.ajax({
-                url: '<?= base_url('admin/fee-chalan/get-edit-form') ?>',
-                type: 'POST',
-                data: {
-                    student_id: studentId,
-                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                },
-                dataType: 'json',
-                beforeSend: function() {
-                    $('#editChalanModal').modal('show');
-                    $('#edit-loading').show();
-                    $('#edit-content').hide();
-                    $('#save-chalan-btn').show();
-                },
-                success: function(response) {
-                    $('#edit-loading').hide();
-                    if (response.success) {
-                        $('#edit-content').html(response.html).show();
-                    } else {
-                        toastr.error(response.msg || 'Failed to load edit form');
-                        $('#editChalanModal').modal('hide');
-                    }
-                },
-                error: function(xhr) {
-                    $('#edit-loading').hide();
-                    toastr.error('Error loading edit form');
-                    console.error(xhr.responseText);
-                    $('#editChalanModal').modal('hide');
-                }
-            });
-        }
-        
-        function saveChalanEdit() {
-            const formData = $('#chalan-edit-form').serialize();
-            
-            $.ajax({
-                url: '<?= base_url('admin/fee-chalan/save-edit') ?>',
-                type: 'POST',
-                data: formData + '&<?= csrf_token() ?>=<?= csrf_hash() ?>',
-                dataType: 'json',
-                beforeSend: function() {
-                    $('#save-chalan-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Saving...');
-                },
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success(response.msg || 'Chalan updated successfully');
-                        $('#editChalanModal').modal('hide');
-                        
-                        // Reload the page to show updated data
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1500);
-                    } else {
-                        toastr.error(response.msg || 'Failed to update chalan');
-                        $('#save-chalan-btn').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Save Changes');
-                    }
-                },
-                error: function(xhr) {
-                    toastr.error('Error saving changes');
-                    $('#save-chalan-btn').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Save Changes');
-                    console.error(xhr.responseText);
-                }
-            });
-        }
-        
-        // Optional: Add double-click to edit
-        $('.slip-row').dblclick(function() {
-            const studentId = $(this).data('student-id');
-            if (studentId) {
-                loadEditForm(studentId);
-            }
-        });
-        
-        window.onload = function() {
-            // Optional: Auto-print if needed
-            // window.print();
-        }
-    </script>
+    <?php if (! empty($students)): ?>
+        <?php include __DIR__ . '/partials/chalan_print_edit_modal.php'; ?>
+    <?php endif; ?>
 </body>
 </html>

@@ -10,17 +10,20 @@ class App extends BaseConfig
      * --------------------------------------------------------------------------
      * Base Site URL
      * --------------------------------------------------------------------------
+     * Set `app.baseURL` in project root `.env` on production (trailing slash required).
+     * If unset, the default below is used (local XAMPP).
      */
-    public function __construct()
-{
-    parent::__construct();
-    
-    if (ENVIRONMENT !== 'production') {
-        error_reporting(E_ALL);
-        ini_set('display_errors', 1);
-    }
-}
     public string $baseURL = 'http://localhost/school-management-system/public/';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        if (ENVIRONMENT !== 'production') {
+            error_reporting(E_ALL);
+            ini_set('display_errors', '1');
+        }
+    }
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.

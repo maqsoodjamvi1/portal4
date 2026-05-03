@@ -53,7 +53,7 @@ public function add()
         'title' => 'Add Timetable',
         'sections' => $sections,
         'slots' => $slots,
-        'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        'full_week_days' => $this->canonicalWeekdayOrder(),
     ];
 
     return view('admin/timetable_add', $data);
@@ -176,7 +176,7 @@ public function timetable_add()
             'title' => 'Manage Timetable',
             'sections' => $sections,
             'slots' => $slots,
-            'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+            'full_week_days' => $this->canonicalWeekdayOrder(),
         ];
 
         return view('admin/timetable_edit', $data);
@@ -354,9 +354,17 @@ public function getSubjects()
 
   public function getSubjectsTimetable()
 {
-    $cls_sec_id = $this->request->getPost('cls_sec_id');
+    $cls_sec_id = (int) $this->request->getPost('cls_sec_id');
     
     $db = \Config\Database::connect();
+    $campusId = (int) $this->session->get('member_campusid');
+
+    if ($cls_sec_id <= 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'Invalid class section.',
+        ]);
+    }
 
     try {
  $latestSql = "
@@ -382,6 +390,10 @@ $subjects = $db->table('section_subjects ss')
   ->where('ss.status', 1)
   ->orderBy('ss.sec_sub_id', 'ASC')
   ->get()->getResultArray();
+
+        $workingDays = $this->resolveWorkingDayNamesForSection($campusId, $cls_sec_id);
+        $dayTiming = $this->getDayTimingLabelsForSection($campusId, $cls_sec_id);
+        $slotsForGrid = $this->fetchSlotsForCampus($campusId);
 
         // Timetable for the class section
         $timetableRows = $db->table('time_table')
@@ -417,6 +429,10 @@ $subjects = $db->table('section_subjects ss')
             'subjects' => $subjects,
             'timetable' => $timetable,
             'teacherLoad' => array_values($teacherLoad),
+            'working_days' => $workingDays,
+            'full_week_days' => $this->canonicalWeekdayOrder(),
+            'day_timing' => $dayTiming,
+            'slots' => $slotsForGrid,
         ]);
     } catch (\Throwable $e) {
         return $this->response->setJSON([
@@ -426,37 +442,21 @@ $subjects = $db->table('section_subjects ss')
     }
 }
 
-
-public function updateSlot()
+/**
+ * Core save/delete for one timetable cell. Used by updateSlot and bulkUpdateSlotRow.
+ *
+ * @return array{success: bool, msg: string}
+ */
+private function applyTimetableCellUpdate($db, int $cls_sec_id, string $day, int $slot_id, ?int $subject_id, bool $allowSameSubjectDay): array
 {
-    $cls_sec_id  = (int) $this->request->getPost('cls_sec_id');
-    $day         = trim((string) $this->request->getPost('day'));
-    $slot_id     = (int) $this->request->getPost('slot_id');
-    $subject_raw = $this->request->getPost('subject_id');
-    $subject_id  = ($subject_raw === '' || $subject_raw === null) ? null : (int)$subject_raw;
-    $allowSameSubjectDay = ((int)$this->request->getPost('allow_same_subject_day') === 1);
-
-    $validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    if ($cls_sec_id <= 0 || $day === '' || !in_array($day, $validDays, true) || $slot_id <= 0) {
-        return $this->response->setJSON(['success' => false, 'msg' => 'Invalid input.']);
-    }
-
-    $db = \Config\Database::connect();
-
-    // If subject is NULL/empty → delete the slot
     if ($subject_id === null) {
         $db->table('time_table')
-           ->where(['cls_sec_id' => $cls_sec_id, 'day' => $day, 'slot_id' => $slot_id])
-           ->delete();
+            ->where(['cls_sec_id' => $cls_sec_id, 'day' => $day, 'slot_id' => $slot_id])
+            ->delete();
 
-        return $this->response->setJSON([
-            'success' => true,
-            'msg'     => 'Slot cleared',
-            'teacherLoad' => $this->calculateTeacherLoad($cls_sec_id),
-        ]);
+        return ['success' => true, 'msg' => 'Slot cleared'];
     }
 
-    // 1) Ensure this subject exists in this section (and get sec_sub_id)
     $secSub = $db->table('section_subjects')
         ->select('sec_sub_id')
         ->where('cls_sec_id', $cls_sec_id)
@@ -464,46 +464,43 @@ public function updateSlot()
         ->where('status', 1)
         ->get()->getRow();
 
-    if (!$secSub) {
-        return $this->response->setJSON([
+    if (! $secSub) {
+        return [
             'success' => false,
-            'msg'     => 'Subject is not offered in this section.'
-        ]);
+            'msg'     => 'Subject is not offered in this section.',
+        ];
     }
-    $sec_sub_id = (int)$secSub->sec_sub_id;
+    $sec_sub_id = (int) $secSub->sec_sub_id;
 
-    // 2) Prevent same subject twice in same day (optional constraint)
-    if (!$allowSameSubjectDay) {
+    if (! $allowSameSubjectDay) {
         $dup = $db->table('time_table')
             ->select('slot_id')
             ->where('cls_sec_id', $cls_sec_id)
             ->where('day', $day)
             ->where('subject_id', $subject_id)
-            ->where('slot_id !=', $slot_id)   // allow replacing same cell
+            ->where('slot_id !=', $slot_id)
             ->get()->getRow();
 
         if ($dup) {
-            return $this->response->setJSON([
+            return [
                 'success' => false,
-                'msg'     => "This subject is already scheduled on {$day} (slot {$dup->slot_id})."
-            ]);
+                'msg'     => "This subject is already scheduled on {$day} (slot {$dup->slot_id}).",
+            ];
         }
     }
 
-    // 3) Resolve the latest teacher for this (section, subject)
-    $teacherRow = $db->query("
+    $teacherRow = $db->query('
         SELECT ts.tid
         FROM teacher_subjects ts
         WHERE ts.cls_sec_id = ? AND ts.sec_sub_id = ? AND ts.status = 1
         ORDER BY ts.sst DESC
         LIMIT 1
-    ", [$cls_sec_id, $sec_sub_id])->getRow();
+    ', [$cls_sec_id, $sec_sub_id])->getRow();
 
     $tid = $teacherRow->tid ?? null;
 
-    // 4) If a teacher is assigned, block cross-section conflicts at same day/slot
     if ($tid) {
-        $conflict = $db->query("
+        $conflict = $db->query('
             SELECT 1
             FROM time_table tt
             JOIN section_subjects ss
@@ -527,41 +524,123 @@ public function updateSlot()
             WHERE tt.day = ?
               AND tt.slot_id = ?
               AND cur.tid = ?
-              AND NOT (tt.cls_sec_id = ? AND tt.day = ? AND tt.slot_id = ?)  -- ignore current cell
+              AND NOT (tt.cls_sec_id = ? AND tt.day = ? AND tt.slot_id = ?)
             LIMIT 1
-        ", [$day, $slot_id, $tid, $cls_sec_id, $day, $slot_id])->getRow();
+        ', [$day, $slot_id, $tid, $cls_sec_id, $day, $slot_id])->getRow();
 
         if ($conflict) {
-            return $this->response->setJSON([
+            return [
                 'success' => false,
-                'msg'     => 'Teacher conflict: this teacher is already scheduled in another class at the same day/slot.'
-            ]);
+                'msg'     => 'Teacher conflict: this teacher is already scheduled in another class at the same day/slot.',
+            ];
         }
     }
 
-    // 5) Enforce one row per natural key (cls_sec_id, day, slot_id)
-    // Delete any legacy duplicates first, then insert the current subject.
     $db->table('time_table')
         ->where([
             'cls_sec_id' => $cls_sec_id,
             'day'        => $day,
-            'slot_id'    => $slot_id
+            'slot_id'    => $slot_id,
         ])
         ->delete();
 
     $db->table('time_table')->insert([
-        'cls_sec_id'    => $cls_sec_id,
-        'day'           => $day,
-        'slot_id'       => $slot_id,
-        'subject_id'    => $subject_id,
-        'created_date'  => date('Y-m-d H:i:s'),
-        'updated_date'  => date('Y-m-d H:i:s'),
-        'user_id'       => (int)($this->session->get('member_userid') ?? 0),
+        'cls_sec_id'   => $cls_sec_id,
+        'day'          => $day,
+        'slot_id'      => $slot_id,
+        'subject_id'   => $subject_id,
+        'created_date' => date('Y-m-d H:i:s'),
+        'updated_date' => date('Y-m-d H:i:s'),
+        'user_id'      => (int) ($this->session->get('member_userid') ?? 0),
     ]);
+
+    return ['success' => true, 'msg' => 'Slot updated'];
+}
+
+public function updateSlot()
+{
+    $cls_sec_id  = (int) $this->request->getPost('cls_sec_id');
+    $day         = trim((string) $this->request->getPost('day'));
+    $slot_id     = (int) $this->request->getPost('slot_id');
+    $subject_raw = $this->request->getPost('subject_id');
+    $subject_id  = ($subject_raw === '' || $subject_raw === null) ? null : (int) $subject_raw;
+    $allowSameSubjectDay = ((int) $this->request->getPost('allow_same_subject_day') === 1);
+
+    $validDays = $this->canonicalWeekdayOrder();
+    if ($cls_sec_id <= 0 || $day === '' || ! in_array($day, $validDays, true) || $slot_id <= 0) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'Invalid input.']);
+    }
+
+    $db = \Config\Database::connect();
+    $result = $this->applyTimetableCellUpdate($db, $cls_sec_id, $day, $slot_id, $subject_id, $allowSameSubjectDay);
+    if (! $result['success']) {
+        return $this->response->setJSON($result);
+    }
 
     return $this->response->setJSON([
         'success'     => true,
-        'msg'         => 'Slot updated',
+        'msg'         => $result['msg'],
+        'teacherLoad' => $this->calculateTeacherLoad($cls_sec_id),
+    ]);
+}
+
+/**
+ * Apply the same subject (or clear) to every visible day in one slot row — atomic.
+ */
+public function bulkUpdateSlotRow()
+{
+    $cls_sec_id  = (int) $this->request->getPost('cls_sec_id');
+    $slot_id     = (int) $this->request->getPost('slot_id');
+    $subject_raw = $this->request->getPost('subject_id');
+    $subject_id  = ($subject_raw === '' || $subject_raw === null) ? null : (int) $subject_raw;
+    $allowSameSubjectDay = ((int) $this->request->getPost('allow_same_subject_day') === 1);
+
+    $daysRaw = $this->request->getPost('days');
+    if (is_string($daysRaw)) {
+        $days = json_decode($daysRaw, true);
+    } else {
+        $days = $daysRaw;
+    }
+
+    if ($cls_sec_id <= 0 || $slot_id <= 0 || ! is_array($days)) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'Invalid input.']);
+    }
+
+    $valid = $this->canonicalWeekdayOrder();
+    $orderedDays = [];
+    foreach ($days as $d) {
+        $d = trim((string) $d);
+        if (in_array($d, $valid, true)) {
+            $orderedDays[] = $d;
+        }
+    }
+    $orderedDays = array_values(array_unique($orderedDays));
+
+    if ($orderedDays === []) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'No valid days.']);
+    }
+
+    $db = \Config\Database::connect();
+    $db->transStart();
+
+    foreach ($orderedDays as $day) {
+        $result = $this->applyTimetableCellUpdate($db, $cls_sec_id, $day, $slot_id, $subject_id, $allowSameSubjectDay);
+        if (! $result['success']) {
+            $db->transRollback();
+
+            return $this->response->setJSON($result);
+        }
+    }
+
+    $db->transComplete();
+
+    if ($db->transStatus() === false) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'Could not update row.']);
+    }
+
+    return $this->response->setJSON([
+        'success'     => true,
+        'msg'         => $subject_id === null ? 'Row cleared' : 'Subject applied to full row',
         'teacherLoad' => $this->calculateTeacherLoad($cls_sec_id),
     ]);
 }
@@ -1076,6 +1155,61 @@ private function canonicalWeekdayOrder(): array
     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 }
 
+private function formatTimeForDisplay(?string $t): string
+{
+    if ($t === null || $t === '') {
+        return '';
+    }
+    try {
+        $dt = new \DateTime((string) $t);
+
+        return $dt->format('h:i A');
+    } catch (\Throwable $e) {
+        return (string) $t;
+    }
+}
+
+/**
+ * Per-day school check-in / check-out labels from active timing type (for timetable UI).
+ *
+ * @return array<string, array{checkin: string, checkout: string}>
+ */
+private function getDayTimingLabelsForSection(int $campusId, int $clsSecId): array
+{
+    $type = $this->getActiveTimingTypeForCampus($campusId);
+    if (! $type) {
+        return [];
+    }
+
+    $rows = $this->db->table('school_timings')
+        ->select('dayname, checkin_timing, checkout_timing')
+        ->where('cls_sec_id', $clsSecId)
+        ->where('type_id', (int) $type['type_id'])
+        ->get()
+        ->getResultArray();
+
+    $out = [];
+    foreach ($rows as $row) {
+        $dn = trim((string) ($row['dayname'] ?? ''));
+        $canon = null;
+        foreach ($this->canonicalWeekdayOrder() as $c) {
+            if (strcasecmp($dn, $c) === 0) {
+                $canon = $c;
+                break;
+            }
+        }
+        if ($canon === null) {
+            continue;
+        }
+        $out[$canon] = [
+            'checkin'  => $this->formatTimeForDisplay($row['checkin_timing'] ?? null),
+            'checkout' => $this->formatTimeForDisplay($row['checkout_timing'] ?? null),
+        ];
+    }
+
+    return $out;
+}
+
 /**
  * Day columns for one class section: only days where that section's school timing
  * (active type) has check-in and check-out set and different. No campus-wide union.
@@ -1490,7 +1624,7 @@ public function save()
     $clsSecId = $this->request->getPost('cls_sec_id');
     $timetable = json_decode($this->request->getPost('timetable'), true);
     $allowSameSubjectDay = ((int)$this->request->getPost('allow_same_subject_day') === 1);
-    $validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    $validDays = $this->canonicalWeekdayOrder();
 
     try {
         if (empty($clsSecId) || !is_array($timetable)) {

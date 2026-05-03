@@ -1,5 +1,17 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
+<?php
+$slotsBootstrap = [];
+if (! empty($slots)) {
+    foreach ($slots as $s) {
+        $slotsBootstrap[] = [
+            'slot_id'    => (int) $s->slot_id,
+            'start_time' => (string) $s->start_time,
+            'end_time'   => (string) $s->end_time,
+        ];
+    }
+}
+?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
@@ -66,6 +78,19 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="showFullWeekDays">
+                                <label class="custom-control-label" for="showFullWeekDays">
+                                    Show full week (Mon–Sun) for assignment
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Default columns follow this section’s working days from School Timing (check-in and check-out). Enable this to assign subjects on any weekday; cells stay editable afterward.
+                            </small>
+                        </div>
+                    </div>
                     
                     <div class="row mt-3">
                         <div class="col-md-3">
@@ -113,6 +138,11 @@
 </section>
 
 <script>
+window.TTIMETABLE_BOOTSTRAP = {
+    fullWeekDays: <?= json_encode($full_week_days ?? []) ?>,
+    slots: <?= json_encode($slotsBootstrap) ?>
+};
+
 $(document).ready(function () {
     // Initialize Select2
     $('.select2').select2({ theme: 'bootstrap4' });
@@ -126,11 +156,29 @@ $(document).ready(function () {
     let allowSameSubjectPerDay = false;
     let blockedSlotsMap = {};
     let constraintsLoading = false;
+    let ttMeta = {
+        workingDays: [],
+        fullWeekDays: window.TTIMETABLE_BOOTSTRAP.fullWeekDays || [],
+        dayTiming: {},
+        slots: window.TTIMETABLE_BOOTSTRAP.slots || [],
+        showFullWeek: false
+    };
 
     $('#allowSameSubjectPerDay').on('change', function () {
         allowSameSubjectPerDay = $(this).is(':checked');
         if (selectedSubject) {
             fetchAndPaintConstraints(selectedSubject);
+        }
+    });
+
+    $('#showFullWeekDays').on('change', function () {
+        ttMeta.showFullWeek = $(this).is(':checked');
+        if (currentClsSecId && subjects.length) {
+            renderTimetableGrid(subjects, timetableData);
+            initializeDragAndDrop();
+            if (selectedSubject) {
+                fetchAndPaintConstraints(selectedSubject);
+            }
         }
     });
 
@@ -161,7 +209,11 @@ $(document).ready(function () {
                 if (response.success) {
                     subjects = response.subjects;
                     timetableData = response.timetable || {};
-                    
+                    ttMeta.workingDays = response.working_days || ttMeta.fullWeekDays;
+                    ttMeta.fullWeekDays = response.full_week_days || ttMeta.fullWeekDays;
+                    ttMeta.dayTiming = response.day_timing || {};
+                    ttMeta.slots = (response.slots && response.slots.length) ? response.slots : (window.TTIMETABLE_BOOTSTRAP.slots || []);
+
                     renderSubjectPool(response.subjects);
                     renderTimetableGrid(response.subjects, response.timetable);
                     renderTeacherLoad(response.teacherLoad);
@@ -228,68 +280,130 @@ $(document).ready(function () {
         });
     }
 
-    // Render timetable grid
+    function getDisplayDays() {
+        if (ttMeta.showFullWeek && ttMeta.fullWeekDays.length) {
+            return ttMeta.fullWeekDays;
+        }
+        return ttMeta.workingDays.length ? ttMeta.workingDays : ttMeta.fullWeekDays;
+    }
+
+    // Render timetable grid (columns = working days or full week)
     function renderTimetableGrid(subjects, timetable) {
-        let html = `<div class="table-responsive"><table class="table table-bordered"><thead><tr><th>Time/Day</th>`;
+        const days = getDisplayDays();
+        const slots = ttMeta.slots || [];
 
-        // Add day headers
-        <?php foreach ($days as $day): ?>
-            html += `<th><?= esc($day) ?></th>`;
-        <?php endforeach; ?>
-        
-        html += `</tr></thead><tbody>`;
+        if (!days.length) {
+            $('#timetableContainer').html('<div class="alert alert-warning">No days to display. Configure School Timing for this section or enable full week.</div>');
+            return;
+        }
+        if (!slots.length) {
+            $('#timetableContainer').html('<div class="alert alert-warning">No period slots found for this campus.</div>');
+            return;
+        }
 
-        // Add time slots
-        <?php foreach ($slots as $slot): ?>
-            <?php
-            $start = new \DateTime($slot->start_time);
-            $end = new \DateTime($slot->end_time);
-            $timeStr = $start->format('h:i A') . ' - ' . $end->format('h:i A');
-            $slotId = $slot->slot_id;
-            ?>
-            html += `<tr><td><?= esc($timeStr) ?></td>`;
+        let html = '<div class="table-responsive"><table class="table table-bordered table-sm tt-slot-grid"><thead><tr><th class="tt-slot-col text-center" style="width:1%">Slot</th>';
+        days.forEach(function (day) {
+            html += '<th class="text-center">' + day + '</th>';
+        });
+        html += '</tr></thead><tbody>';
 
-            <?php foreach ($days as $day): ?>
-                (function(day, slotId) {
-                    const cellId = `cell-${day}-${slotId}`;
-                    const currentSubject = (timetable[day] && timetable[day][slotId]) 
-                        ? timetable[day][slotId].subject_id 
-                        : null;
-                    
-                    const subject = currentSubject 
-                        ? subjects.find(s => s.subject_id == currentSubject)
-                        : null;
-                    
-                    html += `<td id="${cellId}" class="timetable-cell" 
-                              data-day="${day}" 
-                              data-slot-id="${slotId}"
-                              onclick="handleCellClick(this)">`;
-                    
-                    if (subject) {
-                        html += `
-                            <div class="subject-card bg-gradient-info m-1 p-2 rounded" 
-                                 data-subject-id="${subject.subject_id}"
-                                 draggable="true">
-                                <small>${subject.subject_name}</small>
-                                <div class="text-xs">${subject.first_name ? `${subject.first_name} ${subject.last_name}` : ''}</div>
-                                <button class="btn btn-xs btn-danger remove-subject" style="position: absolute; top: 0; right: 0;">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `;
-                    }
-                    
-                    html += `</td>`;
-                })("<?= esc($day) ?>", "<?= esc($slotId) ?>");
-            <?php endforeach; ?>
+        slots.forEach(function (slot, slotIndex) {
+            const slotId = String(slot.slot_id);
+            const slotLabel = 'Slot ' + (slotIndex + 1);
+            html += '<tr><td class="align-middle tt-slot-col"><div class="d-flex align-items-center justify-content-between flex-nowrap gap-1">';
+            html += '<span class="text-nowrap small font-weight-bold">' + slotLabel + '</span>';
+            html += '<button type="button" class="btn btn-sm btn-outline-secondary tt-fill-row py-0 px-1" data-slot-id="' + slotId + '" title="Put selected subject in this slot on every visible day"><i class="fas fa-arrows-alt-h"></i></button>';
+            html += '</div></td>';
 
-            html += `</tr>`;
-        <?php endforeach; ?>
+            days.forEach(function (day) {
+                const cellId = 'cell-' + day + '-' + slotId;
+                const rowForDay = timetable[day] || {};
+                const cellEntry = rowForDay[slotId] || rowForDay[parseInt(slotId, 10)];
+                const currentSubject = cellEntry ? cellEntry.subject_id : null;
+                const subject = currentSubject
+                    ? subjects.find(s => String(s.subject_id) === String(currentSubject))
+                    : null;
 
-        html += `</tbody></table></div>`;
+                html += '<td id="' + cellId + '" class="timetable-cell" data-day="' + day + '" data-slot-id="' + slotId + '" onclick="handleCellClick(this)">';
+                if (subject) {
+                    html += '<div class="subject-card bg-gradient-info m-1 p-2 rounded" data-subject-id="' + subject.subject_id + '" draggable="true">';
+                    html += '<small>' + subject.subject_name + '</small>';
+                    html += '<div class="text-xs">' + (subject.first_name ? (subject.first_name + ' ' + subject.last_name) : '') + '</div>';
+                    html += '<button class="btn btn-xs btn-danger remove-subject" style="position: absolute; top: 0; right: 0;"><i class="fas fa-times"></i></button>';
+                    html += '</div>';
+                }
+                html += '</td>';
+            });
+            html += '</tr>';
+        });
 
+        html += '</tbody></table></div>';
         $('#timetableContainer').html(html);
     }
+
+    $('#timetableContainer').on('click', '.tt-fill-row', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const slotId = $(this).data('slot-id');
+        if (!currentClsSecId) {
+            toastr.error('Please select a class section first');
+            return;
+        }
+        if (!selectedSubject) {
+            toastr.info('Select a subject on the left, then click the small week button on that slot row.');
+            return;
+        }
+        const days = getDisplayDays();
+        if (!days.length) {
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('admin/timetable/bulk-update-slot-row') ?>",
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                cls_sec_id: currentClsSecId,
+                slot_id: slotId,
+                subject_id: selectedSubject,
+                days: JSON.stringify(days),
+                allow_same_subject_day: allowSameSubjectPerDay ? 1 : 0
+            },
+            success: function (response) {
+                if (response.success) {
+                    const sub = subjects.find(s => String(s.subject_id) === String(selectedSubject));
+                    if (sub) {
+                        days.forEach(function (day) {
+                            if (!timetableData[day]) {
+                                timetableData[day] = {};
+                            }
+                            timetableData[day][String(slotId)] = {
+                                subject_id: sub.subject_id,
+                                subject_name: sub.subject_name
+                            };
+                        });
+                    }
+                    toastr.success(response.msg || 'Row updated');
+                    renderTimetableGrid(subjects, timetableData);
+                    initializeDragAndDrop();
+                    if (response.teacherLoad) {
+                        updateTeacherLoadUI(response.teacherLoad);
+                    }
+                    if (selectedSubject) {
+                        fetchAndPaintConstraints(selectedSubject);
+                    }
+                } else {
+                    toastr.error(response.msg || 'Could not fill row');
+                    if (currentClsSecId) {
+                        loadTimetableData(currentClsSecId);
+                    }
+                }
+            },
+            error: function () {
+                toastr.error('Server error while updating row');
+            }
+        });
+    });
 
     // Initialize drag and drop functionality
     function initializeDragAndDrop() {
@@ -709,6 +823,18 @@ $(document).ready(function () {
     padding: 0 0.25rem;
     font-size: 0.6rem;
     line-height: 1.2;
+}
+
+.tt-slot-grid .tt-slot-col {
+    width: 1%;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.tt-slot-grid .tt-fill-row {
+    font-size: 0.7rem;
+    line-height: 1;
+    min-width: auto;
 }
 </style>
 

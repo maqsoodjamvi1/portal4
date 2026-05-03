@@ -187,6 +187,7 @@ private function fetchStudentChalans(array $params): array
         p.father_cnic,
         cs.class_id,
         c.class_name,
+        c.class_short_name,
         sec.section_id,
         sec.short_name AS section_short_name,
         sec.section_name,
@@ -517,8 +518,10 @@ private function fetchFamilyChalans(array $params): array
         // Get head student (elder student - first in sorted list)
         $headStudent = !empty($students) ? $students[0] : null;
         
-        // Get the elder student's class for display in class field
-        $elderClass = $headStudent ? ($headStudent['class_short_name'] ?? $headStudent['class_name'] ?? '') : '';
+        // Get the elder student's class for display in class field (short label)
+        $elderClass = $headStudent
+            ? fee_chalan_class_badge_text($headStudent['class_short_name'] ?? null, $headStudent['class_name'] ?? null)
+            : '';
         $elderSection = $headStudent ? ($headStudent['section_short_name'] ?? '') : '';
         
         // Format class display for class field using short names
@@ -1053,6 +1056,7 @@ private function getFamilyStudentsWithChalans(int $parent_id, int $campus_id, in
         s.reg_no,
         cs.class_id,
         c.class_name,
+        c.class_short_name,
         sec.short_name AS section_short_name
     ");
 
@@ -1251,6 +1255,44 @@ private function getStudentPaymentHistoryBatch(array $studentIds): array
             return sprintf('%02d/%04d', $parts[0], $parts[1]);
         }
         return $fee_month;
+    }
+
+    private function parseChalanDateInput(?string $raw): ?string
+    {
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return null;
+        }
+        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y'] as $fmt) {
+            $dt = DateTime::createFromFormat($fmt, $raw);
+            if ($dt instanceof DateTime) {
+                $errs = DateTime::getLastErrors();
+                if (is_array($errs) && (($errs['error_count'] ?? 0) > 0 || ($errs['warning_count'] ?? 0) > 0)) {
+                    continue;
+                }
+
+                return $dt->format('Y-m-d');
+            }
+        }
+        $ts = strtotime($raw);
+
+        return $ts !== false ? date('Y-m-d', $ts) : null;
+    }
+
+    private function normalizeFeeMonthYm(?string $raw): string
+    {
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return date('Y-m');
+        }
+        if (preg_match('/^(\d{4})-(\d{2})/', $raw, $m)) {
+            return $m[1] . '-' . $m[2];
+        }
+        if (preg_match('/^(\d{1,2})[\/\-](\d{4})$/', $raw, $m)) {
+            return sprintf('%04d-%02d', (int) $m[2], (int) $m[1]);
+        }
+
+        return date('Y-m');
     }
 
     /**
@@ -1693,10 +1735,11 @@ public function searchFamilies()
             TRIM(CONCAT_WS(' ', TRIM(s.first_name), NULLIF(TRIM(s.last_name), ''))) AS student_name,
             s.reg_no,
             p.f_name AS f_name,
-            cs.class_id,
-            c.class_name,
-            sec.short_name AS section_short_name,
-            cm.campus_name, cm.location, cm.bank_name, cm.bank_address, cm.bank_code, cm.bank_acc,
+        cs.class_id,
+        c.class_name,
+        c.class_short_name,
+        sec.short_name AS section_short_name,
+        cm.campus_name, cm.location, cm.bank_name, cm.bank_address, cm.bank_code, cm.bank_acc,
             cm.chalan_h_msg, cm.chalan_f_msg,
             sys.system_name, sys.logo,
             p.parent_id,
@@ -2295,106 +2338,400 @@ public function deleteAllToday()
     }
 }   
 
+    /**
+     * Class standard amounts (fee_amount) and per-student monthly discount / plan for challan edit auto-fill.
+     *
+     * @param list<int> $studentIds
+     * @param list<array<string,mixed>> $feeTypes rows with fee_type_id
+     *
+     * @return array{amount_map: array<string, float>, students: array<string, array{class_id:int, monthly_discount:float, plan_value:int}>}
+     */
+    private function buildChalanEditStdFeesPayload(int $campus_id, int $session_id, array $studentIds, array $feeTypes): array
+    {
+        $studentIds = array_values(array_unique(array_filter(array_map('intval', $studentIds), static fn ($id) => $id > 0)));
+
+        if ($studentIds === [] || $session_id <= 0) {
+            return ['amount_map' => [], 'students' => []];
+        }
+
+        $rows = $this->db->table('student_class sc')
+            ->select('sc.student_id, cs.class_id, s.discounted_amount, s.fee_plan')
+            ->join('students s', 's.student_id = sc.student_id')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+            ->where('sc.session_id', $session_id)
+            ->where('s.campus_id', $campus_id)
+            ->whereIn('sc.student_id', $studentIds)
+            ->get()
+            ->getResultArray();
+
+        $planCache   = [];
+        $studentsOut = [];
+
+        foreach ($rows as $row) {
+            $sid = (int) ($row['student_id'] ?? 0);
+            if ($sid <= 0 || isset($studentsOut[(string) $sid])) {
+                continue;
+            }
+
+            $classId = (int) ($row['class_id'] ?? 0);
+            $fp      = (int) ($row['fee_plan'] ?? 0);
+
+            if ($fp === 0) {
+                $pv = 1;
+            } else {
+                if (! array_key_exists($fp, $planCache)) {
+                    $pr           = $this->db->table('fee_plans')->select('plan_value')->where('plan_id', $fp)->get()->getRowArray();
+                    $planCache[$fp] = $pr ? (int) $pr['plan_value'] : 1;
+                }
+                $pv = $planCache[$fp];
+            }
+
+            $studentsOut[(string) $sid] = [
+                'class_id'         => $classId,
+                'monthly_discount' => (float) ($row['discounted_amount'] ?? 0),
+                'plan_value'       => max(1, (int) $pv),
+            ];
+        }
+
+        $classIds = [];
+        foreach ($studentsOut as $meta) {
+            $c = (int) ($meta['class_id'] ?? 0);
+            if ($c > 0) {
+                $classIds[$c] = true;
+            }
+        }
+        $classIds = array_keys($classIds);
+
+        $ftIds = [];
+        foreach ($feeTypes as $ft) {
+            $fid = (int) ($ft['fee_type_id'] ?? 0);
+            if ($fid > 0) {
+                $ftIds[$fid] = true;
+            }
+        }
+        $ftIds = array_keys($ftIds);
+
+        $amountMap = [];
+
+        if ($classIds !== [] && $ftIds !== []) {
+            $amRows = $this->db->table('fee_amount')
+                ->select('class_id, fee_type_id, amount')
+                ->where('campus_id', $campus_id)
+                ->where('session_id', $session_id)
+                ->whereIn('class_id', $classIds)
+                ->whereIn('fee_type_id', $ftIds)
+                ->get()
+                ->getResultArray();
+
+            foreach ($amRows as $ar) {
+                $key             = (int) $ar['class_id'] . '_' . (int) $ar['fee_type_id'];
+                $amountMap[$key] = (float) ($ar['amount'] ?? 0);
+            }
+        }
+
+        return [
+            'amount_map' => $amountMap,
+            'students'   => $studentsOut,
+        ];
+    }
+
 /**
- * Get edit form for a specific student's chalan
+ * Get edit form for unpaid challan lines (student or whole family).
  */
 public function getEditForm()
 {
     if (!$this->request->isAJAX()) {
         return $this->response->setJSON(['success' => false, 'msg' => 'Invalid request']);
     }
-    
+
+    $campus_id  = (int) session()->get('member_campusid');
+    $session_id = (int) session()->get('member_sessionid');
     $student_id = (int) $this->request->getPost('student_id');
-    $campus_id = (int) session()->get('member_campusid');
-    
-    if (!$student_id) {
-        return $this->response->setJSON(['success' => false, 'msg' => 'Student ID required']);
+    $parent_id  = (int) $this->request->getPost('parent_id');
+
+    $campusRow = $this->db->table('campus')->select('system_id')->where('campus_id', $campus_id)->get()->getRowArray();
+    $system_id = (int) ($campusRow['system_id'] ?? 0);
+
+    $feeTypes = [];
+    if ($system_id > 0) {
+        $feeTypes = $this->db->table('fee_type')
+            ->select('fee_type_id, fee_type_name, is_monthly_fee')
+            ->where('system_id', $system_id)
+            ->where('status', 1)
+            ->where('s_flag', 1)
+            ->orderBy('fee_type_name', 'ASC')
+            ->get()
+            ->getResultArray();
     }
-    
-    // Get student info
-    $student = $this->db->table('students s')
-        ->select('s.student_id, s.first_name, s.last_name, s.reg_no, s.parent_id, p.f_name')
-        ->join('parents p', 'p.parent_id = s.parent_id', 'left')
-        ->where('s.student_id', $student_id)
-        ->where('s.campus_id', $campus_id)
-        ->get()
-        ->getRowArray();
-    
-    if (!$student) {
-        return $this->response->setJSON(['success' => false, 'msg' => 'Student not found']);
+
+    $scope         = 'student';
+    $headline      = '';
+    $student       = null;
+    $familyStudents = [];
+
+    if ($parent_id > 0) {
+        $scope = 'family';
+        $siblingCount = $this->db->table('students')
+            ->where('parent_id', $parent_id)
+            ->where('campus_id', $campus_id)
+            ->countAllResults();
+        if ($siblingCount === 0) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Family not found for this campus']);
+        }
+
+        $parentRow = $this->db->table('parents')->select('f_name')->where('parent_id', $parent_id)->get()->getRowArray();
+        $headline  = 'Family challans — ' . trim((string) ($parentRow['f_name'] ?? 'Parent')) . ' (parent #' . $parent_id . ')';
+
+        $familyStudents = $this->db->table('students')
+            ->select('student_id, first_name, last_name, reg_no')
+            ->where('parent_id', $parent_id)
+            ->where('campus_id', $campus_id)
+            ->orderBy('first_name', 'ASC')
+            ->orderBy('last_name', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $chalans = $this->db->table('fee_chalan fc')
+            ->select('fc.*, ft.fee_type_name, s.first_name, s.last_name, s.reg_no, s.student_id AS line_student_id')
+            ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left')
+            ->join('students s', 's.student_id = fc.student_id')
+            ->where('s.parent_id', $parent_id)
+            ->where('s.campus_id', $campus_id)
+            ->where('fc.status', 'unpaid')
+            ->orderBy('s.first_name', 'ASC')
+            ->orderBy('fc.fee_month', 'DESC')
+            ->orderBy('fc.issue_date', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $student = !empty($familyStudents) ? [
+            'student_id'  => (int) $familyStudents[0]['student_id'],
+            'first_name'  => $familyStudents[0]['first_name'] ?? '',
+            'last_name'   => $familyStudents[0]['last_name'] ?? '',
+            'reg_no'      => $familyStudents[0]['reg_no'] ?? '',
+            'parent_id'   => $parent_id,
+            'f_name'      => $parentRow['f_name'] ?? '',
+        ] : null;
+    } elseif ($student_id > 0) {
+        $parent_id = 0;
+        $student = $this->db->table('students s')
+            ->select('s.student_id, s.first_name, s.last_name, s.reg_no, s.parent_id, p.f_name')
+            ->join('parents p', 'p.parent_id = s.parent_id', 'left')
+            ->where('s.student_id', $student_id)
+            ->where('s.campus_id', $campus_id)
+            ->get()
+            ->getRowArray();
+
+        if (!$student) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Student not found']);
+        }
+
+        $headline = 'Student — ' . trim($student['first_name'] . ' ' . $student['last_name'])
+            . ' (' . ($student['reg_no'] ?: 'No Reg') . ')';
+
+        $chalans = $this->db->table('fee_chalan fc')
+            ->select('fc.*, ft.fee_type_name, s.first_name, s.last_name, s.reg_no, s.student_id AS line_student_id')
+            ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left')
+            ->join('students s', 's.student_id = fc.student_id')
+            ->where('fc.student_id', $student_id)
+            ->where('s.campus_id', $campus_id)
+            ->where('fc.status', 'unpaid')
+            ->orderBy('fc.fee_month', 'DESC')
+            ->orderBy('fc.issue_date', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $familyStudents = [[
+            'student_id' => (int) $student['student_id'],
+            'first_name' => $student['first_name'],
+            'last_name'  => $student['last_name'],
+            'reg_no'     => $student['reg_no'],
+        ]];
+    } else {
+        return $this->response->setJSON(['success' => false, 'msg' => 'student_id or parent_id required']);
     }
-    
-    // Get unpaid chalans for this student
-    $chalans = $this->db->table('fee_chalan fc')
-        ->select('fc.*, ft.fee_type_name')
-        ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left')
-        ->where('fc.student_id', $student_id)
-        ->where('fc.status', 'unpaid')
-        ->orderBy('fc.fee_month', 'DESC')
-        ->orderBy('fc.issue_date', 'DESC')
-        ->get()
-        ->getResultArray();
-    
-    // Load the edit form view
+
+    $studentIdsForPayload = array_map(static fn ($r) => (int) ($r['student_id'] ?? 0), $familyStudents);
+    $stdFeesPayload       = $this->buildChalanEditStdFeesPayload($campus_id, $session_id, $studentIdsForPayload, $feeTypes);
+
     $html = view('admin/chalanview/partials/chalan_edit_form', [
-        'student' => $student,
-        'chalans' => $chalans,
-        'csrf_token' => csrf_token(),
-        'csrf_hash' => csrf_hash()
+        'scope'           => $scope,
+        'headline'        => $headline,
+        'student'         => $student,
+        'parent_id'       => $parent_id,
+        'chalans'         => $chalans,
+        'fee_types'       => $feeTypes,
+        'family_students' => $familyStudents,
+        'csrf_token'      => csrf_token(),
+        'csrf_hash'       => csrf_hash(),
     ]);
-    
+
     return $this->response->setJSON([
-        'success' => true,
-        'html' => $html
+        'success'  => true,
+        'html'     => $html,
+        'std_fees' => $stdFeesPayload,
     ]);
 }
 
 /**
- * Save edited chalan
+ * Save edited challan lines (update existing, insert new rows).
  */
 public function saveEdit()
 {
     if (!$this->request->isAJAX()) {
         return $this->response->setJSON(['success' => false, 'msg' => 'Invalid request']);
     }
-    
-    $chalan_ids = $this->request->getPost('chalan_id');
-    $amounts = $this->request->getPost('amount');
-    $discounts = $this->request->getPost('discount');
-    $statuses = $this->request->getPost('status');
-    
-    if (empty($chalan_ids) || !is_array($chalan_ids)) {
-        return $this->response->setJSON(['success' => false, 'msg' => 'No data to update']);
+
+    $campus_id = (int) session()->get('member_campusid');
+    $user_id   = (int) session()->get('member_userid');
+
+    $edit_scope     = (string) $this->request->getPost('edit_scope');
+    $posted_student = (int) $this->request->getPost('student_id');
+    $posted_parent  = (int) $this->request->getPost('parent_id');
+
+    $chalan_ids      = $this->request->getPost('chalan_id');
+    $amounts         = $this->request->getPost('amount');
+    $discounts       = $this->request->getPost('discount');
+    $statuses        = $this->request->getPost('status');
+    $issue_dates     = $this->request->getPost('issue_date');
+    $due_dates       = $this->request->getPost('due_date');
+    $fee_months      = $this->request->getPost('fee_month');
+    $line_student_ids = $this->request->getPost('line_student_id');
+    $fee_type_ids    = $this->request->getPost('fee_type_id');
+
+    if (! is_array($chalan_ids) || count($chalan_ids) === 0) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'No rows submitted']);
     }
-    
+
+    $allowedStatus = ['unpaid', 'paid', 'discounted'];
+
+    $campusRow = $this->db->table('campus')->select('system_id')->where('campus_id', $campus_id)->get()->getRowArray();
+    $system_id = (int) ($campusRow['system_id'] ?? 0);
+
     $this->db->transBegin();
-    
+
     try {
-        foreach ($chalan_ids as $index => $chalan_id) {
-            $data = [
-                'amount' => (float)($amounts[$index] ?? 0),
-                'discount' => (float)($discounts[$index] ?? 0),
-                'status' => $statuses[$index] ?? 'unpaid',
-                'updated_date' => date('Y-m-d H:i:s')
-            ];
-            
-            $this->db->table('fee_chalan')
-                ->where('chalan_id', $chalan_id)
-                ->update($data);
+        $updated = 0;
+        $inserted = 0;
+
+        foreach ($chalan_ids as $index => $chalan_id_raw) {
+            $chalan_id = (int) $chalan_id_raw;
+            $amount    = (float) ($amounts[$index] ?? 0);
+            $discount  = (float) ($discounts[$index] ?? 0);
+            $status    = (string) ($statuses[$index] ?? 'unpaid');
+            if (! in_array($status, $allowedStatus, true)) {
+                $status = 'unpaid';
+            }
+            if ($discount > $amount) {
+                $discount = $amount;
+            }
+            if ($discount < 0) {
+                $discount = 0;
+            }
+
+            $issue = $this->parseChalanDateInput($issue_dates[$index] ?? null) ?? date('Y-m-d');
+            $due   = $this->parseChalanDateInput($due_dates[$index] ?? null) ?? date('Y-m-d');
+            $feeYm = $this->normalizeFeeMonthYm($fee_months[$index] ?? null);
+            $fee_month_old = date('F Y', strtotime($feeYm . '-01'));
+
+            if ($chalan_id > 0) {
+                $row = $this->db->table('fee_chalan fc')
+                    ->select('fc.chalan_id, fc.student_id, s.campus_id, s.parent_id')
+                    ->join('students s', 's.student_id = fc.student_id')
+                    ->where('fc.chalan_id', $chalan_id)
+                    ->get()
+                    ->getRowArray();
+
+                if (!$row || (int) $row['campus_id'] !== $campus_id) {
+                    throw new \RuntimeException('Challan not found or access denied.');
+                }
+                if ($edit_scope === 'family' && $posted_parent > 0 && (int) $row['parent_id'] !== $posted_parent) {
+                    throw new \RuntimeException('Challan does not belong to this family.');
+                }
+                if ($edit_scope === 'student' && $posted_student > 0 && (int) $row['student_id'] !== $posted_student) {
+                    throw new \RuntimeException('Challan does not belong to this student.');
+                }
+
+                $this->db->table('fee_chalan')->where('chalan_id', $chalan_id)->update([
+                    'amount'        => $amount,
+                    'discount'      => $discount,
+                    'status'        => $status,
+                    'issue_date'    => $issue,
+                    'due_date'      => $due,
+                    'fee_month'     => $feeYm,
+                    'fee_month_old' => $fee_month_old,
+                    'updated_date'  => date('Y-m-d H:i:s'),
+                ]);
+                $updated++;
+            } else {
+                $line_sid = (int) ($line_student_ids[$index] ?? 0);
+                $ftid     = (int) ($fee_type_ids[$index] ?? 0);
+
+                if ($line_sid <= 0 || $ftid <= 0) {
+                    throw new \RuntimeException('New rows require student and fee type.');
+                }
+
+                $st = $this->db->table('students')
+                    ->select('student_id, parent_id, campus_id')
+                    ->where('student_id', $line_sid)
+                    ->where('campus_id', $campus_id)
+                    ->get()
+                    ->getRowArray();
+
+                if (!$st) {
+                    throw new \RuntimeException('Invalid student for new line.');
+                }
+                if ($edit_scope === 'family' && $posted_parent > 0 && (int) $st['parent_id'] !== $posted_parent) {
+                    throw new \RuntimeException('Student is not in this family.');
+                }
+                if ($edit_scope === 'student' && $posted_student > 0 && $line_sid !== $posted_student) {
+                    throw new \RuntimeException('New line must be for the selected student.');
+                }
+
+                $ftOk = $this->db->table('fee_type')
+                    ->where('fee_type_id', $ftid)
+                    ->where('system_id', $system_id)
+                    ->countAllResults();
+                if ($ftOk === 0) {
+                    throw new \RuntimeException('Invalid fee type.');
+                }
+
+                $date = date('Y-m-d');
+                $this->db->table('fee_chalan')->insert([
+                    'student_id'     => $line_sid,
+                    'fee_type_id'    => $ftid,
+                    'amount'         => $amount,
+                    'discount'       => $discount,
+                    'issue_date'     => $issue,
+                    'due_date'       => $due,
+                    'fee_month'      => $feeYm,
+                    'fee_month_old'  => $fee_month_old,
+                    'status'         => $status,
+                    'payment_status' => 'pending',
+                    'paid_date'      => '0000-00-00',
+                    'created_date'   => $date,
+                    'updated_date'   => date('Y-m-d H:i:s'),
+                    'user_id'        => $user_id,
+                    'acc_id'         => 0,
+                    'currency_code'  => 'PKR',
+                    'invoice_no'     => 0,
+                ]);
+                $inserted++;
+            }
         }
-        
+
         $this->db->transCommit();
-        
+
         return $this->response->setJSON([
             'success' => true,
-            'msg' => count($chalan_ids) . ' chalan(s) updated successfully'
+            'msg'     => sprintf('Saved: %d updated, %d new line(s).', $updated, $inserted),
         ]);
-        
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         $this->db->transRollback();
+
         return $this->response->setJSON([
             'success' => false,
-            'msg' => 'Error updating chalans: ' . $e->getMessage()
+            'msg'     => $e->getMessage(),
         ]);
     }
 }
@@ -2540,7 +2877,6 @@ public function bulk_chalan_stream()
     $fee_month       = (string) $request->getGet('fee_month');
     $issue_date_raw  = $request->getGet('issue_date');
     $due_date_raw    = $request->getGet('due_date');
-    $force_month     = (int) $request->getGet('force_month') === 1;
 
     $issue_date = DateTime::createFromFormat('d/m/Y', (string) $issue_date_raw);
     $due_date   = DateTime::createFromFormat('d/m/Y', (string) $due_date_raw);
@@ -2572,14 +2908,6 @@ public function bulk_chalan_stream()
 
         $system_id = (int) (getSchoolInfo()->system_id ?? 0);
         $date      = date('Y-m-d');
-
-        $monthTs         = strtotime($fee_month . '-01');
-        $monthFull       = date('F', $monthTs);
-        $monthShort      = date('M', $monthTs);
-        $monthNum2       = date('m', $monthTs);
-        $monthNum1       = date('n', $monthTs);
-        $monthKey        = date('Y-m', $monthTs);
-        $monthCandidates = [$monthFull, $monthShort, $monthNum2, (string) $monthNum1, $monthKey];
 
         $planCache = [];
 
@@ -2629,7 +2957,7 @@ public function bulk_chalan_stream()
 
         $feeTypes = $feeTypesRes ? $feeTypesRes->getResultArray() : [];
 
-        $preload  = $this->preloadBulkChalanData($db, $campus_id, $session_id, $students, $fee_type_ids, $monthCandidates);
+        $preload  = $this->preloadBulkChalanData($db, $campus_id, $session_id, $students, $fee_type_ids);
         $bulkCtx  = array_merge($preload, ['use_bulk_invoice' => true]);
 
         $this->primeBulkInvoiceSequence($fee_month);
@@ -2666,10 +2994,6 @@ public function bulk_chalan_stream()
                             $planCache[$fp] = $planRow ? (int) $planRow->plan_value : 1;
                         }
                         $thisPlanValue = $planCache[$fp];
-
-                        if (! $force_month && ! isset($preload['plan_month_ok'][$fp])) {
-                            $allowInsert = false;
-                        }
                     }
                 }
 
@@ -2691,9 +3015,7 @@ public function bulk_chalan_stream()
                         'reg_no'     => (string) ($student->reg_no ?? ''),
                         'name'       => trim((string) ($student->first_name ?? '') . ' ' . (string) ($student->last_name ?? '')),
                         'code'       => 'no_fee_lines_for_month',
-                        'detail'     => $force_month
-                            ? 'No billable fee lines could be built for this student (check fee types vs fee plan).'
-                            : 'Monthly fees skipped: this calendar month is not enabled on the student\'s fee plan for the selected fee types. Use “Force generation” on the form if you still want to bill this month.',
+                        'detail'     => 'No billable fee lines could be built for this student (check fee types, class fee amounts, and fee plan configuration).',
                     ];
                 }
                 if ($processed % $progressEvery === 0 || $processed === $totalStudents) {
@@ -2803,15 +3125,14 @@ private function sendEvent(array $data, string $event = 'message'): void
  *
  * @param list<object> $students Rows from student_class join (student_id, class_id, fee_plan, …)
  *
- * @return array{fee_amount_map: array<string, float>, plan_month_ok: array<int, true>}
+ * @return array{fee_amount_map: array<string, float>}
  */
 private function preloadBulkChalanData(
     BaseConnection $db,
     int $campus_id,
     int $session_id,
     array $students,
-    array $fee_type_ids_int,
-    array $monthCandidates
+    array $fee_type_ids_int
 ): array {
     $feeAmountMap = [];
     $classIds     = [];
@@ -2839,33 +3160,8 @@ private function preloadBulkChalanData(
         }
     }
 
-    $planMonthOk = [];
-    $planIds     = [];
-
-    foreach ($students as $s) {
-        $fp = (int) ($s->fee_plan ?? 0);
-        if ($fp > 0) {
-            $planIds[$fp] = true;
-        }
-    }
-    $planIds = array_keys($planIds);
-
-    if ($planIds !== [] && $monthCandidates !== []) {
-        $pHold = implode(',', array_fill(0, count($planIds), '?'));
-        $mHold = implode(',', array_fill(0, count($monthCandidates), '?'));
-        $sql   = "SELECT DISTINCT fee_plan_id FROM fee_plan_months
-            WHERE campus_id = ? AND status = 1 AND fee_plan_id IN ({$pHold}) AND month IN ({$mHold})";
-        $binds = array_merge([$campus_id], $planIds, $monthCandidates);
-        $rows  = $db->query($sql, $binds)->getResult();
-
-        foreach ($rows as $r) {
-            $planMonthOk[(int) $r->fee_plan_id] = true;
-        }
-    }
-
     return [
         'fee_amount_map' => $feeAmountMap,
-        'plan_month_ok'  => $planMonthOk,
     ];
 }
 

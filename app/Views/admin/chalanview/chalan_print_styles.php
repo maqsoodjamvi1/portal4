@@ -10,20 +10,33 @@
 @media print {
     @page {
         size: A4 landscape;
-        margin: 0.2in;
+        margin: 12mm;
     }
-    
+
     body {
         margin: 0;
         padding: 0;
         background: white;
         font-family: 'Arial', 'Helvetica', sans-serif;
     }
-    
+
+    /* One student/family slip-row per sheet — avoids Chrome ignoring breaks before empty nodes */
+    .chalan-slip-page {
+        page-break-after: always;
+        break-after: page;
+        margin: 0;
+        padding: 0;
+    }
+
+    body > .chalan-slip-page:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+    }
+
     .no-print {
         display: none !important;
     }
-    
+
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -56,7 +69,394 @@
     font-family: 'Arial', 'Helvetica', sans-serif;
     font-size: 8.5pt;
     line-height: 1.2;
-    page-break-inside: avoid;
+    overflow: visible;
+}
+
+/* Legacy manual page breaks (single-page layouts, etc.) */
+.pagebreak {
+    page-break-before: always;
+    break-before: page;
+    clear: both;
+    font-size: 0;
+    line-height: 0;
+    overflow: hidden;
+}
+
+.pagebreak::before {
+    content: '\00a0';
+    display: block;
+    height: 1px;
+}
+
+/* A4 landscape: larger type + taller rows for all fee slips (student/family templates using chalan_template) */
+.chalan-wrapper.chalan-a4-fill {
+    font-size: 10.5pt;
+    line-height: 1.38;
+    padding: 0.12in 0.14in;
+}
+
+.chalan-wrapper.chalan-a4-fill .section-title {
+    font-size: 10pt;
+    padding: 0.035in 0.07in;
+    margin-bottom: 0.055in;
+}
+
+.chalan-wrapper.chalan-a4-fill .chalan-header {
+    margin-bottom: 0.13in;
+    padding-bottom: 0.08in;
+}
+
+.chalan-wrapper.chalan-a4-fill .header-brand {
+    padding: 0.06in 0;
+    gap: 0.12in;
+}
+
+.chalan-wrapper.chalan-a4-fill .header-logo-box {
+    flex: 0 0 0.72in;
+    width: 0.72in;
+}
+
+.chalan-wrapper.chalan-a4-fill .header-logo-box img {
+    max-width: 0.66in;
+    max-height: 0.66in;
+}
+
+.chalan-wrapper.chalan-a4-fill .logo-placeholder {
+    width: 0.62in;
+    height: 0.62in;
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .campus-line {
+    margin-top: 0.045in;
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .bank-line,
+.chalan-wrapper.chalan-a4-fill .acc-line {
+    font-size: 8.5pt;
+    margin-top: 0.02in;
+}
+
+.chalan-wrapper.chalan-a4-fill .student-info-section {
+    margin-bottom: 0.1in;
+    padding-bottom: 0.06in;
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .info-row-single .info-label,
+.chalan-wrapper.chalan-a4-fill .info-label-inline {
+    font-size: 9pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .info-row-single .info-value,
+.chalan-wrapper.chalan-a4-fill .father-name-value {
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .student-name-line {
+    font-size: 10.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .class-badge {
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .family-id-right {
+    font-size: 9pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .info-row-dates-triple {
+    padding: 0.05in 0;
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .info-grid-family,
+.chalan-wrapper.chalan-a4-fill .info-grid-student {
+    gap: 0.035in;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-detail-section {
+    margin-bottom: 0.1in;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-table {
+    font-size: 9.25pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-table th {
+    font-size: 8.5pt;
+    padding: 0.045in 0.05in;
+    line-height: 1.2;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-table td {
+    padding: 0.045in 0.05in;
+}
+
+.chalan-wrapper.chalan-a4-fill .particulars-cell {
+    font-size: 9.25pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-month-small {
+    font-size: 7.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-table tbody tr.fee-detail-fixed td {
+    min-height: 0.44in;
+    height: 0.44in;
+}
+
+.chalan-wrapper.chalan-a4-fill .fee-summary-section.fee-summary-compact {
+    padding: 0.08in 0.06in;
+    margin-bottom: 0.08in;
+}
+
+.chalan-wrapper.chalan-a4-fill .summary-strip {
+    padding: 0.065in 0.06in;
+    gap: 0.06in;
+}
+
+.chalan-wrapper.chalan-a4-fill .summary-col-label {
+    font-size: 8pt;
+    margin-bottom: 0.025in;
+}
+
+.chalan-wrapper.chalan-a4-fill .summary-col-value {
+    font-size: 10pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .summary-col-value-grand {
+    font-size: 11.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .summary-after-due {
+    font-size: 9pt;
+    margin-top: 0.05in;
+}
+
+.chalan-wrapper.chalan-a4-fill .copy-label {
+    margin-top: 0.1in;
+    padding: 0.065in 0.05in;
+    font-size: 12.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .chalan-accounts-disclaimer {
+    margin-top: 0.1in;
+    padding: 0.06in 0.06in;
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill .footer-line {
+    margin-top: 0.05in;
+    padding: 0.045in;
+    font-size: 10pt;
+}
+
+@media screen {
+    body.chalan-preview-a4 {
+        padding-bottom: 24px;
+    }
+
+    /* Stack slip-pages clearly on screen (print rules handle pagination separately) */
+    .chalan-slip-page {
+        margin-bottom: 14px;
+    }
+
+    .chalan-slip-page:last-of-type {
+        margin-bottom: 0;
+    }
+}
+
+/*
+ * Payment history on: compact entire slip so header + fees + history + copy label fit ONE A4 landscape page.
+ * (Base .chalan-a4-fill is sized for slips without history — too tall when history table is included.)
+ */
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history {
+    font-size: 9pt;
+    line-height: 1.22;
+    padding: 0.055in 0.075in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .section-title {
+    font-size: 8.25pt;
+    padding: 0.02in 0.05in;
+    margin-bottom: 0.032in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .chalan-header {
+    margin-bottom: 0.055in;
+    padding-bottom: 0.035in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .header-brand {
+    padding: 0.03in 0;
+    gap: 0.06in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .header-logo-box {
+    flex: 0 0 0.5in;
+    width: 0.5in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .header-logo-box img {
+    max-width: 0.46in;
+    max-height: 0.46in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .logo-placeholder {
+    width: 0.44in;
+    height: 0.44in;
+    font-size: 6.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .campus-line {
+    margin-top: 0.02in;
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .bank-line,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .acc-line {
+    font-size: 7.25pt;
+    margin-top: 0.008in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .student-info-section {
+    margin-bottom: 0.05in;
+    padding-bottom: 0.03in;
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-row-single .info-label,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-label-inline {
+    font-size: 7.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-row-single .info-value,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .father-name-value {
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .student-name-line {
+    font-size: 9pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .class-badge {
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .family-id-right {
+    font-size: 7.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-row-dates-triple {
+    padding: 0.028in 0;
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-grid-family,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-grid-student {
+    gap: 0.018in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-detail-section {
+    margin-bottom: 0.05in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-table {
+    font-size: 7.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-table th {
+    font-size: 6.75pt;
+    padding: 0.022in 0.028in;
+    line-height: 1.1;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-table td {
+    padding: 0.022in 0.028in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .particulars-cell {
+    font-size: 7.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-month-small {
+    font-size: 6.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-table tbody tr.fee-detail-fixed td {
+    min-height: 0.26in;
+    height: 0.26in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .fee-summary-section.fee-summary-compact {
+    padding: 0.04in 0.035in;
+    margin-bottom: 0.04in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .summary-strip {
+    padding: 0.035in 0.035in;
+    gap: 0.03in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .summary-col-label {
+    font-size: 6.25pt;
+    margin-bottom: 0.01in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .summary-col-value {
+    font-size: 8pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .summary-col-value-grand {
+    font-size: 9.25pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .summary-after-due {
+    font-size: 7.5pt;
+    margin-top: 0.03in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .payment-history-section {
+    margin-top: 0.045in;
+    margin-bottom: 0.035in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .history-table {
+    font-size: 6.75pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .history-table th,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .history-table td {
+    padding: 0.026in 0.022in;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .history-table th {
+    font-size: 6.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .copy-label {
+    margin-top: 0.04in;
+    padding: 0.035in 0.03in;
+    font-size: 9.5pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .chalan-accounts-disclaimer {
+    margin-top: 0.04in;
+    padding: 0.03in 0.035in;
+    font-size: 7.75pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .footer-line {
+    margin-top: 0.03in;
+    padding: 0.03in;
+    font-size: 8.25pt;
+}
+
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-row-single,
+.chalan-wrapper.chalan-a4-fill.chalan-has-payment-history .info-row-father {
+    padding: 0.015in 0;
 }
 
 /* SECTION 1: HEADER — logo + text stack */
@@ -64,6 +464,7 @@
     border-bottom: 2px solid #000;
     margin-bottom: 0.1in;
     padding-bottom: 0.05in;
+    overflow: visible;
 }
 
 .header-brand {
@@ -73,6 +474,7 @@
     gap: 0.1in;
     width: 100%;
     padding: 0.04in 0;
+    overflow: visible;
 }
 
 .header-logo-box {
@@ -110,16 +512,20 @@
     min-width: 0;
     text-align: center;
     padding-top: 0.02in;
+    overflow: visible;
 }
 
 .school-name {
     font-size: 11pt;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    white-space: nowrap;
+    letter-spacing: 0.02em;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
     overflow: visible;
-    line-height: 1.15;
+    line-height: 1.18;
+    max-width: 100%;
     color: #000;
 }
 
@@ -582,12 +988,14 @@
     }
 }
 
-/* Ensure proper page breaks */
-.chalan-wrapper,
-.student-info-section,
-.fee-detail-section,
-.fee-summary-section,
-.payment-history-section {
-    page-break-inside: avoid;
+/*
+ * Print: keep each slip as one unit. Avoid stacking page-break-inside:avoid on nested sections —
+ * that combination caused Chrome to leave large blank gaps between slip-rows on the same page.
+ */
+@media print {
+    .chalan-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
 }
 </style>

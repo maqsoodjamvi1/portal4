@@ -15,8 +15,11 @@ $show_payment_history = $show_payment_history ?? false;
 <head>
     <meta charset="UTF-8">
     <title>Family Fee Challan - 3 Copies</title>
+    <meta name="<?= esc(csrf_token()) ?>" content="<?= esc(csrf_hash()) ?>" id="csrf-meta-print-chalan">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <?php include 'chalan_print_styles.php'; ?>
     <style>
+        .slip-row { position: relative; }
         /* Family-specific styles */
         .family-head-student {
             font-weight: bold;
@@ -156,14 +159,21 @@ $show_payment_history = $show_payment_history ?? false;
         }
     </style>
 </head>
-<body>
+<body class="chalan-preview-a4">
     <?php if (!empty($families)): ?>
-        <?php foreach ($families as $index => $family): ?>
-            <?php if ($index > 0): ?>
-                <div class="pagebreak"></div>
-            <?php endif; ?>
-            
-            <div class="slip-row">
+        <div class="no-print" style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">Print</button>
+            <span class="text-muted small">Use <strong>Edit fees</strong> on each family slip to change amounts or add lines, then print.</span>
+        </div>
+        <?php foreach ($families as $family): ?>
+            <div class="chalan-slip-page">
+            <?php $famParentId = (int) ($family['parent_id'] ?? 0); ?>
+            <div class="slip-row" data-parent-id="<?= $famParentId ?>">
+                <button type="button"
+                        class="no-print btn btn-sm btn-light border chalan-edit-fees-btn"
+                        style="position:absolute;top:2px;right:6px;z-index:10;font-size:11px;padding:2px 8px;"
+                        data-student-id="0"
+                        data-parent-id="<?= $famParentId ?>">Edit fees</button>
                 <?php foreach (['Bank Copy', 'School Copy', 'Student Copy'] as $copyType): ?>
                     <div class="slip-col">
                         <?php
@@ -302,6 +312,7 @@ $show_payment_history = $show_payment_history ?? false;
                     </div>
                 <?php endforeach; ?>
             </div>
+            </div>
         <?php endforeach; ?>
     <?php else: ?>
         <div style="text-align: center; padding: 50px;">
@@ -309,11 +320,8 @@ $show_payment_history = $show_payment_history ?? false;
             <p class="no-print">Please try different filters.</p>
         </div>
     <?php endif; ?>
-    
-    <script>
-        window.onload = function() {
-            window.print();
-        };
-    </script>
+    <?php if (! empty($families)): ?>
+        <?php include __DIR__ . '/partials/chalan_print_edit_modal.php'; ?>
+    <?php endif; ?>
 </body>
 </html>

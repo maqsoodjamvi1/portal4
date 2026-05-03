@@ -1279,6 +1279,7 @@ $routes->post('students_absentees/save_late_attendance', 'StudentsAbsentees::sav
     $routes->post('students_absentees/toggle_attendance_status','StudentsAbsentees::toggle_attendance_status');
     $routes->post('students_absentees/load_existing_attendance','StudentsAbsentees::load_existing_attendance');
     $routes->post('students_absentees/check_and_load_attendance','StudentsAbsentees::check_and_load_attendance');
+    $routes->post('students_absentees/sections_for_date', 'StudentsAbsentees::sections_for_date');
 });
 
 
@@ -1350,6 +1351,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     $routes->post('timetable/get-subjects-timetable', 'Timetable::getSubjectsTimetable');
     $routes->post('timetable/get-subject-constraints', 'Timetable::getSubjectConstraints');
     $routes->post('timetable/update-slot', 'Timetable::updateSlot');
+    $routes->post('timetable/bulk-update-slot-row', 'Timetable::bulkUpdateSlotRow');
     $routes->get('timetable/report', 'Timetable::report');
     $routes->post('timetable/report-data', 'Timetable::reportData');
     $routes->get('timetable/report-export', 'Timetable::reportExport');

@@ -55,7 +55,12 @@ if(isset($info)){
 		        <div id="loader-1" class="overlay" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 		      </div> 
 		    <div id="termssessionarea" class="termssessionarea">
-				</div>	
+				</div>
+				<div class="alert alert-info mb-3" role="alert">
+					<strong>Setup order:</strong> Grading policy rows come from your <em>Grades</em> list. Add or edit grade names first under
+					<a href="<?= base_url('admin/grades/add') ?>" class="alert-link">Grades → Add</a>,
+					then return here and enter percentage ranges for each grade. Save once when all bands are correct.
+				</div>
 			  	<div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
 						<button type="reset" class="btn btn-default">Reset</button>
@@ -108,11 +113,11 @@ $(function(){
 				<?php
 				if($id == ''){
 					?>
-					location.href = '/admin/grading-policy';
+					location.href = '<?= base_url('admin/grading-policy') ?>';
 					<?php
 				}else{
 					?>
-					location.href = '/admin/grading-policy/edit?id=<?php echo $id;?>&after=edit';
+					location.href = '<?= base_url('admin/grading-policy/edit?id=' . $id . '&after=edit') ?>';
 					<?php
 				}
 				?>

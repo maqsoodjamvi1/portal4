@@ -44,4 +44,23 @@ if (!function_exists('school_name_fit_font_size')) {
         return max($minSize, round($baseSize * ($refChars / $len), 2));
     }
 }
+
+/**
+ * Class label next to student name on fee challans: prefer DB short name, else compact "Grade N" → "N".
+ */
+if (! function_exists('fee_chalan_class_badge_text')) {
+    function fee_chalan_class_badge_text(?string $classShortName, ?string $classFullName): string
+    {
+        $src = trim((string) $classShortName);
+        if ($src === '') {
+            $src = trim((string) $classFullName);
+        }
+        if ($src === '') {
+            return '';
+        }
+        $out = preg_replace('/^Grade\s+/iu', '', $src);
+
+        return $out !== '' ? $out : $src;
+    }
+}
 ?>

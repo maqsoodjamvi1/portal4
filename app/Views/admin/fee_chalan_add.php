@@ -41,11 +41,9 @@ $today_chalans = $today_chalans ?? [];
   <div class="row">
     <!-- Left Column: Generation Form -->
     <div class="col-lg-6">
-      <div class="card card-primary card-outline">
-       
-
-        <div class="card-body">
+      <div class="card card-primary card-outline fee-chalan-gen-card">
           <form role="form" id="chalanForm" method="post" action="<?= $base_url ?? base_url('admin/fee-chalan/save') ?>">
+        <div class="card-body pb-2">
             <?php if ($isEdit): ?>
               <?= form_hidden('chalan_id', $chalan_id); ?>
             <?php endif; ?>
@@ -148,98 +146,86 @@ $today_chalans = $today_chalans ?? [];
         </div>
     </div>
 </div>
-            <div class="row">
-              <div class="col-md-12">
-                <div class="custom-control custom-checkbox mb-3">
-                  <input type="checkbox" class="custom-control-input" id="force_fee_month" name="force_fee_month" value="1">
-                  <label class="custom-control-label" for="force_fee_month">
-                    <strong>Force generation</strong> — ignore fee-plan month rules for monthly fees (use when you intentionally bill this month even if it is not marked active on the student’s fee plan).
-                  </label>
-                  <small class="form-text text-muted d-block ml-4">Optional. Keeps one-off or corrective billing fast without editing fee-plan calendars.</small>
+
+            <div class="fee-chalan-campus-defaults border rounded bg-light px-3 pt-3 pb-2 mb-0">
+              <h6 class="text-muted text-uppercase small font-weight-bold mb-3">
+                <i class="fas fa-sliders-h mr-1"></i> Campus defaults
+              </h6>
+              <p class="small text-muted mb-3">Fine rules and challan messages are saved to this campus. Small buttons update only that field.</p>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Fine type</label>
+                    <select name="fine_type" class="form-control form-control-sm">
+                      <option value="per_day_fine" <?= (!empty($campusInfo->fine_type) && $campusInfo->fine_type == 'per_day_fine') ? 'selected' : '' ?>>
+                        Per Day Fine
+                      </option>
+                      <option value="fixed_fine" <?= (!empty($campusInfo->fine_type) && $campusInfo->fine_type == 'fixed_fine') ? 'selected' : '' ?>>
+                        Fixed Fine
+                      </option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <!-- Row 3: Fine Type & Fine Amount -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Fine Type</label>
-                  <select name="fine_type" class="form-control">
-                    <option value="per_day_fine" <?= (!empty($campusInfo->fine_type) && $campusInfo->fine_type == 'per_day_fine') ? 'selected' : '' ?>>
-                      Per Day Fine
-                    </option>
-                    <option value="fixed_fine" <?= (!empty($campusInfo->fine_type) && $campusInfo->fine_type == 'fixed_fine') ? 'selected' : '' ?>>
-                      Fixed Fine
-                    </option>
-                  </select>
+                <div class="col-md-6">
+                  <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Fine amount</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" id="late_fee_fine" name="late_fee_fine"
+                             value="<?= esc($campusInfo->late_fee_fine ?? '') ?>">
+                      <div class="input-group-append">
+                        <button class="btn btn-outline-primary" id="btn_late_fee" type="button">Save</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Fine Amount</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="late_fee_fine" name="late_fee_fine"
-                           value="<?= esc($campusInfo->late_fee_fine ?? '') ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_late_fee" type="button">
-                        Save
-                      </button>
-                    </div>
+              <div class="form-group mb-2">
+                <label class="small font-weight-bold mb-1">Header message</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control" id="chalan_h_msg" name="chalan_h_msg"
+                         value="<?= esc($campusInfo->chalan_h_msg ?? '') ?>">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-primary" id="btn_h_msg" type="button">Save</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group mb-0">
+                <label class="small font-weight-bold mb-1">Footer message</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control" id="chalan_f_msg" name="chalan_f_msg"
+                         value="<?= esc($campusInfo->chalan_f_msg ?? '') ?>">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-primary" id="btn_f_msg" type="button">Save</button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Row 4: Header Message -->
-            <div class="row">
-              <div class="col-md-12">
-                <div class="form-group">
-                  <label>Header Message</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="chalan_h_msg" name="chalan_h_msg"
-                           value="<?= esc($campusInfo->chalan_h_msg ?? '') ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_h_msg" type="button">
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        </div>
 
-            <!-- Row 5: Footer Message -->
-            <div class="row">
-              <div class="col-md-12">
-                <div class="form-group">
-                  <label>Footer Message</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="chalan_f_msg" name="chalan_f_msg"
-                           value="<?= esc($campusInfo->chalan_f_msg ?? '') ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_f_msg" type="button">
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="form-group text-center mt-4">
-              <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5">
+        <div class="card-footer bg-white fee-chalan-actions-footer pt-3 pb-4 px-3 border-top shadow-sm">
+          <div class="row align-items-stretch">
+            <div class="col-md-8 mb-2 mb-md-0">
+              <button type="submit" id="submitBtn" class="btn btn-primary btn-lg btn-block fee-chalan-generate-btn py-3 font-weight-bold shadow-sm">
                 <i class="fas fa-<?= $isEdit ? 'save' : 'play' ?> mr-2"></i>
                 <?= $isEdit ? 'Update Fee Chalan' : 'Generate Fee Chalans' ?>
               </button>
-              <button type="button" class="btn btn-secondary btn-lg px-4 ml-2" onclick="history.go(-1);">
-                <i class="fas fa-times mr-2"></i>Cancel
+            </div>
+            <div class="col-md-4">
+              <button type="button" class="btn btn-outline-secondary btn-lg btn-block py-3" onclick="history.go(-1);">
+                <i class="fas fa-arrow-left mr-2"></i>Cancel
               </button>
             </div>
+          </div>
+          <p class="text-center text-muted small mb-0 mt-2">
+            <i class="fas fa-info-circle mr-1"></i>Select fee types and dates above, then confirm in the dialog.
+          </p>
+        </div>
 
           </form>
-        </div>
       </div>
     </div>
 
@@ -464,6 +450,28 @@ $today_chalans = $today_chalans ?? [];
     </div>
   </div>
 </section>
+
+<style>
+/* Fee chalan generator: primary action emphasis + optional sticky footer on wide screens */
+.fee-chalan-gen-card .fee-chalan-generate-btn {
+  font-size: 1.125rem;
+  letter-spacing: 0.02em;
+}
+@media (min-width: 992px) {
+  .fee-chalan-actions-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1020;
+    margin-left: -1px;
+    margin-right: -1px;
+    border-radius: 0 0 0.25rem 0.25rem;
+  }
+}
+.fee-chalan-campus-defaults .btn-outline-primary {
+  min-width: 4.25rem;
+}
+</style>
+
 <!-- Add Select2 CSS and JS (optional - keep for other elements if needed) -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -839,9 +847,6 @@ $(document).ready(function() {
         params.append('issue_date', issueDate);
         params.append('due_date', dueDate);
         feeTypeIds.forEach(id => params.append('fee_type_ids[]', id));
-        if ($('#force_fee_month').is(':checked')) {
-            params.append('force_month', '1');
-        }
         
         const streamUrl = '<?= base_url('admin/fee-chalan/bulk_chalan_stream') ?>?' + params.toString();
         

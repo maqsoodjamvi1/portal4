@@ -184,6 +184,7 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
             WHEN 4 THEN 'Dropped'
             ELSE 'Other'
         END AS status_text,
+        p.parent_id,
         p.f_name AS father_name,
         p.father_cnic,
         s.std_cnic,
@@ -316,6 +317,7 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
             'rownum' => $start + (++$i),
             'profile_photo' => $img,
             'student_id' => (int)($r['student_id'] ?? 0),
+            'parent_id' => (int)($r['parent_id'] ?? 0),
             'reg_no' => (string)($r['reg_no'] ?? ''),
             'student_name' => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
             'father_name' => (string)($r['father_name'] ?? ''),

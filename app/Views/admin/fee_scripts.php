@@ -320,6 +320,9 @@ function renderFeePool() {
     $('#confirmPaymentBtn').toggle(feePool.length > 0);
     $('#clearPoolBtn').toggle(feePool.length > 0);
     $('#poolTotalAmount').text(total.toFixed(2));
+    if ($('#poolItemCount').length) {
+        $('#poolItemCount').text(feePool.length);
+    }
 }
 
 
@@ -760,34 +763,87 @@ function addFamilyUnpaidFeesToPool(parentId) {
 
 
 
-function showFamilyFeeHistoryPage(parentId){
-  // Optional: show a spinner container before request
-  $('#familyHistoryContainer').html('<div class="text-center p-3">Loading…</div>');
+var familyHistoryParentId = null;
+
+function feePayAppendCsrf(data) {
+  var $m = $('#csrf-meta-pay-chalan');
+  if ($m.length) {
+    var n = $m.attr('name');
+    if (n) { data[n] = $m.attr('content'); }
+    return;
+  }
+  <?php if (function_exists('csrf_token')): ?>
+  data['<?= csrf_token() ?>'] = '<?= csrf_hash() ?>';
+  <?php endif; ?>
+}
+
+function loadFamilyFeeHistory() {
+  if (!familyHistoryParentId) {
+    return;
+  }
+  $('#familyHistoryContainer').html('<div class="text-center p-3 text-muted">Loading…</div>');
+
+  var postData = {
+    parent_id: familyHistoryParentId,
+    limit: 200,
+    start_date: $('#fhStart').val() || '',
+    end_date: $('#fhEnd').val() || ''
+  };
+  feePayAppendCsrf(postData);
 
   $.ajax({
     url: '<?= site_url('admin/fee-chalan-pay/get-family-fee-history') ?>',
     method: 'POST',
     dataType: 'json',
-    data: {
-      parent_id: parentId
-      <?php if (function_exists('csrf_token')): ?>
-      , '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-      <?php endif; ?>
-    }
+    data: postData
   })
-  .done(function(res){
+  .done(function (res) {
+    if (res && res.csrfName && res.csrfHash !== undefined) {
+      var $m = $('#csrf-meta-pay-chalan');
+      if ($m.length) {
+        $m.attr('name', res.csrfName).attr('content', res.csrfHash);
+      }
+    }
     if (res && res.success) {
-      $('#familyHistoryContainer').html(res.html);
+      $('#familyHistoryContainer').html(res.html || '');
       $('[data-toggle="tooltip"]').tooltip({container:'body'});
     } else {
       $('#familyHistoryContainer').html(res?.html || '<div class="alert alert-danger">Request failed.</div>');
     }
   })
-  .fail(function(xhr){
+  .fail(function (xhr) {
     console.error('Family fee history AJAX failed:', xhr.status, xhr.responseText);
-    $('#familyHistoryContainer').html('<div class="alert alert-danger">Error '+xhr.status+' loading history.</div>');
+    $('#familyHistoryContainer').html('<div class="alert alert-danger">Error ' + xhr.status + ' loading history.</div>');
   });
 }
+
+function showFamilyFeeHistoryPage(parentId) {
+  familyHistoryParentId = parseInt(parentId, 10) || 0;
+  if (!familyHistoryParentId) {
+    return;
+  }
+  if (!$('#familyHistoryContainer').length) {
+    if (typeof toastr !== 'undefined') {
+      toastr.warning('Family history is available on the fee payment page.');
+    }
+    return;
+  }
+  var $modal = $('#familyFeeHistoryModal');
+  if ($modal.length) {
+    $modal.modal('show');
+  }
+  loadFamilyFeeHistory();
+}
+
+$(function () {
+  $(document).on('click', '#fhApplyFilter', function () {
+    loadFamilyFeeHistory();
+  });
+  $(document).on('click', '#fhClearFilter', function () {
+    $('#fhStart, #fhEnd').val('');
+    loadFamilyFeeHistory();
+  });
+});
 
 
 
@@ -1109,8 +1165,10 @@ $('#saveAdvanceFee').on('click', function () {
 });
 
 $(document).on("click", ".fee-history-btn", function() {
-    let parentId = $(this).data("parent-id");
-    window.open("<?= base_url('fees/familyHistory/') ?>" + parentId, "_blank");
+    var parentId = $(this).data("parent-id");
+    if (parentId) {
+        showFamilyFeeHistoryPage(parentId);
+    }
 });
 
 </script>

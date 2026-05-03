@@ -2,26 +2,20 @@
 <?= $this->section('content') ?>
 
 <?php
- $servername='localhost';
-    $username='timeschool';
-    $password='time@123';
-    $dbname = "timeschool_trial";
-    $conn=mysqli_connect($servername,$username,$password,"$dbname");
-      if(!$conn){
-          die('Could not Connect MySql Server:' .mysql_error());
+if (is_array($_FILES ?? null) && ! empty($_FILES['userImage']['tmp_name']) && is_uploaded_file($_FILES['userImage']['tmp_name'])) {
+    $targetName = basename((string) $_FILES['userImage']['name']);
+    if ($targetName !== '' && $targetName !== '.' && $targetName !== '..') {
+        $uploadDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR;
+        if (! is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
         }
- 
-<?php
-if(is_array($_FILES)) {
-if(is_uploaded_file($_FILES['userImage']['tmp_name'])) {
-$sourcePath = $_FILES['userImage']['tmp_name'];
-$targetPath = "uploads/".$_FILES['userImage']['name'];
-if(move_uploaded_file($sourcePath,$targetPath)) {
-?>
-<img class="image-preview" src="<?php echo $targetPath; ?>" class="upload-preview" />
-<?php
-}
-}
+        $targetPath = $uploadDir . $targetName;
+        if (move_uploaded_file($_FILES['userImage']['tmp_name'], $targetPath)) {
+            ?>
+<img class="image-preview upload-preview" src="<?= esc(base_url('uploads/' . $targetName)) ?>" alt="" />
+            <?php
+        }
+    }
 }
 ?>
 

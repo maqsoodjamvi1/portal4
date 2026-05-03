@@ -76,11 +76,12 @@
         }
     </style>
 </head>
-<body>
+<body class="chalan-preview-a4">
     <?php if (!empty($students)): ?>
-        <?php 
-        // In landscape, we can fit 2 rows of 3 students = 6 students per page
-        $chunks = array_chunk($students, 6);
+        <?php
+        // Fewer challans per page when payment history is shown (taller slips); otherwise 6 per page
+        $perPage = ! empty($show_payment_history) ? 3 : 6;
+        $chunks   = array_chunk($students, $perPage);
         foreach ($chunks as $chunkIndex => $studentChunk): 
         ?>
             <?php if ($chunkIndex > 0): ?>

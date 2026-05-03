@@ -1024,6 +1024,73 @@ function collapseAllCards() {
 // TAB 1: Class/Section View Functions
 // ============================================
 
+/** When true, section <select> change does not auto-load attendance (used while rebuilding options after date change). */
+var suppressSectionAttendanceLoad = false;
+
+/**
+ * Rebuild section dropdown for the selected date so [OFF]/[ON] and data-* match school_timings for that weekday.
+ */
+function refreshSectionOptionsForDate(done) {
+    var date = $('#date').val();
+    var campus_id = $('#campus_id').val();
+    if (!date) {
+        if (typeof done === 'function') {
+            done();
+        }
+        return;
+    }
+    $.ajax({
+        url: '<?= base_url('admin/students_absentees/sections_for_date') ?>',
+        type: 'POST',
+        dataType: 'json',
+        data: { date: date, campus_id: campus_id },
+        success: function (resp) {
+            if (!resp || !resp.success || !resp.sections) {
+                if (typeof done === 'function') {
+                    done();
+                }
+                return;
+            }
+            var prev = $('#section_id').val();
+            var $sel = $('#section_id');
+            suppressSectionAttendanceLoad = true;
+            $sel.empty();
+            $sel.append($('<option></option>').val('0').text('-- Select Section --'));
+            resp.sections.forEach(function (row) {
+                var isOff = !!row.is_off;
+                var hasAtt = !!row.has_attendance;
+                var chk = row.checkin != null ? String(row.checkin) : '';
+                var co = row.checkout != null ? String(row.checkout) : '';
+                $('<option></option>')
+                    .val(row.cls_sec_id)
+                    .text(row.sectionclassname + (isOff ? ' [OFF]' : ' [ON]'))
+                    .attr('data-is-off', isOff ? '1' : '0')
+                    .attr('data-has-attendance', hasAtt ? '1' : '0')
+                    .attr('data-checkin', chk)
+                    .attr('data-checkout', co)
+                    .appendTo($sel);
+            });
+            if (prev && $sel.find('option[value="' + prev + '"]').length) {
+                $sel.val(prev);
+            } else {
+                $sel.val('0');
+            }
+            $sel.trigger('change.select2');
+            suppressSectionAttendanceLoad = false;
+            $('#cls_sec_id').val($sel.val() || 0);
+            if (typeof done === 'function') {
+                done();
+            }
+        },
+        error: function () {
+            suppressSectionAttendanceLoad = false;
+            if (typeof done === 'function') {
+                done();
+            }
+        }
+    });
+}
+
 $(document).ready(function() {
     // Initialize Select2
     $('.select2').select2({
@@ -1036,7 +1103,9 @@ $(document).ready(function() {
         if (parseInt(this.value, 10) > 0) {
             $('#class_id').val('0').trigger('change.select2');
             updateDayStatusInfo();
-            loadAttendanceByClass();
+            if (!suppressSectionAttendanceLoad) {
+                loadAttendanceByClass();
+            }
         }
     });
     
@@ -1050,12 +1119,14 @@ $(document).ready(function() {
     });
     
     $('#date').on('change', function() {
-        updateDayStatusInfo();
-        var sectionId = $('#section_id').val();
-        var classId = $('#class_id').val();
-        if ((sectionId && sectionId != '0') || (classId && classId != '0')) {
-            loadAttendanceByClass();
-        }
+        refreshSectionOptionsForDate(function () {
+            updateDayStatusInfo();
+            var sectionId = $('#section_id').val();
+            var classId = $('#class_id').val();
+            if ((sectionId && sectionId != '0') || (classId && classId != '0')) {
+                loadAttendanceByClass();
+            }
+        });
     });
     
     // Reset search button
@@ -1118,7 +1189,7 @@ function loadAttendanceByClass() {
     updateDayStatusInfo();
 
     $.ajax({
-        url: '/admin/students_absentees/check_and_load_attendance',
+        url: '<?= base_url('admin/students_absentees/check_and_load_attendance') ?>',
         type: "POST",
         dataType: 'json',
         data: {
@@ -1206,7 +1277,7 @@ function attachClassViewEventHandlers(date) {
         $row.addClass('updating');
         
         $.ajax({
-            url: '/admin/students_absentees/update_attendance_status',
+            url: '<?= base_url('admin/students_absentees/update_attendance_status') ?>',
             type: "POST",
             dataType: 'json',
             data: {
@@ -1291,7 +1362,7 @@ function performSearch() {
     `);
     
     $.ajax({
-        url: '/admin/students_absentees/search_students_by_name',
+        url: '<?= base_url('admin/students_absentees/search_students_by_name') ?>',
         type: "POST",
         dataType: 'json',
         data: {
@@ -1435,7 +1506,7 @@ function attachSearchEventHandlers(date) {
         $row.addClass('updating');
         
         $.ajax({
-            url: '/admin/students_absentees/update_attendance_status',
+            url: '<?= base_url('admin/students_absentees/update_attendance_status') ?>',
             type: "POST",
             dataType: 'json',
             data: {
@@ -1487,7 +1558,7 @@ function attachSearchEventHandlers(date) {
             
             requests.push(
                 $.ajax({
-                    url: '/admin/students_absentees/update_attendance_status',
+                    url: '<?= base_url('admin/students_absentees/update_attendance_status') ?>',
                     type: "POST",
                     dataType: 'json',
                     data: {

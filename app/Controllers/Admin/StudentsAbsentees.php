@@ -33,6 +33,106 @@ class StudentsAbsentees extends BaseController
         return view('admin/students_absentees', $this->template_data);
     }
 
+    /**
+     * Section rows with is_off, timings, and has_attendance for a calendar date (same logic as add() view).
+     */
+    protected function buildSectionsClassInfoForDate(string $date, int $campusid): array
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
+
+        $allSections = getAllClassSection();
+        if ($campusid < 1) {
+            return [];
+        }
+
+        $timestamp = strtotime($date);
+        $dayName = date('l', $timestamp);
+
+        $activeTimingType = $this->db->table('school_timing_types')
+            ->select('type_id')
+            ->where('campus_id', $campusid)
+            ->where('status', 1)
+            ->orderBy('type_id', 'ASC')
+            ->get()
+            ->getRow();
+
+        $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
+
+        $sectionsclassinfo = [];
+        foreach ($allSections as $section) {
+            $timingQuery = $this->db->table('school_timings')
+                ->select('checkin_timing, checkout_timing')
+                ->where('cls_sec_id', $section['cls_sec_id'])
+                ->where('dayname', $dayName);
+
+            if ($activeTypeId) {
+                $timingQuery = $timingQuery->where('type_id', $activeTypeId);
+            }
+
+            $timingResult = $timingQuery->get();
+
+            $isOff = false;
+            $checkin = null;
+            $checkout = null;
+
+            $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
+
+            if ($timing) {
+                $checkin = $timing->checkin_timing;
+                $checkout = $timing->checkout_timing;
+                $isOff = ($checkin === $checkout || ($checkin === null && $checkout === null));
+            } else {
+                $isOff = true;
+            }
+
+            $attendanceResult = $this->db->table('attendance')
+                ->select('COUNT(DISTINCT attendance.student_id) AS count', false)
+                ->join('student_class sc', 'sc.student_id = attendance.student_id')
+                ->where('sc.cls_sec_id', $section['cls_sec_id'])
+                ->where('attendance.date', $date)
+                ->where('sc.status', 1)
+                ->get();
+
+            $hasAttendance = false;
+            if ($attendanceResult && $attendanceResult->getRow()) {
+                $row = $attendanceResult->getRow();
+                $hasAttendance = (int) ($row->count ?? 0) > 0;
+            }
+
+            $sectionsclassinfo[] = [
+                'cls_sec_id'        => $section['cls_sec_id'],
+                'section_id'        => $section['cls_sec_id'],
+                'sectionclassname'  => $section['sectionclassname'],
+                'is_off'            => $isOff,
+                'checkin'           => $checkin,
+                'checkout'          => $checkout,
+                'has_attendance'    => $hasAttendance,
+            ];
+        }
+
+        return $sectionsclassinfo;
+    }
+
+    public function sections_for_date()
+    {
+        check_permission('admin-add-student-absentees');
+        $date = trim((string) $this->request->getPost('date'));
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
+        $campusid = (int) ($this->request->getPost('campus_id') ?? session('member_campusid'));
+        if ($campusid < 1) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Invalid campus']);
+        }
+
+        return $this->response->setJSON([
+            'success'  => true,
+            'sections' => $this->buildSectionsClassInfoForDate($date, $campusid),
+        ]);
+    }
+
        public function add()
     {
         check_permission('admin-add-student-absentees');
@@ -72,79 +172,7 @@ class StudentsAbsentees extends BaseController
         }
         $this->template_data['classesinfo'] = $classesInfo;
 
-        // Calculate day status for each section
-      // Calculate day status for each section
-// Calculate day status for each section
-$timestamp = strtotime($date);
-$dayName = date('l', $timestamp);
-
-// Get active timing type for this campus - use $this->db instead of $db
-$activeTimingType = $this->db->table('school_timing_types')
-    ->select('type_id')
-    ->where('campus_id', $campusid)
-    ->where('status', 1)
-    ->orderBy('type_id', 'ASC')
-    ->get()
-    ->getRow();
-
-$activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-
-$sectionsclassinfo = [];
-foreach ($allSections as $section) {
-    // Get school timing for this section on this day using active type_id
-    $timingQuery = $this->db->table('school_timings')
-        ->select('checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $section['cls_sec_id'])
-        ->where('DAYNAME', $dayName);
-    
-    // Apply type_id filter if we have an active timing type
-    if ($activeTypeId) {
-        $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-    }
-    
-    $timingResult = $timingQuery->get();
-    
-    $isOff = false;
-    $checkin = null;
-    $checkout = null;
-    
-    $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-    
-    if ($timing) {
-        $checkin = $timing->checkin_timing;
-        $checkout = $timing->checkout_timing;
-        // Day is OFF if checkin equals checkout OR if both are NULL
-        $isOff = ($checkin === $checkout || ($checkin === null && $checkout === null));
-    } else {
-        // No timing record means day is OFF
-        $isOff = true;
-    }
-    
-    // Check if attendance already exists for this section
-    $attendanceResult = $this->db->table('attendance')
-        ->select('COUNT(DISTINCT student_id) as count')
-        ->join('student_class sc', 'sc.student_id = attendance.student_id')
-        ->where('sc.cls_sec_id', $section['cls_sec_id'])
-        ->where('attendance.date', $date)
-        ->where('sc.status', 1)
-        ->get();
-    
-    $hasAttendance = false;
-    if ($attendanceResult && $attendanceResult->getRow()) {
-        $hasAttendance = $attendanceResult->getRow()->count > 0;
-    }
-    
-    $sectionsclassinfo[] = [
-        'cls_sec_id'        => $section['cls_sec_id'],
-        'section_id'        => $section['cls_sec_id'],
-        'sectionclassname'  => $section['sectionclassname'],
-        'is_off'            => $isOff,
-        'checkin'           => $checkin,
-        'checkout'          => $checkout,
-        'has_attendance'    => $hasAttendance,
-    ];
-}
-        $this->template_data['sectionsclassinfo'] = $sectionsclassinfo;
+        $this->template_data['sectionsclassinfo'] = $this->buildSectionsClassInfoForDate($date, $campusid);
 
         $this->template_data['campusinfo'] = $this->db->table('campus')
             ->where('campus_id', $campusid)
@@ -281,7 +309,7 @@ public function load_attendance_records()
         $timingQuery = $this->db->table('school_timings')
             ->select('checkin_timing, checkout_timing')
             ->where('cls_sec_id', $student->cls_sec_id)
-            ->where('DAYNAME', $dayName);
+            ->where('dayname', $dayName);
         
         if ($activeTypeId) {
             $timingQuery = $timingQuery->where('type_id', $activeTypeId);
@@ -736,7 +764,7 @@ private function checkIfDayIsOn($cls_sec_id, $class_id, $campus_id, $dayName)
         $timingQuery = $db->table('school_timings')
             ->select('checkin_timing, checkout_timing')
             ->where('cls_sec_id', $cls_sec_id)
-            ->where('DAYNAME', $dayName);
+            ->where('dayname', $dayName);
         
         if ($activeTypeId) {
             $timingQuery = $timingQuery->where('type_id', $activeTypeId);
@@ -767,7 +795,7 @@ private function checkIfDayIsOn($cls_sec_id, $class_id, $campus_id, $dayName)
             $timingQuery = $db->table('school_timings')
                 ->select('checkin_timing, checkout_timing')
                 ->where('cls_sec_id', $section['cls_sec_id'])
-                ->where('DAYNAME', $dayName);
+                ->where('dayname', $dayName);
             
             if ($activeTypeId) {
                 $timingQuery = $timingQuery->where('type_id', $activeTypeId);
@@ -874,7 +902,7 @@ private function checkAttendanceExists($cls_sec_id, $class_id, $datevalue)
         $timingQuery = $this->db->table('school_timings')
             ->select('checkin_timing, checkout_timing')
             ->where('cls_sec_id', $cls_sec_id)
-            ->where('DAYNAME', $dayName);
+            ->where('dayname', $dayName);
         
         if ($activeTypeId) {
             $timingQuery = $timingQuery->where('type_id', $activeTypeId);
@@ -1136,7 +1164,7 @@ public function update_attendance_status()
             $timingQuery = $this->db->table('school_timings')
                 ->select('checkin_timing, checkout_timing')
                 ->where('cls_sec_id', $studentClass->cls_sec_id)
-                ->where('DAYNAME', $dayName);
+                ->where('dayname', $dayName);
             
             if ($activeTypeId) {
                 $timingQuery = $timingQuery->where('type_id', $activeTypeId);

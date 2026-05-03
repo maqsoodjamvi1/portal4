@@ -304,7 +304,7 @@ if (empty($sectionsclassinfo)) {
                         <i class="fas fa-file-invoice mr-3 text-success"></i> Show Challans
                     </a>
                     <a href="#" id="modalCreateChallanLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-plus mr-3 text-info"></i> Create Challan
+                        <i class="fas fa-plus mr-3 text-info"></i> Add new fee chalan
                     </a>
                     <div class="dropdown-divider m-0"></div>
                     <a href="#" id="modalSlcLink" class="list-group-item list-group-item-action">
@@ -318,6 +318,64 @@ if (empty($sectionsclassinfo)) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fee challan print options (same template as Fee Chalan → Generate) -->
+<div class="modal fade" id="challanGenerateOptionsModal" tabindex="-1" role="dialog" aria-labelledby="challanGenerateOptionsTitle">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="challanGenerateOptionsTitle">
+                    <i class="fas fa-file-invoice mr-2"></i> Fee challan — options
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Opens the <strong>three-copy</strong> challan (Bank / School / Student) in a new tab. Uses the same layout as <em>Fee Chalan → Generate</em>.</p>
+                <input type="hidden" id="cg_student_id" value="">
+                <input type="hidden" id="cg_parent_id" value="">
+                <div class="form-group">
+                    <label for="cg_fee_month">Fee month <span class="text-muted font-weight-normal">(optional)</span></label>
+                    <input type="month" class="form-control" id="cg_fee_month" autocomplete="off">
+                    <small class="form-text text-muted">Leave empty to include unpaid challans for all months (same as generate page default).</small>
+                </div>
+                <div class="form-group">
+                    <label for="cg_show_discount">Discount columns</label>
+                    <select class="form-control" id="cg_show_discount">
+                        <option value="yes" selected>Show amount &amp; discount</option>
+                        <option value="no">Hide discount (net only)</option>
+                    </select>
+                </div>
+                <div class="form-group mb-0">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cg_payment_history" checked>
+                        <label class="custom-control-label" for="cg_payment_history">Include payment history (last 6 months)</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cg_fine_after">
+                        <label class="custom-control-label" for="cg_fine_after">Show payable after due date (late fee), if campus setting applies</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="cg_scope">Challan scope</label>
+                    <select class="form-control" id="cg_scope">
+                        <option value="student" selected>This student only — 3 copies</option>
+                        <option value="family">Whole family (same parent) — 3 copies</option>
+                    </select>
+                    <small class="form-text text-muted" id="cg_scope_family_hint" style="display:none;">Family challan uses all siblings with unpaid fees for the selected filters.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-success btn-block" id="cgOpenChallanBtn">
+                    <i class="fas fa-external-link-alt mr-1"></i> Open challan
+                </button>
             </div>
         </div>
     </div>
@@ -938,6 +996,7 @@ $(function () {
     const CSRF = { name: '<?= csrf_token() ?>', hash: '<?= csrf_hash() ?>' };
     const printedBy = <?= json_encode((string) (session('member_name') ?? session('member_username') ?? 'User')) ?>;
     const ADMIN = <?= json_encode(rtrim(base_url('admin'), '/')) ?>;
+    window.ADMIN = ADMIN;
 
     // Debounce function
     function debounce(func, wait) {
@@ -1178,7 +1237,8 @@ $(function () {
             { data: 'emergency_contact_person', title: 'Emergency Contact Person', visible: false },
             { data: 'relationship', title: 'Relationship', visible: false },
             { data: 'has_slc', visible: false },
-            { data: 'slc_id', visible: false }
+            { data: 'slc_id', visible: false },
+            { data: 'parent_id', visible: false }
         ],
         initComplete: function() {
             // Stats are already loaded from PHP - no AJAX call needed
@@ -1350,9 +1410,13 @@ function showStudentActions(studentId) {
     if (row) {
         const hasSlc = parseInt(row.has_slc) > 0;
         const slcId = row.slc_id;
+        const parentId = parseInt(row.parent_id, 10) || 0;
+
+        $('#studentActionsModal').data('activeStudentId', studentId);
+        $('#studentActionsModal').data('activeParentId', parentId);
         
         $('#modalProfileLink').attr('href', `${ADMIN_URL}/profile-student?id=${studentId}`);
-        $('#modalChallansLink').attr('href', `${ADMIN_URL}/fee-chalan-single/download?id=${studentId}`);
+        $('#modalChallansLink').attr('href', '#');
         $('#modalCreateChallanLink').attr('href', `${ADMIN_URL}/fee-chalan/add?id=${studentId}`);
         $('#modalEditLink').attr('href', `${ADMIN_URL}/students/edit?id=${studentId}`);
         
@@ -1374,6 +1438,65 @@ function showStudentActions(studentId) {
         $('#studentActionsModal').modal('show');
     }
 }
+
+$(document).on('click', '#modalChallansLink', function (e) {
+    e.preventDefault();
+    const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
+    const studentId = $('#studentActionsModal').data('activeStudentId');
+    const parentId = $('#studentActionsModal').data('activeParentId') || 0;
+    if (!studentId) {
+        return;
+    }
+    $('#studentActionsModal').modal('hide');
+    $('#cg_student_id').val(studentId);
+    $('#cg_parent_id').val(parentId);
+    const $famOpt = $('#cg_scope option[value="family"]');
+    if (!parentId) {
+        $famOpt.prop('disabled', true);
+        if ($('#cg_scope').val() === 'family') {
+            $('#cg_scope').val('student');
+        }
+    } else {
+        $famOpt.prop('disabled', false);
+    }
+    $('#cg_scope_family_hint').toggle($('#cg_scope').val() === 'family');
+    $('#challanGenerateOptionsModal').modal('show');
+});
+
+$('#cg_scope').on('change', function () {
+    $('#cg_scope_family_hint').toggle($(this).val() === 'family');
+});
+
+$('#cgOpenChallanBtn').on('click', function () {
+    const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
+    const studentId = $('#cg_student_id').val();
+    const parentId = $('#cg_parent_id').val();
+    const scope = $('#cg_scope').val();
+    const showDiscount = $('#cg_show_discount').val() === 'yes' ? 'yes' : 'no';
+    const showHistory = $('#cg_payment_history').is(':checked') ? '1' : '0';
+    const fineAfter = $('#cg_fine_after').is(':checked') ? '1' : '0';
+    const feeMonth = ($('#cg_fee_month').val() || '').trim();
+
+    const params = new URLSearchParams();
+    params.set('view_type', scope === 'family' ? 'family_three_copy' : 'student_three_copy');
+    params.set('show_discount', showDiscount);
+    params.set('show_payment_history', showHistory);
+    params.set('fine_after_due_date', fineAfter);
+    params.set('message_position', 'none');
+    params.set('message_text', '');
+    if (feeMonth) {
+        params.set('fee_month', feeMonth);
+    }
+    if (scope === 'family' && parentId) {
+        params.set('family_id', String(parentId));
+    } else {
+        params.set('search', String(studentId));
+    }
+
+    const url = `${ADMIN_URL}/fee-chalan/generate?${params.toString()}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    $('#challanGenerateOptionsModal').modal('hide');
+});
 
 // SLC Generation Functions
 function generateSlc(studentId) {
