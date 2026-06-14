@@ -4,87 +4,16 @@ $school_name = isset($schoolinfo->system_name) ? $schoolinfo->system_name : 'Sch
 $current_language = session('language') ?? 'en';
 
 
-// Load campus helper - absolute path
 helper('campus');
 
-// Also define the function directly as fallback
-if (!function_exists('getCampusExpiryInfo')) {
-    function getCampusExpiryInfo($campusId) {
-        $db = \Config\Database::connect();
-        
-        $latestBill = $db->table('campus_bills')
-            ->select('campus_expiry, bill_id, plan_id, bill_issue_date')
-            ->where('campus_id', $campusId)
-            ->where('status', 1)
-            ->orderBy('bill_id', 'DESC')
-            ->get()
-            ->getRow();
-        
-        if (!$latestBill || empty($latestBill->campus_expiry)) {
-            return [
-                'expiry_date' => null,
-                'days_left' => null,
-                'status' => 'unknown',
-                'message' => 'No active subscription',
-                'css_class' => 'text-muted',
-                'icon' => 'fa-question-circle',
-                'badge_class' => 'bg-secondary',
-                'details' => 'No active subscription found'
-            ];
-        }
-        
-        $expiryDate = new \DateTime($latestBill->campus_expiry);
-        $today = new \DateTime();
-        $interval = $today->diff($expiryDate);
-        $daysLeft = (int)$interval->format('%r%a');
-        
-        if ($daysLeft < 0) {
-            return [
-                'expiry_date' => $latestBill->campus_expiry,
-                'days_left' => $daysLeft,
-                'status' => 'expired',
-                'message' => 'EXPIRED!',
-                'css_class' => 'text-danger font-weight-bold',
-                'icon' => 'fa-exclamation-triangle',
-                'badge_class' => 'bg-danger',
-                'details' => 'Subscription expired ' . abs($daysLeft) . ' days ago'
-            ];
-        } elseif ($daysLeft <= 30) {
-            return [
-                'expiry_date' => $latestBill->campus_expiry,
-                'days_left' => $daysLeft,
-                'status' => 'critical',
-                'message' => '⚠️ Expires in ' . $daysLeft . ' days!',
-                'css_class' => 'text-danger font-weight-bold',
-                'icon' => 'fa-exclamation-circle',
-                'badge_class' => 'bg-danger',
-                'details' => 'CRITICAL: Subscription expires in ' . $daysLeft . ' days'
-            ];
-        } elseif ($daysLeft <= 90) {
-            return [
-                'expiry_date' => $latestBill->campus_expiry,
-                'days_left' => $daysLeft,
-                'status' => 'warning',
-                'message' => '⚠️ Expires in ' . $daysLeft . ' days',
-                'css_class' => 'text-warning font-weight-bold',
-                'icon' => 'fa-clock',
-                'badge_class' => 'bg-warning',
-                'details' => 'Subscription expires in ' . $daysLeft . ' days'
-            ];
-        } else {
-            return [
-                'expiry_date' => $latestBill->campus_expiry,
-                'days_left' => $daysLeft,
-                'status' => 'good',
-                'message' => '✓ Expires: ' . date('d M Y', strtotime($latestBill->campus_expiry)),
-                'css_class' => 'text-success',
-                'icon' => 'fa-check-circle',
-                'badge_class' => 'bg-success',
-                'details' => 'Subscription active until ' . date('d M Y', strtotime($latestBill->campus_expiry))
-            ];
-        }
-    }
-}
+$__host = $_SERVER['HTTP_HOST'] ?? '';
+$__isTrialHost = ($__host === 'trial.timesoftsol.com');
+$__isDemoHost  = ($__host === 'demo.timesoftsol.com');
+$__hasAppBanner = $__isTrialHost || $__isDemoHost;
+
+$uiNeedsDataTables = $uiNeedsDataTables ?? true;
+$uiNeedsSummernote   = $uiNeedsSummernote ?? false;
+$uiNeedsChart        = $uiNeedsChart ?? false;
 ?>
 <!DOCTYPE html>
 <html lang="<?= $current_language ?>" dir="<?= in_array($current_language, ['ar', 'ur']) ? 'rtl' : 'ltr' ?>">
@@ -98,8 +27,8 @@ if (!function_exists('getCampusExpiryInfo')) {
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
     <!-- Ionicons -->
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <!-- Tempusdominus Bootstrap 4 -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') ?>">
+    <!-- Tempusdominus Bootstrap adapter -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <!-- iCheck -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css') ?>">
@@ -109,14 +38,20 @@ if (!function_exists('getCampusExpiryInfo')) {
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') ?>">
     <!-- Daterange picker -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.css') ?>">
+    <?php if ($uiNeedsSummernote): ?>
     <!-- summernote -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.css') ?>">
+    <?php endif; ?>
+    <?php if ($uiNeedsDataTables): ?>
     <!-- DataTables -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+    <?php endif; ?>
     <!-- Select2 -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
     <!-- Toastr -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.css') ?>">
 
@@ -126,71 +61,15 @@ if (!function_exists('getCampusExpiryInfo')) {
     <?php else: ?>
       <link rel="stylesheet" href="<?= base_url('resource/adminlte/dist/css/adminlte.min.css') ?>">
     <?php endif; ?>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
 
     <link rel="stylesheet" href="<?= base_url('assets/js/sweetalert/sweetalert.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260604') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260614b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
-    <style>
-      /* Modern sidebar polish without changing menu logic */
-      .sidebar-slim .brand-link {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .main-sidebar.sidebar-slim {
-        position: fixed !important;
-        top: 0;
-        bottom: 0;
-        height: 100vh !important;
-        min-height: 100vh !important;
-      }
-      .main-sidebar.sidebar-slim .sidebar {
-        height: calc(100vh - 58px) !important;
-        min-height: calc(100vh - 58px) !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-      }
-      .sidebar-slim .nav-sidebar .nav-item > .nav-link {
-        border-radius: 10px;
-        margin: 2px 8px;
-        padding-top: 8px;
-        padding-bottom: 8px;
-      }
-      .sidebar-slim .nav-sidebar .nav-item > .nav-link p {
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.2;
-        margin-bottom: 0;
-      }
-      .sidebar-slim .nav-sidebar .nav-item > .nav-link.active {
-        background: linear-gradient(90deg, rgba(0, 123, 255, 0.18), rgba(0, 123, 255, 0.05));
-        border-left: 3px solid #4dabf7;
-      }
-      .sidebar-slim .nav-treeview > .nav-item > .nav-link {
-        margin-left: 14px;
-      }
-      .sidebar-slim .nav-treeview .nav-link {
-        min-height: 36px;
-      }
-      .sidebar-slim .nav-treeview .nav-link p {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.2;
-        padding-right: 8px;
-      }
-      .sidebar-slim .nav-sidebar .nav-link > p > .right {
-        margin-left: 6px;
-      }
-      .sidebar-slim .nav-sidebar .nav-link {
-        position: relative;
-      }
-      .sidebar-slim .nav-header {
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        opacity: 0.85;
-      }
-    </style>
+    <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260615a') ?>">
 
     <script type="text/javascript">
       var BASE_URL   = '<?= base_url() ?>';
@@ -205,16 +84,20 @@ if (!function_exists('getCampusExpiryInfo')) {
 
     <!-- jQuery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <?= view('layouts/partials/admin_csrf_bootstrap') ?>
     <!-- jQuery UI 1.11.4 -->
     <script src="<?= base_url('resource/adminlte/plugins/jquery-ui/jquery-ui.min.js') ?>"></script>
     <script>
       $.widget.bridge('uibutton', $.ui.button)
     </script>
-    <!-- Bootstrap 4 -->
-    <script src="<?= base_url('resource/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+    <!-- Bootstrap 5 + legacy compatibility bridge -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615a') ?>"></script>
     <script src="<?= base_url('assets/js/report-ui.js') ?>"></script>
+    <?php if ($uiNeedsChart): ?>
     <!-- ChartJS -->
     <script src="<?= base_url('resource/adminlte/plugins/chart.js/Chart.min.js') ?>"></script>
+    <?php endif; ?>
     <!-- Sparkline -->
     <script src="<?= base_url('resource/adminlte/plugins/sparklines/sparkline.js') ?>"></script>
     <!-- JQVMap -->
@@ -228,10 +111,13 @@ if (!function_exists('getCampusExpiryInfo')) {
     <!-- daterangepicker -->
     <script src="<?= base_url('resource/adminlte/plugins/moment/moment.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.js') ?>"></script>
-    <!-- Tempusdominus Bootstrap 4 -->
-    <script src="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') ?>"></script>
+    <!-- Tempusdominus Bootstrap adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="<?= base_url('assets/js/datetimepicker-compat.js?v=20260614') ?>"></script>
+    <?php if ($uiNeedsSummernote): ?>
     <!-- Summernote -->
-    <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.js') ?>"></script>
+    <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.js') ?>"></script>
+    <?php endif; ?>
     <!-- overlayScrollbars -->
     <script src="<?= base_url('resource/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') ?>"></script>
     <!-- AdminLTE App -->
@@ -254,24 +140,25 @@ if (!function_exists('getCampusExpiryInfo')) {
     <script type="text/javascript" src="<?= base_url('resource/toastr/toastr.min.js') ?>"></script>
     <script type="text/javascript" src="<?= base_url('resource/adminlte/plugins/fastclick/fastclick.js') ?>"></script>
     <script type="text/javascript" src="<?= base_url('resource/autosize/autosize.min.js') ?>"></script>
-    
-    <script type="text/javascript" src="<?= base_url('resource/sammy/lib/min/sammy-latest.min.js') ?>"></script>
-    <script type="text/javascript" src="<?= base_url('resource/js/server.js') ?>"></script>
 
+    <?php if ($uiNeedsDataTables): ?>
     <!-- DataTables  & Plugins -->
-    <script src="<?= base_url('resource/adminlte/plugins/datatables/jquery.dataTables.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') ?>"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="<?= base_url('assets/js/jquery.slugit.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/dataTables.buttons.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') ?>"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
     <script src="<?= base_url('resource/adminlte/plugins/jszip/jszip.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/pdfmake/pdfmake.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/pdfmake/vfs_fonts.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.html5.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.print.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.colVis.min.js') ?>"></script>
+    <?php endif; ?>
+    <script src="<?= base_url('assets/js/sms-form-validation.js?v=20260604') ?>"></script>
+    <script src="<?= base_url('assets/js/sms-modal-a11y.js?v=20260604') ?>"></script>
     <script src="<?= base_url('assets/js/sweetalert/sweetalert.js') ?>"></script>
 <style type="text/css">/* Expiry notification animations */
 @keyframes pulse {
@@ -324,101 +211,34 @@ $session         = session();
 $curr_campus_id  = (int) ($session->get('member_campusid')  ?? 0);
 $curr_session_id = (int) ($session->get('member_sessionid') ?? 0);
 
-// ==== Campus flags (transport/hostel/academy) ====
-$hasTransport = $hasHostel = $hasAcademy = false;
+// ==== Campus flags (hifz only) â€” hostel/academy/transport modules removed ====
+$hasTransport = false;
+$hasAcademy   = false;
+$hasHifz      = false;
+$hasHostel    = false;
 if ($curr_campus_id) {
-    $db = \Config\Database::connect();
-    $flags = $db->table('campus')
-        ->select('t_flag, h_flag, a_flag')
-        ->where('campus_id', $curr_campus_id)
-        ->get()->getRow();
-    if ($flags) {
-        $hasTransport = ((int)($flags->t_flag ?? 0) === 1);
-        $hasHostel    = ((int)($flags->h_flag ?? 0) === 1);
-        $hasAcademy   = ((int)($flags->a_flag ?? 0) === 1);
+    try {
+        $db = \Config\Database::connect();
+        if (in_array('hfz_flag', $db->getFieldNames('campus'), true)) {
+            $flags = $db->table('campus')
+                ->select('hfz_flag')
+                ->where('campus_id', $curr_campus_id)
+                ->get()
+                ->getRow();
+            if ($flags) {
+                $hasHifz = ((int) ($flags->hfz_flag ?? 0) === 1);
+            }
+        }
+    } catch (\Throwable $e) {
+        $hasHifz = false;
     }
 }
 
 // ==== Dynamic metrics (badges) ====
-$metrics = [
-  'unread_messages'     => 0,
-  'pending_emp_leaves'  => 0,
-  'pending_std_leaves'  => 0,
-  'unpaid_fee_chalans'  => 0,
-];
-
-$safeCount = static function (string $sql, array $binds = []): int {
-    try {
-        $db  = \Config\Database::connect();
-        $q   = $db->query($sql, $binds);
-        $row = $q ? $q->getRow() : null;
-        return (int)($row->c ?? 0);
-    } catch (\Throwable $e) {
-        return 0;
-    }
-};
-
-$metrics['unread_messages'] = $safeCount(
-    "SELECT COUNT(*) c FROM messages 
-     WHERE (is_read = 0 OR is_read IS NULL)
-       AND (? = 0 OR campus_id = ?)",
-    [$curr_campus_id, $curr_campus_id]
-);
-
-$metrics['pending_emp_leaves'] = $safeCount(
-    "SELECT COUNT(*) c FROM employee_leaves 
-     WHERE (status = 'Pending' OR status = 0 OR approved = 0 OR COALESCE(approved,0) = 0)
-       AND (? = 0 OR campus_id = ?)",
-    [$curr_campus_id, $curr_campus_id]
-);
-
-$metrics['pending_std_leaves'] = $safeCount(
-    "SELECT COUNT(*) c FROM students_leaves 
-     WHERE (status = 'Pending' OR status = 0 OR approved = 0 OR COALESCE(approved,0) = 0)
-       AND (? = 0 OR campus_id = ?)",
-    [$curr_campus_id, $curr_campus_id]
-);
-
-$metrics['unpaid_fee_chalans'] = $safeCount(
-    "SELECT COUNT(*) c
-     FROM fee_chalan
-     WHERE status = 'unpaid'"
-);
+helper('server');
+$metrics = getAdminHeaderMetrics($curr_campus_id);
 ?>
-    <script type="text/javascript">
-      $(document).ready(function(){
-        $("#campusID").change(function(){
-          var id = $(this).val();
-          var dataString = 'id='+ id;
-          $.ajax({
-            type: "POST",
-            url: "<?=  base_url('admin/ajax/change-campus') ?>",
-            data: dataString,
-            cache: false,
-            success: function(html)
-            {
-              location.reload();
-            }
-          });
-        });
-      });
-      $(document).ready(function(){
-        $("#sessionID").change(function(){
-          var id=$(this).val();
-          var dataString = 'session_id='+ id;
-          $.ajax({
-            type: "POST",
-            url: "<?=  base_url('admin/ajax/select-session') ?>",
-            data: dataString,
-            cache: false,
-            success: function(html)
-            {
-              location.reload();
-            }
-          });
-        });
-      });
-    </script>
+    <?= view('layouts/partials/admin_shell_scripts') ?>
     <script>
       function changeLanguage(lang) {
           if (!LANG_URLS[lang]) {
@@ -428,7 +248,7 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
 
           const $switcher = $('.language-switcher .nav-link');
           const originalHtml = $switcher.html();
-          $switcher.html('<i class="fas fa-spinner fa-spin mr-1"></i> <?= lang("app.loading") ?>');
+          $switcher.html('<i class="fas fa-spinner fa-spin me-1"></i> <?= lang("app.loading") ?>');
 
           $.ajax({
               url: LANG_URLS[lang],
@@ -471,25 +291,47 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
           <?php
 $schoolInfo = getSchoolInfo();
 $hasShortName = !empty($schoolInfo->short_name) || !empty($schoolInfo->reg_text);
+$regYearExample = date('y');
 ?>
 
 <?php if (!$hasShortName): ?>
     $("#schoolshortname").modal('show');
 <?php endif; ?>
 
+          var regYearExample = '<?= esc($regYearExample) ?>';
+          var SETUP_I18N = <?= json_encode([
+              'regTextInvalid' => lang('SchoolSetup.reg_text_invalid'),
+          ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
+
+          function updateRegNoPreview() {
+            var $input = $('#schoolshortname #reg_text');
+            var code = ($input.val() || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            $input.val(code);
+            var displayCode = code || '___';
+            $('#regNoPreview').text(regYearExample + '-' + displayCode + '-001');
+          }
+
+          $('#schoolshortname #reg_text').on('input', updateRegNoPreview);
+          updateRegNoPreview();
+
           $('#updateRegText').click(function(){
-            var reg_text = $('#reg_text').val();
+            var reg_text = ($('#schoolshortname #reg_text').val() || '').trim().toUpperCase();
             var systemID = $('#systemID').val();
+
+            if (!/^[A-Z0-9]{2,3}$/.test(reg_text)) {
+              toastr.error(SETUP_I18N.regTextInvalid);
+              return;
+            }
 
             $.ajax({
               url: '<?=  base_url('admin/profile-system/update-reg-text') ?>',
               type: 'POST',
-              data:{reg_text: reg_text,systemID:systemID},
+              data:{reg_text: reg_text, systemID: systemID},
               success:function(res){
                   var json = res;
                   if(json.success){
                       toastr.success(json.msg);
-                      location.reload();
+                      window.location.href = '<?= base_url('admin/getting-started') ?>';
                   }else{
                       toastr.error(json.msg);
                   }
@@ -501,1352 +343,186 @@ $hasShortName = !empty($schoolInfo->short_name) || !empty($schoolInfo->reg_text)
 <?php } ?>
   </head>
 
-  <body class="hold-transition sidebar-mini layout-fixed <?= in_array($current_language, ['ar', 'ur']) ? 'rtl-support' : '' ?>">
-    <div class="modal fade" id="schoolshortname" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <body class="hold-transition sidebar-mini layout-fixed admin-shell-active<?= $__hasAppBanner ? ' has-app-banner' : '' ?> <?= in_array($current_language, ['ar', 'ur']) ? 'rtl-support' : '' ?>" dir="<?= in_array($current_language, ['ar', 'ur']) ? 'rtl' : 'ltr' ?>">
+    <div class="wrapper">
+    <div class="modal fade" id="schoolshortname" tabindex="-1" role="dialog" aria-labelledby="schoolShortNameModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title pull-left" id="exampleModalLabel"><?= $school_name; ?></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            <div>
+              <h5 class="modal-title mb-0" id="schoolShortNameModalLabel"><?= lang('SchoolSetup.modal_title') ?></h5>
+              <small class="text-muted"><?= esc($school_name) ?></small>
+            </div>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
           </div>
           <div class="modal-body">
             <input type="hidden" name="systemID" id="systemID" value="<?php if (isset($schoolinfo) && is_object($schoolinfo)): ?><?= $schoolinfo->system_id ?><?php endif; ?>">
-            <div class="form-group">
-              <label for="reg_text">School Short Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" required name="reg_text" id="reg_text" maxlength="3" value="">
+            <p class="text-muted mb-3"><?= lang('SchoolSetup.modal_explanation') ?></p>
+            <div class="alert alert-info py-2 px-3 mb-3">
+              <strong><?= lang('SchoolSetup.modal_format_label') ?></strong> <code><?= esc(date('y')) ?>-TSS-239</code>
+              <div class="small mt-1 text-muted"><?= lang('SchoolSetup.modal_format_parts') ?></div>
+            </div>
+            <div class="form-group mb-2">
+              <label for="reg_text"><?= lang('SchoolSetup.modal_label_reg_text') ?> <span class="text-danger">*</span></label>
+              <input type="text" class="form-control text-uppercase" required name="reg_text" id="reg_text"
+                     maxlength="3" placeholder="<?= esc(lang('SchoolSetup.modal_placeholder')) ?>" autocomplete="off" style="text-transform: uppercase;">
+              <small class="form-text text-muted"><?= lang('SchoolSetup.modal_hint') ?></small>
+            </div>
+            <div class="small">
+              <strong><?= lang('SchoolSetup.modal_preview') ?></strong> <code id="regNoPreview"><?= esc(date('y')) ?>-___-001</code>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" id="updateRegText" class="btn btn-primary">Save</button>
+            <button type="button" id="updateRegText" class="btn btn-primary"><?= lang('SchoolSetup.modal_save') ?></button>
           </div>
         </div>
       </div>
     </div>
 
-    <?php if($_SERVER['HTTP_HOST'] == 'trial.timesoftsol.com'){ ?>
-      <div class="bg-warning text-white" style="position: relative;width: 100%;z-index: 1046;text-align: center;font-size: 16px;">
-       Your trial period will expire in 30 Days.Pay your bill for live data.This data will not be available for live account.
-      </div>
-    <?php } ?>
+    <?php include __DIR__ . '/partials/admin_shell_init.php'; ?>
+    <?php include __DIR__ . '/partials/admin_banner.php'; ?>
+    <?php include __DIR__ . '/partials/admin_setup_guide.php'; ?>
 
-    
-      <?php
-        $db             = \Config\Database::connect();
-        $session        = \Config\Services::session();
-        $curr_campus_id = $session->get('member_campusid');
-
-        $currentCampusBill = $db->query('SELECT * FROM campus_bills WHERE campus_id = ' . intval($curr_campus_id))->getRow();
-        $plan_id           = $currentCampusBill->plan_id ?? 0;
-
-        $builder  = $db->table('system_plans');
-        $plan_info = $builder->where('plan_id', $plan_id)->get()->getRow();
-
-        $userid   = $session->get('member_userid');
-        $currentuserrole = $db->query("SELECT * FROM user_roles WHERE userID = " . floatval($userid) . " ORDER BY addDate ASC")->getRow();
-
-        $role_name_info = null;
-        if ($currentuserrole) {
-            $role_builder = $db->table('role_name');
-            $role_name_info = $role_builder->where('role_name_id', $currentuserrole->roleID)->get()->getRow();
-        }
-      ?>
-   <!-- Navbar -->
-<nav class="main-header navbar navbar-expand text-white" style="background-color: #3c8dbc; padding: 0px;">
-    <!-- Left navbar links - HAMBURGER MENU BUTTON -->
-    <ul class="navbar-nav">
-        <li class="nav-item">
-            <a class="nav-link" data-widget="pushmenu" href="#" role="button">
-                <i class="fas fa-bars"></i>
-            </a>
-        </li>
-    </ul>
-
-    <!-- Center navbar links (Campus, Session, Expiry) -->
-    <ul class="navbar-nav ml-auto mr-auto">
-        <?php if (hasPermission('admin-campus') && $schoolinfo->system_id != 60): ?>
-        <li class="nav-item" style="min-width: 220px;">
-            <select name="campus_id" id="campusID" class="form-control form-control-sm">
-                <?php foreach($campuses as $campus): ?>
-                <?php 
-                    $system_id = $campus->system_id ?? $schoolinfo->system_id ?? '';
-                    $campus_code = $system_id . '-' . $campus->campus_id;
-                ?>
-                <option value="<?= $campus->campus_id ?>" <?= $curr_campus_id == $campus->campus_id ? 'selected' : '' ?>>
-                    <?= esc($campus->campus_name) ?> [<?= esc($campus_code) ?>]
-                </option>
-                <?php endforeach; ?>
-            </select>
-        </li>
-        <?php endif; ?>
-
-        <?php if(hasPermission('admin-view-global-session')): ?>
-        <li class="nav-item" style="min-width: 150px; margin-left: 10px;">
-            <select name="session_id" id="sessionID" class="form-control form-control-sm">
-                <?php foreach ($academic_sessions as $academic_session): ?>
-                <option value="<?= esc($academic_session->session_id) ?>" <?= ($curr_session_id == $academic_session->session_id) ? 'selected' : '' ?>>
-                    <?= esc($academic_session->session_name) ?>
-                </option>
-                <?php endforeach; ?>
-            </select>
-        </li>
-        <?php endif; ?>
-        
-        <!-- Campus Expiry Display -->
-        <?php 
-        if (isset($curr_campus_id) && $curr_campus_id > 0):
-            $expiryInfo = getCampusExpiryInfo($curr_campus_id);
-            $formattedDate = date('d M Y', strtotime($expiryInfo['expiry_date']));
-            
-            $percentage = 100;
-            if ($expiryInfo['days_left'] > 0 && $expiryInfo['days_left'] <= 365) {
-                $percentage = ($expiryInfo['days_left'] / 365) * 100;
-                $percentage = max(0, min(100, $percentage));
-            }
-        ?>
-        <li class="nav-item ml-3 dropdown">
-            <div class="expiry-badge <?= $expiryInfo['badge_class'] ?> expiry-tooltip dropdown-toggle" 
-                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                 style="cursor: pointer;">
-                <i class="fas <?= $expiryInfo['icon'] ?> mr-1"></i>
-                <span>
-                    <?php if ($expiryInfo['status'] == 'expired'): ?>
-                        ❌ Expired
-                    <?php elseif ($expiryInfo['status'] == 'critical'): ?>
-                        🔴 <?= $expiryInfo['days_left'] ?> days left!
-                    <?php elseif ($expiryInfo['status'] == 'warning'): ?>
-                        🟡 <?= $formattedDate ?>
-                    <?php else: ?>
-                        🟢 <?= $formattedDate ?>
-                    <?php endif; ?>
-                </span>
-            </div>
-            <div class="dropdown-menu dropdown-menu-right p-3" style="min-width: 280px; width: auto;">
-                <div class="text-center mb-3">
-                    <strong><i class="fas fa-calendar-alt text-primary mr-2"></i>Campus Subscription</strong>
-                </div>
-                <div class="mb-2" style="white-space: nowrap;">
-                    <i class="fas fa-calendar-check text-primary mr-2" style="width: 20px;"></i>
-                    <strong>Expiry Date:</strong> 
-                    <span class="ml-1"><?= $formattedDate ?></span>
-                </div>
-                <div class="mb-2" style="white-space: nowrap;">
-                    <i class="fas fa-hourglass-half text-warning mr-2" style="width: 20px;"></i>
-                    <strong>Days Remaining:</strong> 
-                    <?php if ($expiryInfo['days_left'] < 0): ?>
-                        <span class="text-danger ml-1">Expired <?= abs($expiryInfo['days_left']) ?> days ago</span>
-                    <?php else: ?>
-                        <span class="text-success ml-1"><?= $expiryInfo['days_left'] ?> days</span>
-                    <?php endif; ?>
-                </div>
-                <?php if ($expiryInfo['days_left'] > 0 && $expiryInfo['days_left'] <= 365): ?>
-                <div class="mb-2 mt-3">
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar <?= $expiryInfo['status'] == 'critical' ? 'bg-danger' : ($expiryInfo['status'] == 'warning' ? 'bg-warning' : 'bg-success') ?>" 
-                             role="progressbar" style="width: <?= $percentage ?>%;" 
-                             aria-valuenow="<?= $percentage ?>" aria-valuemin="0" aria-valuemax="100">
-                        </div>
-                    </div>
-                    <div class="text-center mt-1">
-                        <small><?= round($percentage) ?>% of year remaining</small>
-                    </div>
-                </div>
-                <?php endif; ?>
-                <?php if ($expiryInfo['days_left'] <= 30 && $expiryInfo['days_left'] > 0): ?>
-                <div class="alert alert-danger mb-0 mt-3 py-2 text-center">
-                    <i class="fas fa-exclamation-triangle mr-1"></i> 
-                    <small>⚠️ Subscription expiring soon! Please renew.</small>
-                </div>
-                <?php endif; ?>
-                <?php if ($expiryInfo['days_left'] <= 0): ?>
-                <div class="alert alert-danger mb-0 mt-3 py-2 text-center">
-                    <i class="fas fa-ban mr-1"></i> 
-                    <small>❌ Subscription expired! Renew now.</small>
-                </div>
-                <?php endif; ?>
-            </div>
-        </li>
-        <?php endif; ?>
-    </ul>
-
-    <!-- Right navbar links -->
-    <ul class="navbar-nav">
-        <?php if($_SERVER['HTTP_HOST'] == 'demo.timesoftsol.com'): ?>
-        <li class="nav-item">
-            <a style="padding: 6px 11px;" href="https://timesoftsol.com/signup/" class="btn btn-sm btn-flat btn-danger">
-                Create Your Own School
-            </a>
-        </li>
-        <?php endif; ?>
-
-        <!-- User Dropdown Menu -->
-        <li class="dropdown user user-menu">
-            <a class="nav-link dropdown-toggle" href="javascript:;" data-toggle="dropdown">
-                <?php 
-                $photoUrl = base_url('resource/adminlte/dist/img/emp-avatar.jpg');
-                if (!empty($user) && !empty($user->photo)) {
-                    $photoPath = FCPATH . 'uploads/employees/' . $user->photo;
-                    if (file_exists($photoPath)) {
-                        $photoUrl = base_url('uploads/employees/' . $user->photo);
-                    }
-                }
-                ?>
-                
-                <?php if ($photoUrl != base_url('resource/adminlte/dist/img/emp-avatar.jpg')): ?>
-                    <img class="user-image" src="<?= $photoUrl ?>" style="width: 25px; height: 25px; border-radius: 50%; object-fit: cover;" />
-                <?php else: ?>
-                    <i class="fa fa-user"></i>
-                <?php endif; ?>
-                
-                <span class="d-none d-sm-inline-block">
-                    <?php if (!empty($user) && !empty($user->username)): ?>
-                        <?= $user->username; ?> (<?= $role_name_info->rolename ?? '' ?>)
-                    <?php endif; ?>
-                </span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-right">
-                <li class="user-header">
-                    <?php if ($photoUrl != base_url('resource/adminlte/dist/img/emp-avatar.jpg')): ?>
-                        <img src="<?= $photoUrl ?>" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover;" />
-                    <?php else: ?>
-                        <i class="fa fa-user fa-3x"></i>
-                    <?php endif; ?>
-                    <p><?= !empty($user->username) ? $user->username : '' ?></p>
-                </li>
-                <li class="user-footer">
-                    <div class="pull-left">
-                        <a href="<?= base_url('admin/profile') ?>" class="btn btn-default btn-flat">
-                            <i class="fa fa-gear"></i> Profile
-                        </a>
-                    </div>
-                    <div class="pull-right">
-                        <a href="<?= base_url('admin/logout') ?>" class="btn btn-default btn-flat">
-                            <i class="fa fa-sign-out"></i> Logout
-                        </a>
-                    </div>
-                </li>
-            </ul>
-        </li>
-    </ul>
-</nav>
 <?php
-  $session         = \Config\Services::session();
-  $db              = \Config\Database::connect();
-  $curr_session_id = $session->get('member_sessionid') ?? null;
-  $curr_campus_id  = (int) ($session->get('member_campusid') ?? 0);
   helper('permission');
-
-  $hasTransport = $hasHostel = $hasAcademy = false;
-  if ($curr_campus_id) {
-      $flags = $db->table('campus')
-          ->select('t_flag, h_flag, a_flag')
-          ->where('campus_id', $curr_campus_id)
-          ->get()->getRow();
-      if ($flags) {
-          $hasTransport = ((int)($flags->t_flag ?? 0) === 1);
-          $hasHostel    = ((int)($flags->h_flag ?? 0) === 1);
-          $hasAcademy   = ((int)($flags->a_flag ?? 0) === 1);
-      }
-  }
 
   $uri         = service('uri');
   $currentPath = trim($uri->getPath(), '/');
 
-  $can = function(string $perm): bool {
+  $can = static function (string $perm): bool {
       return function_exists('hasPermission') ? hasPermission($perm) : false;
   };
-  $canAny = function(array $perms) use($can): bool {
-      foreach ($perms as $p) { if ($can($p)) return true; }
+  $canAny = static function (array $perms) use ($can): bool {
+      foreach ($perms as $p) {
+          if ($can($p)) {
+              return true;
+          }
+      }
       return false;
   };
-  $isActive = function(string $needle) use($currentPath): bool {
+  $isActive = static function (string $needle) use ($currentPath): bool {
       $needle = trim($needle, '/');
       return $needle !== '' && strpos($currentPath, $needle) === 0;
   };
-  $link = function(string $path): string { return base_url($path); };
-
-  // ===== Menu Schema =====
-  $sections = [];
-
-  // Dashboard
-  $sections[] = [
-    'key'   => 'dashboard',
-    'label' => 'Dashboard',
-    'icon'  => 'fas fa-tachometer-alt',
-    'url'   => ('/admin/dashboard'),
-    'match' => 'admin/dashboard',
-    'visible' => true
-  ];
-
-// Profiles
-// Get the logged-in user ID from session
-$session = session();
-$currentUserId = $session->get('member_userid') ?: $session->get('user_id');
-$currentUserName = $session->get('first_name') . ' ' . $session->get('last_name');
-
-// Profiles with dynamic URL
-$profiles = [
-    [
-        'key' => 'profiles.my-profile',
-        'label' => 'My Profile' . ($currentUserName ? ' (' . $currentUserName . ')' : ''),
-        'icon' => 'fas fa-user-circle',
-        'url' => base_url('admin/users/view/' . $currentUserId),
-        'match' => 'admin/users/view',
-        'perms' => []
-    ],
-
-    [
-        'key' => 'profiles.campus-profile',
-        'label' => 'Campus Profile',
-        'icon' => 'fas fa-school',
-        'url' => base_url('admin/profile-campus'),
-        'match' => 'admin/profile-campus',
-        'perms' => []
-    ],
-    [
-        'key' => 'profiles.system-profile',
-        'label' => 'System Profile',
-        'icon' => 'fas fa-cogs',
-        'url' => base_url('admin/profile-system'),
-        'match' => 'admin/profile-system',
-        'perms' => []
-    ],
-];
-
-$sections[] = [
-    'key' => 'profiles',
-    'label' => 'Profiles',
-    'icon' => 'fas fa-th',
-    'children' => $profiles,
-    'visible' => true
-];
-
-
-$healthItems = [
-    [
-        'key' => 'health.bmi-dashboard',
-        'label' => 'BMI Dashboard',
-        'icon' => 'fas fa-heartbeat',
-        'url' => $link('admin/health/bmi-dashboard'),
-        'match' => 'admin/health/bmi-dashboard',
-        'perms' => []  // Empty array means always visible
-    ],
-
-      [
-        'key' => 'health.alerts',
-        'label' => 'Health Alerts',
-        'icon' => 'fas fa-bell',
-        'url' => base_url('admin/health/alerts'),
-        'match' => 'admin/health/alerts',
-        'perms' => ['admin-health-alerts']
-    ],
-
-    [
-        'key' => 'health.bmi-records',
-        'label' => 'BMI Records',
-        'icon' => 'fas fa-chart-line',
-        'url' => $link('admin/health/bmi-records'),
-        'match' => 'admin/health/bmi-records',
-        'perms' => []
-    ],
-    [
-        'key' => 'health.bulk-bmi-update',
-        'label' => 'Bulk BMI Update',
-        'icon' => 'fas fa-upload',
-        'url' => $link('admin/students_bulk_info_date_of_birth'),
-        'match' => 'admin/students_bulk_info_date_of_birth',
-        'perms' => []
-    ],
-    [
-        'key' => 'health.health-alerts',
-        'label' => 'Health Alerts',
-        'icon' => 'fas fa-bell',
-        'url' => $link('admin/health/alerts'),
-        'match' => 'admin/health/alerts',
-        'perms' => []
-    ],
-    [
-        'key' => 'health.nutrition-suggestions',
-        'label' => 'Nutrition Suggestions',
-        'icon' => 'fas fa-apple-alt',
-        'url' => $link('admin/health/nutrition-suggestions'),
-        'match' => 'admin/health/nutrition-suggestions',
-        'perms' => []
-    ],
-    [
-        'key' => 'health.bmi-reports',
-        'label' => 'BMI Reports',
-        'icon' => 'fas fa-file-alt',
-        'url' => $link('admin/health/bmi-reports'),
-        'match' => 'admin/health/bmi-reports',
-        'perms' => []
-    ],
-];
-
-$sections[] = [
-    'key' => 'health',
-    'label' => 'Health & BMI',
-    'icon' => 'fas fa-heartbeat',
-    'children' => $healthItems,
-    'visible' => true  // Always visible, regardless of permissions
-];
-  // Sessions
-  $sessionsItems = [
-  [
-  'key'   => 'sessions.calendar-builder',
-  'label' => 'Calendar Builder',
-  'icon'  => 'fa fa-project-diagram',
-  'url'   => $link('admin/academic-calendar/builder'),
-  'match' => 'admin/academic-calendar/builder',
-  'perms' => ['admin-academic-session'],
-],
-[
-        'key'   => 'academic.setup',
-        'label' => 'Academic Setup Wizard',
-        'icon'  => 'fa fa-chalkboard-teacher',
-        'url'   => $link('admin/academic-setup'),
-        'match' => 'admin/academic-setup',
-        'perms' => ['admin-academic-session'],
-    ],
-
-
-
-    // ['key'=>'sessions.academic-sessions','label'=>'Academic Sessions','icon'=>'fa fa-calendar','url'=>$link('admin/academic_session'),'match'=>'admin/academic_session','perms'=>['admin-academic-session']],
-    // ['key'=>'sessions.terms','label'=>'Terms','icon'=>'fa fa-list','url'=>$link('admin/terms'),'match'=>'admin/terms','perms'=>['admin-terms']],
-    // ['key'=>'sessions.term-sessions','label'=>'Term Sessions','icon'=>'fa fa-list','url'=>$link('admin/terms_session'),'match'=>'admin/terms_session','perms'=>['admin-terms-sessions']],
-    // ['key'=>'sessions.term-weeks','label'=>'Term Weeks','icon'=>'fa fa-list','url'=>$link('admin/term_weeks'),'match'=>'admin/term_weeks','perms'=>['admin-term-weeks']],
-];
-
-  $sections[] = [
-    'key'=>'sessions',
-    'label'=>'Sessions',
-    'icon'=>'fas fa-cogs',
-    'children'=>$sessionsItems,
-    'visible'=> (bool) array_filter($sessionsItems, fn($i)=>$canAny($i['perms'] ?? []))
-  ];
-
-  // Classes
-  $classesItems = [
-    ['key'=>'classes.classes','label'=>'Classes','icon'=>'fa fa-list','url'=>$link('admin/classes'),'match'=>'admin/classes','perms'=>['admin-classes']],
-    ['key'=>'classes.sections','label'=>'Sections','icon'=>'fa fa-flask','url'=>$link('admin/sections'),'match'=>'admin/sections','perms'=>['admin-sections']],
-    ['key'=>'classes.class-sections','label'=>'Class Sections','icon'=>'fa fa-flask','url'=>$link('admin/class-section'),'match'=>'admin/class_section','perms'=>['admin-class-section']],
-    ['key'=>'classes.subjects','label'=>'Subjects','icon'=>'fa fa-list','url'=>$link('admin/subjects'),'match'=>'admin/subjects','perms'=>['admin-subjects']],
-    ['key'=>'classes.section-subjects','label'=>'Section Subjects','icon'=>'fa fa-list','url'=>$link('admin/section_subjects'),'match'=>'admin/section_subjects','perms'=>['admin-section-subjects']],
-  ];
-  $sections[] = [
-    'key'=>'classes',
-    'label'=>'Classes',
-    'icon'=>'fa fa-list-alt',
-    'children'=>$classesItems,
-    'visible'=> (bool) array_filter($classesItems, fn($i)=>$canAny($i['perms']))
-  ];
-
-  // Students / Admissions
-  $studentsItems = [
-    ['key'=>'students.enrolled-print','label'=>'Enrolled Students (Print)','icon'=>'fas fa-users','url'=>$link('admin/students_print?status=1'),'match'=>'admin/students_print','perms'=>['admin-students']],
-    ['key'=>'students.readmit','label'=>'Readmit Students','icon'=>'fas fa-user-plus','url'=>$link('admin/students/readmit'),'match'=>'admin/students/readmit','perms'=>['admin-students']],
-    ['key'=>'students.admission','label'=>'Admission','icon'=>'fas fa-user-plus','url'=>$link('admin/students/add'),'match'=>'admin/students/add','perms'=>['admin-students']],
-    ['key'=>'students.add-bulk','label'=>'Add Bulk Students','icon'=>'fas fa-layer-group','url'=>$link('admin/addbulkstudents/add'),'match'=>'admin/addbulkstudents','perms'=>['admin-students']],
-    ['key'=>'students.id-card','label'=>'Student ID Card','icon'=>'far fa-id-card','url'=>$link('admin/student_id_card'),'match'=>'admin/student_id_card','perms'=>['admin-student-id-cards']],
-    ['key'=>'students.promotion','label'=>'Promotion','icon'=>'fas fa-angle-double-up','url'=>$link('admin/student_class'),'match'=>'admin/student_class','perms'=>['admin-student-class']],
-    ['key'=>'students.attachment-types','label'=>'Attachment Types','icon'=>'fas fa-paperclip','url'=>$link('admin/attachment_types'),'match'=>'admin/attachment_types','perms'=>['admin-attachment-types']],
-    ['key'=>'students.data-verification','label'=>'Data Verification Form','icon'=>'fas fa-user-check','url'=>$link('admin/student_data_verification_form'),'match'=>'admin/student_data_verification_form','perms'=>['admin-students']],
-    ['key'=>'students.fee-verification','label'=>'Fee Verification Form','icon'=>'fas fa-file-invoice-dollar','url'=>$link('admin/student_data_verification_form/student_fee_verification'),'match'=>'admin/student_data_verification_form/student_fee_verification','perms'=>['admin-students']],
-  ];
-  $sections[] = [
-    'key'=>'students',
-    'label'=>'Students',
-    'icon'=>'fas fa-user-graduate',
-    'children'=>$studentsItems,
-    'visible'=> (bool) array_filter($studentsItems, fn($i)=>$canAny($i['perms']))
-  ];
-// Faculty
-
-
-$facultyItems = [
-    // Main Employee Management
-    ['key'=>'faculty.employees.list','label'=>'All Employees','icon'=>'fa fa-list','url'=>$link('admin/users?status=1'),'match'=>'admin/users','perms'=>['admin-users']],
-    ['key'=>'faculty.employees.add','label'=>'Add Employee','icon'=>'fa fa-user-plus','url'=>$link('admin/users/add'),'match'=>'admin/users/add','perms'=>['admin-users']],
-    ['key'=>'faculty.employees.dropped','label'=>'Dropped Employees','icon'=>'fa fa-user-slash','url'=>$link('admin/users?status=0'),'match'=>'admin/users','perms'=>['admin-users']],
-    
-    // ===== SALARY MANAGEMENT SECTION =====
-    ['key'=>'faculty.salary.settings','label'=>'Salary Settings','icon'=>'fa fa-cog','url'=>$link('admin/salary-settings'),'match'=>'admin/salary-settings','perms'=>['admin-users']],
-    ['key'=>'faculty.salary.generate','label'=>'Generate Monthly Salary','icon'=>'fa fa-calculator','url'=>$link('admin/salary-settings'),'match'=>'admin/salary-settings','perms'=>['admin-users']],
-    ['key'=>'faculty.salary.reports','label'=>'Salary Reports','icon'=>'fa fa-chart-line','url'=>$link('admin/salary-reports'),'match'=>'admin/salary-reports','perms'=>['admin-users']],
-    ['key'=>'faculty.salary.advance','label'=>'Advance Salary','icon'=>'fa fa-hand-holding-usd','url'=>$link('admin/advance-salary'),'match'=>'admin/advance-salary','perms'=>['admin-users']],
-    ['key'=>'faculty.salary.bonus','label'=>'Bonuses','icon'=>'fa fa-gift','url'=>$link('admin/bonuses'),'match'=>'admin/bonuses','perms'=>['admin-users']],
-    ['key'=>'faculty.salary.slips','label'=>'Salary Slips','icon'=>'fa fa-file-invoice-dollar','url'=>$link('admin/salary-slips'),'match'=>'admin/salary-slips','perms'=>['admin-users']],
-    
-    // ===== QR CODE ATTENDANCE SECTION =====
-    ['key'=>'faculty.qr-scanner','label'=>'QR Attendance Scanner','icon'=>'fa fa-qrcode','url'=>$link('admin/attendance/scan'),'match'=>'admin/attendance/scan','perms'=>['admin-users']],
-    ['key'=>'faculty.attendance-manual','label'=>'Manual Attendance','icon'=>'fa fa-pen','url'=>$link('admin/attendance/manual'),'match'=>'admin/attendance/manual','perms'=>['admin-users']],
-    ['key'=>'faculty.attendance-report','label'=>'Attendance Report','icon'=>'fa fa-chart-bar','url'=>$link('admin/attendance/report'),'match'=>'admin/attendance/report','perms'=>['admin-users']],
-    ['key'=>'faculty.attendance-summary','label'=>'Daily Summary','icon'=>'fa fa-table','url'=>$link('admin/attendance/summary'),'match'=>'admin/attendance/summary','perms'=>['admin-users']],
-    
-    // QR Code Management
-    ['key'=>'faculty.qr-generate-all','label'=>'Generate All QR Codes','icon'=>'fa fa-plus-circle','url'=>$link('admin/qr/generate-all'),'match'=>'admin/qr/generate-all','perms'=>['admin-users']],
-    ['key'=>'faculty.qr-download-all','label'=>'Download All QR Codes','icon'=>'fa fa-download','url'=>$link('admin/qr/download-all'),'match'=>'admin/qr/download-all','perms'=>['admin-users']],
-    
-    // Subject Management
-    ['key'=>'faculty.subject-teachers','label'=>'Subject Teachers','icon'=>'fa fa-chalkboard-user','url'=>$link('admin/teacher_subjects/add'),'match'=>'admin/teacher_subjects','perms'=>['admin-add-teacher-subject']],
-    ['key'=>'faculty.section-incharges','label'=>'Section Incharges','icon'=>'fa fa-user-graduate','url'=>$link('admin/teacher_section/add'),'match'=>'admin/teacher_section','perms'=>['admin-add-teacher-section']],
-    ['key'=>'faculty.employee-timing','label'=>'Employee Timing','icon'=>'fa fa-hourglass-half','url'=>$link('admin/emp_timing/add'),'match'=>'admin/emp_timing','perms'=>['admin-add-teacher-section']],
-    
-    // Employee Details Views
-    ['key'=>'faculty.profile','label'=>'Employee Profile','icon'=>'fa fa-id-card','url'=>'javascript:void(0)','match'=>'admin/users/view','disabled'=>true,'perms'=>['admin-users']],
-    ['key'=>'faculty.salary','label'=>'Employee Salary Details','icon'=>'fa fa-money-bill-wave','url'=>'javascript:void(0)','match'=>'admin/users/salary','disabled'=>true,'perms'=>['admin-users']],
-    ['key'=>'faculty.timetable','label'=>'Teacher Timetable','icon'=>'fa fa-calendar-alt','url'=>$link('admin/users?status=1'),'match'=>'admin/users/timetable','perms'=>['admin-users']],
-    ['key'=>'faculty.subjects','label'=>'Teacher Subjects','icon'=>'fa fa-book-open','url'=>$link('admin/users?status=1'),'match'=>'admin/users/subjects','perms'=>['admin-users']],
-    ['key'=>'faculty.attendance','label'=>'Attendance Records','icon'=>'fa fa-check-circle','url'=>$link('admin/attendance/report'),'match'=>'admin/attendance/report|admin/users/attendance','perms'=>['admin-users']],
-    // FIXED: Removed the extra closing parenthesis and added proper closing
-    ['key'=>'faculty.leaves','label'=>'Leave Applications','icon'=>'fa fa-plane','url'=>$link('admin/users?status=1'),'match'=>'admin/users/leaves','perms'=>['admin-users']]
-];
-
-$sections[] = [
-    'key' => 'faculty',
-    'label' => 'Faculty',
-    'icon' => 'fa fa-users',
-    'children' => $facultyItems,
-    'visible' => (bool) array_filter($facultyItems, fn($i) => $canAny($i['perms']))
-];
-  // Exams & Tests
-  $examsItems = [
-    ['key'=>'quiz.quiz','label'=>'Add Quiz','icon'=>'fa fa-list','url'=>$link('admin/quiz-ai'),'match'=>'admin/quiz-ai','perms'=>['admin-exams']],
-
-    ['key'=>'exams.exam','label'=>'Exam','icon'=>'fa fa-list','url'=>$link('admin/exam'),'match'=>'admin/exam','perms'=>['admin-exams']],
-
-
-
-    ['key'=>'exams.datesheet','label'=>'Date Sheet','icon'=>'fa fa-calendar','url'=>$link('admin/datesheet'),'match'=>'admin/datesheet','perms'=>['admin-datesheet']],
-    ['key'=>'exams.results-add','label'=>'Results','icon'=>'fa fa-list','url'=>$link('admin/students-results/add'),'match'=>'admin/students-results','perms'=>['admin-students-results']],
-    ['key'=>'exams.results-list','label'=>'Results List','icon'=>'fa fa-list','url'=>$link('admin/students-results-list'),'match'=>'admin/students-results-list','perms'=>['admin-students-results']],
-    ['key'=>'exams.subject-results','label'=>'Subject Results','icon'=>'fa fa-list','url'=>$link('admin/students-subject-results/add'),'match'=>'admin/students-subject-results','perms'=>['admin-students-subject-results']],
-    ['key'=>'exams.grades','label'=>'Grades','icon'=>'fa fa-list','url'=>$link('admin/grades/add'),'match'=>'admin/grades','perms'=>['admin-grades']],
-    ['key'=>'exams.grading-policy','label'=>'Grading Policy','icon'=>'fa fa-list','url'=>$link('admin/grading-policy'),'match'=>'admin/grading-policy','perms'=>['admin-grading-policy']],
-
-    [
-    'key'   => 'quiz.play-admin',
-    'label' => 'Play Quiz (Admin)',
-    'icon'  => 'fa fa-gamepad',
-    'url'   => $link('admin/quiz-assign'),
-    'match' => 'admin/quiz-assign',
-    'perms' => ['admin-classdairy']
-],
-
-
-  ];
-  $testsItems = [
-    ['key'=>'tests.results','label'=>'Add Tests Results','icon'=>'fa fa-list','url'=>$link('admin/test-results'),'match'=>'admin/test-results','perms'=>['admin-test-series']],
-    ['key'=>'tests.series-result-card','label'=>'Tests Series Results Card','icon'=>'fa fa-list','url'=>$link('admin/test-series-result-card'),'match'=>'admin/test-series-result-card','perms'=>['admin-test-series']],
-  ];
-  $sections[] = [
-    'key'=>'exams-tests',
-    'label'=>'Exams & Tests',
-    'icon'=>'fas fa-diagnoses',
-    'children'=>array_merge($examsItems, $testsItems),
-    'visible'=> (bool) array_filter(array_merge($examsItems, $testsItems), fn($i)=>$canAny($i['perms']))
-  ];
-
-
-$quizzesItems = [
-    [
-        'key'   => 'question-bank.question-bank',
-        'label' => 'Question Bank',
-        'icon'  => 'fa fa-list',
-        'url'   => $link('admin/question-bank'),
-        'match' => 'admin/question-bank',
-        'perms' => ['admin-exams'],
-    ],
-
-    // ✅ NEW: Topic Manager
-    [
-        'key'   => 'question-bank.topics',
-        'label' => 'QB Topics',
-        'icon'  => 'fa fa-tags',
-        'url'   => $link('admin/qb-topics'),
-        'match' => 'admin/qb-topics',
-        'perms' => ['admin-exams'],
-    ],
-    [
-        'key'   => 'vocabulary-bank.topics',
-        'label' => 'Vocab Topics',
-        'icon'  => 'fa fa-tags',
-        'url'   => $link('admin/vocab-topics'),
-        'match' => 'admin/vocab-topics',
-        'perms' => ['admin-exams'],
-    ],
-
-    [
-        'key'   => 'vocab-bank.vocab-bank',
-        'label' => 'Vocabulary Bank',
-        'icon'  => 'fa fa-list',
-        'url'   => $link('admin/vocab-bank'),
-        'match' => 'admin/vocab-bank',
-        'perms' => ['admin-exams'],
-    ],
-
-    [
-        'key'   => 'vocab-bank.report',
-        'label' => 'Vocabulary Report',
-        'icon'  => 'fa fa-table',
-        'url'   => $link('admin/vocab-bank/report'),
-        'match' => 'admin/vocab-bank/report',
-        'perms' => ['admin-exams'],
-    ],
-
-     [
-        'key'   => 'vocab-bank.listofwords',
-        'label' => 'Vocabulary words',
-        'icon'  => 'fa fa-table',
-        'url'   => $link('admin/vocab-bank/listofwords'),
-        'match' => 'admin/vocab-bank/listofwords',
-        'perms' => ['admin-exams'],
-    ],
-
-    [
-        'key'   => 'quizzes.quizzes',
-        'label' => 'Quizzes',
-        'icon'  => 'fa fa-calendar',
-        'url'   => $link('admin/quizzes'),
-        'match' => 'admin/quizzes',
-        'perms' => ['admin-datesheet'],
-    ],
-];
-
-    
-  
-  $sections[] = [
-    'key'=>'quizzes',
-    'label'=>'Quizzes',
-    'icon'=>'fas fa-diagnoses',
-    'children'=>$quizzesItems,
-    'visible'=> (bool) array_filter($quizzesItems, fn($i)=>$canAny($i['perms']))
-  ];
-
-// Attendance
-$attendanceOpsItems = [
-    ['key'=>'attendance.employees-attendance','label'=>'Employees Attendance','icon'=>'fa fa-cubes','url'=>$link('admin/employees_attendance/add'),'match'=>'admin/employees_attendance','perms'=>['admin-add-student-attendance']],
-    ['key'=>'attendance.absentees','label'=>'Absentees','icon'=>'far fa-clock','url'=>$link('admin/students_absentees/add'),'match'=>'admin/students_absentees','perms'=>['admin-add-student-absentees']],
-    ['key'=>'attendance.face-attendance','label'=>'Face Attendance','icon'=>'fa fa-camera','url'=>$link('admin/face-attendance'),'match'=>'admin/face-attendance','perms'=>['admin-emp-attendance-monthly-report']],
-    ['key'=>'attendance.face-management','label'=>'Face Management','icon'=>'fa fa-user-check','url'=>$link('admin/face-management'),'match'=>'admin/face-management','perms'=>['admin-emp-attendance-monthly-report']],
-];
-
-$attendanceApprovalItems = [
-    ['key'=>'attendance.emp-leaves-add','label'=>'Create Employee Leaves','icon'=>'fa fa-cubes','url'=>$link('admin/employee_leaves/add'),'match'=>'admin/employee_leaves/add','perms'=>['admin-add-student-attendance']],
-    ['key'=>'attendance.emp-leaves','label'=>'Employee Leaves Applications','icon'=>'fa fa-cubes','url'=>$link('admin/employee_leaves'),'match'=>'admin/employee_leaves','perms'=>['admin-add-student-attendance'],'badge'=>['key'=>'pending_emp_leaves','class'=>'badge-danger']],
-    ['key'=>'attendance.std-leaves-add','label'=>'Create Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves/add'),'match'=>'admin/students_leaves/add','perms'=>['admin-add-student-leaves']],
-    ['key'=>'attendance.std-leaves','label'=>'Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves'),'match'=>'admin/students_leaves','perms'=>['admin-student-leaves'],'badge'=>['key'=>'pending_std_leaves','class'=>'badge-danger']],
-];
-
-$attendanceReportItems = [
-    ['key'=>'attendance.emp-attendance-report','label'=>'Employees Attendance Report','icon'=>'fa fa-cubes','url'=>$link('admin/emp_attendance_monthlyreport'),'match'=>'admin/emp_attendance_monthlyreport','perms'=>['admin-emp-attendance-monthly-report']],
-    ['key'=>'attendance.student-monthly-report','label'=>'Students Monthly Report','icon'=>'fa fa-calendar-alt','url'=>$link('admin/attendance-monthly-report'),'match'=>'admin/attendance-monthly-report','perms'=>['admin-emp-attendance-monthly-report']],
-    ['key'=>'attendance.student-session-report','label'=>'Students Session Report','icon'=>'fa fa-calendar','url'=>$link('admin/attendance-monthly-report/student-session-report'),'match'=>'admin/attendance-monthly-report/student-session-report','perms'=>['admin-attendance-monthly-report']],
-    ['key'=>'attendance.working-days-report','label'=>'Working Days Report','icon'=>'fa fa-calendar-check','url'=>$link('admin/attendance-working-days-report'),'match'=>'admin/attendance-working-days-report','perms'=>['admin-emp-attendance-monthly-report']],
-];
-
-$attendanceItems = array_merge(
-    [['label'=>'— Operations —','icon'=>'','header'=>true]],
-    $attendanceOpsItems,
-    [['label'=>'— Approvals —','icon'=>'','header'=>true]],
-    $attendanceApprovalItems,
-    [['label'=>'— Monitoring & Reports —','icon'=>'','header'=>true]],
-    $attendanceReportItems
-);
-  $sections[] = [
-    'key'=>'attendance',
-    'label'=>'Attendance',
-    'icon'=>'far fa-address-card',
-    'children'=>$attendanceItems,
-    'visible'=> (bool) array_filter(array_merge($attendanceOpsItems, $attendanceApprovalItems, $attendanceReportItems), fn($i)=>$canAny($i['perms']))
-  ];
-
-  // Time Table
-  $timetableItems = [
-    ['key'=>'timetable.timetable','label'=>'Time Table','icon'=>'far fa-clock','url'=>$link('admin/timetable/add'),'match'=>'admin/timetable','perms'=>['admin-timetable']],
-    ['key'=>'timetable.report','label'=>'Timetable Report (Class/Teacher)','icon'=>'far fa-file-alt','url'=>$link('admin/timetable/report'),'match'=>'admin/timetable/report','perms'=>['admin-timetable']],
-    ['key'=>'timetable.school-timing','label'=>'School Timing','icon'=>'far fa-clock','url'=>$link('admin/school_timing/add'),'match'=>'admin/school_timing','perms'=>['admin-school-timing']],
-    ['key'=>'timetable.timing-type','label'=>'School Timing Type','icon'=>'far fa-clock','url'=>$link('admin/school_timming_type'),'match'=>'admin/school_timming_type','perms'=>['admin-school-timing']],
-    ['key'=>'timetable.slots','label'=>'Slots','icon'=>'far fa-clock','url'=>$link('admin/slots'),'match'=>'admin/slots','perms'=>['admin-slots']],
-  ];
-  $sections[] = [
-    'key'=>'timetable',
-    'label'=>'Time Table',
-    'icon'=>'far fa-clock',
-    'children'=>$timetableItems,
-    'visible'=> (bool) array_filter($timetableItems, fn($i)=>$canAny($i['perms']))
-  ];
-
-
-
-// Academics
-$academicsItems = [
-    [
-        'key' => 'academics.top-level-planning.add',
-        'label' => 'Add Top Level Planning',
-        'icon' => 'fa fa-plus-circle',
-        'url' => $link('admin/top_level_planning/add'),
-        'match' => 'admin/top_level_planning/add',
-        'perms' => ['admin-add-top-level-planning']
-    ],
-    [
-        'key' => 'academics.top-level-planning.view',
-        'label' => 'View Top Level Planning',
-        'icon' => 'fa fa-eye',
-        'url' => $link('admin/top_level_planning/view'),
-        'match' => 'admin/top_level_planning/view',
-        'perms' => ['admin-add-top-level-planning']
-    ],
-    [
-        'key' => 'academics.weekly-planning-add',
-        'label' => 'Add Weekly Planning',
-        'icon' => 'fa fa-plus-circle',
-        'url' => $link('admin/weekly_planning/add'),
-        'match' => 'admin/weekly_planning/add',
-        'parent' => 'academics.weekly-planning',
-        'perms' => ['admin-add-weekly-planning']
-    ],
-    [
-        'key' => 'academics.weekly-planning-report',
-        'label' => 'Weekly Planning Report',
-        'icon' => 'fa fa-chart-bar',
-        'url' => $link('admin/weekly_planning_report'),
-        'match' => 'admin/weekly_planning_report',
-        'perms' => ['admin-weekly-planning']
-    ],
-    [
-        'key' => 'academics.daily-diary',
-        'label' => 'Daily Diary',
-        'icon' => 'fa fa-list',
-        'url' => $link('admin/classdairy-view'),
-        'match' => 'admin/classdairy-view',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.bag-pack',
-        'label' => 'Bag Pack',
-        'icon' => 'fa fa-shopping-bag',
-        'url' => $link('admin/bagpack'),
-        'match' => 'admin/bagpack',
-        'perms' => ['admin-classdairy']
-    ],
-    
-    // ========== ACTIVITY REPORT SECTION ==========
-    // Divider
-    [
-        'key' => 'academics.activity-report.divider',
-        'label' => '━━━━━━━━━━━━━━━━━━━━',
-        'icon' => '',
-        'url' => '#',
-        'disabled' => true,
-        'perms' => []
-    ],
-    [
-        'key' => 'academics.activity-report',
-        'label' => 'Activity Reports',
-        'icon' => 'fa fa-clipboard-list',
-        'url' => '#',
-        'match' => 'admin/activity-report',
-        'perms' => ['admin-classdairy', 'admin-activity-review']
-    ],
-    [
-        'key' => 'academics.activity-report.teacher',
-        'label' => '   ├ My Activity Report',
-        'icon' => 'fa fa-chalkboard-teacher',
-        'url' => $link('admin/activity-report/teacher-report'),
-        'match' => 'admin/activity-report/teacher-report',
-        'parent' => 'academics.activity-report',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.activity-report.principal',
-        'label' => '   ├ Review Activities',
-        'icon' => 'fa fa-star',
-        'url' => $link('admin/activity-report/principal-report'),
-        'match' => 'admin/activity-report/principal-report',
-        'parent' => 'academics.activity-report',
-        'perms' => ['admin-activity-review']
-    ],
-    [
-        'key' => 'academics.activity-report.summary',
-        'label' => '   └ Activity Summary',
-        'icon' => 'fa fa-chart-pie',
-        'url' => $link('admin/activity-report/summary'),
-        'match' => 'admin/activity-report/summary',
-        'parent' => 'academics.activity-report',
-        'perms' => ['admin-activity-review']
-    ],
-    
-    // ========== STUDENT RECORDINGS REVIEW SECTION ==========
-    // Divider
-    [
-        'key' => 'academics.recordings.divider',
-        'label' => '━━━━━━━━━━━━━━━━━━━━',
-        'icon' => '',
-        'url' => '#',
-        'disabled' => true,
-        'perms' => []
-    ],
-    [
-        'key' => 'academics.recordings',
-        'label' => 'Student Recordings',
-        'icon' => 'fa fa-microphone-alt',
-        'url' => $link('admin/recordings'),
-        'match' => 'admin/recordings',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.recordings.pending',
-        'label' => '   ├ Pending Reviews',
-        'icon' => 'fa fa-clock',
-        'url' => $link('admin/recordings?tab=pending'),
-        'match' => 'admin/recordings',
-        'parent' => 'academics.recordings',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.recordings.audio',
-        'label' => '   ├ Audio Submissions',
-        'icon' => 'fa fa-microphone',
-        'url' => $link('admin/recordings?tab=audio'),
-        'match' => 'admin/recordings',
-        'parent' => 'academics.recordings',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.recordings.video',
-        'label' => '   ├ Video Submissions',
-        'icon' => 'fa fa-video',
-        'url' => $link('admin/recordings?tab=video'),
-        'match' => 'admin/recordings',
-        'parent' => 'academics.recordings',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.recordings.progress',
-        'label' => '   ├ Student Progress',
-        'icon' => 'fa fa-chart-line',
-        'url' => $link('admin/recordings/student-progress'),
-        'match' => 'admin/recordings/student-progress',
-        'parent' => 'academics.recordings',
-        'perms' => ['admin-classdairy']
-    ],
-    [
-        'key' => 'academics.recordings.analytics',
-        'label' => '   └ Performance Analytics',
-        'icon' => 'fa fa-chart-bar',
-        'url' => $link('admin/recordings/analytics'),
-        'match' => 'admin/recordings/analytics',
-        'parent' => 'academics.recordings',
-        'perms' => ['admin-classdairy']
-    ]
-];
-
-$sections[] = [
-    'key' => 'academics',
-    'label' => 'Academics',
-    'icon' => 'far fa-address-card',
-    'children' => $academicsItems,
-    'visible' => (bool) array_filter($academicsItems, fn($i) => $canAny($i['perms'] ?? []))
-];
-
-  // Communication
-  $commItems = [
-    ['key'=>'communication.templates','label'=>'Message Templates','icon'=>'fas fa-comment-dots','url'=>$link('admin/message-templates'),'match'=>'admin/message-templates','perms'=>['admin-update-message-templates']],
-    ['key'=>'communication.messages','label'=>'Messages','icon'=>'fas fa-comments','url'=>$link('admin/messages'),'match'=>'admin/messages','perms'=>['admin-messages'],'badge'=>['key'=>'unread_messages','class'=>'badge-warning']],
-    ['key'=>'communication.bulk-excel-sms','label'=>'Bulk Excel SMS','icon'=>'fas fa-file-upload','url'=>$link('admin/bulksms'),'match'=>'admin/bulksms','perms'=>['admin-bulk-messages']],
-    ['key'=>'communication.defaulter-sms','label'=>'Defaulter SMS','icon'=>'fas fa-exclamation-circle','url'=>$link('admin/defaulter-message'),'match'=>'admin/defaulter-message','perms'=>['admin-defaulter-message']],
-    ['key'=>'communication.result-sms','label'=>'Result SMS','icon'=>'fas fa-poll','url'=>$link('admin/result-message'),'match'=>'admin/result-message','perms'=>['admin-result-message']],
-
-    ['key'=>'communication.wa-test-series','label'=>'Send Test Series Result (WA)','icon'=>'fab fa-whatsapp','url'=>$link('admin/students_list?status=1'),'match'=>'admin/students_list','perms'=>['admin-result-message','admin-messages']],
-    ['key'=>'communication.wa-result','label'=>'Send Result (WA)','icon'=>'fab fa-whatsapp','url'=>$link('admin/students_w_result_list?status=1'),'match'=>'admin/students_w_result_list','perms'=>['admin-result-message','admin-messages']],
-    ['key'=>'communication.wa-fee-chalan','label'=>'Send Fee Chalan (WA)','icon'=>'fab fa-whatsapp','url'=>$link('admin/family_chalan_whatsapp'),'match'=>'frontend/family_chalan_whatsapp','perms'=>['admin-result-message','admin-messages']],
-    ['key'=>'communication.wa-daily-diary','label'=>'Send Daily Diary (WA)','icon'=>'fab fa-whatsapp','url'=>$link('frontend/family_diary_whatsapp'),'match'=>'frontend/family_diary_whatsapp','perms'=>['admin-result-message','admin-messages']],
-    ['key'=>'communication.absentees-report','label'=>'Students Absentees Report','icon'=>'far fa-address-card','url'=>$link('admin/students_attendance/report'),'match'=>'admin/students_attendance/report','perms'=>['admin-add-student-attendance']],
-  ];
-  $sections[] = [
-    'key'=>'communication',
-    'label'=>'Communication',
-    'icon'=>'fas fa-sms',
-    'badge_sum_children'=>true,
-    'children'=>$commItems,
-    'visible'=> (bool) array_filter($commItems, fn($i)=>$canAny($i['perms'] ?? ['admin-messages']))
-  ];
-
-  // Finance
-  $feeItems = [
-
-
-    ['key'=>'finance.fee.fee-type','label'=>'Fee Type','icon'=>'fas fa-money-check-alt','url'=>$link('admin/fee_type'),'match'=>'admin/fee_type','perms'=>['admin-fee-type']],
-
-    
-
-
-    ['key'=>'finance.fee.plan-months','label'=>'Fee Plan Months','icon'=>'fas fa-money-check-alt','url'=>$link('admin/fee_plan_months/add'),'match'=>'admin/fee_plan_months','perms'=>['admin-fee-plan-months']],
-    ['key'=>'finance.fee.structure','label'=>'Fee Structure','icon'=>'fa fa-calendar','url'=>$link('admin/fee_amount/add'),'match'=>'admin/fee_amount','perms'=>['admin-fee-amount']],
-    ['key'=>'finance.fee.generate-chalan','label'=>'Generate Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan/add'),'match'=>'admin/fee-chalan/add','perms'=>['admin-fee-chalan']],
-    ['key'=>'finance.fee.print-chalan','label'=>'Print Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan'),'match'=>'admin/fee-chalan$','perms'=>['admin-fee-chalan']],
- /* [
-    'key' => 'finance.fee.chalan',
-    'label' => 'Fee Chalan',
-    'icon' => 'fas fa-file-invoice',
-    'url' => $link('admin/fee-chalan/generate'),
-    'match' => 'admin/fee-chalan/generate|admin/fee-chalan$',
-    'perms' => ['admin-fee-chalan'],
-    'badge' => 'New'
-],
-    ['key'=>'finance.fee.print-chalan-new','label'=>'Print Fee Chalan new','icon'=>'fas fa-file-invoice','url'=>$link('admin/print-fee-chalan'),'match'=>'admin/print-fee-chalan$','perms'=>['admin-fee-chalan']],*/
-    ['key'=>'finance.fee.pay-chalan','label'=>'Pay Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay'),'match'=>'admin/fee-chalan-pay','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'badge-info']],
-
-
-    /*
-    ['key'=>'finance.fee.pay-chalan1','label'=>'Pay Fee Chalan1','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay1'),'match'=>'admin/fee-chalan-pay1','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'badge-info']],  */
-    ['key'=>'finance.fee.delete-chalan','label'=>'Delete Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/delete-fee-chalan'),'match'=>'admin/delete-fee-chalan','perms'=>['admin-del-fee-chalan']],
-    ['key'=>'finance.fee.monthly-balance','label'=>'Monthly Balance','icon'=>'far fa-money-bill-alt','url'=>$link('admin/fee-chalan-balance'),'match'=>'admin/fee-chalan-balance','perms'=>['admin-fee-chalan-balance']],
-  ];
-  $accountsItems = [
-    ['key'=>'finance.accounts.expense-heads','label'=>'Expense Heads','icon'=>'fas fa-money-check-alt','url'=>$link('admin/expense_head'),'match'=>'admin/expense_head','perms'=>['admin-account-heads']],
-    ['key'=>'finance.accounts.expenses','label'=>'Expenses','icon'=>'fas fa-money-check-alt','url'=>$link('admin/expenses'),'match'=>'admin/expenses','perms'=>['admin-account-expenses']],
-    ['key'=>'finance.accounts.asset-heads','label'=>'Asset Heads','icon'=>'fas fa-money-check-alt','url'=>$link('admin/asset_heads'),'match'=>'admin/asset_heads','perms'=>['admin-asset-heads']],
-    ['key'=>'finance.accounts.assets','label'=>'Assets','icon'=>'fas fa-money-check-alt','url'=>$link('admin/assets'),'match'=>'admin/assets','perms'=>['admin-assets']],
-  ];
-  $sections[] = [
-    'key'=>'finance',
-    'label'=>'Finance',
-    'icon'=>'fas fa-receipt',
-    'children'=>array_merge(
-      [['label'=>'— Fee Management —','icon'=>'','header'=>true]],
-      $feeItems,
-      [['label'=>'— Accounts —','icon'=>'','header'=>true]],
-      $accountsItems
-    ),
-    'visible'=> (bool) array_filter(array_merge($feeItems, $accountsItems), fn($i)=>$canAny($i['perms'] ?? []))
-  ];
-
-
-// sports
-
-// Sports
-$sportsItems = [
-  [
-    'key'   => 'sports.houses',
-    'label' => 'Houses',
-    'icon'  => 'fas fa-flag',
-    'url'   => $link('admin/sports/houses'),
-    'match' => 'admin/sports/houses',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.mapping',
-    'label' => 'Assign Students to Houses',
-    'icon'  => 'fas fa-users-cog',
-    'url'   => $link('admin/sports/mapping'),
-    'match' => 'admin/sports/mapping',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.mentors',
-    'label' => 'House Mentors',
-    'icon'  => 'fas fa-user-friends',
-    'url'   => $link('admin/sports/mentors'),
-    'match' => 'admin/sports/mentors',
-    'perms' => ['admin-classdairy'],
-  ],
-  
-
-  [
-  'key'   => 'sports.bulk_events',
-  'label' => 'Bulk Events',
-  'icon'  => 'fas fa-layer-group',
-  'url'   => $link('admin/sports/bulk-events'),
-  'match' => 'admin/sports/bulk-events*',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.results',
-  'label' => 'Event Results',
-  'icon'  => 'fas fa-trophy',
-  'url'   => $link('admin/sports/results'),
-  'match' => 'admin/sports/results*',
-  'perms' => ['admin-classdairy'],   // or your correct permission key
-],
-
-  // ─────────── New Items for Teams / Members / Entries ───────────
-  [
-    'key'   => 'sports.teams',
-    'label' => 'Teams',
-    'icon'  => 'fas fa-users',
-    'url'   => $link('admin/sports/teams'),
-    'match' => 'admin/sports/teams',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.team-members',
-    'label' => 'Team Members',
-    'icon'  => 'fas fa-user-plus',
-    'url'   => $link('admin/sports/teams'),
-    'match' => 'admin/sports/team-members',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.entries',
-    'label' => 'Event Entries',
-    'icon'  => 'far fa-file-alt',
-    'url'   => $link('admin/sports/events'),
-    'match' => 'admin/sports/entries',
-    'perms' => ['admin-classdairy'],
-  ],
-
-  // ✅ NEW: Seats (Per House) UI
- 
-  // ────────────────────────────────────────────────────────────────
-
-  [
-    'key'   => 'sports.rules',
-    'label' => 'Scoring Rules',
-    'icon'  => 'fas fa-list-ol',
-    'url'   => $link('admin/sports/rules'),
-    'match' => 'admin/sports/rules',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.leaderboard',
-    'label' => 'Leaderboard',
-    'icon'  => 'fas fa-trophy',
-    'url'   => $link('admin/sports/leaderboard'),
-    'match' => 'admin/sports/leaderboard',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.house-sheet',
-    'label' => 'House Result Sheet',
-    'icon'  => 'far fa-file-alt',
-    'url'   => $link('admin/sports/house-sheet'),
-    'match' => 'admin/sports/house-sheet',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.reports.events',
-    'label' => 'Events & Participants Report',
-    'icon'  => 'fas fa-clipboard-list',
-    'url'   => $link('admin/sports/reports/events'),
-    'match' => 'admin/sports/reports/events',
-    'perms' => ['admin-classdairy'],
-  ],
-  [
-    'key'   => 'sports.events.order',
-    'label' => 'Arrange Sports Events',
-    'icon'  => 'fas fa-arrows-alt',
-    'url'   => $link('admin/sports/events/order'),
-    'match' => 'admin/sports/events/order',
-    'perms' => ['admin-classdairy'],
-],
-
-  [
-  'key'   => 'sports.entries-seats',
-  'label' => 'Event Seats (Per House)',
-  'icon'  => 'fas fa-chair',
-  'url'   => $link('admin/sports/entries/seats'), // opens selector (index)
-  'match' => 'admin/sports/entries/seats',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.reports.house-members',
-  'label' => 'House Members Report',
-  'icon'  => 'fas fa-id-badge',
-  'url'   => $link('admin/sports/reports/house-members'),
-  'match' => 'admin/sports/reports/house-members',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.results',
-  'label' => 'Event Results',
-  'icon'  => 'fas fa-trophy',
-  'url'   => $link('admin/sports/results'),
-  'match' => 'admin/sports/results*',
-  'perms' => ['admin-classdairy'],   // or your correct permission key
-],
-
-[
-  'key'   => 'sports.report_points',
-  'label' => 'Points Report',
-  'icon'  => 'fas fa-medal',
-  'url'   => $link('admin/sports/report-points'),
-  'match' => 'admin/sports/report-points*',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.participation',
-  'label' => 'Student Participation',
-  'icon'  => 'fas fa-users',
-  'url'   => $link('admin/sports/participation-report'),
-  'match' => 'admin/sports/participation-report*',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.leaderboard',
-  'label' => 'Leaderboard',
-  'icon'  => 'fas fa-trophy',
-  'url'   => $link('admin/sports/leaderboard'),
-  'match' => 'admin/sports/leaderboard*',
-  'perms' => ['admin-classdairy'],
-],
-
-[
-  'key'   => 'sports.age_report',
-  'label' => 'Age Report',
-  'icon'  => 'fas fa-user-clock',
-  'url'   => $link('admin/sports/age-report'),
-  'match' => 'admin/sports/age-report*',
-  'perms' => ['admin-classdairy'],
-],
-];
-
-$sections[] = [
-  'key'      => 'sports',
-  'label'    => 'Sports',
-  'icon'     => 'fas fa-medal',
-  'children' => $sportsItems,
-  'visible'  => (bool) array_filter($sportsItems, fn($i) => $canAny($i['perms'] ?? [])),
-];
-
-
-  // Reports
-  $reportsAttendanceItems = [
-    ['key'=>'reports.attendance-report', 'label'=>'Attendance Report', 'icon'=>'fas fa-calendar-check', 'url'=>$link('admin/attendance-report'), 'match'=>'admin/attendance-report', 'perms'=>['admin-attendance-monthly-report']],
-    ['key'=>'reports.attendance-monthly','label'=>'Attendance Monthly Reports','icon'=>'far fa-clock','url'=>$link('admin/attendance-monthly-report'),'match'=>'admin/attendance-monthly-report','perms'=>['admin-attendance-monthly-report']],
-  ];
-  $reportsFeeItems = [
-    ['key'=>'reports.fee','label'=>'Fee Report','icon'=>'fas fa-users','url'=>$link('admin/student_fee_report'),'match'=>'admin/student_fee_report','perms'=>['admin-student-fee-report']],
-    ['key'=>'reports.student-fee-summary', 'label'=>'Student Fee Summary Report', 'icon'=>'fas fa-chart-pie', 'url'=>$link('admin/student_fee_summary'), 'match'=>'admin/student_fee_summary', 'perms'=>['admin-defaulter-student-fee-report']],
-    ['key'=>'reports.defaulters-by-fee-type','label'=>'Defaulters Report by Fee Type','icon'=>'fas fa-users','url'=>$link('admin/defaulter_students_fee_report'),'match'=>'admin/defaulter_students_fee_report','perms'=>['admin-defaulter-student-fee-report']],
-    ['key'=>'reports.student-prev-fee','label'=>'Student Prev Fee Report','icon'=>'fas fa-users','url'=>$link('admin/students_prevfee'),'match'=>'admin/students_prevfee','perms'=>['admin-defaulter-student-fee-report']],
-    ['key'=>'reports.family-prev-fee','label'=>'Family Prev Fee Report','icon'=>'fas fa-users','url'=>$link('admin/parents_prevfee'),'match'=>'admin/parents_prevfee','perms'=>['admin-defaulter-student-fee-report']],
-    ['key'=>'reports.family-paid-fee','label'=>'Family Paid Fee Report','icon'=>'fas fa-users','url'=>$link('admin/parents_paidfee'),'match'=>'admin/parents_paidfee','perms'=>['admin-student-fee-report']],
-    ['key'=>'reports.family-balance-fee','label'=>'Family Balance Fee Report','icon'=>'fas fa-users','url'=>$link('admin/parents_balancefee'),'match'=>'admin/parents_balancefee','perms'=>['admin-student-fee-report']],
-    ['key'=>'reports.fee-by-month','label'=>'Fee Report By Month','icon'=>'fas fa-users','url'=>$link('admin/fee_chalan_month'),'match'=>'admin/fee_chalan_month','perms'=>['admin-student-fee-report']],
-    ['key'=>'reports.family-fee','label'=>'Family Fee Report','icon'=>'fas fa-users','url'=>$link('admin/family_fee_report'),'match'=>'admin/family_fee_report','perms'=>['admin-family-fee-report']],
-    ['key'=>'reports.by-fee-type','label'=>'Report By Fee Type','icon'=>'fas fa-users','url'=>$link('admin/student_fee_report/report_by_fee_type'),'match'=>'admin/student_fee_report/report_by_fee_type','perms'=>['admin-report-by-fee-type']],
-    ['key'=>'reports.by-student-fee','label'=>'Report By Student Fee','icon'=>'fas fa-users','url'=>$link('admin/student_fee_report/report_by_fee_student'),'match'=>'admin/student_fee_report/report_by_fee_student','perms'=>['admin-report-by-student-fee']],
-    ['key'   => 'reports.fee-collection-session-wise','label' => 'Fee Collection Session Wise','icon'  => 'fas fa-file-invoice-dollar','url'   => $link('admin/fee-collection-session-wise'),'match' => 'admin/fee-collection-session-wise','perms' => ['admin-profit-loss-reports']],
-  ];
-  $reportsAcademicItems = [
-    ['key'=>'reports.classwise-result','label'=>'Class Wise Result','icon'=>'fas fa-users','url'=>$link('admin/classwise_results'),'match'=>'admin/classwise_results','perms'=>['admin-classwise-result-report']],
-    ['key'=>'reports.student-results','label'=>'Student Results','icon'=>'fas fa-users','url'=>$link('admin/student_results'),'match'=>'admin/student_results','perms'=>['admin-students-result-report']],
-    ['key'=>'reports.datesheet-report','label'=>'Datesheet Report','icon'=>'fas fa-users','url'=>$link('admin/datesheet_report/add'),'match'=>'admin/datesheet_report','perms'=>['admin-datesheet-report']],
-    ['key'=>'reports.strength-report','label'=>'Strength Report','icon'=>'fas fa-money-check-alt','url'=>$link('admin/ClasswiseMonthlyStrengthReport'),'match'=>'admin/ClasswiseMonthlyStrengthReport','perms'=>['admin-profit-loss-reports']],
-  ];
-  $reportsFinanceItems = [
-    ['key'=>'reports.expenses','label'=>'Expenses Report','icon'=>'fas fa-money-check-alt','url'=>$link('admin/expense_report'),'match'=>'admin/expense_report','perms'=>['admin-expense-reports']],
-    ['key'=>'reports.assets','label'=>'Assets Report','icon'=>'fas fa-money-check-alt','url'=>$link('admin/assets_report'),'match'=>'admin/assets_report','perms'=>['admin-assets-report']],
-    ['key'=>'reports.profit-loss','label'=>'Profit/Loss Report','icon'=>'fas fa-money-check-alt','url'=>$link('admin/profit_loss_report'),'match'=>'admin/profit_loss_report','perms'=>['admin-profit-loss-reports']],
-  ];
-
-  $reportsItems = array_merge(
-    [['label'=>'— Attendance —','icon'=>'','header'=>true]],
-    $reportsAttendanceItems,
-    [['label'=>'— Fee & Billing —','icon'=>'','header'=>true]],
-    $reportsFeeItems,
-    [['label'=>'— Academic —','icon'=>'','header'=>true]],
-    $reportsAcademicItems,
-    [['label'=>'— Accounts —','icon'=>'','header'=>true]],
-    $reportsFinanceItems
-  );
-  $sections[] = [
-    'key'=>'reports',
-    'label'=>'Reports',
-    'icon'=>'far fa-address-card',
-    'children'=>$reportsItems,
-    'visible'=> (bool) array_filter(array_merge($reportsAttendanceItems, $reportsFeeItems, $reportsAcademicItems, $reportsFinanceItems), fn($i)=>$canAny($i['perms']))
-  ];
-
-  // Optional modules
-  if ($hasTransport) {
-    $transportItems = [
-      ['key'=>'transport.vehicles','label'=>'Vehicles','icon'=>'fa fa-list','url'=>$link('admin/vehicles'),'match'=>'admin/vehicles','perms'=>['admin-vehicles']],
-    ];
-    $sections[] = [
-      'key'=>'transport','label'=>'Transport','icon'=>'far fa-address-card','children'=>$transportItems,
-      'visible'=> (bool) array_filter($transportItems, fn($i)=>$canAny($i['perms']))
-    ];
-  }
-  if ($hasHostel) {
-    $hostelItems = [
-      ['key'=>'hostel.blocks','label'=>'Blocks','icon'=>'fa fa-list','url'=>$link('admin/h_blocks'),'match'=>'admin/h_blocks','perms'=>['admin-blocks']],
-      ['key'=>'hostel.rooms','label'=>'Rooms','icon'=>'fa fa-list','url'=>$link('admin/h_rooms'),'match'=>'admin/h_rooms','perms'=>['admin-blocks']],
-      ['key'=>'hostel.beds','label'=>'Beds','icon'=>'fa fa-list','url'=>$link('admin/h_beds'),'match'=>'admin/h_beds','perms'=>['admin-blocks']],
-      ['key'=>'hostel.block-rooms','label'=>'Block Rooms','icon'=>'fa fa-list','url'=>$link('admin/h_block_rooms'),'match'=>'admin/h_block_rooms','perms'=>['admin-blocks']],
-      ['key'=>'hostel.room-beds','label'=>'Rooms Beds','icon'=>'fa fa-list','url'=>$link('admin/h_room_beds'),'match'=>'admin/h_room_beds','perms'=>['admin-blocks']],
-      ['key'=>'hostel.fee-amount','label'=>'Hostel Fee Amount','icon'=>'fa fa-list','url'=>$link('admin/h_fee_amount/add'),'match'=>'admin/h_fee_amount','perms'=>['admin-blocks']],
-      ['key'=>'hostel.student-beds','label'=>'Student Beds','icon'=>'fa fa-list','url'=>$link('admin/h_student_beds/add'),'match'=>'admin/h_student_beds','perms'=>['admin-blocks']],
-      ['key'=>'hostel.student-report','label'=>'Hostel Student Report','icon'=>'fa fa-list','url'=>$link('admin/h_student_report'),'match'=>'admin/h_student_report$','perms'=>['admin-blocks']],
-      ['key'=>'hostel.student-report2','label'=>'Hostel Student Report2','icon'=>'fa fa-list','url'=>$link('admin/h_student_report/report2'),'match'=>'admin/h_student_report/report2','perms'=>['admin-blocks']],
-      ['key'=>'hostel.defaulter','label'=>'Hostel Student Defaulter','icon'=>'fa fa-list','url'=>$link('admin/h_student_report/defaulter'),'match'=>'admin/h_student_report/defaulter','perms'=>['admin-blocks']],
-    ];
-    $sections[] = [
-      'key'=>'hostel','label'=>'Hostel','icon'=>'fa fa-list','children'=>$hostelItems,
-      'visible'=> (bool) array_filter($hostelItems, fn($i)=>$canAny($i['perms']))
-    ];
-  }
-  if ($hasAcademy) {
-    $academyItems = [
-      ['key'=>'academy.groups','label'=>'A Groups','icon'=>'fa fa-list','url'=>$link('admin/a_groups'),'match'=>'admin/a_groups','perms'=>['admin-academy']],
-      ['key'=>'academy.class-subjects','label'=>'Class Subjects','icon'=>'fa fa-list','url'=>$link('admin/a_section_subjects'),'match'=>'admin/a_section_subjects','perms'=>['admin-academy']],
-      ['key'=>'academy.subject-groups','label'=>'Subject Groups','icon'=>'fa fa-list','url'=>$link('admin/a_subject_group/add'),'match'=>'admin/a_subject_group','perms'=>['admin-academy']],
-      ['key'=>'academy.teacher-groups','label'=>'Teacher Groups','icon'=>'fa fa-list','url'=>$link('admin/a_teacher_group/add'),'match'=>'admin/a_teacher_group','perms'=>['admin-academy']],
-      ['key'=>'academy.fee-amount','label'=>'A Fee Amount','icon'=>'fa fa-list','url'=>$link('admin/a_fee_amount/add'),'match'=>'admin/a_fee_amount','perms'=>['admin-academy']],
-      ['key'=>'academy.students','label'=>'A Students','icon'=>'fa fa-list','url'=>$link('admin/students_bulk_academy_fee'),'match'=>'admin/students_bulk_academy_fee','perms'=>['admin-academy']],
-    ];
-    $sections[] = [
-      'key'=>'academy','label'=>'Academy','icon'=>'fa fa-list','children'=>$academyItems,
-      'visible'=> (bool) array_filter($academyItems, fn($i)=>$canAny($i['perms']))
-    ];
-  }
-
-  if ($can('admin-campus')) {
-    $sections[] = ['key'=>'campus','label'=>'Campus','icon'=>'fa fa-home','url'=>$link('admin/campus'),'match'=>'admin/campus','visible'=>true];
-  }
-  if ($can('admin-custom-campus')) {
-    $sections[] = ['key'=>'custom-campus','label'=>'Custom Campus','icon'=>'fa fa-home','url'=>$link('admin/custom_campus/add'),'match'=>'admin/custom_campus','visible'=>true];
-  }
-
-  $billingItems = [
-    ['key'=>'billing.bill-type','label'=>'Bill Type','icon'=>'fa fa-list','url'=>$link('admin/bill_type'),'match'=>'admin/bill_type','perms'=>['admin-bill-type']],
-    ['key'=>'billing.bill-amount','label'=>'Bill Amount','icon'=>'fa fa-list','url'=>$link('admin/bill_amount/add'),'match'=>'admin/bill_amount','perms'=>['admin-bill-amount']],
-    ['key'=>'billing.plan-months','label'=>'Bill Plan Months','icon'=>'fa fa-list','url'=>$link('admin/bill_plan_months'),'match'=>'admin/bill_plan_months','perms'=>['admin-bill-plan-months']],
-    ['key'=>'billing.pay-campus-chalan','label'=>'Pay Campus Chalan','icon'=>'fa fa-list','url'=>$link('admin/campus_chalan_pay'),'match'=>'admin/campus_chalan_pay','perms'=>['admin-campus-chalan-pay']],
-    ['key'=>'billing.pay-campus-bill','label'=>'Pay Campus Bill','icon'=>'fa fa-home','url'=>$link('admin/pay_campus_bill'),'match'=>'admin/pay_campus_bill','perms'=>['admin-pay-campus-bill']],
-    ['key'=>'billing.invoice','label'=>'Billing Invoice','icon'=>'fas fa-file-invoice','url'=>$link('admin/campus_plans'),'match'=>'admin/campus_plans','perms'=>['admin-campus-plans']],
-    ['key'=>'billing.pay-system-bill','label'=>'Pay System Bill','icon'=>'fa fa-home','url'=>$link('admin/pay_system_bill'),'match'=>'admin/pay_system_bill','perms'=>['admin-pay-system-bill']],
-    ['key'=>'billing.login-log','label'=>'Login Log','icon'=>'fa fa-home','url'=>$link('admin/ci_session_view'),'match'=>'admin/ci_session_view','perms'=>['admin-ci-session_view']],
-    ['key'=>'billing.demo-login-log','label'=>'Demo Login Log','icon'=>'fa fa-home','url'=>$link('admin/ci_session_view_demo'),'match'=>'admin/ci_session_view_demo','perms'=>['admin-ci-session_view']],
-  ];
-  $planMgmt = [
-    ['key'=>'admin.roles','label'=>'Roles','icon'=>'fa fa-users','url'=>$link('admin/roles'),'match'=>'admin/roles','perms'=>['admin-roles']],
-    ['key'=>'admin.permissions','label'=>'Permissions','icon'=>'fa fa-users','url'=>$link('admin/permissions'),'match'=>'admin/permissions','perms'=>['admin-permissions']],
-     ['key' => 'campus.management.report', 'label' => 'Campus Report', 'icon' => 'fas fa-chart-line', 'url' => $link('admin/campus-management'), 'match' => 'admin/campus-management', 'perms' => ['admin-permissions']],
-        ['key' => 'campus.management.settings', 'label' => 'Campus Settings', 'icon' => 'fas fa-cog', 'url' => $link('admin/campus-settings'), 'match' => 'admin/campus-settings', 'perms' => ['admin-permissions']],
-  ];
-
-
-
-  $sections[] = [
-    'key'=>'billing-admin',
-    'label'=>'Billing & Admin',
-    'icon'=>'far fa-address-card',
-    'children'=>array_merge(
-      [['label'=>'— Billing —','icon'=>'','header'=>true]],
-      $billingItems,
-      [['label'=>'— Plan Management —','icon'=>'','header'=>true]],
-      $planMgmt
-    ),
-    'visible'=> (bool) array_filter(array_merge($billingItems, $planMgmt), fn($i)=>$canAny($i['perms']))
-  ];
-
-  // ===== Menu Quality Pass (captions + order + dedupe) =====
-  $captionMap = [
-      'time table' => 'Timetable',
-      'school timing type' => 'Timing Type',
-      'create employee leaves' => 'Create Employee Leave',
-      'employee leaves applications' => 'Employee Leave Requests',
-      'students monthly report' => 'Student Monthly Report',
-      'students session report' => 'Student Session Report',
-      'create leaves applications' => 'Create Student Leave',
-      'leaves applications' => 'Student Leave Requests',
-      'vocabulary words' => 'Vocabulary Words',
-      'student prev fee report' => 'Student Previous Fee Report',
-      'family prev fee report' => 'Family Previous Fee Report',
-      'fee report by month' => 'Monthly Fee Report',
-      'report by fee type' => 'Fee Type Report',
-      'report by student fee' => 'Student Fee Report',
-      'class wise result' => 'Class Result',
-      'student results' => 'Student Result',
-      'students absentees report' => 'Student Absentees Report',
-      'send test series result (wa)' => 'Send Test Series Result (WhatsApp)',
-      'send result (wa)' => 'Send Result (WhatsApp)',
-      'send fee chalan (wa)' => 'Send Fee Chalan (WhatsApp)',
-      'send daily diary (wa)' => 'Send Daily Diary (WhatsApp)',
-      'a groups' => 'Academy Groups',
-      'a fee amount' => 'Academy Fee Amount',
-      'a students' => 'Academy Students',
-  ];
-
-  $normalizeLabel = function($label) use ($captionMap) {
-      $label = trim((string) $label);
-      if ($label === '') return $label;
-      // Remove tree/ASCII prefixes used as visual hacks.
-      $label = preg_replace('/^[\s\-\|├└─]+/u', '', $label);
-      // Remove divider-like labels.
-      if (preg_match('/^[━\-\s]+$/u', $label)) return '';
-      $key = strtolower($label);
-      if (isset($captionMap[$key])) return $captionMap[$key];
-      return preg_replace('/\s+/', ' ', $label);
+  $link = static function (string $path): string {
+      return base_url($path);
   };
 
-  $cleanMenuItems = function(array $items) use (&$cleanMenuItems, $normalizeLabel): array {
-      $out = [];
-      $seen = [];
-      foreach ($items as $item) {
-          if (!is_array($item)) continue;
-          $item['label'] = $normalizeLabel($item['label'] ?? '');
-          if (empty($item['label']) && empty($item['header'])) continue;
+  $sections = \App\Libraries\AdminMenuBuilder::build([
+      'link'           => $link,
+      'can'            => $can,
+      'canAny'         => $canAny,
+      'hasTransport'   => $hasTransport,
+      'hasHostel'      => $hasHostel,
+      'hasAcademy'     => $hasAcademy,
+      'hasHifz'        => $hasHifz,
+      'role_name_info' => $role_name_info ?? null,
+  ]);
 
-          if (!empty($item['children']) && is_array($item['children'])) {
-              $item['children'] = $cleanMenuItems($item['children']);
-          }
+  helper('role');
 
-          // Remove duplicates by key, fallback to url+match+label signature.
-          $signature = $item['key'] ?? (($item['url'] ?? '') . '|' . ($item['match'] ?? '') . '|' . ($item['label'] ?? ''));
-          if (isset($seen[$signature])) continue;
-          $seen[$signature] = true;
-          $out[] = $item;
+  $menuItemVisible = static function (array $item) use ($canAny): bool {
+      if (! empty($item['super_admin_only']) || ! empty($item['director_quizzes_menu'])) {
+          return quizzesMenuItemVisible($item, $canAny);
       }
+
+      $menuKey = trim((string) ($item['key'] ?? ''));
+      if ($menuKey !== '' && ! \App\Libraries\RoleMenuAccess::isAllowedForUser($menuKey)) {
+          return false;
+      }
+
+      $perms = $item['perms'] ?? [];
+
+      return $perms === [] || $canAny($perms);
+  };
+
+  $filterMenuChildren = static function (array $children, ?string $sectionKey = null) use ($menuItemVisible): array {
+      $out           = [];
+      $pendingHeader = null;
+
+      foreach ($children as $ch) {
+          if (! empty($ch['header'])) {
+              $pendingHeader = $ch;
+              continue;
+          }
+          if (! $menuItemVisible($ch)) {
+              continue;
+          }
+          if ($pendingHeader !== null) {
+              $out[]         = $pendingHeader;
+              $pendingHeader = null;
+          }
+          $out[] = $ch;
+      }
+
       return $out;
   };
 
-  $sections = $cleanMenuItems($sections);
+  $menuSectionVisible = static function (array $sec) use ($menuItemVisible, $filterMenuChildren): bool {
+      if (! empty($sec['super_admin_only']) && ! userIsSuperAdmin()) {
+          return false;
+      }
 
-  $sectionOrder = [
-      'sessions' => 10,
-      'classes' => 20,
-      'students' => 30,
-      'faculty' => 40,
-      'exams-tests' => 50,
-      'quizzes' => 60,
-      'attendance' => 70,
-      'timetable' => 80,
-      'academics' => 90,
-      'communication' => 100,
-      'finance' => 110,
-      'reports' => 120,
-      'sports' => 130,
-      'transport' => 140,
-      'hostel' => 150,
-      'academy' => 160,
-      'campus' => 170,
-      'custom-campus' => 180,
-      'billing-admin' => 190,
-  ];
-  usort($sections, function($a, $b) use ($sectionOrder) {
-      $ak = $a['key'] ?? '';
-      $bk = $b['key'] ?? '';
-      $ao = $sectionOrder[$ak] ?? 999;
-      $bo = $sectionOrder[$bk] ?? 999;
-      if ($ao === $bo) return strcmp((string)($a['label'] ?? ''), (string)($b['label'] ?? ''));
-      return $ao <=> $bo;
-  });
+      $sectionKey = trim((string) ($sec['key'] ?? ''));
+      if ($sectionKey !== '' && ! \App\Libraries\RoleMenuAccess::isAllowedForUser($sectionKey)) {
+          return false;
+      }
 
+      $visible = $sec['visible'] ?? true;
+      if (is_callable($visible)) {
+          $visible = $visible();
+      }
+      if (! $visible) {
+          return false;
+      }
+
+      if (empty($sec['children'])) {
+          return $menuItemVisible($sec);
+      }
+
+      $sectionKey = trim((string) ($sec['key'] ?? ''));
+
+      return $filterMenuChildren($sec['children'], $sectionKey !== '' ? $sectionKey : null) !== [];
+  };
+
+  $adminBreadcrumbs = \App\Libraries\AdminMenuBuilder::resolveBreadcrumb($currentPath, $sections);
+  $adminNavIndex    = \App\Libraries\AdminMenuBuilder::flattenNavIndex($sections, $canAny, $menuItemVisible);
+  $userMenuPrefsMap = $session->get('menu_prefs') ?? [];
+  if ($userMenuPrefsMap === [] && (int) $session->get('member_userid') > 0) {
+      $userMenuPrefsMap = \App\Libraries\UserMenuPrefsLibrary::loadMapForUser((int) $session->get('member_userid'));
+      $session->set('menu_prefs', $userMenuPrefsMap);
+  }
+?>
+<link rel="stylesheet" href="<?= base_url('assets/css/admin-command-palette.css?v=20260604') ?>">
+
+    <div class="admin-shell-headers no-print">
+      <?php include __DIR__ . '/partials/admin_app_bar.php'; ?>
+      <?php include __DIR__ . '/partials/admin_workspace_mobile.php'; ?>
+    </div>
+
+<?php
   // ===== Renderers =====
-  $renderItem = function($item) use($isActive, $metrics) {
+  $renderItem = function($item) use($isActive, $metrics, $menuItemVisible, $filterMenuChildren) {
       if (!empty($item['header'])) {
           return '<li class="nav-header text-xs text-muted">'.esc($item['label']).'</li>';
       }
 
+      if (!empty($item['disabled'])) {
+          return '';
+      }
+
+      if (! empty($item['children'])) {
+          $parentKey = trim((string) ($item['key'] ?? ''));
+          $item['children'] = $filterMenuChildren(
+              $item['children'],
+              $parentKey !== '' ? $parentKey : null
+          );
+      }
+
       $hasChildren = !empty($item['children']);
+      if ($hasChildren === false && empty($item['url'])) {
+          return '';
+      }
 
       $selfBadge = 0;
       if (!empty($item['badge'])) {
@@ -1874,7 +550,7 @@ $sections[] = [
       $icon    = !empty($item['icon']) ? '<i class="nav-icon '.$item['icon'].'"></i>' : '<i class="nav-icon far fa-circle"></i>';
 
       $badgeHtml  = '';
-      $badgeClass = 'badge-danger';
+      $badgeClass = 'text-bg-danger';
       if (!empty($item['badge']) && is_array($item['badge']) && !empty($item['badge']['class'])) {
           $badgeClass = $item['badge']['class'];
       }
@@ -1896,12 +572,14 @@ $sections[] = [
             <ul class="nav nav-treeview">';
           foreach ($item['children'] as $ch) {
               if (!empty($ch['header'])) {
-                  $html .= '<li class="nav-header text-xs text-muted pl-3">'.esc($ch['label']).'</li>';
+                  $html .= '<li class="nav-header text-xs text-muted ps-3">'.esc($ch['label']).'</li>';
                   continue;
               }
-              if (isset($ch['perms']) && !empty($ch['perms'])) {
-                  $visible = array_reduce($ch['perms'], fn($ok,$p)=>$ok||hasPermission($p), false);
-                  if (!$visible) continue;
+              if (!empty($ch['disabled'])) {
+                  continue;
+              }
+              if (! $menuItemVisible($ch)) {
+                  continue;
               }
               $chActive = !empty($ch['match']) && $isActive($ch['match']);
 
@@ -1909,7 +587,7 @@ $sections[] = [
               if (!empty($ch['badge'])) {
                   $ckey = is_array($ch['badge']) ? ($ch['badge']['key'] ?? null) : $ch['badge'];
                   $cnum = $ckey && isset($metrics[$ckey]) ? (int)$metrics[$ckey] : 0;
-                  $cclass = 'badge-info';
+                  $cclass = 'text-bg-info';
                   if (is_array($ch['badge']) && !empty($ch['badge']['class'])) $cclass = $ch['badge']['class'];
                   if ($cnum > 0) $childBadge = '<span class="right badge '.$cclass.'">'.$cnum.'</span>';
               }
@@ -1933,9 +611,8 @@ $sections[] = [
           $html .= '</ul></li>';
           return $html;
       } else {
-          if (isset($item['perms']) && !empty($item['perms'])) {
-              $visible = array_reduce($item['perms'], fn($ok,$p)=>$ok||hasPermission($p), false);
-              if (!$visible) return '';
+          if (! $menuItemVisible($item)) {
+              return '';
           }
           return '<li '.$liAttrs.'>
                     <a href="'.esc($item['url']).'" class="'.$aClass.'">
@@ -1946,37 +623,56 @@ $sections[] = [
   };
 ?>
 
-<aside class="main-sidebar sidebar-dark-orange elevation-4 sidebar-slim" <?php if($_SERVER['HTTP_HOST'] == 'trial.timesoftsol.com'){ ?>style="top:24px"<?php } ?>>
-  <a style="padding:7px;background-color:#3c8dbc" href="<?= base_url() ?>" class="brand-link">
-    <span class="brand-text font-weight-light"><?= esc($school_name ?? 'School Name') ?></span>
+<aside class="main-sidebar sidebar-dark-orange elevation-4 sidebar-slim">
+  <a href="<?= base_url('admin/dashboard') ?>" class="brand-link ts-brand-bar">
+    <span class="brand-text fw-light"><?= esc($school_name ?? 'School Name') ?></span>
   </a>
 
-  <div class="sidebar" <?php if(empty($curr_session_id)){ ?>style="pointer-events:none;opacity:.3"<?php } ?>>
-    <div class="image text-center mt-3 mb-2">
+  <div class="sidebar">
+    <div class="image text-center mt-2 mb-1 sidebar-logo-wrap">
       <?php if(!empty($schoolinfo) && !empty($schoolinfo->logo)): ?>
-        <img style="height:70px;max-width:100%" src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="Logo">
+        <img class="sidebar-logo" src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="Logo">
       <?php endif; ?>
     </div>
 
-    <button type="button" class="btn btn-tool text-white no-print" data-toggle="modal" data-target="#menuPrefsModal">
-      <i class="fas fa-sliders-h"></i> Customize menu
-    </button>
+    <?php if (empty($curr_session_id) && !empty($canSelectSession)): ?>
+      <div class="sidebar-no-session-notice">
+        <i class="fas fa-info-circle"></i>
+        Choose an academic session in the workspace bar to unlock navigation.
+      </div>
+    <?php endif; ?>
 
-    <div class="form-inline px-2 mb-2">
-      <div class="input-group w-100">
-        <input id="menuSearch" class="form-control form-control-sidebar" type="search" placeholder="Search menu..." aria-label="Search">
-        <div class="input-group-append">
-          <button class="btn btn-sidebar"><i class="fas fa-search fa-sm"></i></button>
+    <div class="sidebar-controls no-print">
+      <div class="sidebar-controls__row">
+        <button type="button"
+                class="btn btn-sidebar sidebar-controls__customize"
+                data-bs-toggle="modal"
+                data-bs-target="#menuPrefsModal"
+                title="Customize menu"
+                aria-label="Customize menu">
+          <i class="fas fa-sliders-h"></i>
+        </button>
+        <div class="sidebar-controls__search">
+          <input id="menuSearch"
+                 class="form-control form-control-sidebar"
+                 type="search"
+                 placeholder="Search menu..."
+                 aria-label="Search menu">
+          <i class="fas fa-search sidebar-controls__search-icon" aria-hidden="true"></i>
         </div>
       </div>
     </div>
 
-    <nav class="mt-2">
+    <nav class="mt-1 sidebar-nav">
+      <div id="sidebarQuickAccess" class="sidebar-quick-access no-print" hidden>
+        <div class="sidebar-quick-access__label text-muted text-xs text-uppercase px-3 mb-1">Quick access</div>
+        <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent text-sm mb-2" id="sidebarQuickAccessList"></ul>
+      </div>
       <ul id="sidebarMenu" class="nav nav-pills nav-sidebar flex-column nav-child-indent text-sm" data-widget="treeview" role="menu" data-accordion="true">
         <?php
-          $userMenuPrefs = $session->get('menu_prefs') ?? [];
+          $userMenuPrefs = $userMenuPrefsMap;
 
-          $applyPrefs = function(array $items) use (&$applyPrefs, $userMenuPrefs): array {
+          $applyPrefs = function(array $items) use (&$applyPrefs, $userMenuPrefs, $menuSectionVisible, $filterMenuChildren): array {
               $out = [];
               foreach ($items as $item) {
                   $key = $item['key'] ?? null;
@@ -1987,10 +683,10 @@ $sections[] = [
 
                   if (!empty($item['children'])) {
                       $item['children'] = $applyPrefs($item['children']);
-                      $hasRealChildren = (bool) array_filter($item['children'], fn($c)=>empty($c['header']));
-                      if (!$hasRealChildren && empty($item['url'])) {
-                          continue;
-                      }
+                  }
+
+                  if (! $menuSectionVisible($item)) {
+                      continue;
                   }
 
                   $out[] = $item;
@@ -2001,18 +697,8 @@ $sections[] = [
           $sections = $applyPrefs($sections);
 
           foreach ($sections as $sec) {
-            $visible = $sec['visible'] ?? true;
-            if (is_callable($visible)) { $visible = $visible(); }
-            if (!$visible) continue;
-
-            if (!empty($sec['children'])) {
-              $hasVisibleChildren = false;
-              foreach ($sec['children'] as $c) {
-                if (!empty($c['header'])) { $hasVisibleChildren = true; break; }
-                $v = (empty($c['perms']) || array_reduce(($c['perms'] ?? []), fn($ok,$p)=>$ok||hasPermission($p), false));
-                if ($v) { $hasVisibleChildren = true; break; }
-              }
-              if (!$hasVisibleChildren) continue;
+            if (! $menuSectionVisible($sec)) {
+                continue;
             }
 
             echo $renderItem($sec);
@@ -2023,56 +709,19 @@ $sections[] = [
   </div>
 </aside>
 
-<div class="modal fade" id="menuPrefsModal" tabindex="-1" role="dialog" aria-labelledby="menuPrefsLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="menuPrefsLabel">Customize Menu</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-2 d-flex justify-content-between">
-          <div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="prefsShowAll">Show All</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="prefsHideAll">Hide All</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="prefsReset">Reset</button>
-          </div>
-          <input type="search" id="prefsSearch" class="form-control form-control-sm" style="max-width:240px" placeholder="Search items...">
-        </div>
+<?php include __DIR__ . '/partials/admin_mobile_nav.php'; ?>
 
-        <div id="menuPrefsList">
-          <?php
-            $flatten = function(array $items, $prefix = '') use (&$flatten) {
-              foreach ($items as $it) {
-                $key = $it['key'] ?? null;
-                $label = $it['label'] ?? ($it['url'] ?? $key);
-                if (!$label) continue;
+<?php include __DIR__ . '/partials/admin_menu_prefs_modal.php'; ?>
+<?php include __DIR__ . '/partials/admin_command_palette.php'; ?>
 
-                echo '<div class="form-check my-1" data-item-row data-key="'.esc($key).'" data-label="'.esc(strtolower($label)).'">';
-                echo '  <input class="form-check-input menu-item-toggle" type="checkbox" id="mi_'.esc($key).'" data-key="'.esc($key).'" checked>';
-                echo '  <label class="form-check-label" for="mi_'.esc($key).'">'.esc($label).'</label>';
-                echo '</div>';
-
-                if (!empty($it['children'])) $flatten($it['children'], $key.'.');
-              }
-            };
-            $flatten($sections);
-          ?>
-        </div>
-        <small class="text-muted d-block mt-2">Hidden items won’t appear in the sidebar. You can’t show items you don’t have permission for.</small>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="menuPrefsSave" class="btn btn-primary">
-          <i class="fas fa-save"></i> Save preferences
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
+<script>
+window.MENU_PREFS_SAVE_URL = <?= json_encode(base_url('admin/ajax/user-menu-prefs')) ?>;
+window.USER_MENU_PREFS = <?= json_encode($userMenuPrefsMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+</script>
 <script>
 $(function () {
   var MENU_PREFS_KEY = 'menu_prefs_v1';
+  var MENU_FAVORITES_KEY = 'menu_favorites_v1';
   var $menu   = $('#sidebarMenu');
   var $search = $('#menuSearch');
 
@@ -2087,8 +736,53 @@ $(function () {
   function storePrefs(prefs) {
     try { localStorage.setItem(MENU_PREFS_KEY, JSON.stringify(prefs)); } catch(e){}
     if (window.MENU_PREFS_SAVE_URL) {
-      $.post(window.MENU_PREFS_SAVE_URL, { prefs: JSON.stringify(prefs) });
+      var hidden = [];
+      Object.keys(prefs || {}).forEach(function (k) {
+        if (prefs[k] === false) hidden.push(k);
+      });
+      $.ajax({
+        url: window.MENU_PREFS_SAVE_URL,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ hidden: hidden, prefs: prefs })
+      });
     }
+  }
+
+  function loadFavorites() {
+    try {
+      var raw = localStorage.getItem(MENU_FAVORITES_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function renderQuickAccess() {
+    var favs = loadFavorites();
+    var $wrap = $('#sidebarQuickAccess');
+    var $list = $('#sidebarQuickAccessList');
+    $list.empty();
+    if (!favs.length || !window.ADMIN_NAV_INDEX) {
+      $wrap.attr('hidden', true);
+      return;
+    }
+    var byKey = {};
+    (window.ADMIN_NAV_INDEX || []).forEach(function (item) {
+      if (item.key) byKey[item.key] = item;
+    });
+    var shown = 0;
+    favs.forEach(function (key) {
+      var item = byKey[key];
+      if (!item || prefs[key] === false) return;
+      shown++;
+      $list.append(
+        '<li class="nav-item" data-menu-key="' + $('<div>').text(key).html() + '">' +
+        '<a href="' + item.url + '" class="nav-link" title="' + $('<div>').text(item.label).html() + '">' +
+        '<i class="nav-icon ' + (item.icon || 'far fa-circle') + '"></i>' +
+        '<p>' + $('<div>').text(item.label).html() + '</p></a></li>'
+      );
+    });
+    $wrap.prop('hidden', shown === 0);
   }
 
   function applyMenuPrefs(prefs) {
@@ -2108,14 +802,19 @@ $(function () {
   }
 
   function setTreeOpenState() {
-    $menu.find('ul.nav-treeview').each(function () {
-      var $ul = $(this);
-      var hasActive       = $ul.find('.nav-link.active').length > 0;
-      var hasVisibleChild = $ul.find('> li.nav-item:visible').length > 0;
-      var open = hasActive || hasVisibleChild;
-      $ul.closest('.has-treeview').toggleClass('menu-open', open);
-      $ul.toggle(open);
-    });
+    $menu.find('li.has-treeview').removeClass('menu-open');
+    $menu.find('ul.nav-treeview').hide();
+
+    var $active = $menu.find('a.nav-link.active').first();
+    if (!$active.length) {
+      return;
+    }
+
+    var $topSection = $active.closest('#sidebarMenu > li.has-treeview');
+    if ($topSection.length) {
+      $topSection.addClass('menu-open');
+      $topSection.children('ul.nav-treeview').show();
+    }
   }
 
   function resetToPrefs() {
@@ -2128,6 +827,7 @@ $(function () {
 
     $menu.find('li.nav-item').hide();
     $menu.find('ul.nav-treeview').hide();
+    $menu.find('li.has-treeview').removeClass('menu-open');
 
     $menu.find('a.nav-link').filter(function () {
       return $(this).text().toLowerCase().indexOf(q) > -1;
@@ -2147,25 +847,86 @@ $(function () {
   }
 
   function initTogglesFromPrefs() {
-    $('.menu-item-toggle[data-key]').each(function () {
+    $('#menuPrefsModal .menu-item-toggle[data-key]').each(function () {
       var k = $(this).data('key');
       var show = (prefs[k] !== false);
       $(this).prop('checked', show);
     });
+    updateMenuPrefsSummary();
   }
 
-  $(document).on('change', '.menu-item-toggle[data-key]', function () {
-    var k    = $(this).data('key');
-    var show = $(this).is(':checked');
-    prefs[k] = show;
-    storePrefs(prefs);
+  function updateMenuPrefsSummary() {
+    var $toggles = $('#menuPrefsModal .menu-item-toggle[data-key]');
+    var total = $toggles.length;
+    var visible = $toggles.filter(':checked').length;
+    $('#menuPrefsVisibleCount').text(visible);
+    $('#menuPrefsTotalCount').text(total);
+
+    $('#menuPrefsModal .menu-prefs-group').each(function () {
+      var $group = $(this);
+      var $groupToggles = $group.find('.menu-item-toggle[data-key]');
+      var gTotal = $groupToggles.length;
+      var gVisible = $groupToggles.filter(':checked').length;
+      $group.find('.menu-prefs-group__count').text(gVisible + '/' + gTotal);
+      $group.toggleClass('menu-prefs-group--all-hidden', gTotal > 0 && gVisible === 0);
+    });
+  }
+
+  function previewMenuPrefsFromModal() {
+    $('#menuPrefsModal .menu-item-toggle[data-key]').each(function () {
+      var k = $(this).data('key');
+      prefs[k] = $(this).is(':checked');
+    });
     applyMenuPrefs(prefs);
     setTreeOpenState();
+    updateMenuPrefsSummary();
+  }
+
+  function expandPrefsGroup($group, expand) {
+    var $body = $group.find('.menu-prefs-group__body');
+    var $btn  = $group.find('.menu-prefs-group__toggle');
+    if (expand) {
+      $body.addClass('show');
+      $btn.attr('aria-expanded', 'true');
+      $group.addClass('menu-prefs-group--open');
+    } else {
+      $body.removeClass('show');
+      $btn.attr('aria-expanded', 'false');
+      $group.removeClass('menu-prefs-group--open');
+    }
+  }
+
+  function expandActivePrefsGroup() {
+    var $active = $menu.find('a.nav-link.active').first();
+    $('#menuPrefsModal .menu-prefs-group').each(function () {
+      expandPrefsGroup($(this), false);
+    });
+    if (!$active.length) {
+      expandPrefsGroup($('#menuPrefsModal .menu-prefs-group').first(), true);
+      return;
+    }
+    var activeKey = $active.closest('li.nav-item[data-menu-key]').data('menu-key');
+    var $matchGroup = activeKey
+      ? $('#menuPrefsModal .menu-prefs-group').filter(function () {
+          return $(this).find('[data-key="' + activeKey + '"]').length > 0;
+        }).first()
+      : $();
+    if (!$matchGroup.length) {
+      $matchGroup = $('#menuPrefsModal .menu-prefs-group').first();
+    }
+    expandPrefsGroup($matchGroup, true);
+  }
+
+  var prefsSnapshot = {};
+  var prefsSavedInModal = false;
+
+  $(document).on('change', '#menuPrefsModal .menu-item-toggle[data-key]', function () {
+    previewMenuPrefsFromModal();
   });
 
   $(document).on('click', '#menuPrefsSave', function () {
     var next = {};
-    $('.menu-item-toggle[data-key]').each(function () {
+    $('#menuPrefsModal .menu-item-toggle[data-key]').each(function () {
       var k = $(this).data('key');
       next[k] = $(this).is(':checked');
     });
@@ -2173,36 +934,115 @@ $(function () {
     storePrefs(prefs);
     applyMenuPrefs(prefs);
     setTreeOpenState();
+    renderQuickAccess();
+    prefsSavedInModal = true;
 
     if ($.fn.modal) { $('#menuPrefsModal').modal('hide'); }
     if (window.toastr) { toastr.success('Menu preferences saved'); }
   });
 
   $(document).on('click', '#prefsShowAll', function(){
-    $('.menu-item-toggle').prop('checked', true).trigger('change');
+    $('#menuPrefsModal .menu-item-toggle').prop('checked', true);
+    previewMenuPrefsFromModal();
   });
   $(document).on('click', '#prefsHideAll', function(){
-    $('.menu-item-toggle').prop('checked', false).trigger('change');
+    $('#menuPrefsModal .menu-item-toggle').prop('checked', false);
+    previewMenuPrefsFromModal();
   });
   $(document).on('click', '#prefsReset', function(){
     prefs = {};
-    try { localStorage.removeItem(MENU_PREFS_KEY); } catch(e){}
     initTogglesFromPrefs();
     applyMenuPrefs(prefs);
     setTreeOpenState();
-    if (window.toastr) toastr.info('Menu preferences reset');
+    if (window.toastr) toastr.info('Menu preferences reset â€” click Save to keep');
+  });
+
+  $(document).on('click', '#prefsExpandAll', function () {
+    $('#menuPrefsModal .menu-prefs-group').each(function () {
+      expandPrefsGroup($(this), true);
+    });
+  });
+
+  $(document).on('click', '#prefsCollapseAll', function () {
+    $('#menuPrefsModal .menu-prefs-group').each(function () {
+      expandPrefsGroup($(this), false);
+    });
+  });
+
+  $(document).on('click', '.prefs-group-show', function () {
+    $(this).closest('.menu-prefs-group').find('.menu-item-toggle').prop('checked', true);
+    previewMenuPrefsFromModal();
+  });
+
+  $(document).on('click', '.prefs-group-hide', function () {
+    $(this).closest('.menu-prefs-group').find('.menu-item-toggle').prop('checked', false);
+    previewMenuPrefsFromModal();
+  });
+
+  $(document).on('click', '.menu-prefs-group__toggle', function () {
+    var $group = $(this).closest('.menu-prefs-group');
+    var isOpen = $group.hasClass('menu-prefs-group--open');
+    expandPrefsGroup($group, !isOpen);
   });
 
   $(document).on('keyup', '#prefsSearch', function(){
     var q = $(this).val().toLowerCase().trim();
-    $('[data-item-row]').each(function(){
-      var label = ($(this).data('label') || '').toString();
-      $(this).toggle(label.indexOf(q) > -1);
+    if (!q) {
+      $('#menuPrefsModal [data-item-row]').show();
+      $('#menuPrefsModal .menu-prefs-subhead').show();
+      $('#menuPrefsModal .menu-prefs-group').show();
+      expandActivePrefsGroup();
+      return;
+    }
+
+    $('#menuPrefsModal .menu-prefs-group').each(function () {
+      var $group = $(this);
+      var groupLabel = ($group.data('group-label') || '').toString();
+      var groupMatch = groupLabel.indexOf(q) > -1;
+      var itemMatch = false;
+
+      $group.find('[data-item-row]').each(function () {
+        var label = ($(this).data('label') || '').toString();
+        var match = label.indexOf(q) > -1 || groupMatch;
+        $(this).toggle(match);
+        if (match) itemMatch = true;
+      });
+
+      $group.find('.menu-prefs-subhead').each(function () {
+        var text = $(this).text().toLowerCase();
+        $(this).toggle(text.indexOf(q) > -1 || itemMatch || groupMatch);
+      });
+
+      var showGroup = groupMatch || itemMatch;
+      $group.toggle(showGroup);
+      if (showGroup) {
+        expandPrefsGroup($group, true);
+      }
     });
+  });
+
+  $('#menuPrefsModal').on('show.bs.modal', function(){
+    prefsSnapshot = $.extend({}, prefs);
+    prefsSavedInModal = false;
   });
 
   $('#menuPrefsModal').on('shown.bs.modal', function(){
     initTogglesFromPrefs();
+    $('#prefsSearch').val('');
+    expandActivePrefsGroup();
+  });
+
+  $('#menuPrefsModal').on('hidden.bs.modal', function(){
+    if (!prefsSavedInModal) {
+      prefs = $.extend({}, prefsSnapshot);
+      initTogglesFromPrefs();
+      applyMenuPrefs(prefs);
+      setTreeOpenState();
+    }
+  });
+
+  $(document).on('click', '#menuPrefsCancel', function () {
+    prefsSavedInModal = false;
   });
 
   $search.on('keyup', function () {
@@ -2213,5 +1053,146 @@ $(function () {
   applyMenuPrefs(prefs);
   setTreeOpenState();
   initTogglesFromPrefs();
+  renderQuickAccess();
+
+  $(document).on('dblclick', '#sidebarMenu a.nav-link[href]', function (e) {
+    var key = $(this).closest('li[data-menu-key]').data('menu-key');
+    if (!key) return;
+    e.preventDefault();
+    var favs = loadFavorites();
+    var idx = favs.indexOf(key);
+    if (idx > -1) {
+      favs.splice(idx, 1);
+      if (window.toastr) toastr.info('Removed from quick access');
+    } else {
+      if (favs.length >= 8) favs.shift();
+      favs.push(key);
+      if (window.toastr) toastr.success('Pinned to quick access');
+    }
+    try { localStorage.setItem(MENU_FAVORITES_KEY, JSON.stringify(favs)); } catch (err) {}
+    renderQuickAccess();
+  });
+
+  /* Command palette */
+  var $cmdPalette = $('#adminCommandPalette');
+  var $cmdInput   = $('#adminCommandInput');
+  var $cmdResults = $('#adminCommandResults');
+  var cmdActive   = -1;
+
+  function openCommandPalette() {
+    $cmdPalette.removeAttr('hidden');
+    $cmdInput.val('').trigger('focus');
+    renderCommandResults('');
+    cmdActive = -1;
+  }
+
+  function closeCommandPalette() {
+    $cmdPalette.attr('hidden', true);
+    cmdActive = -1;
+  }
+
+  function renderCommandResults(q) {
+    q = (q || '').toLowerCase().trim();
+    var items = (window.ADMIN_NAV_INDEX || []).filter(function (item) {
+      if (!item.url || prefs[item.key] === false) return false;
+      if (!q) return true;
+      var hay = (item.label + ' ' + (item.section || '')).toLowerCase();
+      return hay.indexOf(q) > -1;
+    }).slice(0, 12);
+
+    $cmdResults.empty();
+    if (!items.length) {
+      $cmdResults.append('<li class="px-3 py-2 text-muted small">No matching pages</li>');
+      return;
+    }
+
+    items.forEach(function (item, idx) {
+      $cmdResults.append(
+        '<li role="option">' +
+        '<a href="' + item.url + '" class="admin-command-palette__item' + (idx === cmdActive ? ' is-active' : '') + '" data-cmd-idx="' + idx + '">' +
+        '<i class="' + (item.icon || 'far fa-circle') + '"></i>' +
+        '<span>' + $('<div>').text(item.label).html() + '</span>' +
+        '<span class="admin-command-palette__item-meta">' + $('<div>').text(item.section || '').html() + '</span>' +
+        '</a></li>'
+      );
+    });
+  }
+
+  $(document).on('click', '#adminCommandOpen', openCommandPalette);
+  $(document).on('click', '[data-cmd-close]', closeCommandPalette);
+
+  $cmdInput.on('input', function () {
+    cmdActive = -1;
+    renderCommandResults($(this).val());
+  });
+
+  $cmdInput.on('keydown', function (e) {
+    var $links = $cmdResults.find('a.admin-command-palette__item');
+    if (e.key === 'Escape') {
+      closeCommandPalette();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      cmdActive = Math.min(cmdActive + 1, $links.length - 1);
+      $links.removeClass('is-active').eq(cmdActive).addClass('is-active');
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      cmdActive = Math.max(cmdActive - 1, 0);
+      $links.removeClass('is-active').eq(cmdActive).addClass('is-active');
+      return;
+    }
+    if (e.key === 'Enter' && cmdActive >= 0) {
+      e.preventDefault();
+      var href = $links.eq(cmdActive).attr('href');
+      if (href) window.location.href = href;
+    }
+  });
+
+  $(document).on('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      openCommandPalette();
+    }
+  });
+
+  var TREE_OPEN_KEY = 'admin_sidebar_open_v1';
+  function saveTreeOpenState() {
+    var keys = [];
+    $menu.find('> li.has-treeview.menu-open[data-menu-key]').each(function () {
+      var k = $(this).data('menu-key');
+      if (k) keys.push(k);
+    });
+    try { localStorage.setItem(TREE_OPEN_KEY, JSON.stringify(keys)); } catch (e) {}
+  }
+  function restoreTreeOpenState() {
+    if ($search.val().trim()) return;
+    try {
+      var keys = JSON.parse(localStorage.getItem(TREE_OPEN_KEY) || '[]');
+      if (!Array.isArray(keys) || !keys.length) return;
+      keys.forEach(function (key) {
+        var $li = $menu.find('> li.has-treeview[data-menu-key="' + key + '"]');
+        if ($li.length) {
+          $li.addClass('menu-open');
+          $li.children('ul.nav-treeview').show();
+        }
+      });
+    } catch (e) {}
+  }
+
+  $menu.on('click', '> li.has-treeview > a', function () {
+    setTimeout(saveTreeOpenState, 80);
+  });
+
+  /* Re-sync after AdminLTE treeview init (window load) so only the active section stays open */
+  $(window).on('load', function () {
+    if (!$search.val().trim()) {
+      setTreeOpenState();
+      restoreTreeOpenState();
+    }
+    renderQuickAccess();
+  });
 });
 </script>
