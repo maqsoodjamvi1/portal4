@@ -1,9 +1,42 @@
+# Local environment and secrets
 .env
+.env.*
+!.env.example
+!env.email.example
+
+# Runtime writable data
 writable/
 public/uploads/
 public/system-logo/
 public/assets/uploads/
-*.zip
+
+# Dependency directories
 vendor/
 node_modules/
+
+# Logs, caches, and test output
 *.log
+debug-*.log
+build/
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Local database exports and deployment scratch files
+backups/
+*.sql
+*.sql.gz
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Editor, OS, and local scratch artifacts
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+=
+ystemctl restart nginx
+
+# Build/transient metadata
+*.tsbuildinfo
