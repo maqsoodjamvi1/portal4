@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\AjaxToggleWhitelist;
 use CodeIgniter\HTTP\ResponseInterface;
 
 use App\Models\ParentModel;
@@ -25,7 +26,7 @@ class Ajax extends BaseController
   {
     // Log received data for debugging
     log_message('debug', 'Received POST data: ' . print_r($this->request->getPost(), true));
-    
+
     // Validate AJAX request
     if (!$this->request->isAJAX()) {
         return $this->response->setStatusCode(405)->setJSON(['error' => 'Method Not Allowed']);
@@ -44,11 +45,11 @@ class Ajax extends BaseController
 
     // Sanitize CNIC format
     $clean_cnic = preg_replace('/[^0-9\-]/', '', $cnic);
-    
+
     // Validate CNIC format
     if (!preg_match('/^\d{5}-\d{7}-\d{1}$/', $clean_cnic)) {
         return $this->response->setJSON([
-            'exists' => false, 
+            'exists' => false,
             'message' => 'Invalid CNIC format. Valid format: XXXXX-XXXXXXX-X'
         ]);
     }
@@ -56,7 +57,7 @@ class Ajax extends BaseController
     try {
         // Load parent model using CodeIgniter's service
         $parentModel = model('ParentModel');
-        
+
         // Check if parent exists
         $parent = $parentModel->where('father_cnic', $clean_cnic)
                               ->where('campus_id', $campus_id)
@@ -98,10 +99,17 @@ class Ajax extends BaseController
         ]);
     }
 }
-    
+
     public function index(): void
     {
-        // Optional default 
+        // Optional default
+    }
+
+    public function dismissOptionalModules(): ResponseInterface
+    {
+        session()->set('optional_modules_dismissed', true);
+
+        return $this->response->setJSON(['success' => true]);
     }
 
     public function selectClassFee(): ResponseInterface
@@ -113,10 +121,10 @@ class Ajax extends BaseController
 
         $amount = 0;
         $query = $this->db->query(
-            "SELECT amount FROM fee_amount WHERE fee_type_id = 
-                (SELECT fee_type_id FROM fee_type WHERE system_id=? AND is_monthly_fee=1 AND s_flag=1) 
-                AND class_id = 
-                (SELECT class_id FROM class_section WHERE status=1 AND cls_sec_id=?) 
+            "SELECT amount FROM fee_amount WHERE fee_type_id =
+                (SELECT fee_type_id FROM fee_type WHERE system_id=? AND is_monthly_fee=1 AND s_flag=1)
+                AND class_id =
+                (SELECT class_id FROM class_section WHERE status=1 AND cls_sec_id=?)
                 AND campus_id=? AND session_id=?",
             [$schoolinfo->system_id, $section_id, $campusid, $session_id]
         );
@@ -205,7 +213,14 @@ class Ajax extends BaseController
         $row = $this->db->table('campus')->where('campus_id', $id)->get()->getRowArray();
 
         if ($row) {
-            $this->session->set(['member_campusid' => $row['campus_id']]);
+            $campusId = (int) $row['campus_id'];
+            $this->session->set(['member_campusid' => $campusId]);
+
+            $userId = (int) $this->session->get('member_userid');
+            if ($userId > 0) {
+                \App\Libraries\UserWorkspacePrefs::save($userId, $campusId, null);
+            }
+
             return $this->response->setBody('true');
         }
 
@@ -219,10 +234,16 @@ class Ajax extends BaseController
         $academic_session_info = $this->db->table('academic_session')
             ->where('session_id', $session_id)
             ->get()->getRow();
- 
 
         if ($academic_session_info) {
-            $this->session->set(['member_sessionid' => $academic_session_info->session_id]);
+            $sessionId = (int) $academic_session_info->session_id;
+            $this->session->set(['member_sessionid' => $sessionId]);
+
+            $userId = (int) $this->session->get('member_userid');
+            if ($userId > 0) {
+                \App\Libraries\UserWorkspacePrefs::save($userId, null, $sessionId);
+            }
+
             return $this->response->setBody('true');
         }
 
@@ -231,93 +252,42 @@ class Ajax extends BaseController
 
     public function setboolattributeteachers(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('tid', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('tid');
     }
 
     public function setboolattribute2(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('student_id', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('student_id');
     }
 
     public function setboolattributeexam(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('eid', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('eid');
     }
 
     public function setboolattributetest(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('t_series_id', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('t_series_id');
     }
 
     public function setboolattributeSchoolType(): ResponseInterface
     {
-        $campusid = session('member_campusid');
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table('school_timing_types')->where('campus_id', $campusid)->update(['status' => 0]);
-        $this->db->table($tblname)->where('type_id', $id)->set($sfield, $sval)->update();
-
-        return $this->response->setBody('success');
+        return $this->response->setStatusCode(410)->setBody('deprecated');
     }
 
     public function setfeetypestatus(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('fee_type_id', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('fee_type_id');
     }
 
     public function setboolattribute(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('id', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('id');
     }
 
     public function setboolIndexable(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
-
-        $this->db->table($tblname)->where('content_id', $id)->set($sfield, $sval)->update();
-        return $this->response->setBody('success');
+        return $this->applyBoolToggle('content_id');
     }
 
     public function setboolattributeIsTrial(): ResponseInterface
@@ -334,11 +304,17 @@ class Ajax extends BaseController
 
     public function setboolattributeFee(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $schoolinfo = getSchoolInfo();
+        $tblname = (string) $this->request->getPost('tbname');
+        $sfield  = (string) $this->request->getPost('tbfield');
+        $sval    = $this->request->getPost('tbfieldvalue');
 
+        try {
+            AjaxToggleWhitelist::assertAllowed($tblname, $sfield);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(403)->setBody('forbidden');
+        }
+
+        $schoolinfo = getSchoolInfo();
         $this->db->table($tblname)->set($sfield, 0)->update();
 
         $id = (int) $this->request->getPost('id');
@@ -349,12 +325,24 @@ class Ajax extends BaseController
 
     public function setboolattributenotice(): ResponseInterface
     {
-        $tblname = $this->request->getPost('tbname');
-        $sfield = $this->request->getPost('tbfield');
-        $sval = $this->request->getPost('tbfieldvalue');
-        $id = (int) $this->request->getPost('id');
+        return $this->applyBoolToggle('notice_id');
+    }
 
-        $this->db->table($tblname)->where('notice_id', $id)->set($sfield, $sval)->update();
+    protected function applyBoolToggle(string $pkColumn): ResponseInterface
+    {
+        $tblname = (string) $this->request->getPost('tbname');
+        $sfield  = (string) $this->request->getPost('tbfield');
+        $sval    = $this->request->getPost('tbfieldvalue');
+        $id      = (int) $this->request->getPost('id');
+
+        try {
+            AjaxToggleWhitelist::assertAllowed($tblname, $sfield);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(403)->setBody('forbidden');
+        }
+
+        $this->db->table($tblname)->where($pkColumn, $id)->set($sfield, $sval)->update();
+
         return $this->response->setBody('success');
     }
 
@@ -455,10 +443,17 @@ class Ajax extends BaseController
         $classsubjects = '<option value="">Select Subject</option>';
 
         if (in_array(5, $currentrole)) {
-            $section_subjects_info = $this->db->query(
-                "SELECT * FROM teacher_subjects WHERE tid = {$userid} AND status=1 AND sec_sub_id IN
-                (SELECT sec_sub_id FROM section_subjects WHERE status=1 AND cls_sec_id = {$section_id})"
-            )->getResult();
+            $section_subjects_info = $this->db->table('teacher_subjects')
+                ->where('tid', (int) $userid)
+                ->where('status', 1)
+                ->whereIn('sec_sub_id', static function ($builder) use ($section_id) {
+                    return $builder->select('sec_sub_id')
+                        ->from('section_subjects')
+                        ->where('status', 1)
+                        ->where('cls_sec_id', (int) $section_id);
+                })
+                ->get()
+                ->getResult();
 
             foreach ($section_subjects_info as $section_subjects) {
                 $section_info = $this->db->table('section_subjects')
@@ -494,10 +489,17 @@ class Ajax extends BaseController
         $classsubjects = '<option value="">Select Subject</option>';
 
         if (in_array(5, $currentrole)) {
-            $section_subjects_info = $this->db->query(
-                "SELECT * FROM teacher_subjects WHERE status=1 AND tid = {$userid} AND sec_sub_id IN
-                (SELECT sec_sub_id FROM section_subjects WHERE status=1 AND cls_sec_id = {$section_id})"
-            )->getResult();
+            $section_subjects_info = $this->db->table('teacher_subjects')
+                ->where('status', 1)
+                ->where('tid', (int) $userid)
+                ->whereIn('sec_sub_id', static function ($builder) use ($section_id) {
+                    return $builder->select('sec_sub_id')
+                        ->from('section_subjects')
+                        ->where('status', 1)
+                        ->where('cls_sec_id', (int) $section_id);
+                })
+                ->get()
+                ->getResult();
 
             foreach ($section_subjects_info as $section_subjects) {
                 $section_info = $this->db->table('section_subjects')
@@ -598,8 +600,10 @@ class Ajax extends BaseController
 
         $term_session_str = implode(',', array_map('intval', $term_session_ids));
 
-        $terms_week_info = $this->db->query("SELECT * FROM term_weeks WHERE term_session_id IN ({$term_session_str})")
-            ->getResult();
+        $termSessionIds = array_map('intval', $term_session_ids);
+        $terms_week_info = $termSessionIds === []
+            ? []
+            : $this->db->table('term_weeks')->whereIn('term_session_id', $termSessionIds)->get()->getResult();
 
         $termweek = '';
         foreach ($terms_week_info as $term_week) {
@@ -686,16 +690,16 @@ class Ajax extends BaseController
 
     if ($table && $field) {
         $field_value = $this->request->getGet('value'); // Note: using 'value' parameter
-        
+
         $builder = $this->db->table($table)->where($field, $field_value);
-        
+
         // If ID is provided, exclude that record (for edit mode)
         if (!empty($id) && is_numeric($id)) {
             $builder->where('id !=', $id);
         }
-        
+
         $info = $builder->get()->getRow();
-        
+
         // Return 'false' if exists (invalid), 'true' if doesn't exist (valid)
         return $this->response->setBody($info ? 'false' : 'true');
     }
@@ -880,12 +884,12 @@ class Ajax extends BaseController
             ->get()->getRow();
 
         $studentsresults = $this->db->query(
-            "SELECT t1.campus_id, t2.student_id, t2.obtained_marks, t2.subject_id
+            'SELECT t1.campus_id, t2.student_id, t2.obtained_marks, t2.subject_id
             FROM exam t1, studentsresults t2
-            WHERE t2.eid = {$eid} AND t2.class_id = {$classsectioninfo->class_id}
-            AND t1.campus_id = {$campus_id}
+            WHERE t2.eid = ? AND t2.class_id = ? AND t1.campus_id = ?
             GROUP BY t2.student_id, t2.subject_id, t2.obtained_marks
-            ORDER BY t2.class_id ASC"
+            ORDER BY t2.class_id ASC',
+            [(int) $eid, (int) $classsectioninfo->class_id, (int) $campus_id]
         )->getResult();
 
         $classsubjectsinfo = $this->db->table('section_subjects')
@@ -898,7 +902,10 @@ class Ajax extends BaseController
         $studentsList .= '<input type="hidden" name="eid" value="' . $eid . '">';
         $studentsList .= '<input type="hidden" name="class_id" value="' . $id . '">';
 
-        $classstudents = $this->db->query("SELECT * FROM student_class WHERE status = 1 AND cls_sec_id = {$id}")->getResult();
+        $classstudents = $this->db->table('student_class')
+            ->where(['status' => 1, 'cls_sec_id' => (int) $id])
+            ->get()
+            ->getResult();
         $classesinfo = $this->db->table('classes')->where('class_id', $id)->get()->getRow();
         $session_id_info = $this->db->table('academic_session')->where('session_id', $session_id)->get()->getRow();
         $campus_info = $this->db->table('campus')->where('campus_id', $campus_id)->get()->getRow();
@@ -949,7 +956,7 @@ class Ajax extends BaseController
                     ->get()->getRow();
                 $obtained_marks = $resultsdetail->obtained_marks ?? '';
 
-                $studentsList .= "<td style='width:{$width}%;'><input type='text' style='height:25px;padding:0 5px !important;' 
+                $studentsList .= "<td style='width:{$width}%;'><input type='text' style='height:25px;padding:0 5px !important;'
                     name='obtained_marks[{$row->student_id}][{$subject->subject_id}]' value='{$obtained_marks}' class='form-control'></td>";
             }
             $studentsList .= '</tr>';
@@ -1012,8 +1019,8 @@ public function studentsOptions()
     }
 
     // Optional: campus/session columns on students table
-    $hasStudentCampus  = $this->db->query("SHOW COLUMNS FROM {$studentsTbl} LIKE 'campus_id'")->getNumRows() > 0;
-    $hasStudentSession = $this->db->query("SHOW COLUMNS FROM {$studentsTbl} LIKE 'session_id'")->getNumRows() > 0;
+    $hasStudentCampus  = $this->db->fieldExists('campus_id', $studentsTbl);
+    $hasStudentSession = $this->db->fieldExists('session_id', $studentsTbl);
 
     // Build exclusion WHERE for taken students:
     // Prefer event-wide exclusion (covers same team + other teams).
@@ -1233,7 +1240,7 @@ private function formatAge(?string $dob): string
                 <div class="std-name">'.esc($name).'</div>
                 <div class="std-age">'.esc($age).'</div>
                 <div class="std-class">'.esc($cls).'</div>
-                <button type="button" class="btn btn-xs btn-outline-primary pick-btn">Select</button>
+                <button type="button" class="btn btn-sm btn-outline-primary pick-btn">Select</button>
               </div>
             ';
         }
@@ -1246,7 +1253,7 @@ private function formatAge(?string $dob): string
 
         return $this->response->setJSON(['ok' => true, 'html' => $html]);
     }
-    
+
 public function individualStudentsOptions()
 {
     $sessionId = (int) (session('member_sessionid') ?? 0);

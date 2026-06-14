@@ -1,7 +1,7 @@
 <div class="card shadow-sm border-0">
     <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-            <i class="fas fa-qrcode mr-2"></i> QR Attendance
+            <i class="fas fa-qrcode me-2"></i> QR Attendance
         </h5>
         <small id="qrCurrentTime"></small>
     </div>
@@ -16,7 +16,7 @@
         <!-- SCAN BUTTON -->
         <div class="text-center">
             <button class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#qrModal">
-                <i class="fas fa-camera mr-2"></i> Scan QR Code
+                <i class="fas fa-camera me-2"></i> Scan QR Code
             </button>
         </div>
 
@@ -30,10 +30,10 @@
 <div class="modal fade" id="qrModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            
+
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-qrcode mr-2"></i> Scan QR Code
+                    <i class="fas fa-qrcode me-2"></i> Scan QR Code
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
