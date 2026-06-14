@@ -19,7 +19,7 @@ class SchoolSetup extends BaseController
 
     public function index()
     {
-        return view('admin/school_timming_type', $this->template_data);
+        return redirect()->to(base_url('admin/school_timing/add'));
     }
 
     public function saveStep1Class(): ResponseInterface

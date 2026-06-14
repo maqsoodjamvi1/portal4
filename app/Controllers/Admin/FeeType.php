@@ -9,17 +9,19 @@ class FeeType extends BaseController
     protected $db;
     protected $session;
 
-    public function __construct()
+    public function __construct(bool $skipPermissionCheck = false)
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
         helper(['form']);
-        check_permission('admin-fee-type');
+        if (!$skipPermissionCheck) {
+            check_permission('admin-fee-type');
+        }
     }
 
     public function index()
     {
-        return view('admin/fee_type');
+        return redirect()->to(base_url('admin/fee_setup?tab=types'));
     }
 
     public function data()
@@ -40,15 +42,18 @@ class FeeType extends BaseController
 
         $total = $builder->countAllResults(false);
 
+        $monthlyLocked = $this->isMonthlyFeeLocked();
+
         $data = [];
         $count = 1;
         foreach ($results as $row) {
             $data[] = [
-                  'id' => $row->fee_type_id,
-                  'sno' => $count,
-                  'fee_type_name' => $row->fee_type_name,
-                  'is_monthly_fee' => $row->is_monthly_fee,
-                  'status' => $row->status
+                'id' => $row->fee_type_id,
+                'sno' => $count,
+                'fee_type_name' => $row->fee_type_name,
+                'is_monthly_fee' => $row->is_monthly_fee,
+                'status' => $row->status,
+                'monthly_fee_locked' => $monthlyLocked,
             ];
 
             $count++;
@@ -58,28 +63,44 @@ class FeeType extends BaseController
             'draw' => $request->getPost('draw'),
             'recordsTotal' => $total,
             'recordsFiltered' => $total,
+            'monthly_fee_locked' => $monthlyLocked,
             'data' => $data,
         ]);
     }
 
     public function add()
     {
-
         check_permission('admin-add-fee-type');
+
+        return redirect()->to(base_url('admin/fee_setup?tab=types'));
+    }
+
+    /**
+     * Fee types for setup form (used by fee_setup).
+     */
+    public function getTypesForSetup(): array
+    {
         $schoolinfo = getSchoolInfo();
-        
-        $info = $this->db
+
+        return $this->db
             ->table('fee_type')
-           ->where('system_id', $schoolinfo->system_id)
-        ->orderBy('fee_type_id', 'asc')
-        ->get()
-        ->getResult();
+            ->where('system_id', $schoolinfo->system_id)
+            ->orderBy('fee_type_id', 'asc')
+            ->get()
+            ->getResult();
+    }
 
-        return view('admin/fee_type_edit', [
-        'info' => $info
-        ]);
+    /**
+     * True once any fee type is marked monthly for this school (finance-critical; cannot be changed via UI).
+     */
+    public function isMonthlyFeeLocked(): bool
+    {
+        $schoolinfo = getSchoolInfo();
 
-     
+        return $this->db->table('fee_type')
+            ->where('system_id', $schoolinfo->system_id)
+            ->where('is_monthly_fee', 1)
+            ->countAllResults() > 0;
     }
 
 
@@ -104,9 +125,13 @@ class FeeType extends BaseController
             $id = (int) $request->getPost('id' . $i);
             $fee_type_name = trim($request->getPost('fee_type_name' . $i));
 
-            if ($fee_type_name === '') continue;
+            if ($fee_type_name === '') {
+                continue;
+            }
 
-            $is_monthly_fee = ($rowIndex === 0) ? 1 : 0;
+            $monthlyLocked = $this->isMonthlyFeeLocked();
+            // New rows: only first form row may become monthly, and only if none is set yet
+            $is_monthly_fee = (!$monthlyLocked && $rowIndex === 0) ? 1 : 0;
 
             if ($id === 0) {
                 // Check for duplicate
@@ -122,11 +147,7 @@ class FeeType extends BaseController
                         'system_id'      => $schoolinfo->system_id,
                         'user_id'        => $user_id,
                         'std_type'        => 1,
-                        'is_transport_fee'        => 0,
-                        'h_flag'        => 0,
                         's_flag'        => 1,
-                        'a_flag'        => 0,
-                        't_flag'        => 0,
                         'created_date'   => $date,
                         'status'         => 1
                     ];
@@ -156,7 +177,7 @@ class FeeType extends BaseController
             return $this->response->setJSON(['amount_id' => false, 'msg' => 'Fee Structure Not Found']);
         }
 
-        return $this->response->setJSON([ 
+        return $this->response->setJSON([
             'success' => $inserted,
             'msg' => $inserted ? 'Fee Type Saved Successfully' : 'No new data saved or updated',
         ]);
@@ -203,7 +224,7 @@ class FeeType extends BaseController
 }
 
     public function setMonthlyFee()
-    { 
+    {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(403)->setJSON([
                 'success' => false,
@@ -214,7 +235,7 @@ class FeeType extends BaseController
         $schoolinfo = getSchoolInfo();
         $fee_type_id = (int) $this->request->getPost('id');
 
-            $feeType = $this->db->table('fee_type')
+        $feeType = $this->db->table('fee_type')
             ->where('fee_type_id', $fee_type_id)
             ->where('system_id', $schoolinfo->system_id)
             ->get()->getRow();
@@ -222,11 +243,36 @@ class FeeType extends BaseController
         if (!$feeType) {
             return $this->response->setJSON([
                 'success' => false,
-                'msg' => 'Fee Type not found'
+                'msg' => 'Fee Type not found',
             ]);
         }
 
-    $this->db->transStart();
+        $currentMonthly = $this->db->table('fee_type')
+            ->select('fee_type_id')
+            ->where('system_id', $schoolinfo->system_id)
+            ->where('is_monthly_fee', 1)
+            ->orderBy('fee_type_id', 'ASC')
+            ->get()
+            ->getRow();
+
+        if ($currentMonthly !== null) {
+            $currentId = (int) $currentMonthly->fee_type_id;
+            if ($currentId !== $fee_type_id) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'locked' => true,
+                    'msg' => 'The monthly fee type cannot be changed after it has been set. It drives fee calculations and challans. Contact support if a correction is required.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'msg' => 'Monthly fee type is already set.',
+                'locked' => true,
+            ]);
+        }
+
+        $this->db->transStart();
 
     // Set is_monthly_fee = 0 for all fee types of the same system
     $this->db->table('fee_type')
@@ -249,7 +295,8 @@ class FeeType extends BaseController
 
     return $this->response->setJSON([
         'success' => true,
-        'msg' => 'Monthly fee type set successfully'
+        'msg' => 'Monthly fee type set successfully',
+        'apply_lock_ui' => true,
     ]);
 
 

@@ -10,18 +10,48 @@ class FeeAmount extends BaseController
     protected $db;
     protected $session;
 
-    public function __construct()
+    public function __construct(bool $skipPermissionCheck = false)
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
         helper(['form']);
-        check_permission('admin-fee-amount');
+        if (!$skipPermissionCheck) {
+            check_permission('admin-fee-amount');
+        }
     }
 
 public function add(): string
 {
     check_permission('admin-add-fee-amount');
- 
+
+    return redirect()->to(base_url('admin/fee_setup?tab=amounts'));
+}
+
+/**
+ * Active classes for fee matrix, always ordered by class_id ascending.
+ *
+ * @return list<object>
+ */
+private function getActiveClassesOrdered(int $systemId): array
+{
+    $classes = $this->db->table('classes')
+        ->where('system_id', $systemId)
+        ->where('status', 1)
+        ->orderBy('class_id', 'ASC')
+        ->get()
+        ->getResult();
+
+    usort($classes, static fn ($a, $b) => (int) $a->class_id <=> (int) $b->class_id);
+
+    return $classes;
+}
+
+/**
+ * View data for fee amount matrix (used by fee_amount/add and fee_setup).
+ */
+public function getAddViewData(): array
+{
+    $request = $this->request ?? service('request');
     $campus_id = $this->session->get('member_campusid');
     $session_id = $this->session->get('member_sessionid');
     $schoolinfo = getSchoolInfo();
@@ -33,7 +63,7 @@ public function add(): string
             ->where('system_id', $schoolinfo->system_id)
             ->orderBy('session_id', 'DESC')
             ->get()->getRow();
-        
+
         if ($latestSession) {
             $session_id = $latestSession->session_id;
             // Store in session for future use
@@ -47,36 +77,31 @@ public function add(): string
         ->where('campus_id', $campus_id)
         ->get()
         ->getRow();
-    
+
     // If no campus flags found, create default object
     if (!$campus_flags) {
         $campus_flags = new \stdClass();
         $campus_flags->daycare_flag = 0;
         $campus_flags->boarding_flag = 0;
     }
-    
+
     // Determine which fee type to show (1=daycare, 2=boarding)
     $flag = 0;
     $show_selector = false;
-    
-    if ($this->request->getGet('force_flag')) {
-        $flag = (int)$this->request->getGet('force_flag');
+
+    if ($request->getGet('force_flag')) {
+        $flag = (int) $request->getGet('force_flag');
         $show_selector = true;
     } else {
         if ($campus_flags->daycare_flag == 1) {
             $flag = 1;
-        } 
+        }
         if ($campus_flags->boarding_flag == 1) {
             $flag = 2;
         }
     }
 
-    // Get classes and fee types
-    $classesinfo = $this->db->table('classes')
-        ->where('system_id', $schoolinfo->system_id)
-        ->where('status', 1)
-        ->orderBy('class_name', 'ASC')
-        ->get()->getResult();
+    $classesinfo = $this->getActiveClassesOrdered((int) $schoolinfo->system_id);
 
     // Get fee types filtered by std_type based on flag
     $fee_type_info = $this->db->table('fee_type')
@@ -112,7 +137,7 @@ public function add(): string
             ->where('session_id', $session_id)
             ->get()->getRow();
     }
-    
+
     // If still no current session, get the latest session
     if (!$current_academic_sessioninfo && !empty($academic_sessioninfo)) {
         $current_academic_sessioninfo = $academic_sessioninfo[0];
@@ -127,7 +152,7 @@ public function add(): string
     // Get previous session fees if available
     $prev_fees = [];
     $prev_session = null;
-    
+
     if ($session_id) {
         $prev_session = $this->db->table('academic_session')
             ->where('system_id', $schoolinfo->system_id)
@@ -150,7 +175,7 @@ public function add(): string
     $current_fees = [];
     $amount_ids = [];
     $result = [];
-    
+
     if ($session_id) {
         $result = $this->db->table('fee_amount')
             ->where('campus_id', $campus_id)
@@ -168,7 +193,7 @@ public function add(): string
         ->where('status', 1)
         ->get()->getRow('max_fee');
 
-    return view('admin/fee_amount_edit', [
+    return [
         'classesinfo' => $classesinfo,
         'session_id' => $session_id,
         'academic_sessioninfo' => $academic_sessioninfo,
@@ -185,8 +210,9 @@ public function add(): string
         'fee_flag' => $flag,
         'result' => $result,
         'has_session' => ($current_academic_sessioninfo !== null),
-        'has_fee_types' => !empty($fee_type_ordered)
-    ]);
+        'has_fee_types' => !empty($fee_type_ordered),
+        'embedded' => false,
+    ];
 }
 public function get_fees()
 {
@@ -338,21 +364,27 @@ public function save(): ResponseInterface
         ->where('campus_id', $campus_id)
         ->countAllResults();
 
-    // Determine redirect URL based on student count
-    $redirectUrl = ($studentCount > 0) 
-        ? base_url('admin/dashboard') 
-        : base_url('admin/addbulkstudents/add');
+    $fromSetup = (bool) $this->request->getPost('from_setup');
+
+    if ($fromSetup) {
+        $redirectUrl = base_url('admin/fee_setup?tab=amounts');
+    } else {
+        $redirectUrl = ($studentCount > 0)
+            ? base_url('admin/dashboard')
+            : base_url('admin/addbulkstudents/add');
+    }
 
     if ($isAjax) {
         return $this->response->setJSON([
-            'success' => true, 
+            'success' => true,
             'msg' => 'Fee amount updated successfully.',
             'redirect_url' => $redirectUrl,
             'has_students' => $studentCount > 0,
-            'student_count' => $studentCount
+            'student_count' => $studentCount,
+            'from_setup' => $fromSetup,
         ]);
     }
-    
+
     return redirect()->to($redirectUrl)->with('success', 'Fee amount updated successfully.');
 }
 
@@ -362,9 +394,7 @@ public function save(): ResponseInterface
         $session_id = $this->request->getPost('session_id');
         $schoolinfo = getSchoolInfo();
 
-        $classes = $this->db->table('classes')
-            ->where('system_id', $schoolinfo->system_id)
-            ->where('status', 1)->get()->getResult();
+        $classes = $this->getActiveClassesOrdered((int) $schoolinfo->system_id);
 
         $fee_types = $this->db->table('fee_type')
             ->where('system_id', $schoolinfo->system_id)

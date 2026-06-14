@@ -10,16 +10,69 @@ class FeePlanMonths extends BaseController
     protected $db;
     protected $session;
 
-    public function __construct()
+    public function __construct(bool $skipPermissionCheck = false)
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        check_permission('admin-fee-plan-months');
+        if (!$skipPermissionCheck) {
+            check_permission('admin-fee-plan-months');
+        }
+    }
+
+    /**
+     * Data for fee setup plan-months grid (plans × months).
+     */
+    public function getSetupGridData(): array
+    {
+        $campusid = $this->session->get('member_campusid');
+        $months = $this->months();
+        $fee_plan_info = $this->db->table('fee_plans')
+            ->orderBy('plan_id', 'ASC')
+            ->get()
+            ->getResult();
+
+        $plans = [];
+        $totalActive = 0;
+
+        foreach ($fee_plan_info as $fee_plan) {
+            $monthStates = [];
+            $activeCount = 0;
+
+            foreach ($months as $month) {
+                $row = $this->db->table('fee_plan_months')
+                    ->where('campus_id', $campusid)
+                    ->where('month', $month)
+                    ->where('fee_plan_id', $fee_plan->plan_id)
+                    ->get()
+                    ->getRow();
+
+                $checked = $row && (int) $row->status === 1;
+                $monthStates[$month] = $checked;
+                if ($checked) {
+                    $activeCount++;
+                    $totalActive++;
+                }
+            }
+
+            $plans[] = [
+                'plan_id'      => (int) $fee_plan->plan_id,
+                'plan_name'    => $fee_plan->plan_name,
+                'months'       => $monthStates,
+                'active_count' => $activeCount,
+            ];
+        }
+
+        return [
+            'billing_months' => $months,
+            'fee_plans'      => $plans,
+            'plan_count'     => count($plans),
+            'active_slots'   => $totalActive,
+        ];
     }
 
     public function index()
     {
-        return view('admin/fee_plan_months', []);
+        return view('admin/fee_plan_months/index', $this->getSetupGridData());
     }
 
     public function data(): ResponseInterface
@@ -164,49 +217,29 @@ class FeePlanMonths extends BaseController
                 ->where('campus_id', $campusid)
                 ->where('month', $month)
                 ->update($data);
-        } else {
+        } elseif ((int) $status === 1) {
             $data = [
-                'fee_plan_id' => $plan_id,
-                'month' =>  $month,
-                'campus_id' =>  $campusid,
-                'user_id' => $user_id,
+                'fee_plan_id'  => $plan_id,
+                'month'        => $month,
+                'campus_id'    => $campusid,
+                'user_id'      => $user_id,
                 'created_date' => $date,
-                'status' => 1
+                'status'       => 1,
             ];
             $this->db->table('fee_plan_months')->insert($data);
         }
-        return $this->response->setJSON(['success' => true, 'msg' => 'Add Fee Plan Months Success']);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg'     => ((int) $status === 1) ? 'Month enabled for plan' : 'Month disabled for plan',
+        ]);
     }
 
     public function add()
     {
         check_permission('admin-add-fee-plan-months');
-        $campusid = $this->session->get('member_campusid');
-        $classsectioninfo = $this->db->table('class_section')
-            ->where('campus_id', $campusid)
-            ->get()->getResult();
 
-        $sectionsclassinfo = [];
-        foreach ($classsectioninfo as $section) {
-            $classinfo = $this->db->table('classes')
-                ->where('class_id', $section->class_id)
-                ->get()->getRow();
-            $sectioninfo = $this->db->table('sections')
-                ->where('section_id', $section->section_id)
-                ->get()->getRow();
-
-            $sectionsclassinfo[] = [
-                'section_id' => $section->cls_sec_id,
-                'sectionclassname' => ($classinfo->class_name ?? '') . " (" . ($sectioninfo->section_name ?? '') . ")"
-            ];
-        }
-
-        $subjectinfo = $this->db->table('allsubject')->get()->getResult();
-
-        return view('admin/fee_plan_months_edit', [
-            'sectionsclassinfo' => $sectionsclassinfo,
-            'subjectinfo' => $subjectinfo
-        ]);
+        return redirect()->to(base_url('admin/fee_plan_months'));
     }
 
     public function edit()

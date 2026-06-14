@@ -18,33 +18,92 @@ class AcademicCalendar extends BaseController
     }
 
     /**
+     * Highest session_id for this system (most recently created session row).
+     */
+    private function getLatestAcademicSessionId(int $systemId): ?int
+    {
+        if ($systemId <= 0) {
+            return null;
+        }
+
+        $row = $this->db->table('academic_session')
+            ->select('session_id')
+            ->where('system_id', $systemId)
+            ->orderBy('session_id', 'DESC')
+            ->get(1)
+            ->getRow();
+
+        return $row ? (int) $row->session_id : null;
+    }
+
+    /**
+     * Session where start_date <= today <= end_date (system scoped).
+     * If multiple rows match, highest session_id wins.
+     */
+    private function getCurrentAcademicSessionId(int $systemId): ?int
+    {
+        if ($systemId <= 0) {
+            return null;
+        }
+        $today = date('Y-m-d');
+        $row   = $this->db->table('academic_session')
+            ->select('session_id')
+            ->where('system_id', $systemId)
+            ->where('start_date <=', $today)
+            ->where('end_date >=', $today)
+            ->orderBy('session_id', 'DESC')
+            ->get(1)
+            ->getRow();
+
+        return $row ? (int) $row->session_id : null;
+    }
+
+    private function isAcademicSessionCurrentlyActive(int $systemId, int $sessionId): bool
+    {
+        $current = $this->getCurrentAcademicSessionId($systemId);
+
+        return $current !== null && $current === $sessionId;
+    }
+
+    /**
      * One-screen builder: session + terms dates
      */
 public function builder()
 {
     $schoolinfo = getSchoolInfo();
     $systemId   = $schoolinfo->system_id;
-    
+
+    $isNewSession   = $this->request->getGet('new') === '1' || $this->request->getGet('mode') === 'new';
     $sessionIdParam = (int) $this->request->getGet('session_id');
-    
+
     // Get all previous sessions for dropdown
     $allSessions = $this->db->table('academic_session')
         ->where('system_id', $systemId)
         ->orderBy('session_id', 'DESC')
         ->get()->getResult();
-    
-    // Calculate term counts for each session
+
+    // Term counts for all sessions in one query (avoid N+1)
     $sessionTermCounts = [];
-    foreach ($allSessions as $sess) {
-        $sessionTermCounts[$sess->session_id] = $this->db->table('terms_session')
-            ->where('session_id', $sess->session_id)
-            ->countAllResults();
+    if (! empty($allSessions)) {
+        $sessionIds = array_map(static fn ($s) => (int) $s->session_id, $allSessions);
+        $countRows   = $this->db->table('terms_session')
+            ->select('session_id, COUNT(*) AS c', false)
+            ->where('system_id', $systemId)
+            ->whereIn('session_id', $sessionIds)
+            ->groupBy('session_id')
+            ->get()
+            ->getResult();
+        foreach ($countRows as $cr) {
+            $sessionTermCounts[(int) $cr->session_id] = (int) $cr->c;
+        }
     }
-    
-    // Get the latest session to fetch its terms (for new session creation)
-    $latestSession = !empty($allSessions) ? $allSessions[0] : null;
-    
-    // Fetch terms from the latest session (to pre-populate for new session)
+
+    $currentSessionId = $this->getCurrentAcademicSessionId($systemId);
+    $latestSessionId  = $this->getLatestAcademicSessionId($systemId);
+
+    $latestSession = ! empty($allSessions) ? $allSessions[0] : null;
+
+    // Fetch terms from the latest session (template when creating a new session)
     $previousTerms = [];
     if ($latestSession) {
         $previousTerms = $this->db->table('terms_session ts')
@@ -54,74 +113,70 @@ public function builder()
             ->where('ts.session_id', $latestSession->session_id)
             ->orderBy('ts.start_date', 'ASC')
             ->get()->getResult();
-        
-        log_message('debug', 'Previous terms count: ' . count($previousTerms));
     }
-    
-    $sessionRow = null;
-    $isEditing = false;
+
+    $sessionRow    = null;
+    $isEditing     = false;
     $existingTerms = [];
-    $termsCount = 3; // Default
-    
-    // Check if we're editing an existing session
-    if ($sessionIdParam > 0) {
+    $termsCount    = 3;
+
+    $isFirstSession = empty($allSessions);
+
+    if ($isNewSession) {
+        // Explicit "New session" — create flow (save inserts a new row)
+    } elseif ($sessionIdParam > 0) {
         $sessionRow = $this->db->table('academic_session')
             ->where('system_id', $systemId)
             ->where('session_id', $sessionIdParam)
             ->get()->getRow();
-        
+
         if ($sessionRow) {
             $isEditing = true;
-            
-            // Fetch existing terms for this session (for editing)
-            $existingTerms = $this->db->table('terms_session ts')
-                ->select('ts.*, t.name, t.short_name')
-                ->join('terms t', 't.term_id = ts.term_id')
-                ->where('ts.system_id', $systemId)
-                ->where('ts.session_id', $sessionIdParam)
-                ->orderBy('ts.start_date', 'ASC')
-                ->get()->getResult();
-            
-            $termsCount = count($existingTerms);
         }
+    } elseif ($latestSession) {
+        // Default: load the latest academic session for editing
+        $sessionRow = $latestSession;
+        $isEditing  = true;
     }
-    
-    $isFirstSession = empty($allSessions);
-    
-    // If not editing (creating new session) and we have previous terms, use them
-    if (!$isEditing && !$isFirstSession && !empty($previousTerms)) {
-        // Use terms from previous session as template
+
+    if ($isEditing && $sessionRow) {
+        $existingTerms = $this->db->table('terms_session ts')
+            ->select('ts.*, t.name, t.short_name')
+            ->join('terms t', 't.term_id = ts.term_id')
+            ->where('ts.system_id', $systemId)
+            ->where('ts.session_id', (int) $sessionRow->session_id)
+            ->orderBy('ts.start_date', 'ASC')
+            ->get()->getResult();
+
+        $termsCount = count($existingTerms) ?: 3;
+    }
+
+    // New session: pre-fill from previous session structure
+    if (! $isEditing && ! $isFirstSession && ! empty($previousTerms)) {
         $existingTerms = $previousTerms;
-        $termsCount = count($previousTerms);
-        log_message('debug', 'Using previous terms for new session: ' . $termsCount);
+        $termsCount    = count($previousTerms);
     }
-    
-    // If not editing (new session), generate next session name and dates
-    if (!$isEditing) {
-        if (!empty($allSessions)) {
-            // Generate next session name
+
+    if (! $isEditing) {
+        if (! empty($allSessions)) {
             $nextSessionName = $this->generateNextSessionName($allSessions);
-            $session_name = $nextSessionName;
-            
-            // Calculate next session dates
-            $latestSession = $allSessions[0];
-            $prevEndDate = $latestSession->end_date;
-            
+            $session_name    = $nextSessionName;
+
+            $prevEndDate = $allSessions[0]->end_date;
+
             $startDateTime = new \DateTime($prevEndDate);
             $startDateTime->modify('+1 day');
-            
-            // Snap to Monday
+
             $dow = (int) $startDateTime->format('N');
             if ($dow !== 1) {
                 $offset = 8 - $dow;
                 $startDateTime->modify("+{$offset} day");
             }
             $start_date = $startDateTime->format('Y-m-d');
-            
-            // End date = start date + 1 year, snap to Sunday
+
             $endDateTime = clone $startDateTime;
             $endDateTime->modify('+1 year')->modify('-1 day');
-            
+
             $dowEnd = (int) $endDateTime->format('N');
             if ($dowEnd !== 7) {
                 $offsetEnd = 7 - $dowEnd;
@@ -129,32 +184,28 @@ public function builder()
             }
             $end_date = $endDateTime->format('Y-m-d');
         } else {
-            // First session ever
-            $start_date = $this->getNextMonday();
-            $end_date = $this->getEndDateFromStart($start_date);
+            $start_date   = $this->getNextMonday();
+            $end_date     = $this->getEndDateFromStart($start_date);
             $session_name = date('Y') . '-' . substr(date('Y') + 1, -2);
         }
         $session_id = 0;
     } else {
-        // Editing existing session - use its data
-        $session_id = $sessionRow->session_id;
+        $session_id   = (int) $sessionRow->session_id;
         $session_name = $sessionRow->session_name;
-        $start_date = $sessionRow->start_date;
-        $end_date = $sessionRow->end_date;
+        $start_date   = $sessionRow->start_date;
+        $end_date     = $sessionRow->end_date;
     }
-    
-    // Get week types
+
     $weekTypes = $this->db->table('week_type')
         ->orderBy('type_id', 'ASC')
         ->get()->getResult();
-    
-    // For compatibility with existing code
+
     $termsMaster = $this->db->table('terms')
         ->where('system_id', $systemId)
         ->where('status', 1)
         ->orderBy('term_id', 'ASC')
         ->get()->getResult();
-    
+
     $termSessionsByTerm = [];
     if ($isEditing && $sessionRow) {
         $tsRows = $this->db->table('terms_session')
@@ -162,29 +213,30 @@ public function builder()
             ->where('session_id', $sessionRow->session_id)
             ->orderBy('term_session_id', 'ASC')
             ->get()->getResult();
-        
+
         foreach ($tsRows as $r) {
-            $termSessionsByTerm[(int)$r->term_id] = $r;
+            $termSessionsByTerm[(int) $r->term_id] = $r;
         }
     }
-    
-    // Pass all data to view
+
     return view('admin/academic_calendar_builder', [
-        'mode'               => $isEditing ? 'edit' : 'add',
-        'session_id'         => $session_id,
-        'session_name'       => $session_name,
-        'start_date'         => $start_date,
-        'end_date'           => $end_date,
-        'terms'              => $termsMaster,
-        'termSessionsByTerm' => $termSessionsByTerm,
-        'weekTypes'          => $weekTypes,
-        'allSessions'        => $allSessions,
-        'existingTerms'      => $existingTerms,  // This will contain previous terms for new session
-        'termsCount'         => $termsCount,
-        'isFirstSession'     => $isFirstSession,
-        'isEditing'          => $isEditing,
-        'sessionTermCounts'  => $sessionTermCounts,
-        'previousTerms'      => $previousTerms,  // For debugging
+        'mode'                 => $isEditing ? 'edit' : 'add',
+        'session_id'           => $session_id,
+        'session_name'         => $session_name,
+        'start_date'           => $start_date,
+        'end_date'             => $end_date,
+        'terms'                => $termsMaster,
+        'termSessionsByTerm'   => $termSessionsByTerm,
+        'weekTypes'            => $weekTypes,
+        'allSessions'          => $allSessions,
+        'existingTerms'        => $existingTerms,
+        'termsCount'           => $termsCount,
+        'isFirstSession'       => $isFirstSession,
+        'isEditing'            => $isEditing,
+        'isNewSession'         => $isNewSession,
+        'sessionTermCounts'    => $sessionTermCounts,
+        'current_session_id'   => $currentSessionId,
+        'latest_session_id'    => $latestSessionId,
     ]);
 }
     /**
@@ -200,21 +252,21 @@ private function generateNextSessionName($allSessions)
         $currentYear = date('Y');
         return $currentYear . '-' . substr($currentYear + 1, -2);
     }
-    
+
     // Get the latest session
     $latestSession = $allSessions[0];
     $latestName = $latestSession->session_name;
-    
+
     // Parse session name like "2024-25" or "2024-2025"
     if (preg_match('/(\d{4})-(\d{2,4})/', $latestName, $matches)) {
         $startYear = (int)$matches[1];
         $endYearPart = $matches[2];
-        
+
         // If end year is 2 digits (e.g., 25 from 2024-25)
         if (strlen($endYearPart) == 2) {
             $nextStartYear = $startYear + 1;
             return $nextStartYear . '-' . substr($nextStartYear + 1, -2);
-        } 
+        }
         // If end year is 4 digits (e.g., 2025 from 2024-2025)
         else if (strlen($endYearPart) == 4) {
             $nextStartYear = $startYear + 1;
@@ -222,14 +274,14 @@ private function generateNextSessionName($allSessions)
             return $nextStartYear . '-' . $nextEndYear;
         }
     }
-    
+
     // Fallback: try to extract years from session name
     if (preg_match('/(\d{4})/', $latestName, $matches)) {
         $lastYear = (int)$matches[1];
         $nextStartYear = $lastYear + 1;
         return $nextStartYear . '-' . substr($nextStartYear + 1, -2);
     }
-    
+
     // Ultimate fallback
     $currentYear = date('Y');
     return $currentYear . '-' . substr($currentYear + 1, -2);
@@ -248,14 +300,14 @@ private function getNextMonday($fromDate = null)
     } else {
         $date = new \DateTime();
     }
-    
+
     $dow = (int) $date->format('N');
-    
+
     if ($dow !== 1) {
         $offset = 8 - $dow;
         $date->modify("+{$offset} day");
     }
-    
+
     return $date->format('Y-m-d');
 }
 
@@ -267,20 +319,20 @@ private function getEndDateFromStart($startDate)
     $start = new \DateTime($startDate);
     $end = clone $start;
     $end->modify('+1 year')->modify('-1 day');
-    
+
     // Snap to Sunday
     $dowEnd = (int) $end->format('N');
     if ($dowEnd !== 7) {
         $offsetEnd = 7 - $dowEnd;
         $end->modify("+{$offsetEnd} day");
     }
-    
+
     return $end->format('Y-m-d');
 }
     /**
      * Calculate end date (approx 1 year, snapped to Sunday)
      */
-   
+
 
     /**
      * Save session + terms + generate weeks
@@ -322,6 +374,7 @@ private function getEndDateFromStart($startDate)
 
         // Week type selections
         $weekTypePost = (array) $request->getPost('week_type');
+        $termSessionIdsPost = (array) $request->getPost('term_session_id');
 
         // Default week_type_id
         $defaultWeekTypeId = $this->getDefaultWeekTypeId($systemId);
@@ -361,12 +414,13 @@ private function getEndDateFromStart($startDate)
             }
 
             $preparedTerms[] = [
-                'idx'     => $idx,
-                'name'    => $name,
-                'short'   => $short,
-                'start'   => $s,
-                'end'     => $e,
-                'term_id' => $termId,
+                'idx'              => $idx,
+                'name'             => $name,
+                'short'            => $short,
+                'start'            => $s,
+                'end'              => $e,
+                'term_id'          => $termId,
+                'term_session_id'  => isset($termSessionIdsPost[$idx]) ? (int) $termSessionIdsPost[$idx] : 0,
             ];
         }
 
@@ -378,6 +432,8 @@ private function getEndDateFromStart($startDate)
         }
 
         $this->db->transBegin();
+
+        $isUpdate = $sessionId > 0;
 
         // 1) Save academic session
         if ($sessionId > 0) {
@@ -403,36 +459,17 @@ private function getEndDateFromStart($startDate)
             $sessionId = $this->db->insertID();
         }
 
-        // 2) Remove old weeks & term_sessions for this session
-        $oldTS = $this->db->table('terms_session')
-            ->select('term_session_id')
-            ->where('system_id', $systemId)
-            ->where('session_id', $sessionId)
-            ->get()->getResult();
-
-        if (!empty($oldTS)) {
-            $ids = array_map(function($r){ return $r->term_session_id; }, $oldTS);
-            $this->db->table('term_weeks')
-                ->where('system_id', $systemId)
-                ->whereIn('term_session_id', $ids)
-                ->delete();
-        }
-
-        $this->db->table('terms_session')
-            ->where('system_id', $systemId)
-            ->where('session_id', $sessionId)
-            ->delete();
-
-        // 3) Insert/update terms and terms_session
+        // 2) Upsert terms + terms_session (on update: keep existing rows — no deletes)
         $termSessionMeta = [];
 
         foreach ($preparedTerms as $tRow) {
-            $idx   = $tRow['idx'];
-            $name  = $tRow['name'];
-            $short = $tRow['short'];
-            $s     = $tRow['start'];
-            $e     = $tRow['end'];
+            $idx    = $tRow['idx'];
+            $name   = $tRow['name'];
+            $short  = $tRow['short'];
+            $s      = $tRow['start'];
+            $e      = $tRow['end'];
             $termId = $tRow['term_id'];
+            $tsId   = (int) ($tRow['term_session_id'] ?? 0);
 
             if ($short === '') {
                 $short = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $name));
@@ -442,7 +479,6 @@ private function getEndDateFromStart($startDate)
                 $short = substr($short, 0, 4);
             }
 
-            // If term_id provided (editing existing term), update it
             if ($termId > 0) {
                 $this->db->table('terms')
                     ->where('term_id', $termId)
@@ -453,7 +489,6 @@ private function getEndDateFromStart($startDate)
                         'user_id'      => $userId,
                     ]);
             } else {
-                // Check if term with same name exists
                 $termRow = $this->db->table('terms')
                     ->where('system_id', $systemId)
                     ->where('name', $name)
@@ -461,8 +496,7 @@ private function getEndDateFromStart($startDate)
 
                 if ($termRow) {
                     $termId = (int) $termRow->term_id;
-                    
-                    // Update short_name if needed
+
                     if ($termRow->short_name !== $short) {
                         $this->db->table('terms')
                             ->where('term_id', $termId)
@@ -473,7 +507,6 @@ private function getEndDateFromStart($startDate)
                             ]);
                     }
                 } else {
-                    // Insert new term
                     $this->db->table('terms')->insert([
                         'system_id'    => $systemId,
                         'name'         => $name,
@@ -486,19 +519,45 @@ private function getEndDateFromStart($startDate)
                 }
             }
 
-            // Insert term_session
-            $this->db->table('terms_session')->insert([
-                'system_id'    => $systemId,
-                'term_id'      => $termId,
-                'session_id'   => $sessionId,
-                'start_date'   => $s,
-                'end_date'     => $e,
-                'status'       => 1,
-                'created_date' => $now,
-                'user_id'      => $userId,
-            ]);
+            $existingTs = null;
+            if ($tsId > 0) {
+                $existingTs = $this->db->table('terms_session')
+                    ->where('system_id', $systemId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_session_id', $tsId)
+                    ->get()->getRow();
+            }
+            if (! $existingTs && $termId > 0) {
+                $existingTs = $this->db->table('terms_session')
+                    ->where('system_id', $systemId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $termId)
+                    ->get()->getRow();
+            }
 
-            $tsId = (int) $this->db->insertID();
+            if ($existingTs) {
+                $tsId = (int) $existingTs->term_session_id;
+                $this->db->table('terms_session')
+                    ->where('term_session_id', $tsId)
+                    ->update([
+                        'term_id'    => $termId,
+                        'start_date' => $s,
+                        'end_date'   => $e,
+                        'status'     => 1,
+                    ]);
+            } else {
+                $this->db->table('terms_session')->insert([
+                    'system_id'    => $systemId,
+                    'term_id'      => $termId,
+                    'session_id'   => $sessionId,
+                    'start_date'   => $s,
+                    'end_date'     => $e,
+                    'status'       => 1,
+                    'created_date' => $now,
+                    'user_id'      => $userId,
+                ]);
+                $tsId = (int) $this->db->insertID();
+            }
 
             $termSessionMeta[] = [
                 'idx'             => $idx,
@@ -510,12 +569,91 @@ private function getEndDateFromStart($startDate)
             ];
         }
 
-        // 4) Generate term_weeks
+        // 3) Sync term_weeks: add missing weeks, update types — never delete existing rows
         $sessionSuffix = substr($sessionName, -2);
+        $this->syncTermWeeksForSession(
+            $systemId,
+            $userId,
+            $now,
+            $sessionSuffix,
+            $termSessionMeta,
+            $weekTypePost,
+            $defaultWeekTypeId
+        );
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg'     => 'Transaction failed while saving academic calendar.',
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'success'  => true,
+            'msg'      => $isUpdate
+                ? 'Academic calendar updated with terms and weeks.'
+                : 'Academic calendar saved with terms and weeks.',
+            'redirect' => base_url('admin/academic-calendar/builder'),
+        ]);
+    }
+
+    private function getDefaultWeekTypeId($systemId)
+    {
+        $defaultWeekTypeId = 1;
+        try {
+            $wtRow = $this->db->table('week_type')
+                ->where('system_id', $systemId)
+                ->where('short_name', 'study')
+                ->get()->getRow();
+            if ($wtRow) {
+                $defaultWeekTypeId = (int) $wtRow->type_id;
+            }
+        } catch (\Throwable $e) {
+            // Silent fallback
+        }
+        return $defaultWeekTypeId;
+    }
+
+    /**
+     * Add missing term_weeks and update week_type_id when provided — never delete rows.
+     *
+     * @param list<array{idx:int, term_session_id:int, term_id:int, short_name:string, start_date:string, end_date:string}> $termSessionMeta
+     * @param array<int, array<int|string, mixed>> $weekTypePost
+     */
+    private function syncTermWeeksForSession(
+        int $systemId,
+        int $userId,
+        string $now,
+        string $sessionSuffix,
+        array $termSessionMeta,
+        array $weekTypePost,
+        int $defaultWeekTypeId
+    ): void {
+        if ($termSessionMeta === []) {
+            return;
+        }
+
+        $tsIds = array_values(array_unique(array_map(static fn ($r) => (int) $r['term_session_id'], $termSessionMeta)));
+        $existingByTs = [];
+
+        if ($tsIds !== []) {
+            $weekRows = $this->db->table('term_weeks')
+                ->whereIn('term_session_id', $tsIds)
+                ->get()
+                ->getResult();
+
+            foreach ($weekRows as $w) {
+                $tsKey = (int) $w->term_session_id;
+                $noKey = (int) $w->week_no;
+                $existingByTs[$tsKey][$noKey] = $w;
+            }
+        }
 
         foreach ($termSessionMeta as $row) {
             $formIdx       = $row['idx'];
-            $termSessionId = $row['term_session_id'];
+            $termSessionId = (int) $row['term_session_id'];
             $shortName     = $row['short_name'] ?: ('T' . $row['term_id']);
             $tsStart       = $row['start_date'];
             $tsEnd         = $row['end_date'];
@@ -528,7 +666,6 @@ private function getEndDateFromStart($startDate)
             $mStart = new \DateTime($tsStart);
             $mEnd   = new \DateTime($tsEnd);
 
-            // Move start to Monday
             $dow = (int) $mStart->format('N');
             if ($dow !== 1) {
                 $offset = 1 - $dow;
@@ -549,61 +686,49 @@ private function getEndDateFromStart($startDate)
                     break;
                 }
 
-                $weekName = $sessionSuffix . '-' . $shortName . '-W' . $weekNo;
-
+                $weekName   = $sessionSuffix . '-' . $shortName . '-W' . $weekNo;
                 $weekTypeId = $defaultWeekTypeId;
                 if (isset($weekTypesForTerm[$weekNo]) && $weekTypesForTerm[$weekNo] !== '') {
                     $weekTypeId = (int) $weekTypesForTerm[$weekNo];
                 }
 
-                $this->db->table('term_weeks')->insert([
-                    'term_session_id' => $termSessionId,
-                    'system_id'       => $systemId,
-                    'week_no'         => $weekNo,
-                    'start_date'      => $weekStart->format('Y-m-d'),
-                    'end_date'        => $weekEnd->format('Y-m-d'),
-                    'week_name'       => $weekName,
-                    'week_type_id'    => $weekTypeId,
-                    'created_date'    => $now,
-                    'user_id'         => $userId,
-                ]);
+                $startStr = $weekStart->format('Y-m-d');
+                $endStr   = $weekEnd->format('Y-m-d');
+                $existing = $existingByTs[$termSessionId][$weekNo] ?? null;
+
+                if ($existing) {
+                    $update = [
+                        'week_name' => $weekName,
+                    ];
+                    if (isset($weekTypesForTerm[$weekNo]) && $weekTypesForTerm[$weekNo] !== '') {
+                        $update['week_type_id'] = $weekTypeId;
+                    }
+                    $this->db->table('term_weeks')
+                        ->where('term_weeks_id', (int) $existing->term_weeks_id)
+                        ->update($update);
+                } else {
+                    $this->db->table('term_weeks')->insert([
+                        'term_session_id' => $termSessionId,
+                        'system_id'       => $systemId,
+                        'week_no'         => $weekNo,
+                        'start_date'      => $startStr,
+                        'end_date'        => $endStr,
+                        'week_name'       => $weekName,
+                        'week_type_id'    => $weekTypeId,
+                        'created_date'    => $now,
+                        'user_id'         => $userId,
+                    ]);
+
+                    $existingByTs[$termSessionId][$weekNo] = (object) [
+                        'term_weeks_id' => (int) $this->db->insertID(),
+                        'week_no'       => $weekNo,
+                    ];
+                }
 
                 $weekNo++;
                 $mStart->modify('+7 day');
             }
         }
-
-        $this->db->transComplete();
-
-        if ($this->db->transStatus() === false) {
-            return $this->response->setJSON([
-                'success' => false,
-                'msg'     => 'Transaction failed while saving academic calendar.',
-            ]);
-        }
-
-        return $this->response->setJSON([
-            'success'  => true,
-            'msg'      => 'Academic calendar saved with terms and weeks.',
-            'redirect' => base_url('admin/academic-setup'),
-        ]);
-    }
-
-    private function getDefaultWeekTypeId($systemId)
-    {
-        $defaultWeekTypeId = 1;
-        try {
-            $wtRow = $this->db->table('week_type')
-                ->where('system_id', $systemId)
-                ->where('short_name', 'study')
-                ->get()->getRow();
-            if ($wtRow) {
-                $defaultWeekTypeId = (int) $wtRow->type_id;
-            }
-        } catch (\Throwable $e) {
-            // Silent fallback
-        }
-        return $defaultWeekTypeId;
     }
 
     public function ajaxQuickAdd()

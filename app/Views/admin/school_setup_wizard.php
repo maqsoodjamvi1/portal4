@@ -8,19 +8,19 @@
 <div class="container mt-5">
   <div class="bs-stepper" id="schoolWizard">
     <div class="bs-stepper-header">
-      <div class="step" data-target="#step-1">
+      <div class="step" data-bs-target="#step-1">
         <button class="step-trigger"><span class="bs-stepper-label">Basic Info</span></button>
       </div>
       <div class="line"></div>
-      <div class="step" data-target="#step-2">
+      <div class="step" data-bs-target="#step-2">
         <button class="step-trigger"><span class="bs-stepper-label">Contact Info</span></button>
       </div>
       <div class="line"></div>
-      <div class="step" data-target="#step-3">
+      <div class="step" data-bs-target="#step-3">
         <button class="step-trigger"><span class="bs-stepper-label">Academic Setup</span></button>
       </div>
       <div class="line"></div>
-      <div class="step" data-target="#step-4">
+      <div class="step" data-bs-target="#step-4">
         <button class="step-trigger"><span class="bs-stepper-label">Fee Setup</span></button>
       </div>
     </div>
