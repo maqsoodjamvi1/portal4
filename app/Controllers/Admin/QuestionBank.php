@@ -15,12 +15,21 @@ class QuestionBank extends BaseController
         $this->db      = db_connect();
         $this->session = session();
         helper(['form', 'url']);
+        check_permission('admin-questions');
     }
 
-    /* -------------------------------------------------------------
-     * UI: Add form
-     * ----------------------------------------------------------- */
+    /**
+     * Overview: class → subject → topic counts, proof read, links to form.
+     */
     public function index()
+    {
+        return view('admin/question_bank_report');
+    }
+
+    /**
+     * Add/edit questions (JSON + cards).
+     */
+    public function form()
     {
         return view('admin/question_bank_form', [
             'classes'  => $this->getAllClasses(),
@@ -32,6 +41,8 @@ class QuestionBank extends BaseController
 public function summary_all()
 {
     $db = db_connect();
+    $boardService = new \App\Libraries\QbBoardPublisherService($db);
+    $systemId     = (int) (getSchoolInfo()->system_id ?? 0);
 
     // If you use sessions, you can also filter by session_id here (optional)
     // $sessionId = (int) ($this->session->get('member_sessionid') ?? 0);
@@ -54,6 +65,7 @@ public function summary_all()
             SUM(CASE WHEN q.question_type = 'tf' THEN 1 ELSE 0 END)        AS tf_count,
             SUM(CASE WHEN q.question_type = 'fill' THEN 1 ELSE 0 END)      AS fill_count,
             SUM(CASE WHEN q.question_type = 'short' THEN 1 ELSE 0 END)     AS short_count,
+            SUM(CASE WHEN q.question_type IN ('descriptive', 'description') THEN 1 ELSE 0 END) AS descriptive_count,
             SUM(CASE WHEN q.question_type = 'match' THEN 1 ELSE 0 END)     AS match_count,
 
             -- optional (only if you still care about drag/non-drag)
@@ -65,7 +77,7 @@ public function summary_all()
         LEFT JOIN allsubject s  ON s.sid      = q.subject_id
         LEFT JOIN qb_topics t   ON t.id       = q.topic_id
         GROUP BY q.class_id, q.subject_id, q.topic_id
-        ORDER BY class_name ASC, subject_name ASC, topic_name ASC
+        ORDER BY q.class_id ASC, q.subject_id ASC, q.topic_id ASC
     ";
 
     $rows = $db->query($sql)->getResultArray();
@@ -101,6 +113,7 @@ public function summary_all()
             'tf_count'           => (int)$r['tf_count'],
             'fill_count'         => (int)$r['fill_count'],
             'short_count'        => (int)$r['short_count'],
+            'descriptive_count'  => (int)($r['descriptive_count'] ?? 0),
             'match_count'        => (int)$r['match_count'],
 
             // optional
@@ -109,16 +122,40 @@ public function summary_all()
         ];
     }
 
+    $topicIds = [];
+    foreach ($tree as $classRow) {
+        foreach ($classRow['subjects'] as $subRow) {
+            foreach ($subRow['topics'] as $topRow) {
+                $topicIds[] = (int) ($topRow['topic_id'] ?? 0);
+            }
+        }
+    }
+    $boardLabelsMap = $boardService->getLabelsMapForTopics($topicIds);
+
     // convert associative to indexed arrays
     $out = [];
     foreach ($tree as $c) {
+        foreach ($c['subjects'] as &$sub) {
+            foreach ($sub['topics'] as &$top) {
+                $tid = (int) ($top['topic_id'] ?? 0);
+                $labels = $boardLabelsMap[$tid] ?? [];
+                $top['board_publishers']    = $labels;
+                $top['board_publisher_ids'] = array_values(array_map(
+                    static fn (array $bp): int => (int) ($bp['id'] ?? 0),
+                    $labels
+                ));
+            }
+            unset($top);
+        }
+        unset($sub);
         $c['subjects'] = array_values($c['subjects']);
         $out[] = $c;
     }
 
     return $this->response->setJSON([
-        'status' => 1,
-        'data'   => $out
+        'status'           => 1,
+        'data'             => $out,
+        'board_publishers' => $boardService->listForSystem($systemId, true),
     ]);
 }
 
@@ -143,18 +180,38 @@ public function summary()
     $sum = [
         'total'         => count($rows),
         'mcq'           => 0,
+        'mcq_multi'     => 0,
+        'tf'            => 0,
         'fill'          => 0,
         'short'         => 0,
+        'descriptive'   => 0,
+        'match'         => 0,
         'match_drag'    => 0,
-        'match_nodrag'  => 0
+        'match_nodrag'  => 0,
     ];
 
     foreach ($rows as $r) {
-        if ($r->question_type === 'mcq') $sum['mcq']++;
-        if ($r->question_type === 'fill') $sum['fill']++;
-        if ($r->question_type === 'short') $sum['short']++;
-        if ($r->question_type === 'match' && $r->is_drag == 1) $sum['match_drag']++;
-        if ($r->question_type === 'match' && $r->is_drag == 0) $sum['match_nodrag']++;
+        $type = (string) ($r->question_type ?? '');
+        if ($type === 'mcq') {
+            $sum['mcq']++;
+        } elseif ($type === 'mcq_multi') {
+            $sum['mcq_multi']++;
+        } elseif ($type === 'tf') {
+            $sum['tf']++;
+        } elseif ($type === 'fill') {
+            $sum['fill']++;
+        } elseif ($type === 'short') {
+            $sum['short']++;
+        } elseif ($type === 'descriptive' || $type === 'description') {
+            $sum['descriptive']++;
+        } elseif ($type === 'match') {
+            $sum['match']++;
+            if ((int) ($r->is_drag ?? 0) === 1) {
+                $sum['match_drag']++;
+            } else {
+                $sum['match_nodrag']++;
+            }
+        }
     }
 
     return $this->response->setJSON($sum);
@@ -162,7 +219,6 @@ public function summary()
 
 public function save()
 {
-
     log_message('debug', 'QB FILES: ' . print_r($this->request->getFiles(), true));
 
     $questions = $this->request->getPost('questions');
@@ -171,20 +227,174 @@ public function save()
         return redirect()->back()->with('error', 'No questions submitted.');
     }
 
-    $tbl         = $this->db->table('qb_questions');
-    $savedCount  = 0;
-    $skipped     = 0;
-    $total       = count($questions);
+    $result = $this->persistQuestions($questions, $this->request->getFiles());
 
-    log_message('debug', 'QB save() raw questions: ' . print_r($questions, true));
-
-    // ✅ Upload directory (inside writable/)
-    $uploadDir = WRITEPATH . 'uploads/qb_questions';
-    if (!is_dir($uploadDir)) {
-        @mkdir($uploadDir, 0775, true);
+    if ($result['saved'] > 0) {
+        return redirect()
+            ->to(base_url('admin/question-bank/form'))
+            ->with('msg', "{$result['saved']} of {$result['total']} question(s) saved successfully. Skipped: {$result['skipped']}.");
     }
 
-    foreach ($questions as $idx => $q) {
+    return redirect()
+        ->back()
+        ->with('error', "No questions were saved. Total submitted: {$result['total']}, skipped: {$result['skipped']}. Check logs for details.");
+}
+
+    /**
+     * AJAX: save one or more questions (proof-read modal).
+     */
+    public function saveAjax(): ResponseInterface
+    {
+        $questions = $this->request->getPost('questions');
+
+        if (empty($questions) || !is_array($questions)) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 0,
+                'message' => 'No questions submitted.',
+            ]);
+        }
+
+        $result = $this->persistQuestions($questions, $this->request->getFiles());
+
+        if ($result['saved'] > 0) {
+            $saved = (int) $result['saved'];
+            $total = (int) $result['total'];
+            $id    = $result['saved_ids'][0] ?? 0;
+
+            return $this->response->setJSON([
+                'status'    => 1,
+                'message'   => "{$saved} of {$total} question(s) saved successfully.",
+                'saved'     => $saved,
+                'skipped'   => (int) $result['skipped'],
+                'total'     => $total,
+                'saved_ids' => $result['saved_ids'],
+                'id'        => $id,
+            ]);
+        }
+
+        return $this->response->setStatusCode(422)->setJSON([
+            'status'    => 0,
+            'message'   => 'No questions were saved. Check required fields.',
+            'saved'     => 0,
+            'skipped'   => $result['skipped'],
+            'total'     => $result['total'],
+            'saved_ids' => [],
+        ]);
+    }
+
+    /**
+     * AJAX: single question for edit modal.
+     */
+    public function questionOne($id = 0): ResponseInterface
+    {
+        $id = (int) $id;
+        if ($id <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 0,
+                'message' => 'Invalid question id.',
+            ]);
+        }
+
+        try {
+            $builder = $this->db->table('qb_questions q')
+                ->select('q.*, c.class_name, t.topic_name, s.subject_name')
+                ->join('classes c', 'c.class_id = q.class_id', 'left');
+
+            if ($this->db->tableExists('allsubject')) {
+                $builder->join('allsubject s', 's.sid = q.subject_id', 'left');
+            } elseif ($this->db->tableExists('subjects')) {
+                $builder->join('subjects s', 's.subject_id = q.subject_id', 'left');
+            }
+
+            if ($this->db->tableExists('qb_topics')) {
+                $builder->join('qb_topics t', 't.id = q.topic_id', 'left');
+            }
+
+            $row = $builder->where('q.id', $id)->get()->getRow();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::questionOne failed - ' . $e->getMessage());
+            $row = null;
+        }
+
+        if (!$row) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status'  => 0,
+                'message' => 'Question not found.',
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status'   => 1,
+            'question' => $this->normalizeQuestionBankRowForJson($row),
+        ]);
+    }
+
+    /**
+     * AJAX: delete a question.
+     */
+    public function deleteQuestion(): ResponseInterface
+    {
+        $id = (int) ($this->request->getPost('id') ?? 0);
+        if ($id <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 0,
+                'message' => 'Invalid question id.',
+            ]);
+        }
+
+        $existing = $this->db->table('qb_questions')->where('id', $id)->get()->getRowArray();
+        if (!$existing) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status'  => 0,
+                'message' => 'Question not found.',
+            ]);
+        }
+
+        try {
+            $img = (string) ($existing['question_image'] ?? '');
+            if ($img !== '') {
+                $path = WRITEPATH . ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $img), DIRECTORY_SEPARATOR);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+
+            $this->db->table('qb_questions')->where('id', $id)->delete();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::deleteQuestion failed - ' . $e->getMessage());
+
+            return $this->response->setStatusCode(500)->setJSON([
+                'status'  => 0,
+                'message' => 'Could not delete question.',
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status'  => 1,
+            'message' => 'Question deleted.',
+            'id'      => $id,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $files
+     * @return array{saved: int, skipped: int, total: int, saved_ids: list<int>}
+     */
+    private function persistQuestions(array $questions, array $files): array
+    {
+        $savedCount = 0;
+        $skipped    = 0;
+        $total      = count($questions);
+        $savedIds   = [];
+
+        log_message('debug', 'QB persistQuestions raw: ' . print_r($questions, true));
+
+        $uploadDir = WRITEPATH . 'uploads/qb_questions';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0775, true);
+        }
+
+        foreach ($questions as $idx => $q) {
 
         $classId    = (int) ($q['class_id'] ?? 0);
         $subjectId  = (int) ($q['subject_id'] ?? 0);
@@ -202,22 +412,31 @@ public function save()
         $questionText = trim((string) ($q['question'] ?? ''));
         $imageAlt     = trim((string) ($q['question_image_alt'] ?? ''));
 
-        // ✅ file for this question (nested name: questions[IDX][question_image])
-       $files = $this->request->getFiles();
+        $qid = (int) ($q['id'] ?? 0);
+        $existing = null;
+        if ($qid > 0) {
+            $existing = $this->db->table('qb_questions')->where('id', $qid)->get()->getRowArray();
+            if (!$existing) {
+                $skipped++;
+                log_message('warning', "QB save() skip idx={$idx}: invalid question id {$qid}");
+                continue;
+            }
+        }
 
-// CI4 nested file: questions[IDX][question_image]
-$file = $files['questions'][$idx]['question_image'] ?? null;
+        // CI4 nested file: questions[IDX][question_image]
+        $file = $files['questions'][$idx]['question_image'] ?? null;
 
-// fallback (optional)
-if (!$file) {
-    $file = $this->request->getFile("questions.$idx.question_image");
-}
+        // fallback (optional)
+        if (!$file) {
+            $file = $this->request->getFile("questions.$idx.question_image");
+        }
 
+        $hasNewImage = $file && $file->isValid();
 
         // ✅ Validation:
         // - class/subject/topic always required
         // - if text mode => question text required
-        // - if image mode => image file required
+        // - if image mode => new upload OR (update) keep existing image
         if ($classId <= 0 || $subjectId <= 0 || $topicId <= 0) {
             $skipped++;
             log_message('warning', "QB save() skip idx={$idx}: missing class/subject/topic");
@@ -231,33 +450,33 @@ if (!$file) {
                 continue;
             }
         } else { // image mode
-            if (!$file || !$file->isValid()) {
+            if (!$hasNewImage && !($qid > 0 && !empty($existing['question_image']))) {
                 $skipped++;
-                log_message('warning', "QB save() skip idx={$idx}: missing/invalid image (image mode)");
+                log_message('warning', "QB save() skip idx={$idx}: missing/invalid image (image mode, no existing)");
                 continue;
             }
 
-            // validate image
-            $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-            $mime    = $file->getMimeType();
-            $sizeOk  = ($file->getSize() <= 2 * 1024 * 1024); // 2MB
+            if ($hasNewImage) {
+                // validate image
+                $allowed = ['image/jpeg', 'image/png', 'image/webp'];
+                $mime    = $file->getMimeType();
+                $sizeOk  = ($file->getSize() <= 2 * 1024 * 1024); // 2MB
 
-            if (!in_array($mime, $allowed, true) || !$sizeOk) {
-                $skipped++;
-                log_message('warning', "QB save() skip idx={$idx}: invalid image mime/size (mime={$mime}, size={$file->getSize()})");
-                continue;
+                if (!in_array($mime, $allowed, true) || !$sizeOk) {
+                    $skipped++;
+                    log_message('warning', "QB save() skip idx={$idx}: invalid image mime/size (mime={$mime}, size={$file->getSize()})");
+                    continue;
+                }
             }
         }
 
-        // Base fields
+        // Base fields (no created_* here — insert vs update below)
         $data = [
             'class_id'       => $classId,
             'subject_id'     => $subjectId,
             'topic_id'       => $topicId,
             'question_type'  => $type,
             'difficulty'     => $difficulty,
-            'created_at'     => date('Y-m-d H:i:s'),
-            'created_by'     => (int) ($this->session->get('member_id') ?? 0),
 
             // ✅ new columns
             'question_media'     => $questionMedia,
@@ -285,24 +504,22 @@ if (!$file) {
             $data['question'] = $questionText;
             $data['question_image'] = null;
         } else {
-            // upload image
-            try {
-                $newName = $file->getRandomName();
-                $file->move($uploadDir, $newName);
+            if ($hasNewImage) {
+                try {
+                    $newName = $file->getRandomName();
+                    $file->move($uploadDir, $newName);
 
-                // store relative path (recommended for portability)
-                $data['question_image'] = 'uploads/qb_questions/' . $newName;
-
-                // in image mode, question text can be blank, we keep NULL
-                $data['question'] = null;
-
-                // if alt text empty, you may fallback to old text (optional)
-                // $data['question_image_alt'] = $data['question_image_alt'] ?: null;
-
-            } catch (\Throwable $e) {
-                $skipped++;
-                log_message('error', "QB save() upload failed idx={$idx}: " . $e->getMessage());
-                continue;
+                    $data['question_image'] = 'uploads/qb_questions/' . $newName;
+                    $data['question']       = null;
+                } catch (\Throwable $e) {
+                    $skipped++;
+                    log_message('error', "QB save() upload failed idx={$idx}: " . $e->getMessage());
+                    continue;
+                }
+            } else {
+                // Update without replacing image
+                $data['question_image'] = $existing['question_image'] ?? null;
+                $data['question']       = null;
             }
         }
 
@@ -368,6 +585,15 @@ if (!$file) {
             $data['answer_text'] = trim($q['answer_text'] ?? '');
         }
 
+        elseif ($type === 'descriptive') {
+            $data['answer_text'] = trim($q['answer_text'] ?? '');
+            if ($data['answer_text'] === '') {
+                $skipped++;
+                log_message('warning', "QB save() skip idx={$idx}: descriptive answer_text empty");
+                continue;
+            }
+        }
+
         elseif ($type === 'match') {
             $pairs = $q['match_pairs'] ?? [];
             if (!empty($pairs) && is_array($pairs)) {
@@ -378,24 +604,33 @@ if (!$file) {
         }
 
         /* =======================================
-           INSERT
+           INSERT or UPDATE
         ======================================= */
         try {
-            $ok = $tbl->insert($data);
-
-            if (!$ok) {
-                $dbError = $this->db->error();
-                log_message(
-                    'error',
-                    'QB save() insert failed idx=' . $idx . ' : ' . json_encode($dbError)
-                    . ' | data=' . json_encode($data)
-                );
-                $skipped++;
-                continue;
+            if ($qid > 0) {
+                $ok = $this->db->table('qb_questions')->where('id', $qid)->update($data);
+                if ($ok === false) {
+                    throw new \RuntimeException('update returned false');
+                }
+                $savedIds[] = $qid;
+            } else {
+                $data['created_at'] = date('Y-m-d H:i:s');
+                $data['created_by'] = (int) ($this->session->get('member_id') ?? 0);
+                $ok                  = $this->db->table('qb_questions')->insert($data);
+                if (!$ok) {
+                    $dbError = $this->db->error();
+                    log_message(
+                        'error',
+                        'QB save() insert failed idx=' . $idx . ' : ' . json_encode($dbError)
+                        . ' | data=' . json_encode($data)
+                    );
+                    $skipped++;
+                    continue;
+                }
+                $savedIds[] = (int) $this->db->insertID();
             }
 
             $savedCount++;
-
         } catch (\Throwable $e) {
             log_message(
                 'error',
@@ -406,18 +641,15 @@ if (!$file) {
             $skipped++;
             continue;
         }
-    }
+        }
 
-    if ($savedCount > 0) {
-        return redirect()
-            ->to(base_url('admin/question-bank'))
-            ->with('msg', "{$savedCount} of {$total} question(s) saved successfully. Skipped: {$skipped}.");
+        return [
+            'saved'     => $savedCount,
+            'skipped'   => $skipped,
+            'total'     => $total,
+            'saved_ids' => $savedIds,
+        ];
     }
-
-    return redirect()
-        ->back()
-        ->with('error', "No questions were saved. Total submitted: {$total}, skipped: {$skipped}. Check logs for details.");
-}
 
 
     /* -------------------------------------------------------------
@@ -429,59 +661,144 @@ if (!$file) {
         $subjectId = (int) ($this->request->getGet('subject_id') ?? 0);
         $topicId   = (int) ($this->request->getGet('topic_id') ?? 0);
 
-        try {
-            // Base query
-            $builder = $this->db->table('qb_questions q')
-                ->select('q.*, c.class_name, t.topic_name, s.subject_name')
-                ->join('classes c', 'c.class_id = q.class_id', 'left');
-
-            // check subject table existence
-            if ($this->db->tableExists('subjects')) {
-                $builder->join('subjects s', 's.subject_id = q.subject_id', 'left');
-            } elseif ($this->db->tableExists('allsubject')) {
-                $builder->join('allsubject s', 's.sid = q.subject_id', 'left');
-            } else {
-                $builder->select("'Unknown' AS subject_name", false);
-            }
-
-            // topic table check
-            if ($this->db->tableExists('qb_topics')) {
-                $builder->join('qb_topics t', 't.id = q.topic_id', 'left');
-            } else {
-                $builder->select("'Unknown' AS topic_name", false);
-            }
-
-            // filters
-            if ($classId > 0) {
-                $builder->where('q.class_id', $classId);
-            }
-            if ($subjectId > 0) {
-                $builder->where('q.subject_id', $subjectId);
-            }
-            if ($topicId > 0) {
-                $builder->where('q.topic_id', $topicId);
-            }
-
-            $builder->orderBy('q.id', 'DESC');
-            $query = $builder->get();
-
-            if (!$query) {
-                throw new \RuntimeException('Query failed: ' . $this->db->getLastQuery());
-            }
-
-            $questions = $query->getResult();
-        } catch (\Throwable $e) {
-            log_message('error', 'QuestionBank::list() failed - ' . $e->getMessage());
-            $questions = [];
-        }
+        $questions = $this->fetchQuestionsFiltered($classId, $subjectId, $topicId, 'DESC', null);
 
         return view('admin/question_bank_list', [
             'questions' => $questions,
         ]);
     }
 
+    /**
+     * AJAX: full question rows for proofreading / bulk edit (JSON).
+     * Filters: class_id (required), optional subject_id, topic_id.
+     */
+    public function questionsJson(): ResponseInterface
+    {
+        $classId   = (int) ($this->request->getGet('class_id') ?? 0);
+        $subjectId = (int) ($this->request->getGet('subject_id') ?? 0);
+        $topicId   = (int) ($this->request->getGet('topic_id') ?? 0);
+        $limit     = (int) ($this->request->getGet('limit') ?? 200);
+        $limit     = max(1, min($limit, 500));
 
-   
+        if ($classId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 0,
+                'message' => 'class_id is required',
+            ]);
+        }
+
+        $total     = $this->countQuestionsFiltered($classId, $subjectId, $topicId);
+        $rows      = $this->fetchQuestionsFiltered($classId, $subjectId, $topicId, 'ASC', $limit);
+        $truncated = $total > count($rows);
+
+        $questions = [];
+        foreach ($rows as $row) {
+            $questions[] = $this->normalizeQuestionBankRowForJson($row);
+        }
+
+        $first = $rows[0] ?? null;
+
+        $labels = [
+            'class_name'   => '',
+            'subject_name' => '',
+            'topic_name'   => '',
+        ];
+        if ($first) {
+            $labels['class_name'] = (string) ($first->class_name ?? '');
+            if ($subjectId > 0) {
+                $labels['subject_name'] = (string) ($first->subject_name ?? '');
+            }
+            if ($topicId > 0) {
+                $labels['topic_name'] = (string) ($first->topic_name ?? '');
+            } elseif ($subjectId > 0) {
+                $labels['topic_name'] = 'All topics in subject';
+            } elseif ($classId > 0) {
+                $labels['subject_name'] = 'All subjects';
+                $labels['topic_name']   = 'All topics';
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'    => 1,
+            'meta'      => [
+                'total'     => $total,
+                'returned'  => count($questions),
+                'truncated' => $truncated,
+                'limit'     => $limit,
+            ],
+            'filter'    => [
+                'class_id'   => $classId,
+                'subject_id' => $subjectId,
+                'topic_id'   => $topicId,
+            ],
+            'labels'    => $labels,
+            'questions' => $questions,
+        ]);
+    }
+
+    /**
+     * Full-page proof read (same filters as questions-json).
+     */
+    public function proofRead()
+    {
+        $classId   = (int) ($this->request->getGet('class_id') ?? 0);
+        $subjectId = (int) ($this->request->getGet('subject_id') ?? 0);
+        $topicId   = (int) ($this->request->getGet('topic_id') ?? 0);
+
+        if ($classId <= 0) {
+            return redirect()->to(site_url('admin/question-bank/overview'))
+                ->with('error', 'Invalid proof-read link: class is required.');
+        }
+
+        $limit = 500;
+        $total = $this->countQuestionsFiltered($classId, $subjectId, $topicId);
+        $rows  = $this->fetchQuestionsFiltered($classId, $subjectId, $topicId, 'ASC', $limit);
+
+        $questions = [];
+        foreach ($rows as $row) {
+            $questions[] = $this->normalizeQuestionBankRowForJson($row);
+        }
+
+        $truncated = $total > count($questions);
+        $first     = $rows[0] ?? null;
+
+        $labels = [
+            'class_name'   => '',
+            'subject_name' => '',
+            'topic_name'   => '',
+        ];
+        if ($first) {
+            $labels['class_name'] = (string) ($first->class_name ?? '');
+            if ($subjectId > 0) {
+                $labels['subject_name'] = (string) ($first->subject_name ?? '');
+            }
+            if ($topicId > 0) {
+                $labels['topic_name'] = (string) ($first->topic_name ?? '');
+            } elseif ($subjectId > 0) {
+                $labels['topic_name'] = 'All topics in subject';
+            } elseif ($classId > 0) {
+                $labels['subject_name'] = 'All subjects';
+                $labels['topic_name']   = 'All topics';
+            }
+        }
+
+        return view('admin/question_bank_proof_read', [
+            'filter_class_id'   => $classId,
+            'filter_subject_id' => $subjectId,
+            'filter_topic_id'   => $topicId,
+            'questions'         => $questions,
+            'meta'              => [
+                'total'     => $total,
+                'returned'  => count($questions),
+                'truncated' => $truncated,
+                'limit'     => $limit,
+            ],
+            'labels' => $labels,
+        ]);
+    }
+
+
+
     /**
      * AJAX: get subjects for a class based on your real structure:
      * classes -> class_section -> section_subjects -> a_subject
@@ -495,41 +812,244 @@ if (!$file) {
         if ($classId <= 0) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status'  => 'error',
-                'message' => 'Invalid class_id'
+                'message' => 'Invalid class_id',
             ]);
         }
 
-        $builder = $this->db->table('class_section cs')
-            ->select('DISTINCT a.sid AS subject_id, a.subject_name, a.subject_short_name', false)
-            ->join('section_subjects ss', 'ss.cls_sec_id = cs.cls_sec_id', 'inner')
-            ->join('allsubject a', 'a.sid = ss.subject_id', 'inner')
-            ->where('cs.class_id', $classId)
-            ->orderBy('a.subject_name', 'ASC');
-
-        // If these columns exist, good; if not, ignore gracefully.
-        try { $builder->where('ss.status', 1); } catch (\Throwable $e) {}
-        try { if ($campusId > 0) { $builder->where('cs.campus_id', $campusId); } } catch (\Throwable $e) {}
-
-        $query = null;
-        try { $query = $builder->get(); } catch (\Throwable $e) { $query = null; }
-
-        $subjects = [];
-        if ($query) {
-            $subjects = $query->getResultArray();
-            // Filter out blanks defensively
-            $subjects = array_values(array_filter($subjects, function ($r) {
-                return isset($r['subject_name']) && trim((string)$r['subject_name']) !== '';
-            }));
-        }
+        $subjects = $this->fetchSubjectsForClass($classId, $campusId);
+        $source   = $subjects['_source'] ?? 'section';
+        unset($subjects['_source']);
+        $list = $subjects['list'] ?? [];
 
         return $this->response->setJSON([
             'status'   => 'ok',
-            'subjects' => $subjects,
-            'count'    => count($subjects),
+            'subjects' => $list,
+            'count'    => count($list),
+            'source'   => $source,
         ]);
     }
 
-  
+    /**
+     * Resolve subjects for a class: timetable mapping, then QB topics/questions, then all subjects.
+     *
+     * @return array{list: list<array<string, mixed>>, _source: string}
+     */
+    private function fetchSubjectsForClass(int $classId, int $campusId): array
+    {
+        $sessionId = (int) ($this->session->get('member_sessionid') ?? $this->session->get('academic_session_id') ?? 0);
+
+        $list = $this->fetchSubjectsFromClassSections($classId, $campusId, $sessionId, true);
+        $source = 'section';
+
+        if ($list === [] && $campusId > 0) {
+            $list = $this->fetchSubjectsFromClassSections($classId, 0, $sessionId, true);
+        }
+
+        if ($list === []) {
+            $list = $this->fetchSubjectsFromClassSections($classId, $campusId, $sessionId, false);
+        }
+
+        if ($list === [] && $campusId > 0) {
+            $list = $this->fetchSubjectsFromClassSections($classId, 0, $sessionId, false);
+        }
+
+        if ($list === []) {
+            $list   = $this->fetchSubjectsFromQbTopics($classId);
+            $source = 'qb_topics';
+        }
+
+        if ($list === []) {
+            $list   = $this->fetchSubjectsFromQbQuestions($classId);
+            $source = 'qb_questions';
+        }
+
+        if ($list === []) {
+            $list   = $this->fetchAllSubjectsForSystem();
+            $source = 'allsubject';
+        }
+
+        $list = $this->dedupeSubjectsById($list);
+
+        return ['list' => $list, '_source' => $source];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchSubjectsFromClassSections(int $classId, int $campusId, int $sessionId, bool $activeOnly): array
+    {
+        if (!$this->db->tableExists('class_section')
+            || !$this->db->tableExists('section_subjects')
+            || !$this->db->tableExists('allsubject')) {
+            return [];
+        }
+
+        try {
+            $builder = $this->db->table('class_section cs')
+                ->select('DISTINCT a.sid AS subject_id, a.subject_name, a.subject_short_name', false)
+                ->join('section_subjects ss', 'ss.cls_sec_id = cs.cls_sec_id', 'inner')
+                ->join('allsubject a', 'a.sid = ss.subject_id', 'inner')
+                ->where('cs.class_id', $classId);
+
+            if ($campusId > 0 && $this->db->fieldExists('campus_id', 'class_section')) {
+                $builder->where('cs.campus_id', $campusId);
+            }
+
+            if ($sessionId > 0 && $this->db->fieldExists('session_id', 'class_section')) {
+                $builder->where('cs.session_id', $sessionId);
+            }
+
+            if ($activeOnly && $this->db->fieldExists('status', 'class_section')) {
+                $builder->where('cs.status', 1);
+            }
+
+            if ($activeOnly && $this->db->fieldExists('status', 'section_subjects')) {
+                $builder->where('ss.status', 1);
+            }
+
+            $rows = $builder->orderBy('a.subject_name', 'ASC')->get()->getResultArray();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::fetchSubjectsFromClassSections ' . $e->getMessage());
+
+            return [];
+        }
+
+        return $this->filterSubjectRows($rows);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchSubjectsFromQbTopics(int $classId): array
+    {
+        if (!$this->db->tableExists('qb_topics')) {
+            return [];
+        }
+
+        try {
+            $builder = $this->db->table('qb_topics t')
+                ->select('DISTINCT t.subject_id, a.subject_name, a.subject_short_name', false)
+                ->where('t.class_id', $classId)
+                ->where('t.subject_id >', 0);
+
+            if ($this->db->tableExists('allsubject')) {
+                $builder->join('allsubject a', 'a.sid = t.subject_id', 'left');
+            } else {
+                $builder->select('DISTINCT t.subject_id', false);
+            }
+
+            $rows = $builder->orderBy('a.subject_name', 'ASC')->get()->getResultArray();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::fetchSubjectsFromQbTopics ' . $e->getMessage());
+
+            return [];
+        }
+
+        foreach ($rows as &$row) {
+            if (empty($row['subject_name'])) {
+                $row['subject_name'] = 'Subject #' . (int) ($row['subject_id'] ?? 0);
+            }
+        }
+        unset($row);
+
+        return $this->filterSubjectRows($rows);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchSubjectsFromQbQuestions(int $classId): array
+    {
+        if (!$this->db->tableExists('qb_questions')) {
+            return [];
+        }
+
+        try {
+            $builder = $this->db->table('qb_questions q')
+                ->select('DISTINCT q.subject_id, a.subject_name, a.subject_short_name', false)
+                ->where('q.class_id', $classId)
+                ->where('q.subject_id >', 0);
+
+            if ($this->db->tableExists('allsubject')) {
+                $builder->join('allsubject a', 'a.sid = q.subject_id', 'left');
+            } else {
+                $builder->select('DISTINCT q.subject_id', false);
+            }
+
+            $rows = $builder->orderBy('a.subject_name', 'ASC')->get()->getResultArray();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::fetchSubjectsFromQbQuestions ' . $e->getMessage());
+
+            return [];
+        }
+
+        foreach ($rows as &$row) {
+            if (empty($row['subject_name'])) {
+                $row['subject_name'] = 'Subject #' . (int) ($row['subject_id'] ?? 0);
+            }
+        }
+        unset($row);
+
+        return $this->filterSubjectRows($rows);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchAllSubjectsForSystem(): array
+    {
+        $rows = [];
+        foreach ($this->getAllSubjects() as $row) {
+            $arr    = (array) $row;
+            $rows[] = [
+                'subject_id'         => (int) ($arr['subject_id'] ?? 0),
+                'subject_name'       => (string) ($arr['subject_name'] ?? ''),
+                'subject_short_name' => (string) ($arr['subject_short_name'] ?? $arr['subject_name'] ?? ''),
+            ];
+        }
+
+        return $this->filterSubjectRows($rows);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function filterSubjectRows(array $rows): array
+    {
+        return array_values(array_filter($rows, static function ($r) {
+            $id = (int) ($r['subject_id'] ?? 0);
+            if ($id <= 0) {
+                return false;
+            }
+            $name = trim((string) ($r['subject_name'] ?? $r['subject_short_name'] ?? ''));
+
+            return $name !== '';
+        }));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function dedupeSubjectsById(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) ($r['subject_id'] ?? 0);
+            if ($id > 0 && !isset($out[$id])) {
+                $out[$id] = $r;
+            }
+        }
+
+        usort($out, static function ($a, $b) {
+            return strcasecmp((string) ($a['subject_name'] ?? ''), (string) ($b['subject_name'] ?? ''));
+        });
+
+        return array_values($out);
+    }
+
+
 
     public function bankSearch(): ResponseInterface
     {
@@ -571,7 +1091,9 @@ if (!$file) {
         $classId   = (int) $this->request->getGet('class_id');
         $subjectId = (int) $this->request->getGet('subject_id');
 
-        $builder = $this->db->table('qb_topics')->orderBy('id', 'ASC');
+        $builder = $this->db->table('qb_topics')
+            ->select('id, topic_name, description, class_id, subject_id')
+            ->orderBy('id', 'ASC');
 
         if ($classId > 0) {
             $builder->where('class_id', $classId);
@@ -837,6 +1359,92 @@ General rules:
 
 
 
+    private function makeQuestionsListBuilder(int $classId, int $subjectId, int $topicId)
+    {
+        $builder = $this->db->table('qb_questions q')
+            ->select('q.*, c.class_name, t.topic_name, s.subject_name')
+            ->join('classes c', 'c.class_id = q.class_id', 'left');
+
+        if ($this->db->tableExists('allsubject')) {
+            $builder->join('allsubject s', 's.sid = q.subject_id', 'left');
+        } elseif ($this->db->tableExists('subjects')) {
+            $builder->join('subjects s', 's.subject_id = q.subject_id', 'left');
+        } else {
+            $builder->select("'Unknown' AS subject_name", false);
+        }
+
+        if ($this->db->tableExists('qb_topics')) {
+            $builder->join('qb_topics t', 't.id = q.topic_id', 'left');
+        } else {
+            $builder->select("'Unknown' AS topic_name", false);
+        }
+
+        if ($classId > 0) {
+            $builder->where('q.class_id', $classId);
+        }
+        if ($subjectId > 0) {
+            $builder->where('q.subject_id', $subjectId);
+        }
+        if ($topicId > 0) {
+            $builder->where('q.topic_id', $topicId);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * @return list<object>
+     */
+    private function fetchQuestionsFiltered(int $classId, int $subjectId, int $topicId, string $order = 'DESC', ?int $limit = null): array
+    {
+        try {
+            $builder = $this->makeQuestionsListBuilder($classId, $subjectId, $topicId);
+            $builder->orderBy('q.id', strtoupper($order) === 'ASC' ? 'ASC' : 'DESC');
+            if ($limit !== null && $limit > 0) {
+                $builder->limit($limit);
+            }
+            $query = $builder->get();
+            if (!$query) {
+                return [];
+            }
+
+            return $query->getResult();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::fetchQuestionsFiltered failed - ' . $e->getMessage());
+
+            return [];
+        }
+    }
+
+    private function countQuestionsFiltered(int $classId, int $subjectId, int $topicId): int
+    {
+        try {
+            $builder = $this->db->table('qb_questions q');
+            if ($classId > 0) {
+                $builder->where('q.class_id', $classId);
+            }
+            if ($subjectId > 0) {
+                $builder->where('q.subject_id', $subjectId);
+            }
+            if ($topicId > 0) {
+                $builder->where('q.topic_id', $topicId);
+            }
+
+            return (int) $builder->countAllResults();
+        } catch (\Throwable $e) {
+            log_message('error', 'QuestionBank::countQuestionsFiltered failed - ' . $e->getMessage());
+
+            return 0;
+        }
+    }
+
+    private function normalizeQuestionBankRowForJson(object $row): array
+    {
+        return \App\Libraries\QbQuestionPresenter::normalize($row);
+    }
+
+
+
     private function getAllClasses(): array
     {
          $system_id = (int) getSchoolInfo()->system_id;
@@ -854,34 +1462,48 @@ General rules:
     private function getAllSubjects(): array
     {
         foreach ([
-            ['table' => 'subjects',   'id' => 'subject_id', 'name' => 'subject_name'],
             ['table' => 'allsubject', 'id' => 'sid',        'name' => 'subject_name'],
+            ['table' => 'subjects',   'id' => 'subject_id', 'name' => 'subject_name'],
             ['table' => 'subject',    'id' => 'id',         'name' => 'name'],
         ] as $cfg) {
+            if (! $this->db->tableExists($cfg['table'])) {
+                continue;
+            }
+
             try {
                 $b = $this->db->table($cfg['table'])->select("{$cfg['id']} AS subject_id, {$cfg['name']} AS subject_name");
-                try { $b->where('status', 1); } catch (\Throwable $e) {}
+                if ($this->db->fieldExists('status', $cfg['table'])) {
+                    $b->where('status', 1);
+                }
                 $q = $b->orderBy($cfg['id'], 'ASC')->get();
                 if ($q) {
                     $rows = $q->getResult();
-                    if (!empty($rows)) return $rows;
+                    if (! empty($rows)) {
+                        return $rows;
+                    }
                 }
-            } catch (\Throwable $e) { /* try next */ }
+            } catch (\Throwable $e) {
+                log_message('debug', 'QuestionBank::getAllSubjects skipped ' . $cfg['table'] . ': ' . $e->getMessage());
+            }
         }
+
         return [];
     }
 
 
    private function getSubjectNameById(int $id): string
     {
-        // Try common schemas in your project
         $candidates = [
-            ['table' => 'subjects',    'id' => 'subject_id', 'name' => 'subject_name'],
-            ['table' => 'subject',     'id' => 'id',         'name' => 'name'],
-            ['table' => 'allsubject',  'id' => 'sid',        'name' => 'subject_name'],
+            ['table' => 'allsubject', 'id' => 'sid',        'name' => 'subject_name'],
+            ['table' => 'subjects',   'id' => 'subject_id', 'name' => 'subject_name'],
+            ['table' => 'subject',    'id' => 'id',         'name' => 'name'],
         ];
 
         foreach ($candidates as $cfg) {
+            if (! $this->db->tableExists($cfg['table'])) {
+                continue;
+            }
+
             try {
                 $q = $this->db->table($cfg['table'])
                     ->select($cfg['name'] . ' AS name')
@@ -893,9 +1515,10 @@ General rules:
                     return (string) ($row->name ?? '');
                 }
             } catch (\Throwable $e) {
-                // ignore and try next table
+                log_message('debug', 'QuestionBank::getSubjectNameById skipped ' . $cfg['table'] . ': ' . $e->getMessage());
             }
         }
+
         return '';
     }
 
@@ -911,7 +1534,7 @@ private function decodeJsonQuestions(?string $text): ?array
 
     // Optional: remove typical markdown fences
     if (str_starts_with($clean, '```')) {
-        $clean = preg_replace('/^```[a-zA-Z0-9]*\s*/', '', $clean); // remove ```json or ``` 
+        $clean = preg_replace('/^```[a-zA-Z0-9]*\s*/', '', $clean); // remove ```json or ```
         $clean = preg_replace('/```$/', '', $clean);
         $clean = trim($clean);
     }
