@@ -25,7 +25,7 @@
                 <div class="card card-success">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-gift mr-1"></i> Add New Bonus
+                            <i class="fas fa-gift me-1"></i> Add New Bonus
                         </h3>
                     </div>
                     <form action="<?= base_url('admin/bonuses/add') ?>" method="post">
@@ -37,13 +37,13 @@
                                     <option value="">Select Employee</option>
                                     <?php foreach ($employees as $emp): ?>
                                         <option value="<?= $emp->id ?>">
-                                            <?= esc($emp->first_name . ' ' . $emp->last_name) ?> 
+                                            <?= esc($emp->first_name . ' ' . $emp->last_name) ?>
                                             (Salary: <?= number_format($emp->basic_salary, 2) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label>Bonus Type</label>
                                 <select name="bonus_type" class="form-control">
@@ -54,54 +54,50 @@
                                     <option value="special">Special Bonus</option>
                                 </select>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label>Amount <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">PKR</span>
-                                    </div>
-                                    <input type="number" step="0.01" class="form-control" name="amount" 
+                                    <span class="input-group-text">PKR</span>
+                                    <input type="number" step="0.01" class="form-control" name="amount"
                                            placeholder="Enter bonus amount" required>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label>Bonus Month</label>
-                                <input type="month" class="form-control" name="bonus_month" 
+                                <input type="month" class="form-control" name="bonus_month"
                                        value="<?= date('Y-m') ?>">
                                 <small class="text-muted">Select month for which bonus is awarded</small>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label>Reason / Remarks</label>
-                                <textarea name="reason" class="form-control" rows="3" 
+                                <textarea name="reason" class="form-control" rows="3"
                                           placeholder="Enter reason for bonus (optional)"></textarea>
                             </div>
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save mr-1"></i> Add Bonus
+                                <i class="fas fa-save me-1"></i> Add Bonus
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-            
+
             <div class="col-md-7">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-list mr-1"></i> Bonus History
+                            <i class="fas fa-list me-1"></i> Bonus History
                         </h3>
                         <div class="card-tools">
                             <div class="input-group input-group-sm" style="width: 200px;">
                                 <input type="text" id="bonusSearch" class="form-control" placeholder="Search employee...">
-                                <div class="input-group-append">
-                                    <button class="btn btn-default" type="button">
+                                <button class="btn btn-secondary" type="button">
                                         <i class="fas fa-search"></i>
                                     </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -137,18 +133,18 @@
                                         ];
                                         $class = $badgeClass[$bonus->bonus_type] ?? 'secondary';
                                         ?>
-                                        <span class="badge badge-<?= $class ?>">
+                                        <span class="badge text-bg-<?=  $class ?>">
                                             <?= ucfirst($bonus->bonus_type) ?>
                                         </span>
                                     </td>
-                                    <td class="text-right font-weight-bold text-success">
+                                    <td class="text-end fw-bold text-success">
                                         <?= number_format($bonus->amount, 2) ?>
                                     </td>
                                     <td><?= date('M Y', strtotime($bonus->bonus_month)) ?></td>
                                     <td><?= date('d-M-Y', strtotime($bonus->created_date)) ?></td>
                                     <td>
-                                        <a href="<?= base_url('admin/bonuses/delete/' . $bonus->bonus_id) ?>" 
-                                           class="btn btn-sm btn-danger" 
+                                        <a href="<?= base_url('admin/bonuses/delete/' . $bonus->bonus_id) ?>"
+                                           class="btn btn-sm btn-danger"
                                            onclick="return confirm('Delete this bonus record?')">
                                             <i class="fas fa-trash"></i> Delete
                                         </a>
@@ -158,15 +154,15 @@
                                 <?php if (empty($bonuses)): ?>
                                 <tr>
                                     <td colspan="7" class="text-center text-muted">
-                                        <i class="fas fa-info-circle mr-1"></i> No bonus records found
+                                        <i class="fas fa-info-circle me-1"></i> No bonus records found
                                     </td>
                                 </tr>
                                 <?php endif; ?>
                             </tbody>
                             <tfoot>
                                 <tr class="bg-light">
-                                    <th colspan="3" class="text-right">Total:</th>
-                                    <th class="text-right">
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($bonuses, 'amount')), 2) ?>
                                     </th>
                                     <th colspan="3"></th>
@@ -189,7 +185,7 @@ $(document).ready(function() {
             $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
     });
-    
+
     // Initialize select2
     $('.select2').select2({
         width: '100%',

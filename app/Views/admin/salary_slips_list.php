@@ -1,38 +1,31 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Salary Slips</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/salary-reports') ?>">Salary Reports</a></li>
-                    <li class="breadcrumb-item active">All Salary Slips</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</div>
+<?= view('components/page_header', [
+    'title' => 'Salary Slips',
+    'icon' => 'fas fa-file-invoice',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Salary Reports', 'url' => base_url('admin/salary-reports')],
+        ['label' => 'All Salary Slips', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
         <!-- Filter Section -->
         <div class="row">
             <div class="col-md-12">
-                <div class="card">
+                <div class="card sms-card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-filter mr-1"></i> Filter Salary Slips
+                            <i class="fas fa-filter me-1"></i> Filter Salary Slips
                         </h3>
                     </div>
                     <div class="card-body">
-                        <form method="get" class="form-inline">
-                            <div class="form-group mr-2 mb-2">
-                                <label class="mr-2">Employee:</label>
+                        <form method="get" class="d-flex flex-wrap align-items-center">
+                            <div class="form-group me-2 mb-2">
+                                <label class="me-2">Employee:</label>
                                 <select name="employee_id" class="form-control select2" style="width: 250px;">
                                     <option value="">All Employees</option>
                                     <?php foreach ($employees as $emp): ?>
@@ -42,8 +35,8 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="form-group mr-2 mb-2">
-                                <label class="mr-2">Year:</label>
+                            <div class="form-group me-2 mb-2">
+                                <label class="me-2">Year:</label>
                                 <select name="year" class="form-control">
                                     <option value="">All Years</option>
                                     <?php for($y = date('Y')-2; $y <= date('Y'); $y++): ?>
@@ -51,8 +44,8 @@
                                     <?php endfor; ?>
                                 </select>
                             </div>
-                            <div class="form-group mr-2 mb-2">
-                                <label class="mr-2">Month:</label>
+                            <div class="form-group me-2 mb-2">
+                                <label class="me-2">Month:</label>
                                 <select name="month" class="form-control">
                                     <option value="">All Months</option>
                                     <?php for($m = 1; $m <= 12; $m++): ?>
@@ -63,10 +56,10 @@
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary mb-2">
-                                <i class="fas fa-search mr-1"></i> Filter
+                                <i class="fas fa-search me-1"></i> Filter
                             </button>
-                            <a href="<?= base_url('admin/salary-slips') ?>" class="btn btn-default mb-2 ml-2">
-                                <i class="fas fa-undo mr-1"></i> Reset
+                            <a href="<?= base_url('admin/salary-slips') ?>" class="btn btn-secondary mb-2 ms-2">
+                                <i class="fas fa-undo me-1"></i> Reset
                             </a>
                         </form>
                     </div>
@@ -80,14 +73,14 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-file-invoice-dollar mr-1"></i> Salary Slips List
+                            <i class="fas fa-file-invoice-dollar me-1"></i> Salary Slips List
                         </h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-sm btn-success" id="exportExcel">
-                                <i class="fas fa-file-excel mr-1"></i> Export
+                                <i class="fas fa-file-excel me-1"></i> Export
                             </button>
                             <button type="button" class="btn btn-sm btn-danger" id="printTable">
-                                <i class="fas fa-print mr-1"></i> Print
+                                <i class="fas fa-print me-1"></i> Print
                             </button>
                         </div>
                     </div>
@@ -117,29 +110,29 @@
                                         </td>
                                         <td><?= esc($slip->designation ?? 'N/A') ?></td>
                                         <td><?= date('F Y', strtotime($slip->year . '-' . $slip->month . '-01')) ?></td>
-                                        <td class="text-right"><?= number_format($slip->basic_salary, 2) ?></td>
-                                        <td class="text-right text-success">
+                                        <td class="text-end"><?= number_format($slip->basic_salary, 2) ?></td>
+                                        <td class="text-end text-success">
                                             <?= number_format(($slip->attendance_bonus ?? 0) + ($slip->other_bonus ?? 0), 2) ?>
                                         </td>
-                                        <td class="text-right text-danger">
+                                        <td class="text-end text-danger">
                                             <?= number_format($slip->total_deductions ?? 0, 2) ?>
                                         </td>
-                                        <td class="text-right font-weight-bold">
+                                        <td class="text-end fw-bold">
                                             <?= number_format($slip->net_salary ?? 0, 2) ?>
                                         </td>
                                         <td>
                                             <?php if ($slip->payment_status == 'paid'): ?>
-                                                <span class="badge badge-success">
+                                                <span class="badge text-bg-success">
                                                     <i class="fas fa-check-circle"></i> Paid
                                                 </span>
                                             <?php else: ?>
-                                                <span class="badge badge-warning">
+                                                <span class="badge text-bg-warning">
                                                     <i class="fas fa-clock"></i> Pending
                                                 </span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="<?= base_url('admin/users/view-salary-slip/' . $slip->user_id . '/' . $slip->slip_id) ?>" 
+                                            <a href="<?= base_url('admin/users/view-salary-slip/' . $slip->user_id . '/' . $slip->slip_id) ?>"
                                                class="btn btn-sm btn-info" target="_blank">
                                                 <i class="fas fa-eye"></i> View
                                             </a>
@@ -149,7 +142,7 @@
                                 <?php else: ?>
                                     <tr>
                                         <td colspan="10" class="text-center text-muted">
-                                            <i class="fas fa-info-circle mr-1"></i> No salary slips found
+                                            <i class="fas fa-info-circle me-1"></i> No salary slips found
                                         </td>
                                     </tr>
                                 <?php endif; ?>
@@ -157,17 +150,17 @@
                             <?php if (!empty($slips)): ?>
                             <tfoot>
                                 <tr class="bg-light">
-                                    <th colspan="4" class="text-right">Total:</th>
-                                    <th class="text-right">
+                                    <th colspan="4" class="text-end">Total:</th>
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'basic_salary')), 2) ?>
                                     </th>
-                                    <th class="text-right">
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'attendance_bonus')) + array_sum(array_column($slips, 'other_bonus')), 2) ?>
                                     </th>
-                                    <th class="text-right">
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'total_deductions')), 2) ?>
                                     </th>
-                                    <th class="text-right">
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'net_salary')), 2) ?>
                                     </th>
                                     <th colspan="2"></th>
@@ -189,7 +182,7 @@ $(document).ready(function() {
         width: '100%',
         placeholder: 'Select employee'
     });
-    
+
     // Export to Excel
     $('#exportExcel').on('click', function() {
         var table = document.getElementById('salarySlipsTable');
@@ -200,7 +193,7 @@ $(document).ready(function() {
         link.href = url;
         link.click();
     });
-    
+
     // Print table
     $('#printTable').on('click', function() {
         window.print();
