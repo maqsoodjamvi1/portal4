@@ -55,11 +55,11 @@ class RoleModel extends Model
     public function getAllRolesWithPermissions()
     {
         $roles = $this->getRoleWithDetails();
-        
+
         foreach ($roles as $role) {
             $role->permissions = $this->getRolePermissions($role->id);
         }
-        
+
         return $roles;
     }
 

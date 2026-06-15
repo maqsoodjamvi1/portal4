@@ -34,9 +34,15 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
-        'prefCurrency' => \App\Filters\PreferredCurrencyFilter::class, 
+        'prefCurrency' => \App\Filters\PreferredCurrencyFilter::class,
         'localization' => \App\Filters\LocalizationFilter::class, // ← Changed from 'locale'
         'authguard' => \App\Filters\AuthGuard::class,
+        'portalauth' => \App\Filters\PortalAuthFilter::class,
+        'boardprepauth' => \App\Filters\BoardPrepAuthFilter::class,
+        'adminpermission' => \App\Filters\AdminPermissionFilter::class,
+        'schoolsetup'     => \App\Filters\SchoolSetupFilter::class,
+        'hifzschema'      => \App\Filters\HifzSchemaFilter::class,
+        'csrfrefresh'     => \App\Filters\CsrfRefreshFilter::class,
     ];
 
     /**
@@ -54,13 +60,10 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
-            'forcehttps', // Force Global Secure Requests
-            'pagecache',  // Web Page Caching
+            'forcehttps',
         ],
         'after' => [
-            'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
+            'performance',
         ],
     ];
 
@@ -73,18 +76,66 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             // 'honeypot',
-            // 'csrf',
+            'pagecache' => [
+                'except' => [
+                    'admin',
+                    'admin/*',
+                    'student',
+                    'student/*',
+                    'parent',
+                    'parent/*',
+                    'prep',
+                    'prep/*',
+                ],
+            ],
+            'csrf' => [
+                'except' => [
+                    'admin/ajax/*',
+                    // Read-heavy admin AJAX (auth + RBAC still apply)
+                    'admin/**/search*',
+                    'admin/**/get-student*',
+                    'admin/**/get_student*',
+                    'admin/**/get-parent*',
+                    'admin/**/get_parent*',
+                    'admin/**/get_parentinfo*',
+                    'admin/**/autocomplete*',
+                    'admin/fee-chalan/search*',
+                    'admin/fee-chalan/get-*',
+                    'admin/fee-chalan-pay/get-*',
+                    'admin/fee-chalan-pay/data',
+                    'admin/students_print/*',
+                    'admin/students-print/*',
+                    'admin/students/search*',
+                    'admin/students_absentees/*',
+                    'api/captcha',
+                    'prep/api/captcha',
+                    'uploads/*',
+                ],
+            ],
             'prefCurrency',
             'localization',
         ],
         'after' => [
+            'pagecache' => [
+                'except' => [
+                    'admin',
+                    'admin/*',
+                    'student',
+                    'student/*',
+                    'parent',
+                    'parent/*',
+                    'prep',
+                    'prep/*',
+                ],
+            ],
+            'csrfrefresh',
             // 'honeypot',
-            // 'secureheaders',
+            'secureheaders',
         ],
     ];
 
 
-    
+
 
     /**
      * List of filter aliases that works on a
@@ -110,16 +161,26 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
-
-
-public $csrf = [
-    'except' => [
-        'admin/fee-chalan/search-students',
-        'admin/fee-chalan/search-families',
-        'admin/fee-chalan/get-sections-by-class'
-    ],
-];
+    public array $filters = [
+        'adminpermission' => [
+            'before' => [
+                'admin',
+                'admin/*',
+            ],
+        ],
+        'schoolsetup' => [
+            'before' => [
+                'admin',
+                'admin/*',
+            ],
+        ],
+        'hifzschema' => [
+            'before' => [
+                'admin/hifz',
+                'admin/hifz/*',
+            ],
+        ],
+    ];
     // shafiq nay comment kiya hay
     // // Protect the dashboard & student switch
     // public $filters = [

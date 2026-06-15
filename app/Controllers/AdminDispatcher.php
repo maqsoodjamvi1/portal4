@@ -4,14 +4,31 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 
+/**
+ * @deprecated Legacy ?c=Controller&m=action routing. Prefer explicit routes in Config/Routes.php.
+ */
 class AdminDispatcher extends Controller
 {
     public function route()
     {
         $request = service('request');
+        $session = session();
 
         $controllerName = $request->getGet('c');
         $methodName = $request->getGet('m') ?? 'index';
+
+        log_message('notice', 'Deprecated AdminDispatcher: c={c} m={m}', [
+            'c' => (string) $controllerName,
+            'm' => (string) $methodName,
+        ]);
+
+        $isAuthed = (bool) ($session->get('IsAuthorized') || $session->get('member_userid'));
+
+        if (! $isAuthed) {
+            helper('server');
+
+            return admin_auth_failure_response($request);
+        }
 
         // Collect optional params: param1, param2, ...
         $params = [];
@@ -21,32 +38,28 @@ class AdminDispatcher extends Controller
             }
         }
 
-        if (!$controllerName) {
-            return redirect()->to('/admin');
+        if (! $controllerName) {
+            return redirect()->to(base_url('admin/dashboard'));
         }
 
-        $controllerClass = 'App\\Controllers\\Admin\\' . ucfirst($controllerName);
+        $response = \App\Libraries\AdminLegacyDispatch::run($controllerName, $methodName, $request);
 
-        if (!class_exists($controllerClass)) {
-            return "?? Controller not found: {$controllerClass}";
+        if ($response === null) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setBody("Controller not found for: {$controllerName}");
         }
 
-        $controller = new $controllerClass();
-
-        if (!method_exists($controller, $methodName)) {
-            return "?? Method '{$methodName}' not found in {$controllerClass}";
+        if ($response instanceof \CodeIgniter\HTTP\ResponseInterface) {
+            return $response;
         }
 
-        // Call the method
-        $response = call_user_func_array([$controller, $methodName], $params);
-
-        // Automatically wrap with layout if it's an Admin controller and not AJAX
-        if (
-            is_string($response) &&
-            strpos(get_class($controller), 'App\\Controllers\\Admin\\') === 0 &&
-            !$request->isAJAX()
-        ) {
+        if (is_string($response) && ! $request->isAJAX()) {
             return view('admin/layout', ['content' => $response]);
+        }
+
+        if (! empty($params)) {
+            log_message('warning', 'AdminDispatcher: paramN not supported for {c}', ['c' => $controllerName]);
         }
 
         return $response;

@@ -3,6 +3,9 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\MemberAcl;
+use App\Libraries\MenuPermissionCatalog;
+use App\Libraries\RoleMenuAccess;
 use App\Models\RoleModel;
 use App\Models\RoleNameModel;
 use App\Models\PermissionModel;
@@ -35,10 +38,10 @@ public function test_perms()
         ->orderBy('sortid', 'ASC')
         ->get()
         ->getResult();
-    
+
     // Build simple tree
     $tree = $this->buildSimpleTreeArray($permissions, 0);
-    
+
     return $this->response->setJSON($tree);
 }
 
@@ -67,9 +70,11 @@ private function buildSimpleTreeArray($permissions, $parentId)
      */
    public function index()
 {
+    helper('role');
+
     $data = [
         'title' => 'Role Management',
-        'total_roles' => $this->roleModel->countAll()
+        'total_roles' => $this->roleModel->countAll(),
     ];
     return view('admin/roles/index', $data);
 }
@@ -86,30 +91,30 @@ public function data()
     $length = $this->request->getPost('length');
     $search = $this->request->getPost('search')['value'] ?? '';
 
+    helper('role');
+    $rolePlanId = getRolePlanId();
+
     // Get total records
     $totalRecords = $this->roleModel->countAll();
 
-    // Build query
+    // Build query — annual package (plan 3) roles only
     $builder = $this->db->table('roles r')
-        ->select('r.id, r.role_name_id, r.plan_id, r.issys, rn.rolename as role_name, sp.plan_name')
+        ->select('r.id, r.role_name_id, r.plan_id, r.issys, rn.rolename as role_name')
         ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'left')
-        ->join('system_plans sp', 'sp.plan_id = r.plan_id', 'left');
-    
+        ->where('r.plan_id', $rolePlanId);
+
     // Apply search if provided
     if (!empty($search)) {
-        $builder->groupStart()
-            ->like('rn.rolename', $search)
-            ->orLike('sp.plan_name', $search)
-            ->groupEnd();
+        $builder->like('rn.rolename', $search);
     }
-    
+
     // Get filtered count
     $filteredRecords = $builder->countAllResults(false);
-    
+
     // Get data with limit
     $builder->orderBy('r.id', 'DESC')
         ->limit($length, $start);
-    
+
     $roles = $builder->get()->getResult();
 
     $response = [
@@ -123,7 +128,6 @@ public function data()
         $response['data'][] = [
             'id' => $row->id,
             'roleName' => $row->role_name,
-            'plan_name' => $row->plan_name ?? 'No Plan',
             'issys' => $row->issys,
             'actions' => $this->getActionButtons($row->id, $row->issys)
         ];
@@ -138,12 +142,12 @@ public function data()
 private function getActionButtons($id, $isSys = 0)
 {
     $buttons = '<div class="btn-group btn-group-sm" role="group">';
-    
+
     // Edit button
     $buttons .= '<a href="' . base_url('admin/roles/edit/' . $id) . '" class="btn btn-info" title="Edit Role">
                     <i class="fas fa-edit"></i>
                  </a>';
-    
+
     // Delete button - only if not system role
     if ($isSys != 1) {
         $buttons .= '<button type="button" onclick="deleteRole(' . $id . ')" class="btn btn-danger" title="Delete Role">
@@ -154,7 +158,7 @@ private function getActionButtons($id, $isSys = 0)
                         <i class="fas fa-lock"></i>
                      </button>';
     }
-    
+
     $buttons .= '</div>';
     return $buttons;
 }
@@ -178,17 +182,13 @@ public function add()
         ->orderBy('rolename', 'ASC')
         ->get()
         ->getResult();
-    
-    // Get plans
-    $plans = $this->db->table('system_plans')
-        ->orderBy('plan_id', 'ASC')
-        ->get()
-        ->getResult();
+
+    helper('role');
 
     $data = [
         'title' => 'Add Role',
         'role_names' => $roleNames,
-        'plans' => $plans,
+        'plan_id' => getRolePlanId(),
         'role_id' => 0
     ];
 
@@ -207,9 +207,9 @@ public function edit($id = null)
     }
 
     $id = $id ?: $this->request->getGet('id');
-    
+
     $role = $this->roleModel->find($id);
-    
+
     if (!$role) {
         return redirect()->to('/admin/roles')->with('error', 'Role not found');
     }
@@ -219,18 +219,14 @@ public function edit($id = null)
         ->orderBy('rolename', 'ASC')
         ->get()
         ->getResult();
-    
-    // Get plans
-    $plans = $this->db->table('system_plans')
-        ->orderBy('plan_id', 'ASC')
-        ->get()
-        ->getResult();
+
+    helper('role');
 
     $data = [
         'title' => 'Edit Role',
         'role' => $role,
         'role_names' => $roleNames,
-        'plans' => $plans,
+        'plan_id' => getRolePlanId(),
         'role_id' => $id
     ];
 
@@ -242,18 +238,18 @@ public function permData()
     $roleId = (int) $this->request->getPost('roleid');
     // Enforce two-state model in DB: Allow(1) / Deny(0).
     $this->normalizeRolePermValuesToBinary();
-    
+
     // Get all permissions
     $permissions = $this->db->table('permissions')
         ->orderBy('sortid', 'ASC')
         ->orderBy('id', 'ASC')
         ->get()
         ->getResult();
-    
+
     if (empty($permissions)) {
         return $this->response->setJSON([]);
     }
-    
+
     // Get role permissions - ALL rows for this role (allow / deny / ignore stored explicitly)
     $rolePerms = [];
     if ($roleId > 0) {
@@ -261,15 +257,80 @@ public function permData()
             ->where('roleID', $roleId)
             ->get()
             ->getResult();
-            
+
         foreach ($rolePermsResult as $rp) {
             $rolePerms[(int) $rp->permID] = $rp->value;
         }
     }
-    
+
     $tree = $this->buildSimpleTreeWithValues($permissions, 0, $rolePerms);
-    
+
     return $this->response->setJSON($tree);
+}
+
+public function menuPermData()
+{
+    if (function_exists('check_permission')) {
+        check_permission('admin-edit-role');
+    }
+
+    $roleId = (int) $this->request->getPost('roleid');
+
+    return $this->response->setJSON([
+        'sections'     => MenuPermissionCatalog::getCatalog(),
+        'state'        => MenuPermissionCatalog::getStateForRole($roleId),
+        'items'        => MenuPermissionCatalog::getItemIndex(),
+        'hasOverrides' => RoleMenuAccess::getMapForRole($roleId) !== [],
+    ]);
+}
+
+/**
+ * Auto-save menu Show/Hide toggles (no form submit required).
+ */
+public function saveMenuAccess()
+{
+    if (function_exists('check_permission')) {
+        check_permission('admin-edit-role');
+    }
+
+    $roleId     = (int) $this->request->getPost('roleid');
+    $menuAccess = $this->request->getPost('menu_access');
+
+    if ($roleId <= 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'Invalid role.',
+        ]);
+    }
+
+    if (! RoleMenuAccess::tableExists()) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'Menu access storage is not set up. Please run database migrations.',
+        ]);
+    }
+
+    if (! is_array($menuAccess)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'Invalid menu access data.',
+        ]);
+    }
+
+    if (! RoleMenuAccess::saveForRole($roleId, $menuAccess)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'Menu access was not saved. Reload the page and try again (incomplete data).',
+        ]);
+    }
+
+    $this->clearAclCachesForRoleUsers($roleId);
+
+    return $this->response->setJSON([
+        'success'   => true,
+        'msg'       => 'Menu access saved.',
+        'csrf_hash' => csrf_hash(),
+    ]);
 }
 
 /**
@@ -328,17 +389,17 @@ private function normalizeRolePermValuesToBinary(): void
 private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [], $level = 0)
 {
     $branch = [];
-    
+
     foreach ($items as $item) {
         if ($item->parent_id == $parentId) {
             $chk = '0';
-            
+
             if (array_key_exists((int) $item->id, $rolePerms)) {
                 $chk = $this->mapRolePermValueToChk($rolePerms[(int) $item->id]);
             } else {
                 $chk = '0';
             }
-            
+
             $node = [
                 'id' => $item->id,
                 'name' => $item->permName,
@@ -346,11 +407,11 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
                 'chk' => $chk,
                 'children' => $this->buildSimpleTreeWithValues($items, $item->id, $rolePerms, $level + 1)
             ];
-            
+
             $branch[] = $node;
         }
     }
-    
+
     return $branch;
 }
 
@@ -370,8 +431,6 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
     public function get_role_by_name()
 {
     $roleNameId = (int) $this->request->getPost('role_name_id');
-    $planIdRaw = $this->request->getPost('plan_id');
-    $planId = ($planIdRaw === null || $planIdRaw === '') ? null : (int) $planIdRaw;
 
     if ($roleNameId <= 0) {
         return $this->response->setJSON([
@@ -380,17 +439,11 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
         ]);
     }
 
-    // Find exact role by role_name + plan so edit screen can switch context in-place.
-    $builder = $this->db->table('roles')
-        ->where('role_name_id', $roleNameId);
+    helper('role');
 
-    if ($planId === null) {
-        $builder->where('plan_id IS NULL', null, false);
-    } else {
-        $builder->where('plan_id', $planId);
-    }
-
-    $role = $builder
+    $role = $this->db->table('roles')
+        ->where('role_name_id', $roleNameId)
+        ->where('plan_id', getRolePlanId())
         ->orderBy('id', 'DESC')
         ->get()
         ->getRow();
@@ -425,11 +478,14 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
     // Validate and get data
     $id = $this->request->getPost('id');
     $role_name_id = $this->request->getPost('role_name_id');
-    $plan_id = $this->request->getPost('plan_id');
     $permissions = $this->request->getPost('perms');
-    
+    $menuAccess  = $this->request->getPost('menu_access');
+
+    helper('role');
+    $plan_id = getRolePlanId();
+
     $this->db->transStart();
-    
+
     if ($id) {
         // Update existing role
         $this->roleModel->update($id, [
@@ -445,13 +501,13 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
             'issys' => 0
         ]);
     }
-    
+
     if ($roleId) {
         // Delete existing permissions for this role
         $this->db->table('role_perms')
             ->where('roleID', $roleId)
             ->delete();
-        
+
         // Insert new permissions
         if ($permissions && is_array($permissions)) {
             $insertData = [];
@@ -464,22 +520,33 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
                     'add_date' => date('Y-m-d H:i:s')
                 ];
             }
-            
+
             if (!empty($insertData)) {
                 $this->db->table('role_perms')->insertBatch($insertData);
             }
         }
+
+        if (is_array($menuAccess) && ! RoleMenuAccess::saveForRole((int) $roleId, $menuAccess)) {
+            $this->db->transComplete();
+
+            return $this->response->setJSON([
+                'success' => false,
+                'msg'     => 'Failed to save menu access for this role.',
+            ]);
+        }
     }
-    
+
     $this->db->transComplete();
-    
+
     if ($this->db->transStatus() === false) {
         return $this->response->setJSON([
             'success' => false,
             'msg' => 'Failed to save role'
         ]);
     }
-    
+
+    $this->clearAclCachesForRoleUsers((int) $roleId);
+
     return $this->response->setJSON([
         'success' => true,
         'msg' => $id ? 'Role updated successfully' : 'Role created successfully',
@@ -488,18 +555,62 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
 }
 
     /**
+     * Invalidate per-user permission and menu caches for everyone on this role.
+     */
+    private function clearAclCachesForRoleUsers(int $roleId): void
+    {
+        if ($roleId <= 0) {
+            return;
+        }
+
+        $userIds = [];
+
+        $rows = $this->db->table('user_roles')
+            ->select('userID')
+            ->where('roleID', $roleId)
+            ->get()
+            ->getResultArray();
+
+        foreach ($rows as $row) {
+            $uid = (int) ($row['userID'] ?? 0);
+            if ($uid > 0) {
+                $userIds[$uid] = $uid;
+            }
+        }
+
+        $legacyRows = $this->db->table('user_roles ur')
+            ->select('ur.userID')
+            ->join('roles r', 'r.role_name_id = ur.roleID')
+            ->where('r.id', $roleId)
+            ->get()
+            ->getResultArray();
+
+        foreach ($legacyRows as $row) {
+            $uid = (int) ($row['userID'] ?? 0);
+            if ($uid > 0) {
+                $userIds[$uid] = $uid;
+            }
+        }
+
+        foreach ($userIds as $uid) {
+            (new MemberAcl($uid))->clearUserCaches($uid);
+            RoleMenuAccess::clearCacheForUser($uid);
+        }
+    }
+
+    /**
      * Save role permissions
      */
     private function saveRolePermissions($roleId)
     {
         $permissions = $this->request->getPost('perms');
-        
+
         if ($permissions && is_array($permissions)) {
             // Delete existing permissions
             $this->db->table('role_perms')
                 ->where('roleID', $roleId)
                 ->delete();
-            
+
             // Insert new permissions
             foreach ($permissions as $permId => $value) {
                 if ($value == 1) {
@@ -520,16 +631,16 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
     public function delete($id = null)
     {
         check_permission('admin-del-role');
-        
+
         $id = $id ?: $this->request->getGet('id');
-        
+
         if (!$id) {
             return $this->response->setJSON([
                 'success' => false,
                 'msg' => 'Invalid role ID'
             ]);
         }
-        
+
         // Check if role is system role (issys = 1)
         $role = $this->roleModel->find($id);
         if ($role && $role->issys == 1) {
@@ -540,23 +651,23 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
         }
 
         $this->db->transStart();
-        
+
         // Delete role permissions
         $this->db->table('role_perms')->where('roleID', $id)->delete();
-        
+
         // Delete user role assignments
         $this->db->table('user_roles')->where('roleID', $id)->delete();
-        
+
         // Delete role
         $this->roleModel->delete($id);
-        
+
         $this->db->transComplete();
-        
+
         // Clear cache
         if (function_exists('cxp_update_cache')) {
             cxp_update_cache();
         }
-        
+
         return $this->response->setJSON([
             'success' => true,
             'msg' => 'Role deleted successfully'
@@ -582,12 +693,12 @@ private function buildSimpleTreeWithValues($items, $parentId = 0, $rolePerms = [
 private function buildSimpleTree($items, $parentId = 0, $rolePerms = [], $level = 0)
 {
     $branch = [];
-    
+
     foreach ($items as $item) {
         if ($item->parent_id == $parentId) {
             // Determine permission value
             $chk = 'x'; // Default to ignore
-            
+
             // Check if this permission is assigned to the role
             if (isset($rolePerms[$item->id])) {
                 $chk = '1'; // Allow
@@ -599,13 +710,13 @@ private function buildSimpleTree($items, $parentId = 0, $rolePerms = [], $level 
                     $chk = 'x';
                 }
             }
-            
+
             // Store parent value for children
             if (!isset($this->parentPermValues)) {
                 $this->parentPermValues = [];
             }
             $this->parentPermValues[$item->id] = $chk;
-            
+
             $node = [
                 'id' => $item->id,
                 'name' => $item->permName,
@@ -613,11 +724,11 @@ private function buildSimpleTree($items, $parentId = 0, $rolePerms = [], $level 
                 'chk' => $chk,
                 'children' => $this->buildSimpleTree($items, $item->id, $rolePerms, $level + 1)
             ];
-            
+
             $branch[] = $node;
         }
     }
-    
+
     return $branch;
 }
 
@@ -638,7 +749,7 @@ public function get_permissions_direct()
 {
     try {
         $roleId = (int) $this->request->getPost('roleid');
-        
+
         // Get all permissions
         $permissions = $this->db->table('permissions')
             ->select('id, permName, permKey, parent_id, sortid')
@@ -646,11 +757,11 @@ public function get_permissions_direct()
             ->orderBy('id', 'ASC')
             ->get()
             ->getResult();
-        
+
         if (empty($permissions)) {
             return $this->response->setJSON([]);
         }
-        
+
         // Get role permissions if editing
         $rolePermissions = [];
         if ($roleId > 0) {
@@ -659,16 +770,16 @@ public function get_permissions_direct()
                 ->where('value', 1)
                 ->get()
                 ->getResult();
-            
+
             foreach ($rolePerms as $rp) {
                 $rolePermissions[$rp->permID] = 1;
             }
         }
-        
+
         // Build tree for zTree
         $tree = [];
         $permMap = [];
-        
+
         // First, create a map of all permissions
         foreach ($permissions as $perm) {
             $permMap[$perm->id] = [
@@ -681,7 +792,7 @@ public function get_permissions_direct()
                 'children' => []
             ];
         }
-        
+
         // Build the tree structure
         foreach ($permMap as $id => &$node) {
             if ($node['parent_id'] == 0) {
@@ -692,16 +803,16 @@ public function get_permissions_direct()
                 }
             }
         }
-        
+
         // Remove empty children arrays
         foreach ($permMap as &$node) {
             if (empty($node['children'])) {
                 unset($node['children']);
             }
         }
-        
+
         return $this->response->setJSON($tree);
-        
+
     } catch (\Exception $e) {
         log_message('error', 'Error in get_permissions_direct: ' . $e->getMessage());
         return $this->response->setJSON([
@@ -716,14 +827,14 @@ public function get_permissions_direct()
 private function buildSimpleTreeData($permissions, $parentId, $rolePermissions)
 {
     $result = [];
-    
+
     foreach ($permissions as $perm) {
         if ($perm->parent_id == $parentId) {
             $chk = 'x';
             if (isset($rolePermissions[$perm->id])) {
                 $chk = '1';
             }
-            
+
             $node = [
                 'id' => $perm->id,
                 'name' => $perm->permName,
@@ -732,7 +843,7 @@ private function buildSimpleTreeData($permissions, $parentId, $rolePermissions)
                 'chk' => $chk,
                 'open' => true
             ];
-            
+
             // Check for children
             $hasChildren = false;
             foreach ($permissions as $p) {
@@ -741,16 +852,16 @@ private function buildSimpleTreeData($permissions, $parentId, $rolePermissions)
                     break;
                 }
             }
-            
+
             if ($hasChildren) {
                 $node['children'] = $this->buildSimpleTreeData($permissions, $perm->id, $rolePermissions);
                 $node['isParent'] = true;
             }
-            
+
             $result[] = $node;
         }
     }
-    
+
     return $result;
 }
 
@@ -762,11 +873,11 @@ public function debug_permissions()
     // Check if permissions table exists
     $tables = $this->db->listTables();
     $permissionsExists = in_array('permissions', $tables);
-    
+
     // Get count of permissions
     $permissionCount = 0;
     $permissions = [];
-    
+
     if ($permissionsExists) {
         $permissionCount = $this->db->table('permissions')->countAll();
         $permissions = $this->db->table('permissions')
@@ -775,7 +886,7 @@ public function debug_permissions()
             ->get()
             ->getResult();
     }
-    
+
     return $this->response->setJSON([
         'permissions_table_exists' => $permissionsExists,
         'permission_count' => $permissionCount,
@@ -791,7 +902,7 @@ public function get_permissions_list()
 {
     try {
         $roleId = (int) $this->request->getPost('roleid');
-        
+
         // Get all permissions
         $permissions = $this->db->table('permissions')
             ->select('id, permName, permKey, parent_id, sortid')
@@ -800,14 +911,14 @@ public function get_permissions_list()
             ->orderBy('id', 'ASC')
             ->get()
             ->getResult();
-        
+
         if (empty($permissions)) {
             return $this->response->setJSON([
                 'success' => true,
                 'permissions' => []
             ]);
         }
-        
+
         // Get role permissions
         $rolePermissions = [];
         if ($roleId > 0) {
@@ -816,16 +927,16 @@ public function get_permissions_list()
                 ->where('value', 1)
                 ->get()
                 ->getResult();
-            
+
             foreach ($rolePerms as $rp) {
                 $rolePermissions[$rp->permID] = 1;
             }
         }
-        
+
         // Build hierarchical structure
         $permissionMap = [];
         $tree = [];
-        
+
         // First, create a map
         foreach ($permissions as $perm) {
             $permissionMap[$perm->id] = [
@@ -837,7 +948,7 @@ public function get_permissions_list()
                 'children' => []
             ];
         }
-        
+
         // Build tree
         foreach ($permissionMap as $id => &$node) {
             if ($node['parent_id'] == 0) {
@@ -848,13 +959,13 @@ public function get_permissions_list()
                 }
             }
         }
-        
+
         return $this->response->setJSON([
             'success' => true,
             'permissions' => $tree,
             'total' => count($permissions)
         ]);
-        
+
     } catch (\Exception $e) {
         log_message('error', 'Error in get_permissions_list: ' . $e->getMessage());
         return $this->response->setJSON([
@@ -870,7 +981,7 @@ public function get_permissions_list()
     {
         $roleId = (int) $this->request->getGet('role_id');
         $permissions = $this->permissionModel->getAllPermissions();
-        
+
         $rolePermissions = [];
         if ($roleId > 0) {
             $rolePerms = $this->roleModel->getRolePermissions($roleId);
@@ -878,9 +989,9 @@ public function get_permissions_list()
                 $rolePermissions[$perm->id] = 1;
             }
         }
-        
+
         $tree = $this->buildPermissionTree($permissions, 0, $rolePermissions);
-        
+
         return $this->response->setJSON($tree);
     }
 }
