@@ -1,3 +1,4 @@
+<?php $uiNeedsChart = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -26,7 +27,7 @@
 }
 .alert-item {
     padding: 12px;
-    border-left: 4px solid;
+    border-start: 4px solid;
     margin-bottom: 10px;
     background: #f8f9fa;
     border-radius: 5px;
@@ -35,9 +36,9 @@
 .alert-item:hover {
     background: #e9ecef;
 }
-.alert-underweight { border-left-color: #3498db; }
-.alert-overweight { border-left-color: #f39c12; }
-.alert-obese { border-left-color: #e74c3c; }
+.alert-underweight { border-start-color: #3498db; }
+.alert-overweight { border-start-color: #f39c12; }
+.alert-obese { border-start-color: #e74c3c; }
 .trend-chart-container {
     background: white;
     border-radius: 10px;
@@ -45,21 +46,14 @@
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-heartbeat mr-2"></i>BMI Dashboard</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">BMI Dashboard</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'BMI Dashboard',
+    'icon' => 'fas fa-heartbeat',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <!-- Statistics Cards -->
@@ -183,8 +177,8 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-bell mr-2"></i>Recent Health Alerts
-                        <span class="badge badge-danger ml-2"><?= count($recentAlerts) ?></span>
+                        <i class="fas fa-bell me-2"></i>Recent Health Alerts
+                        <span class="badge text-bg-danger ms-2"><?= count($recentAlerts) ?></span>
                     </h3>
                     <div class="card-tools">
                         <a href="<?= base_url('admin/health/alerts') ?>" class="btn btn-sm btn-primary">
@@ -199,7 +193,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <strong><?= esc($alert->first_name . ' ' . $alert->last_name) ?></strong>
-                                        <span class="badge badge-<?= $alert->alert_type == 'underweight' ? 'info' : ($alert->alert_type == 'overweight' ? 'warning' : 'danger') ?> ml-2">
+                                        <span class="badge text-bg-<?=  $alert->alert_type == 'underweight' ? 'info' : ($alert->alert_type == 'overweight' ? 'warning' : 'danger') ?> ms-2">
                                             <?= ucfirst($alert->alert_type) ?>
                                         </span>
                                         <div class="small text-muted mt-1">

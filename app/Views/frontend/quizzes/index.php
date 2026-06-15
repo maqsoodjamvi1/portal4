@@ -1,9 +1,14 @@
 <?= $this->extend('frontend/layouts/master_portal') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1 class="mb-3">My Quizzes</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'My Quizzes',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('student/dashboard')],
+        ['label' => 'My Quizzes', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <div class="row">
@@ -64,7 +69,7 @@
                   <tr>
                     <td><?= esc($a->title) ?></td>
                     <td><?= esc($a->score_obtained) ?></td>
-                    <td><span class="badge <?= $a->status==='submitted'?'badge-success':'badge-secondary' ?>"><?= esc($a->status) ?></span></td>
+                    <td><span class="badge <?= $a->status==='submitted'?'text-bg-success':'text-bg-secondary' ?>"><?= esc($a->status) ?></span></td>
                     <td><?= esc($a->submitted_at) ?></td>
                     <td>
                       <a class="btn btn-info btn-sm" href="<?= base_url('student/quizzes/review/'.$a->attempt_id) ?>">Open</a>

@@ -233,11 +233,13 @@ public function byParent()
     protected function userClassSections()
     {
         return $this->db->table('class_section cs')
-            ->select('cs.cls_sec_id, cs.section_id, CONCAT(c.class_name, " (", s.section_name, ")") as sectionclassname')
+            ->select('cs.cls_sec_id, cs.section_id, cs.class_id, CONCAT(c.class_name, " (", s.section_name, ")") as sectionclassname')
             ->join('classes c', 'c.class_id = cs.class_id')
             ->join('sections s', 's.section_id = cs.section_id')
             ->where('cs.status', 1)
             ->where('cs.campus_id', $this->session->get('member_campusid'))
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('s.section_id', 'ASC')
             ->get()
             ->getResultArray();
     }
@@ -370,8 +372,9 @@ public function data()
             p.relationship          AS p_relationship,
             p.religion              AS p_religion
         ")
-        // When loading by parent, it’s nice to have a stable sort: class -> first_name
-        ->orderBy('sc.cls_sec_id', 'ASC')
+        // Sort by class id (not class name), then section, then student name
+        ->orderBy('cs.class_id', 'ASC')
+        ->orderBy('cs.section_id', 'ASC')
         ->orderBy('s.first_name', 'ASC')
         ->orderBy('s.last_name',  'ASC')
         ->get()->getResult();

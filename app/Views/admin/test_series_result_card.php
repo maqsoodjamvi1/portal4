@@ -3,21 +3,15 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-poll"></i> Test Results – Student Cards</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Test Results</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Test Results – Student Cards',
+    'icon' => 'fas fa-poll',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Test Results', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <div class="card card-primary card-outline">
@@ -27,7 +21,7 @@
     <div class="card-body">
       <form id="resultFilterForm" class="mb-2">
         <?= csrf_field() ?>
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-3">
             <label for="cls_sec_id">Class Section <span class="text-danger">*</span></label>
           <select class="form-control" id="cls_sec_id" name="cls_sec_id" required>
@@ -80,17 +74,17 @@
   <button type="submit" id="btnView" class="btn btn-primary">
     <i class="fas fa-eye"></i> View Results
   </button>
-  <button type="button" id="btnReset" class="btn btn-secondary ml-2">
+  <button type="button" id="btnReset" class="btn btn-secondary ms-2">
     <i class="fas fa-undo"></i> Reset
   </button>
 
   <!-- NEW: Compact switch -->
-  <div class="custom-control custom-switch ml-3 d-flex align-items-center">
-    <input type="checkbox" class="custom-control-input" id="toggleCompact">
-    <label class="custom-control-label" for="toggleCompact">Compact view</label>
+  <div class="form-check form-switch ms-3 d-flex align-items-center">
+    <input type="checkbox" class="form-check-input" id="toggleCompact">
+    <label class="form-check-label" for="toggleCompact">Compact view</label>
   </div>
 
-  <button type="button" id="btnPrint" class="btn btn-outline-secondary ml-auto">
+  <button type="button" id="btnPrint" class="btn btn-outline-secondary ms-auto">
     <i class="fas fa-print"></i> Print
   </button>
 </div>

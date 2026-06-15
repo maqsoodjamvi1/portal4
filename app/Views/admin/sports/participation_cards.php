@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Student Participation</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active">Participation</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Participation',
+    'icon' => 'fas fa-id-badge',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Participation', 'active' => true],
+    ],
+]) ?>
 
 <style>
 .filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -56,7 +51,7 @@
       <div class="filter-bar">
         <label class="mb-0">Class Section</label>
         <select id="cls_sec_id" class="form-control" style="max-width:260px">
-          <option value="0">— All Sections —</option>
+          <option value="0">ï¿½ All Sections ï¿½</option>
           <?php foreach (($sections ?? []) as $s): ?>
             <option value="<?= (int)$s['cls_sec_id'] ?>">
               <?= esc(($s['class_short'] ?? '') . ' - ' . ($s['section_name'] ?? '')) ?>
@@ -69,7 +64,7 @@
 
     <div class="card-body">
       <div id="cards" class="cards-grid"></div>
-      <div id="hint" class="hint">Pick a class section or keep “All Sections”.</div>
+      <div id="hint" class="hint">Pick a class section or keep ï¿½All Sectionsï¿½.</div>
     </div>
   </div>
 </section>
@@ -102,7 +97,7 @@ function renderCards(rows){
 
   const html = rows.map(r=>{
     const full = esc(((r.first_name||'')+' '+(r.last_name||'')).trim()) || ('ID '+r.student_id);
-    const meta = [r.class_short||'', ageYears(r.date_of_birth||''), (r.participation_count||0)+' events'].filter(Boolean).join(' • ');
+    const meta = [r.class_short||'', ageYears(r.date_of_birth||''), (r.participation_count||0)+' events'].filter(Boolean).join(' ï¿½ ');
    const events = (r.events_array || []).map(ev => `<div class="event-box">${esc(ev)}</div>`).join('');
     return `
       <div class="card-item">
@@ -120,7 +115,7 @@ function renderCards(rows){
 
 function reload(){
   const cls_sec_id = Number(document.getElementById('cls_sec_id').value||0);
-  document.getElementById('cards').innerHTML = '<div class="hint">Loading…</div>';
+  document.getElementById('cards').innerHTML = '<div class="hint">Loadingï¿½</div>';
   fetch('<?= base_url('admin/sports/participation-report/data') ?>', {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},

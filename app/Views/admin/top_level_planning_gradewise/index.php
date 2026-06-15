@@ -69,9 +69,9 @@ $showUpdatedDate = !empty($selected_filters['show_updated_date']);
         <div class="card-header d-flex justify-content-between align-items-center">
           <h3 class="card-title">Top Level Planning (<?= esc($session_name) ?>)</h3>
           <div class="card-tools no-print d-flex align-items-center">
-            <div class="custom-control custom-switch mr-3">
-              <input type="checkbox" class="custom-control-input" id="tlpToggleBreaks">
-              <label class="custom-control-label" for="tlpToggleBreaks">Remove page breaks</label>
+            <div class="form-check form-switch me-3">
+              <input type="checkbox" class="form-check-input" id="tlpToggleBreaks">
+              <label class="form-check-label" for="tlpToggleBreaks">Remove page breaks</label>
             </div>
 
             <button type="button" class="btn btn-tool" onclick="window.print()">
@@ -166,19 +166,19 @@ $showUpdatedDate = !empty($selected_filters['show_updated_date']);
 
                     <!-- Show Updated Date (NEW) -->
                     <div class="form-group mt-2">
-                      <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="showUpdatedDate" name="show_updated_date"
+                      <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="showUpdatedDate" name="show_updated_date"
                                <?= $showUpdatedDate ? 'checked' : '' ?>>
-                        <label class="custom-control-label" for="showUpdatedDate">Show Updated Date</label>
+                        <label class="form-check-label" for="showUpdatedDate">Show Updated Date</label>
                       </div>
                     </div>
 
                     <!-- Buttons -->
-                    <div class="form-group text-right mt-2">
+                    <div class="form-group text-end mt-2">
                       <button type="button" id="applyFiltersBtn" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Apply Filters
                       </button>
-                      <button type="button" class="btn btn-default" onclick="resetFilters()">
+                      <button type="button" class="btn btn-secondary" onclick="resetFilters()">
                         <i class="fas fa-undo"></i> Reset
                       </button>
                     </div>
@@ -212,15 +212,15 @@ $showUpdatedDate = !empty($selected_filters['show_updated_date']);
 </section>
 
 <!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.4.1/css/rowGroup.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.4.1/css/rowGroup.bootstrap5.min.css">
 
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -280,7 +280,7 @@ function initTlpDataTable() {
       dataSrc: 0,
       startRender: function (rows, group) {
         return $('<tr class="dtrg-start"/>')
-          .append('<td colspan="'+colSpan+'" class="text-center font-weight-bold bg-light">'+ group +'</td>');
+          .append('<td colspan="'+colSpan+'" class="text-center fw-bold bg-light">'+ group +'</td>');
       }
     }
   });

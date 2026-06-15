@@ -1,4 +1,5 @@
 <?php
+helper('school');
 // Ensure all variables are defined with defaults
 $student = $student ?? [];
 $show_discount = $show_discount ?? true;
@@ -107,13 +108,22 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                 <div class="info-row-single">
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
-                        <strong class="student-name-line"><?= esc($head_student['student_name'] ?? '') ?></strong>
+                        <strong class="student-name-line"><?= esc(fee_chalan_student_display_name($head_student['student_name'] ?? '', $head_student['reg_no'] ?? null)) ?></strong>
                         <?php
                         $headClass    = fee_chalan_class_badge_text($head_student['class_short_name'] ?? null, $head_student['class_name'] ?? null);
                         $headSection  = trim((string) ($head_student['section_short_name'] ?? ''));
-                        if ($headClass !== ''):
+                        $headClassSection = trim($headClass . ($headSection !== '' ? ' ' . $headSection : ''));
+                        if ($headClassSection === '') {
+                            $headClassSection = trim((string) ($elder_class_display ?? ''));
+                        }
+                        if ($headClassSection === '') {
+                            $fallbackClass = fee_chalan_class_badge_text($student['class_name'] ?? null, $student['class_name'] ?? null);
+                            $fallbackSec   = trim((string) ($student['section_short_name'] ?? ''));
+                            $headClassSection = trim($fallbackClass . ($fallbackSec !== '' ? ' ' . $fallbackSec : ''));
+                        }
+                        if ($headClassSection !== ''):
                         ?>
-                            <span class="class-badge">(<?= esc($headClass) ?><?= $headSection !== '' ? ' ' . esc($headSection) : '' ?>)</span>
+                            <span class="class-badge">(<?= esc($headClassSection) ?>)</span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -129,21 +139,46 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                 <div class="info-row-single">
                     <div class="info-label">Other:</div>
                     <div class="info-value left-align">
-                        <?php if (!empty($other_students)): ?>
-                            <?php 
-                            $otherNames = [];
+                        <?php
+                        $otherNames = [];
+                        if (!empty($other_students)) {
                             foreach ($other_students as $s) {
-                                $line        = trim((string) ($s['student_name'] ?? ''));
+                                $line        = fee_chalan_student_display_name(
+                                    (string) ($s['student_name'] ?? ''),
+                                    $s['reg_no'] ?? null
+                                );
                                 $classLabel  = fee_chalan_class_badge_text($s['class_short_name'] ?? null, $s['class_name'] ?? null);
                                 $sectionPart = trim((string) ($s['section_short_name'] ?? ''));
                                 if ($classLabel !== '') {
                                     $line .= ' (' . $classLabel . ($sectionPart !== '' ? ' ' . $sectionPart : '') . ')';
                                 }
-                                $otherNames[] = $line;
+                                $otherNames[] = trim($line);
                             }
-                            echo esc(implode(', ', $otherNames));
-                            ?>
-                        <?php endif; ?>
+                        }
+
+                        // Fallback for family views that already pass preformatted sibling text
+                        if (empty($otherNames) && !empty($student['formatted_other_students']) && is_array($student['formatted_other_students'])) {
+                            foreach ($student['formatted_other_students'] as $line) {
+                                $line = trim((string) $line);
+                                if ($line !== '') {
+                                    $otherNames[] = $line;
+                                }
+                            }
+                        }
+
+                        // Final fallback: show family head when no sibling list is available
+                        if (empty($otherNames) && !empty($head_student)) {
+                            $headLine = fee_chalan_student_display_name(
+                                (string) ($head_student['student_name'] ?? ''),
+                                $head_student['reg_no'] ?? null
+                            );
+                            if ($headLine !== '') {
+                                $otherNames[] = $headLine;
+                            }
+                        }
+
+                        echo esc(implode(', ', $otherNames));
+                        ?>
                     </div>
                 </div>
                 
@@ -168,7 +203,7 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                 <div class="info-row-single">
                     <div class="info-label">Name:</div>
                     <div class="info-value left-align">
-                        <strong class="student-name-line"><?= esc($student['student_name'] ?? '') ?></strong>
+                        <strong class="student-name-line"><?= esc(fee_chalan_student_display_name($student['student_name'] ?? '', $student['reg_no'] ?? null)) ?></strong>
                         <?php
                         $studentClass   = fee_chalan_class_badge_text($student['class_short_name'] ?? null, $student['class_name'] ?? null);
                         $studentSection = trim((string) ($student['section_short_name'] ?? ''));
@@ -249,11 +284,11 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                             <?php endif; ?>
                         </td>
                         <?php if ($show_discount): ?>
-                            <td class="text-right"><?= $isBlank ? '' : number_format($amount, 0) . '/-' ?></td>
-                            <td class="text-right"><?= $isBlank ? '' : ($discount > 0 ? number_format($discount, 0) . '/-' : '-') ?></td>
-                            <td class="text-right payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
+                            <td class="text-end"><?= $isBlank ? '' : number_format($amount, 0) . '/-' ?></td>
+                            <td class="text-end"><?= $isBlank ? '' : number_format($discount, 0) . '/-' ?></td>
+                            <td class="text-end payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
                         <?php else: ?>
-                            <td class="text-right payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
+                            <td class="text-end payable-amount"><?= $isBlank ? '' : number_format($payable, 0) . '/-' ?></td>
                         <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
@@ -341,18 +376,18 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                         <?php foreach ($latestSixMonthKeys as $monthKey):
                             $v = $useSplit ? (float) ($mfByMonth[$monthKey] ?? 0) : (float) ($allMonthlyTotals[$monthKey] ?? 0);
                             ?>
-                            <td class="text-right"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
+                            <td class="text-end"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
                         <?php endforeach; ?>
-                        <td class="text-right total-amount"><?= number_format($useSplit ? $grandM : $grandM + $grandO, 0) ?></td>
+                        <td class="text-end total-amount"><?= number_format($useSplit ? $grandM : $grandM + $grandO, 0) ?></td>
                     </tr>
                     <tr>
                         <td class="history-label">Other</td>
                         <?php foreach ($latestSixMonthKeys as $monthKey):
                             $v = $useSplit ? (float) ($oByMonth[$monthKey] ?? 0) : 0.0;
                             ?>
-                            <td class="text-right"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
+                            <td class="text-end"><?= $v > 0 ? number_format($v, 0) : '-' ?></td>
                         <?php endforeach; ?>
-                        <td class="text-right total-amount"><?= number_format($useSplit ? $grandO : 0, 0) ?></td>
+                        <td class="text-end total-amount"><?= number_format($useSplit ? $grandO : 0, 0) ?></td>
                     </tr>
                     <tr class="history-row-sum">
                         <td class="history-label history-label-sum">Total</td>
@@ -363,9 +398,9 @@ if (($payableMonthly + $payableOther) <= 0 && ! empty($student['chalans'])) {
                                 $sumCol = (float) ($allMonthlyTotals[$monthKey] ?? 0);
                             }
                             ?>
-                            <td class="text-right history-sum-cell"><?= $sumCol > 0 ? number_format($sumCol, 0) : '-' ?></td>
+                            <td class="text-end history-sum-cell"><?= $sumCol > 0 ? number_format($sumCol, 0) : '-' ?></td>
                         <?php endforeach; ?>
-                        <td class="text-right total-amount history-sum-cell"><?= number_format($grandSumAll, 0) ?></td>
+                        <td class="text-end total-amount history-sum-cell"><?= number_format($grandSumAll, 0) ?></td>
                     </tr>
                 </tbody>
             </table>

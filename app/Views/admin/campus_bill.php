@@ -62,7 +62,7 @@
 
 .invoice main .notices {
     padding-left: 6px;
-    border-left: 6px solid #3989c6
+    border-start: 6px solid #3989c6
 }
 
 .invoice main .notices .notice {
@@ -189,7 +189,7 @@
 .ribbon-top-right::before,
 .ribbon-top-right::after {
     border-top-color: transparent;
-    border-right-color: transparent
+    border-end-color: transparent
 }
 
 .ribbon-top-right::before {
@@ -248,7 +248,7 @@
 .ribbon-top-right::before,
 .ribbon-top-right::after {
     border-top-color: transparent;
-    border-right-color: transparent
+    border-end-color: transparent
 }
 
 .ribbon-top-right::before {
@@ -327,7 +327,7 @@
 
 .invoice main .notices {
     padding-left: 6px;
-    border-left: 6px solid #3989c6
+    border-start: 6px solid #3989c6
 }
 
 .invoice main .notices .notice {
@@ -461,7 +461,7 @@ $billingAmount =  $campusbillinfo->bill_amount;
 ?>
 <div id="invoice">
     <div class="toolbar hidden-print">
-        <div class="text-right">
+        <div class="text-end">
             <button id="printInvoice" class="btn btn-info"><i class="fa fa-print"></i> Print</button>
             <!-- <button class="btn btn-info"><i class="fa fa-file-pdf-o"></i> Export as PDF</button> -->
         </div>
@@ -505,16 +505,16 @@ $billingAmount =  $campusbillinfo->bill_amount;
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th class="text-left">DESCRIPTION</th>
-                            <th class="text-right">MONTH PRICE</th>
-                            <th class="text-right">MONTHS</th>
-                            <th class="text-right">TOTAL</th>
+                            <th class="text-start">DESCRIPTION</th>
+                            <th class="text-end">MONTH PRICE</th>
+                            <th class="text-end">MONTHS</th>
+                            <th class="text-end">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                           <td class="no">01</td>
-                            <td class="text-left"><h3>TLive Education Web Portal </h3>
+                            <td class="text-start"><h3>TLive Education Web Portal </h3>
                               Students Limit: <?php echo $campusbillinfo->max_students; ?>, Maximum Fee Limit: 
                               <?php echo $campusbillinfo->max_fee; ?>
                             </td>

@@ -47,9 +47,9 @@
                             <th>Status</th>
                             <td>
                                 <?php if ($qr['is_active']): ?>
-                                    <span class="badge badge-success">Active</span>
+                                    <span class="badge text-bg-success">Active</span>
                                 <?php else: ?>
-                                    <span class="badge badge-danger">Inactive</span>
+                                    <span class="badge text-bg-danger">Inactive</span>
                                 <?php endif; ?>
                             </td>
                         </tr>

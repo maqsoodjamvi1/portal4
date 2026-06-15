@@ -2,7 +2,7 @@
 <?= $this->section('content') ?>
 
 <style>
-  .font-weight-600 { font-weight: 600; }
+  
   .cd-day-card {
     margin-bottom: 20px;
     border: 1px solid #e0e0e0;
@@ -85,7 +85,7 @@
   /* Activity Styles */
   .activity-item {
     background: #f8f9fa;
-    border-left: 4px solid #007bff;
+    border-start: 4px solid #007bff;
     padding: 12px;
     margin-bottom: 12px;
     border-radius: 6px;
@@ -164,6 +164,30 @@
     padding-bottom: 5px;
     border-bottom: 2px solid #007bff;
   }
+
+  /* Toolbar under tabs — match Daily Diary (classdiary_view) symmetry */
+  .cd-diary-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem 1rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .cd-diary-toolbar .form-group label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #495057;
+  }
+  .cd-diary-toolbar .form-group label i {
+    margin-right: 0.35rem;
+    color: #3c8dbc;
+  }
+  .card-primary.card-outline.card-tabs > .card-header .nav-link {
+    font-weight: 500;
+  }
+  .card-primary.card-outline.card-tabs > .card-header .nav-link.active {
+    font-weight: 600;
+  }
   .task-type-toggle {
     display: flex;
     gap: 10px;
@@ -185,21 +209,15 @@
 </style>
 
 <!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Class Diary</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Class Diary</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Add Class Diary',
+    'icon' => 'fas fa-book-open',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Diary', 'url' => base_url('admin/classdiary-view')],
+        ['label' => 'Add', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main content -->
 <section class="content">
@@ -207,12 +225,16 @@
     <div class="col-lg-12">
       <div class="card card-primary card-outline card-tabs">
         <div class="card-header p-0 pt-1 border-bottom-0">
-          <ul class="nav nav-tabs">
+          <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
-              <a class="nav-link" href="<?= base_url('admin/classdiary-view') ?>">View Diary</a>
+              <a class="nav-link active" href="<?= base_url('admin/classdiary/add') ?>">
+                <i class="fas fa-plus-circle"></i> Add Daily Diary
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link active" href="<?= base_url('admin/classdiary-add') ?>">Add / Edit Diary</a>
+              <a class="nav-link" href="<?= base_url('admin/classdiary-view') ?>">
+                <i class="fas fa-eye"></i> Class Diary
+              </a>
             </li>
           </ul>
         </div>
@@ -221,57 +243,80 @@
           <div class="tab-content">
             <?php echo form_open(base_url('admin/classdiary/save'), 'role="form" id="classdairy-edit-form"'); ?>
             <?php echo form_hidden('id', $id ?? ''); ?>
-            
-            <!-- Selection Row -->
-            <div class="row">
-              <div class="col-lg-3">
-                <div class="form-group">
-                  <label>Term Session</label>
-                  <select name="term_id" id="term_id" class="form-control">
-                    <?php foreach ($terms_session_info as $ts): ?>
-                      <option value="<?= $ts->term_session_id ?>" <?= ($ts->term_session_id == ($default_term_session_id ?? 0) ? 'selected' : '') ?>>
-                        <?= esc($ts->term_name) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-              </div>
+            <?php
+              $preSec = (int) ($preselect_cls_sec_id ?? 0);
+            ?>
 
-              <div class="col-lg-3">
-                <div class="form-group">
-                  <label>Week</label>
-                  <select name="term_weeks" id="term_weeks" class="form-control">
-                    <?php foreach ($term_weeks_info as $w): ?>
-                      <option value="<?= $w->term_weeks_id ?>" <?= ($w->term_weeks_id == ($default_term_weeks_id ?? 0) ? 'selected' : '') ?>>
-                        <?= esc($w->week_name) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
+            <div class="cd-diary-toolbar">
+              <div class="row">
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label for="term_id"><i class="fas fa-calendar-alt"></i> Term</label>
+                    <select name="term_id" id="term_id" class="form-control cd-select2">
+                      <?php foreach ($terms_session_info as $ts): ?>
+                        <option value="<?= $ts->term_session_id ?>" <?= ($ts->term_session_id == ($default_term_session_id ?? 0) ? 'selected' : '') ?>>
+                          <?= esc($ts->term_name) ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <div class="col-lg-3">
-                <div class="form-group">
-                  <label>Section</label>
-                  <select class="form-control select2" name="section_id" id="section_id">
-                    <option value="0">Select Section</option>
-                    <?php if (isset($sectionsclassinfo)) {
-                        foreach ($sectionsclassinfo as $secionvalue) { ?>
-                          <option value="<?= esc($secionvalue['cls_sec_id']) ?>">
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label for="term_weeks"><i class="fas fa-calendar-week"></i> Week</label>
+                    <select name="term_weeks" id="term_weeks" class="form-control">
+                      <?php $weekIdx = 0; foreach ($term_weeks_info as $w): $weekIdx++; ?>
+                        <?php
+                          $weekNo = (int) ($w->week_no ?? 0);
+                          if ($weekNo <= 0) {
+                              $weekNo = $weekIdx;
+                          }
+                        ?>
+                        <option value="<?= $w->term_weeks_id ?>"
+                          data-start-date="<?= esc($w->start_date ?? '') ?>"
+                          data-end-date="<?= esc($w->end_date ?? '') ?>"
+                          <?= ($w->term_weeks_id == ($default_term_weeks_id ?? 0) ? 'selected' : '') ?>>
+                          Week <?= $weekNo ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                    <small id="term_week_range" class="form-text text-muted"></small>
+                  </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label for="section_id"><i class="fas fa-users"></i> Section</label>
+                    <select class="form-control cd-select2" name="section_id" id="section_id">
+                      <option value="0">-- Select Section --</option>
+                      <?php if (isset($sectionsclassinfo)) {
+                          foreach ($sectionsclassinfo as $secionvalue) {
+                              $cid = (int) ($secionvalue['cls_sec_id'] ?? 0);
+                              ?>
+                          <option value="<?= esc($secionvalue['cls_sec_id']) ?>"<?= ($preSec > 0 && $preSec === $cid) ? ' selected' : '' ?>>
                             <?= esc($secionvalue['sectionclassname']) ?>
                           </option>
                       <?php }
-                    } ?>
-                  </select>
+                      } ?>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label for="sec_sub_id"><i class="fas fa-book"></i> Subject</label>
+                    <select class="form-control" name="sec_sub_id" id="sec_sub_id">
+                      <option value="">-- Select Subject --</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-
-              <div class="col-lg-3">
-                <div class="form-group">
-                  <label>Subject</label>
-                  <select class="form-control" name="sec_sub_id" id="sec_sub_id">
-                    <option value="">Select Subject</option>
-                  </select>
+              <div class="row">
+                <div class="col-lg-3 col-md-6 d-flex align-items-end">
+                  <button type="button" id="btnLoadClassDiary" class="btn btn-primary w-100 mb-3" style="height:42px;">
+                    <i class="fas fa-sync-alt"></i> Load diary
+                  </button>
                 </div>
               </div>
             </div>
@@ -296,7 +341,7 @@
         <h5 class="modal-title" id="activityModalLabel">
           <i class="fas fa-calendar-alt"></i> Add Classroom Activity
         </h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -358,9 +403,9 @@
                 <strong>Video Task</strong>
                 <small class="text-muted">(Optional)</small>
               </div>
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="enable_video_task">
-                <label class="custom-control-label" for="enable_video_task">Enable</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="enable_video_task">
+                <label class="form-check-label" for="enable_video_task">Enable</label>
               </div>
             </div>
           </div>
@@ -387,9 +432,9 @@
                 <strong>Audio Task</strong>
                 <small class="text-muted">(Optional)</small>
               </div>
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="enable_audio_task">
-                <label class="custom-control-label" for="enable_audio_task">Enable</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="enable_audio_task">
+                <label class="form-check-label" for="enable_audio_task">Enable</label>
               </div>
             </div>
           </div>
@@ -416,9 +461,9 @@
                 <strong>Group Settings</strong>
                 <small class="text-muted">(Optional)</small>
               </div>
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="enable_group_activity">
-                <label class="custom-control-label" for="enable_group_activity">Group Activity</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="enable_group_activity">
+                <label class="form-check-label" for="enable_group_activity">Group Activity</label>
               </div>
             </div>
           </div>
@@ -436,7 +481,7 @@
         </div>
       </div>
       <div class="modal-footer d-flex flex-column flex-sm-row gap-2">
-        <button type="button" class="btn btn-secondary order-sm-1" data-dismiss="modal">
+        <button type="button" class="btn btn-secondary order-sm-1" data-bs-dismiss="modal">
           <i class="fas fa-times"></i> Cancel
         </button>
         <button type="button" class="btn btn-primary order-sm-0" onclick="saveActivityToDay()">
@@ -479,7 +524,7 @@
     gap: 8px;
   }
   
-  .modal-activity .custom-switch {
+  .modal-activity .form-switch {
     padding-left: 2rem;
   }
   
@@ -496,7 +541,7 @@
   
   /* Improve touch targets */
   .modal-activity button,
-  .modal-activity .custom-control-label,
+  .modal-activity .form-check-label,
   .modal-activity input,
   .modal-activity select,
   .modal-activity textarea {
@@ -504,14 +549,14 @@
   }
   
   /* Increase tap target size */
-  .custom-control-label::before,
-  .custom-control-label::after {
+  .form-check-label::before,
+  .form-check-label::after {
     top: 0.15rem;
     width: 1.5rem;
     height: 1.5rem;
   }
   
-  .custom-switch .custom-control-label::after {
+  .form-switch .form-check-label::after {
     width: calc(1.5rem - 4px);
     height: calc(1.5rem - 4px);
   }
@@ -605,17 +650,17 @@
 $(document).ready(function() {
   // Click on card header to toggle the section (for better mobile experience)
   $('#video_task_section').closest('.card').find('.card-header').click(function(e) {
-    if ($(e.target).is('input, label, .custom-control, .custom-switch')) return;
+    if ($(e.target).is('input, label, .form-check, .form-switch')) return;
     $('#enable_video_task').trigger('click');
   });
   
   $('#audio_task_section').closest('.card').find('.card-header').click(function(e) {
-    if ($(e.target).is('input, label, .custom-control, .custom-switch')) return;
+    if ($(e.target).is('input, label, .form-check, .form-switch')) return;
     $('#enable_audio_task').trigger('click');
   });
   
   $('#group_activity_section').closest('.card').find('.card-header').click(function(e) {
-    if ($(e.target).is('input, label, .custom-control, .custom-switch')) return;
+    if ($(e.target).is('input, label, .form-check, .form-switch')) return;
     $('#enable_group_activity').trigger('click');
   });
 });
@@ -628,6 +673,7 @@ const URL_SELECT_SUBJECTS  = "<?= base_url('admin/classdiary/select-section-subj
 const URL_GET_CLASSDIARY   = "<?= base_url('admin/classdiary/get-classdiary') ?>";
 const URL_SAVE             = "<?= base_url('admin/classdiary/save') ?>";
 const URL_GET_QUIZZES      = "<?= base_url('admin/classdiary/get-quizzes-by-subject') ?>";
+const URL_GET_TERM_WEEKS   = "<?= base_url('admin/classdiary-view/getWeeks') ?>";
 
 const CSRF_NAME = "<?= csrf_token() ?>";
 let   CSRF_HASH = "<?= csrf_hash() ?>";
@@ -642,6 +688,29 @@ let currentEditingActivityId = null;
 function addCsrf(payload){
     if (CSRF_NAME && CSRF_HASH) payload[CSRF_NAME] = CSRF_HASH;
     return payload;
+}
+
+function formatDiaryShortDate(d) {
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+function updateWeekRangeDisplay() {
+    var $sel = $('#term_weeks option:selected');
+    var start = $sel.attr('data-start-date');
+    var end = $sel.attr('data-end-date');
+    var $hint = $('#term_week_range');
+    if (!$sel.val() || !start || !end) {
+        $hint.text('');
+        return;
+    }
+    var sd = new Date(start.replace(/-/g, '/'));
+    var ed = new Date(end.replace(/-/g, '/'));
+    if (isNaN(sd.getTime()) || isNaN(ed.getTime())) {
+        $hint.text('');
+        return;
+    }
+    $hint.text(formatDiaryShortDate(sd) + ' – ' + formatDiaryShortDate(ed));
 }
 
 function refreshCsrfFromXHR(xhr){
@@ -1179,11 +1248,11 @@ function renderActivities($card, activities) {
                     <div class="activity-title">
                         <i class="fa ${typeIcon}"></i>
                         <span class="activity-name">${escapeHtml(activity.name)}</span>
-                        <span class="activity-badge ${typeClass} ml-2">${typeLabel}</span>
-                        ${activity.duration_minutes ? `<span class="badge badge-light ml-1"><i class="fa fa-clock-o"></i> ${activity.duration_minutes} min</span>` : ''}
+                        <span class="activity-badge ${typeClass} ms-2">${typeLabel}</span>
+                        ${activity.duration_minutes ? `<span class="badge text-bg-light ms-1"><i class="fa fa-clock-o"></i> ${activity.duration_minutes} min</span>` : ''}
                     </div>
                     <div class="activity-actions">
-                        <button type="button" class="btn btn-sm btn-link text-primary p-0 mr-2" 
+                        <button type="button" class="btn btn-sm btn-link text-primary p-0 me-2" 
                                 onclick="openActivityModal('${date}', '${activity.activity_id}')"
                                 title="Edit Activity">
                             <i class="fa fa-edit"></i>
@@ -1222,7 +1291,7 @@ function renderActivities($card, activities) {
                 html += `<span class="task-badge video-task" title="Video Task">
                             <i class="fa fa-video-camera"></i> Video Task`;
                 if (activity.video_task.caption) {
-                    html += `<small class="text-muted d-block ml-4">${escapeHtml(activity.video_task.caption)}</small>`;
+                    html += `<small class="text-muted d-block ms-4">${escapeHtml(activity.video_task.caption)}</small>`;
                 }
                 html += `</span>`;
             }
@@ -1231,7 +1300,7 @@ function renderActivities($card, activities) {
                 html += `<span class="task-badge audio-task" title="Audio Task">
                             <i class="fa fa-headphones"></i> Audio Task`;
                 if (activity.audio_task.caption) {
-                    html += `<small class="text-muted d-block ml-4">${escapeHtml(activity.audio_task.caption)}</small>`;
+                    html += `<small class="text-muted d-block ms-4">${escapeHtml(activity.audio_task.caption)}</small>`;
                 }
                 html += `</span>`;
             }
@@ -1240,7 +1309,7 @@ function renderActivities($card, activities) {
                 html += `<span class="task-badge group-task" title="Group Activity">
                             <i class="fa fa-users"></i> Group Work (${activity.group_activity.group_size} students/group)`;
                 if (activity.group_activity.instructions) {
-                    html += `<small class="text-muted d-block ml-4">${escapeHtml(activity.group_activity.instructions)}</small>`;
+                    html += `<small class="text-muted d-block ms-4">${escapeHtml(activity.group_activity.instructions)}</small>`;
                 }
                 html += `</span>`;
             }
@@ -1263,6 +1332,54 @@ window.deleteActivity = deleteActivity;
 // INITIALIZATION
 // ============================================
 $(function() {
+    if ($.fn.select2) {
+        $('#term_id, #section_id').select2({ width: '100%' });
+    }
+
+    $('#term_id').on('change', function() {
+        var termId = $(this).val();
+        $('#termweekdates').empty();
+        var $weeks = $('#term_weeks');
+        if (!termId) {
+            $weeks.empty().append('<option value="">-- Select Term First --</option>');
+            updateWeekRangeDisplay();
+            return;
+        }
+        $.ajax({
+            url: URL_GET_TERM_WEEKS,
+            type: 'POST',
+            data: addCsrf({ term_id: termId }),
+            dataType: 'json',
+            success: function (response, status, xhr) {
+                refreshCsrfFromXHR(xhr);
+                $weeks.empty().append('<option value="">-- Select Week --</option>');
+                if (response.weeks && response.weeks.length > 0) {
+                    $.each(response.weeks, function (idx, week) {
+                        var weekNo = parseInt(week.week_no, 10) || (idx + 1);
+                        $weeks.append(
+                            $('<option>')
+                                .val(week.term_weeks_id)
+                                .text('Week ' + weekNo)
+                                .attr('data-start-date', week.start_date || '')
+                                .attr('data-end-date', week.end_date || '')
+                        );
+                    });
+                    $weeks.val(String(response.weeks[0].term_weeks_id));
+                } else {
+                    $weeks.append('<option value="">No weeks found</option>');
+                }
+                updateWeekRangeDisplay();
+            },
+            error: function () {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Error loading weeks');
+                }
+            }
+        });
+    });
+
+    $('#term_weeks').on('change', updateWeekRangeDisplay);
+
     // Modal toggle handlers
     $('#enable_video_task').change(function() {
         $('#video_task_section').toggle($(this).is(':checked'));
@@ -1279,18 +1396,24 @@ $(function() {
         loadSubjectsForSection($(this).val());
     });
 
+    $('#btnLoadClassDiary').on('click', function() {
+        getclassdiary();
+    });
+
     // Auto-load diary when subject or week changes
     $('#sec_sub_id, #term_weeks').on('change', function() {
-        if ($('#sec_sub_id').val() && $('#term_weeks').val() && $('#section_id').val()) {
+        if ($('#sec_sub_id').val() && $('#term_weeks').val() && $('#section_id').val() && $('#section_id').val() !== '0') {
             getclassdiary();
         }
     });
 
     // Initial load if section already selected
-    const initialSection = $('#section_id').val();
-    if (initialSection && initialSection != 0) {
+    var initialSection = $('#section_id').val();
+    if (initialSection && initialSection !== '0') {
         loadSubjectsForSection(initialSection);
     }
+
+    updateWeekRangeDisplay();
 });
 </script>
 

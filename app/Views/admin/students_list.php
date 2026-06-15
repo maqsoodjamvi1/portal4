@@ -1,257 +1,181 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?php 
-  $status = ''; 
-  if(!empty($_GET['status'])){
-   $status = $_GET['status']; 
-  }
+<?php
+$status = $_GET['status'] ?? '';
 ?>
-<link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Students Contact List
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Students Contact List</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
-    <!-- Main content -->
-    <section class="content">
-    <div class="row">
-      <div class="col-lg-12">
-      <div class="card card-primary card-outline card-tabs">
-      <div class="card-header p-0 pt-1 border-bottom-0">
-      <ul class="nav nav-tabs">     
-        <li  class="nav-item" ><a  class="nav-link <?php if($status == 1){ ?> active <?php } ?>" href="<?php echo '#/students_contact_list?status=1';?>">  Current</a></li>
-        <li class="nav-item"><a class="nav-link <?php if($status == 2){ ?> active <?php } ?>" href="<?php echo '#/students_contact_list?status=2';?>">  Suspended</a></li>
-        <li class="nav-item"><a class="nav-link <?php if($status == 3){ ?> active <?php } ?>" href="<?php echo '#/students_contact_list?status=3';?>">  Dropped</a></li>
-        <li class="nav-item"><a class="nav-link <?php if($status == 4){ ?> active <?php } ?>" href="<?php echo '#/students_contact_list?status=4';?>">  Pending</a></li>
-      </ul>
-    <div class="card-body">
-    <div class="row">
-      <div class="col-lg-12">
-        <form id="form-filter" class="form-inline">
-                <div class="col-lg-2">
-                    <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
-                       <option value="0">Select Student</option>   
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                  <select class="form-control select2" name="parent_id" id="parent_id" style="height: 24px;width: 100%;" >
-                    <option value="0">Select Parent</option>   
-                  </select>
-                </div>
-               <div class="col-lg-2">
-                    <select class="form-control select2"  name="cls_sec_id" id="cls_sec_id" required="required" style="height: 24px;width: 100%;">
-                       <option value="0">Select Section</option>
-                      <?php if(isset($sectionsclassinfo)){
-                      foreach ($sectionsclassinfo as  $secionvalue) { ?>
-                      <option value="<?php echo $secionvalue['section_id']; ?>"><?php echo $secionvalue['sectionclassname']; ?></option>
-                      <?php } ?>
-                      <?php } ?>
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                    <select name="test_id" id="test_id" class="form-control"> 
-                    <?php  foreach ($test_series as $key => $test) { ?>
-                            <option value="<?php echo $test->t_series_id; ?>"><?php echo $test->series_name; ?></option>
-                    <?php } ?>
-                    </select>
-                </div>
-                <div class="col-lg-3">
-                  <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
-                </div>
-        </form>
-    </div>
-  </div>
-  <br>
-    <table class="table table-striped table-bordered table-hover" id="students-datatable" width="100%" style="font-size:13px;">
-					<thead>
-						<tr style="vertical-align: middle;">
-							<th nowrap>#</th>
-							<th nowrap>Name</th>
-                            <th nowrap>Send </th>
-						</tr>
-					</thead>
-					<tbody>
-					</tbody>
-				</table></div></div>
-        </div>
-         <!-- /.box-body -->
-      </div>
-      <!-- /.box -->
-    </div>
-  </div>
-</section>
-<style type="text/css">
-  table.table-bordered th:last-child, table.table-bordered td:last-child{width: 50px;}
-</style>
-<!-- /.content -->
-<script type="text/javascript">
-$(function(){
-	var table = $('#students-datatable').DataTable({
-	  dom: 'Bfrtip',
-		buttons: [
-		'colvis', 'csv', 'excel',
-		 {
-                extend: 'pdfHtml5',
-                exportOptions: {
-                    columns: [ 1,2,3,4,5,6,7,8 ]
-                }
-            },
-		],
-		deferRender: true,
-		select:{
-			style:'single',
-			blurable: true
-		},
-		
-	"processing": true, //Feature control the processing indicator.
-    "serverSide": true, //Feature control DataTables' server-side processing mode.
-    "ordering": false,
-    "order": [], //Initial no order.
-		"pageLength": 200,
-		 "searching": false,
-		ajax:{
-			url:'<?= base_url('admin/students_list/data') . '?status=' . $_GET['status'] ?>&test_id='+$('#test_id').val(),
-			type:'post', 
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
 
-			data:function(d){
-			 	d.status = $('#status').val();
+<?= view('components/page_header', [
+    'title' => 'Students Contact List',
+    'icon' => 'fas fa-address-book',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students Contact List', 'active' => true],
+    ],
+]) ?>
+
+<?php ob_start(); ?>
+<div class="row">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="student_id" class="report-label">Student</label>
+        <select class="form-control form-control-sm select2" name="student_id" id="student_id" style="width:100%;">
+            <option value="0">Select Student</option>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="parent_id" class="report-label">Parent</label>
+        <select class="form-control form-control-sm select2" name="parent_id" id="parent_id" style="width:100%;">
+            <option value="0">Select Parent</option>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="cls_sec_id" class="report-label">Section</label>
+        <select class="form-control form-control-sm select2" name="cls_sec_id" id="cls_sec_id" required style="width:100%;">
+            <option value="0">Select Section</option>
+            <?php if (!empty($sectionsclassinfo)) : ?>
+                <?php foreach ($sectionsclassinfo as $secionvalue) : ?>
+                    <option value="<?= esc($secionvalue['section_id']) ?>"><?= esc($secionvalue['sectionclassname']) ?></option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="test_id" class="report-label">Test Series</label>
+        <select name="test_id" id="test_id" class="form-control form-control-sm">
+            <?php foreach ($test_series as $test) : ?>
+                <option value="<?= (int) $test->t_series_id ?>"><?= esc($test->series_name) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-lg-3 col-md-8 col-sm-12 mb-2 d-flex align-items-end">
+        <button type="button" id="btn-filter" class="btn btn-primary btn-sm me-1">Filter</button>
+        <button type="button" id="btn-reset" class="btn btn-secondary btn-sm">Reset</button>
+    </div>
+</div>
+<?php $filterBodyHtml = ob_get_clean(); ?>
+
+<?php ob_start(); ?>
+<table class="table table-striped table-bordered table-hover mb-0" id="students-datatable" width="100%" style="font-size:13px;">
+    <thead>
+        <tr style="vertical-align: middle;">
+            <th nowrap>#</th>
+            <th nowrap>Name</th>
+            <th nowrap>Send</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<?php $tableHtml = ob_get_clean(); ?>
+
+<section class="content">
+    <div class="card card-primary card-outline card-tabs">
+        <div class="card-header p-0 pt-1 border-bottom-0">
+            <ul class="nav nav-tabs">
+                <li class="nav-item"><a class="nav-link <?= $status == 1 ? 'active' : '' ?>" href="#/students_contact_list?status=1">Current</a></li>
+                <li class="nav-item"><a class="nav-link <?= $status == 2 ? 'active' : '' ?>" href="#/students_contact_list?status=2">Suspended</a></li>
+                <li class="nav-item"><a class="nav-link <?= $status == 3 ? 'active' : '' ?>" href="#/students_contact_list?status=3">Dropped</a></li>
+                <li class="nav-item"><a class="nav-link <?= $status == 4 ? 'active' : '' ?>" href="#/students_contact_list?status=4">Pending</a></li>
+            </ul>
+        </div>
+        <div class="card-body pt-3">
+            <?= view('components/filter_card', [
+                'title' => 'Filters',
+                'bodyHtml' => $filterBodyHtml,
+                'cardClass' => 'card sms-filter-card report-filter-card mb-3',
+            ]) ?>
+            <?= view('components/data_table_card', [
+                'title' => 'Student Contacts',
+                'icon' => 'fas fa-list',
+                'tableHtml' => $tableHtml,
+                'cardClass' => 'card sms-card mb-0',
+            ]) ?>
+        </div>
+    </div>
+</section>
+
+<?= $this->endSection() ?>
+
+<?= $this->section('pageStyles') ?>
+<style>
+  table.table-bordered th:last-child,
+  table.table-bordered td:last-child { width: 50px; }
+</style>
+<?= $this->endSection() ?>
+
+<?= $this->section('pageScripts') ?>
+<script>
+$(function(){
+    var table = $('#students-datatable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['colvis', 'csv', 'excel', {
+            extend: 'pdfHtml5',
+            exportOptions: { columns: [1, 2, 3, 4, 5, 6, 7, 8] }
+        }],
+        deferRender: true,
+        select: { style: 'single', blurable: true },
+        processing: true,
+        serverSide: true,
+        ordering: false,
+        order: [],
+        pageLength: 200,
+        searching: false,
+        ajax: {
+            url: '<?= base_url('admin/students_list/data') ?>?status=<?= (int) ($_GET['status'] ?? 1) ?>&test_id=' + $('#test_id').val(),
+            type: 'post',
+            data: function(d) {
+                d.status = $('#status').val();
                 d.student_id = $('#student_id').val();
                 d.cls_sec_id = $('#cls_sec_id').val();
                 d.parent_id = $('#parent_id').val();
                 d.test_id = $('#test_id').val();
-			}
-		},
-		columns:[
-			{
-				data:'id',
-				className:'select-checkbox',
-				render:function(data, type, row){
-					return data;
-				}
-			},
-            {
-                data:'name',
-                className:'select-checkbox',
-                render:function(data, type, row){
-                    return data+' ('+row.class+') C/O '+row.f_name; 
-                }
+            }
+        },
+        columns: [
+            { data: 'id', className: 'select-checkbox', render: function(data) { return data; } },
+            { data: 'name', className: 'select-checkbox', render: function(data, type, row) {
+                return data + ' (' + row.class + ') C/O ' + row.f_name;
+            }},
+            { data: 'w_contacts' }
+        ]
+    });
+
+    $('#btn-filter').click(function() { table.ajax.reload(); });
+    $('#btn-reset').click(function() {
+        $('#student_id').val('0').trigger('change');
+        $('#parent_id').val('0').trigger('change');
+        $('#cls_sec_id').prop('selectedIndex', 0);
+        table.ajax.reload();
+    });
+
+    $('#parent_id').select2({
+        minimumInputLength: 2,
+        ajax: {
+            url: 'admin.php?c=students_contact_list&m=get_parentinfo',
+            dataType: 'json',
+            type: 'POST',
+            delay: 50,
+            data: function(term) { return { term: term }; },
+            processResults: function(response) { return { results: response }; },
+            cache: true
+        }
+    });
+
+    $('#student_id').select2({
+        minimumInputLength: 2,
+        ajax: {
+            url: 'admin.php?c=students_contact_list&m=get_studentinfo',
+            dataType: 'json',
+            type: 'POST',
+            delay: 50,
+            data: function(term) {
+                return { term: term, status: <?= (int) ($_GET['status'] ?? 0) ?> };
             },
-            {data:'w_contacts'}
-	
-		]});
-
-	 $('#btn-filter').click(function(){ //button filter event click
-        table.ajax.reload();  //just reload table
+            processResults: function(response) { return { results: response }; },
+            cache: true
+        }
     });
-
-
-    $('#btn-reset').click(function(){ //button reset event click
-        $('#student_id').select2("val", "0");
-        $('#parent_id').select2("val", "0");
-        $('#cls_sec_id').prop('selectedIndex',0);
-        $('#status').prop('selectedIndex',1);
-        table.ajax.reload();  //just reload table
-
-    });
-
-   $("#parent_id").select2({
-    minimumInputLength: 2,
-    tags: [],
-    ajax: {
-        url: 'admin.php?c=students_contact_list&m=get_parentinfo', 
-        dataType: 'json',
-        type: "POST",
-        quietMillis: 50,
-        data: function (term) {
-            return {
-                term:term,
-            }
-        },
-       processResults: function (response) {
-        console.log(response);
-              return {
-                 results: response
-              };
-           },
-           cache: true
-    }
- });
- //$("#cls_sec_id").select2({minimumInputLength: 2});
- $("#student_id").select2({
-    minimumInputLength: 2,
-    tags: [],
-    ajax: {
-        url: 'admin.php?c=students_contact_list&m=get_studentinfo', 
-        dataType: 'json',
-        type: "POST",
-        quietMillis: 50,
-        data: function (term) {
-            return {
-                term: term,
-                status:<?php echo $_GET['status']  ?>
-            }
-        },
-       processResults: function (response) {
-        console.log(response);
-              return {
-                 results: response
-              };
-           },
-           cache: true
-    }
- });  
-
 });
-
 </script>
-<script>
-$('#updateStatus').click(function(){
- 	var studentID = $('#studentID').val();
- 	var discount = $('#discount').val();
- 	var cls_secID = $('#cls_secID').val();
- 	 	
- 	  $.ajax({
-      url: 'admin.php?c=ajax&m=updatestudentstatus',
-      type: 'POST',
-      data:{studentID: studentID,discount:discount,cls_secID:cls_secID}, 
-      success:function(res){
- 		       $('#updateStatus').html('Updated Successfully');
-           location.reload(); 
-          }
-      });
- });
-			
-$('#updateStatus').on('hidden.bs.modal', function () { 
-    location.reload();
-});
-
-$('#makeCurrent').on('show.bs.modal', function (event) {
-  var button = $(event.relatedTarget) // Button that triggered the modal
-  var discount = button.data('discount') // Extract info from data-* attributes
-  var studentID = button.data('id')
-  
-  
-  var modal = $(this)
-  modal.find('#discount').val(discount)
-  modal.find('#studentID').val(studentID)
-  
-});
-
-</script>
-
 <?= $this->endSection() ?>

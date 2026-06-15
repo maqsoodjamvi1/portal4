@@ -112,7 +112,7 @@ class Family_datesheet_whatsapp extends MY_Controller {
 			$data['id'] = $nCount;
 			$data['f_name'] = $f_name.'<br><small>'.rtrim($strStudents,', ').'</small>';
 			$data['f_contacts'] = $father_contact;
-			$data['w_contacts'] = '<a  target="_blank" class="btn btn-success btn-xs" href="https://wa.me/'.$whatsapp_contact.'?text='.$url.'"><i class="fab fa-whatsapp"></i> Send</a>';
+			$data['w_contacts'] = '<a  target="_blank" class="btn btn-success btn-sm" href="https://wa.me/'.$whatsapp_contact.'?text='.$url.'"><i class="fab fa-whatsapp"></i> Send</a>';
 			$data['m_contacts'] = $mother_contact;
 
 			$response->data[] = $data;

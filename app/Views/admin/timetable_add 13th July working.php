@@ -70,7 +70,7 @@
 <script>
 $(document).ready(function () {
     // Initialize Select2 on dropdowns
-    $('.select2').select2({ theme: 'bootstrap4' });
+    $('.select2').select2({ theme: 'bootstrap-5' });
 
     console.log("Document ready - timetable add page loaded");
 
@@ -165,7 +165,7 @@ $(document).ready(function () {
     $('#timetableContainer').html(html);
 
     // Initialize Select2 again
-    $('.subject-select').select2({ theme: 'bootstrap4', width: '100%' });
+    $('.subject-select').select2({ theme: 'bootstrap-5', width: '100%' });
 
 
 

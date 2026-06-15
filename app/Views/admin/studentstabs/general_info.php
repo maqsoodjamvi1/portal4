@@ -10,7 +10,7 @@
     <h3 class="card-title">General Student Information</h3>
   </div>
   <div class="card-body">
-    <div class="form-row">
+    <div class="row">
       <!-- Date of Birth -->
       <div class="form-group col-md-6 col-lg-4">
         <?php
@@ -22,10 +22,8 @@
         ?>
         <label>Date of Birth <span class="text-danger">*</span></label>
         <div class="input-group date" id="dobdatepicker" data-target-input="nearest">
-          <input type="text" name="date_of_birth" class="form-control datetimepicker-input" value="<?= $date_of_birth ?>" data-target="#dobdatepicker" />
-          <div class="input-group-append" data-target="#dobdatepicker" data-toggle="datetimepicker">
-            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-          </div>
+          <input type="text" name="date_of_birth" class="form-control datetimepicker-input" value="<?= $date_of_birth ?>" data-bs-target="#dobdatepicker" />
+          <span class="input-group-text" data-bs-target="#dobdatepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
         </div>
       </div>
 
@@ -90,13 +88,13 @@
                                ->where('a_type_id', $value->a_type_id)
                                ->get()->getRow(); ?>
       <div class="col-md-6 col-lg-4 mb-4">
-        <label class="font-weight-bold"><?= esc($value->a_type_name) ?></label>
+        <label class="fw-bold"><?= esc($value->a_type_name) ?></label>
         <input type="hidden" class="a_type_id<?= $value->a_type_id ?>" value="<?= $value->a_type_id ?>">
         <input type="hidden" class="attachement_id<?= $value->a_type_id ?>" value="<?= $attachment_id ?>">
 
-        <div class="custom-file mb-2">
-          <input type="file" class="custom-file-input" id="thumbnail<?= $value->a_type_id ?>">
-          <label class="custom-file-label" for="thumbnail<?= $value->a_type_id ?>">Choose file</label>
+        <div class="mb-3 mb-2">
+          <input type="file" class="form-control" id="thumbnail<?= $value->a_type_id ?>">
+          <label class="form-label" for="thumbnail<?= $value->a_type_id ?>">Choose file</label>
         </div>
         <div class="text-center">
           <img id="imgthumbnail<?= $value->a_type_id ?>" src="<?= isset($attachementsinfo) ? base_url('studentattachements/' . $attachementsinfo->attachement_path) : '' ?>" class="img-thumbnail" style="max-height: 100px;">

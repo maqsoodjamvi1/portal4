@@ -60,21 +60,15 @@ th, td {
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Fee Chalan Single Copy</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= site_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Fee Chalan Single Copy</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Fee Chalan Thermal Copy',
+    'icon' => 'fas fa-receipt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Print Fee Chalan', 'url' => base_url('admin/print-fee-chalan')],
+        ['label' => 'Thermal Copy', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
 <div class="row">
@@ -83,7 +77,7 @@ th, td {
     <div class="row">
         <div class="col-lg-4 form-group">
             <label>Fee Month:</label>
-            <input type="month" class="form-control pull-right" name="fee_month" value="<?= esc($fee_month) ?>">
+            <input type="month" class="form-control float-end" name="fee_month" value="<?= esc($fee_month) ?>">
         </div>
 
         <div class="col-lg-5 form-group">
@@ -100,22 +94,22 @@ th, td {
 
         <div class="col-lg-4 form-group">
             <label>Footer Line 1:</label>
-            <input type="text" class="form-control pull-right" name="footer_line1" value="<?= esc($footer_line1) ?>">
+            <input type="text" class="form-control float-end" name="footer_line1" value="<?= esc($footer_line1) ?>">
         </div>
 
         <div class="col-lg-4 form-group">
             <label>Footer Line 2:</label>
-            <input type="text" class="form-control pull-right" name="footer_line2" value="<?= esc($footer_line2) ?>">
+            <input type="text" class="form-control float-end" name="footer_line2" value="<?= esc($footer_line2) ?>">
         </div>
 
         <div class="col-lg-2 form-group">
             <label>Show Footer Line 1:</label>
-            <input type="checkbox" class="form-control pull-right" name="show_line1" value="1" <?= $show_line1 == 1 ? 'checked' : '' ?>>
+            <input type="checkbox" class="form-control float-end" name="show_line1" value="1" <?= $show_line1 == 1 ? 'checked' : '' ?>>
         </div>
 
         <div class="col-lg-2 form-group">
             <label>Show Footer Line 2:</label>
-            <input type="checkbox" class="form-control pull-right" name="show_line2" value="1" <?= $show_line2 == 1 ? 'checked' : '' ?>>
+            <input type="checkbox" class="form-control float-end" name="show_line2" value="1" <?= $show_line2 == 1 ? 'checked' : '' ?>>
         </div>
 
         <div class="col-sm-2">
@@ -136,7 +130,7 @@ th, td {
                         <div dir="rtl" lang="ur"><?= $student_info['chalan_h_msg'] ?></div>
                         <div class="chalanwrapper">
                             <div class="row">
-                                <div class="col-sm-3 ml-2 mt-2">
+                                <div class="col-sm-3 ms-2 mt-2">
                                     <img style="width: 100%;" src="<?= base_url('system-logo/' . $student_info['logo']) ?>">
                                 </div>
                                 <div class="col-sm-8 mt-2">
@@ -144,7 +138,7 @@ th, td {
                                     <?= $student_info['campus_name'] ?>, <?= $student_info['location'] ?>
                                 </div>
                             </div>
-                            <div class="ml-2 mt-2" style="text-align: left;">
+                            <div class="ms-2 mt-2" style="text-align: left;">
                                 <?= esc($student_info['bank_name'] . ', ' . $student_info['bank_address'] . ', ' . $student_info['bank_code']) ?><br />
                                 <?php if (!empty($student_info['bank_acc'])): ?>
                                     Account No: <?= esc($student_info['bank_acc']) ?><br />

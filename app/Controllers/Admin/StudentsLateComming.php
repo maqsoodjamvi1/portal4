@@ -15,6 +15,7 @@ class StudentsLateComming extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
+        helper('school');
         check_permission('admin-add-student-latecomming');
     }
 
@@ -106,14 +107,12 @@ class StudentsLateComming extends BaseController
                 ->where('status', 1)
                 ->get()->getRow();
 
-            $schoolTimings = $this->db->query("
-                SELECT *, (checkout_timing - checkin_timing) AS duration
-                FROM school_timings 
-                WHERE cls_sec_id = ? AND dayname = ? AND type_id = (
-                    SELECT type_id FROM school_timing_types WHERE STATUS=1 AND campus_id=?
-                )",
-                [$classSecInfo->cls_sec_id, $day, $campusid]
-            )->getRow();
+            $schoolTimingsRow = getSchoolTimingForSectionDay(
+                (int) $classSecInfo->cls_sec_id,
+                $day,
+                (int) $campusid
+            );
+            $schoolTimings = $schoolTimingsRow !== null ? (object) $schoolTimingsRow : null;
 
             $checkinTime = $this->request->getPost($student_id . '_checkin_date');
             if ($schoolTimings && $checkinTime) {
@@ -229,9 +228,9 @@ class StudentsLateComming extends BaseController
 	                        <input type="checkbox" class="toggle_option" value="1" id="' . $row->student_id . '_late_comming_toggle" 
 	                            name="' . $row->student_id . '_status" style="height:17px;width:20px;margin-right:2px;">
 	                        <div class="input-group ' . $row->student_id . '_clockpicker" id="' . $row->student_id . '_clockpicker" 
-	                            data-placement="left" data-align="top" data-autoclose="true">
+	                            data-bs-placement="left" data-align="top" data-autoclose="true">
 	                            <input type="text" class="form-control" disabled name="' . $row->student_id . '_checkin_date" id="' . $row->student_id . '_checkin_date" value="">
-	                            <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+	                            <span class="input-group-text"><span class="far fa-clock"></span></span>
 	                        </div>
 	                        <script>
 	                            $("#' . $row->student_id . '_late_comming_toggle").click(function() {

@@ -112,11 +112,37 @@ class StudentClass extends BaseController
         $data['sectionsclassinfo'] = userClassSections();
 
         $schoolinfo = getSchoolInfo();
-        $data['academic_sessioninfo'] = $this->db->table('academic_session')
+        $sessions = $this->db->table('academic_session')
             ->where('system_id', $schoolinfo->system_id)
+            ->orderBy('start_date', 'ASC')
             ->get()->getResult();
 
+        $data['academic_sessioninfo'] = $sessions;
         $data['sectionsinfo'] = $this->db->table('sections')->get()->getResult();
+
+        $currentSessionId = (int) $this->session->get('member_sessionid');
+        $previousSessionId = 0;
+
+        if ($currentSessionId > 0) {
+            $currentSession = null;
+            foreach ($sessions as $sessionRow) {
+                if ((int) $sessionRow->session_id === $currentSessionId) {
+                    $currentSession = $sessionRow;
+                    break;
+                }
+            }
+
+            if ($currentSession && ! empty($currentSession->start_date)) {
+                foreach ($sessions as $sessionRow) {
+                    if ($sessionRow->start_date < $currentSession->start_date) {
+                        $previousSessionId = (int) $sessionRow->session_id;
+                    }
+                }
+            }
+        }
+
+        $data['defaultRunningSessionId'] = $previousSessionId > 0 ? $previousSessionId : $currentSessionId;
+        $data['defaultNewSessionId']     = $currentSessionId;
 
         return view('admin/student_class_edit', $data);
     }
@@ -204,7 +230,7 @@ class StudentClass extends BaseController
             ?? $this->request->getVar('session_id')
         );
 
-        $from_cls_sec_id = (int) (
+        $fromFilter = $this->parseClassSectionFilter(
             $this->request->getVar('from_cls_sec_id')
             ?? $this->request->getVar('running_class')
             ?? $this->request->getVar('current_class_id')
@@ -216,64 +242,69 @@ class StudentClass extends BaseController
             ?? $this->request->getVar('next_session_id')
         );
 
-        $to_cls_sec_id = (int) (
+        $toFilter = $this->parseClassSectionFilter(
             $this->request->getVar('to_cls_sec_id')
             ?? $this->request->getVar('new_class')
             ?? $this->request->getVar('next_class_id')
         );
 
-        if (!$from_session_id || !$from_cls_sec_id || !$to_session_id || !$to_cls_sec_id) {
-            return $this->failValidationErrors('Missing required parameters.');
+        if (! $from_session_id || ! $to_session_id) {
+            return $this->failValidationErrors('Missing required session parameters.');
         }
 
-        // LEFT (students in running/current class-session)
-        $fromRows = $this->db->table('student_class sc')
-            ->select('sc.student_id, s.reg_no, s.first_name, s.last_name, s.profile_photo')
-            ->join('students s', 's.student_id = sc.student_id')
-            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-            ->where([
-                'sc.session_id' => $from_session_id,
-                'sc.cls_sec_id' => $from_cls_sec_id,
-                'sc.status'     => 1,
-                'cs.campus_id'  => $campus_id,
-            ])
-            ->orderBy('s.first_name', 'ASC')
-            ->get()->getResult();
+        if ($fromFilter['cls_sec_id'] <= 0 && $fromFilter['class_id'] <= 0) {
+            return $this->failValidationErrors('Please select a running class or section.');
+        }
 
-        // RIGHT (already in new/target class-session)
-        $toRows = $this->db->table('student_class sc')
-            ->select('sc.student_id, s.reg_no, s.first_name, s.last_name, s.profile_photo')
-            ->join('students s', 's.student_id = sc.student_id')
-            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-            ->where([
-                'sc.session_id' => $to_session_id,
-                'sc.cls_sec_id' => $to_cls_sec_id,
-                'sc.status'     => 1,
-                'cs.campus_id'  => $campus_id,
-            ])
-            ->orderBy('s.first_name', 'ASC')
-            ->get()->getResult();
+        if ($toFilter['cls_sec_id'] <= 0 && $toFilter['class_id'] <= 0) {
+            return $this->failValidationErrors('Please select a new class or section.');
+        }
+
+        $fromRows = $this->fetchStudentsForScope(
+            $from_session_id,
+            $fromFilter['class_id'],
+            $fromFilter['cls_sec_id'],
+            $campus_id
+        );
+
+        $toRows = $this->fetchStudentsForScope(
+            $to_session_id,
+            $toFilter['class_id'],
+            $toFilter['cls_sec_id'],
+            $campus_id
+        );
 
         $map = function ($r) {
             $photo = '';
-            if (!empty($r->profile_photo)) {
+            if (! empty($r->profile_photo)) {
                 $path = FCPATH . 'uploads/' . $r->profile_photo;
                 $photo = is_file($path) ? base_url('uploads/' . $r->profile_photo) : '';
             }
+
             return [
-                'id'      => (int) $r->student_id, // NOTE: view expects "id"
-                'reg_no'  => (string) $r->reg_no,
-                'name'    => trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')),
-                'photo'   => $photo,
+                'id'           => (int) $r->student_id,
+                'cls_sec_id'   => (int) ($r->cls_sec_id ?? 0),
+                'section_name' => (string) ($r->section_name ?? ''),
+                'reg_no'       => (string) $r->reg_no,
+                'name'         => trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')),
+                'photo'        => $photo,
             ];
         };
 
-        // Return keys that your current view code uses: "students" (left) + "promoted" (right)
-        return $this->respond([
+        $students = array_map($map, $fromRows);
+        $promoted = array_map($map, $toRows);
+
+        $response = [
             'success'  => true,
-            'students' => array_map($map, $fromRows),
-            'promoted' => array_map($map, $toRows),
-        ]);
+            'students' => $students,
+            'promoted' => $promoted,
+        ];
+
+        if ($students === [] && $promoted === []) {
+            $response['hint'] = 'No students found for the selected session/class. Students Print uses the header session — set Running Session to the session where students are currently enrolled, or choose "All Sections" for the class.';
+        }
+
+        return $this->respond($response);
 
     } catch (\Throwable $e) {
         return $this->failServerError('Failed to fetch students.');
@@ -298,7 +329,7 @@ class StudentClass extends BaseController
             $to_session_id   = (int) $this->request->getPost('to_session_id');
             $to_cls_sec_id   = (int) $this->request->getPost('to_cls_sec_id');
 
-            if (!$student_id || !$from_session_id || !$from_cls_sec_id || !$to_session_id || !$to_cls_sec_id) {
+            if (! $student_id || ! $from_session_id || ! $from_cls_sec_id || ! $to_session_id || ! $to_cls_sec_id) {
                 return $this->failValidationErrors('Missing required parameters.');
             }
 
@@ -329,16 +360,30 @@ class StudentClass extends BaseController
             $from_cls_sec_id = (int) $this->request->getPost('from_cls_sec_id');
             $to_session_id   = (int) $this->request->getPost('to_session_id');
             $to_cls_sec_id   = (int) $this->request->getPost('to_cls_sec_id');
+            $fromClsSecMap   = (array) $this->request->getPost('from_cls_sec_ids');
+            $toClsSecMap     = (array) $this->request->getPost('to_cls_sec_ids');
 
-            if (empty($student_ids) || !$from_session_id || !$from_cls_sec_id || !$to_session_id || !$to_cls_sec_id) {
+            if (empty($student_ids) || ! $from_session_id || ! $to_session_id) {
                 return $this->failValidationErrors('Missing required parameters.');
             }
 
             $ok = 0; $fail = 0; $messages = [];
             foreach ($student_ids as $sid) {
                 $sid = (int) $sid;
-                if (!$sid) continue;
-                $res = $this->promoteOne($sid, $from_session_id, $from_cls_sec_id, $to_session_id, $to_cls_sec_id);
+                if (! $sid) {
+                    continue;
+                }
+
+                $studentFromClsSecId = (int) ($fromClsSecMap[$sid] ?? $fromClsSecMap[(string) $sid] ?? $from_cls_sec_id);
+                $studentToClsSecId   = (int) ($toClsSecMap[$sid] ?? $toClsSecMap[(string) $sid] ?? $to_cls_sec_id);
+
+                if ($studentFromClsSecId <= 0 || $studentToClsSecId <= 0) {
+                    $fail++;
+                    $messages[] = "ID {$sid}: class section mapping not found.";
+                    continue;
+                }
+
+                $res = $this->promoteOne($sid, $from_session_id, $studentFromClsSecId, $to_session_id, $studentToClsSecId);
                 if ($res['success']) { $ok++; } else { $fail++; $messages[] = "ID {$sid}: " . ($res['message'] ?? 'fail'); }
             }
 
@@ -447,5 +492,106 @@ class StudentClass extends BaseController
             $this->db->transRollback();
             return ['success' => false, 'message' => 'Transaction failed.'];
         }
+    }
+
+    /**
+     * POST admin/student_class/activate-class-enrollment
+     * Activates student_class rows for all students in a class for the selected session.
+     */
+    public function activateClassEnrollment()
+    {
+        check_permission('admin-student-class');
+
+        $classId   = (int) $this->request->getPost('class_id');
+        $sessionId = (int) ($this->request->getPost('session_id') ?: session('member_sessionid'));
+        $campusId  = (int) session('member_campusid');
+        $clsSecId  = (int) $this->request->getPost('cls_sec_id');
+
+        if ($classId <= 0) {
+            return $this->failValidationErrors('Please select a class.');
+        }
+
+        if ($sessionId <= 0 || $campusId <= 0) {
+            return $this->failValidationErrors('Session or campus is not set.');
+        }
+
+        $service = new \App\Libraries\StudentSessionEnrollment();
+        $result  = $service->activateClassForSession(
+            $classId,
+            $sessionId,
+            $campusId,
+            (int) session('member_userid'),
+            $clsSecId
+        );
+
+        return $this->respond($result);
+    }
+
+    /**
+     * @return array{class_id:int, cls_sec_id:int}
+     */
+    private function parseClassSectionFilter($raw): array
+    {
+        $value = trim((string) ($raw ?? ''));
+
+        if ($value !== '' && str_starts_with($value, 'class:')) {
+            return [
+                'class_id'   => (int) substr($value, 6),
+                'cls_sec_id' => 0,
+            ];
+        }
+
+        return [
+            'class_id'   => 0,
+            'cls_sec_id' => (int) $value,
+        ];
+    }
+
+    /**
+     * @return list<object>
+     */
+    private function fetchStudentsForScope(int $sessionId, int $classId, int $clsSecId, int $campusId): array
+    {
+        if ($sessionId <= 0 || $campusId <= 0) {
+            return [];
+        }
+
+        if ($clsSecId <= 0 && $classId <= 0) {
+            return [];
+        }
+
+        $builder = $this->db->table('student_class sc')
+            ->select(
+                'sc.student_id,
+                 sc.cls_sec_id,
+                 s.reg_no,
+                 s.first_name,
+                 s.last_name,
+                 s.profile_photo,
+                 COALESCE(NULLIF(sec.short_name, ""), sec.section_name) AS section_name',
+                false
+            )
+            ->join('students s', 's.student_id = sc.student_id', 'inner')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'inner')
+            ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('sc.session_id', $sessionId)
+            ->where('sc.status', 1)
+            ->where('s.status', 1)
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1);
+
+        if ($clsSecId > 0) {
+            $builder->where('sc.cls_sec_id', $clsSecId);
+        } else {
+            $builder->where('cs.class_id', $classId);
+        }
+
+        return $builder
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('sec.section_id', 'ASC')
+            ->orderBy('s.first_name', 'ASC')
+            ->get()
+            ->getResult();
     }
 }

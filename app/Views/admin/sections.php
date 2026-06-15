@@ -1,24 +1,17 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <!-- Include Bootstrap Toggle CSS -->
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-school"></i> Manage Section</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Sections</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Manage Section',
+    'icon' => 'fas fa-school',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sections', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card card-primary">
@@ -70,7 +63,7 @@ $(function () {
     render: function (data, type, row) {
       let checked = data == 1 ? 'checked' : '';
       return `<input type="checkbox" class="toggle-status" data-id="${row.id}" ${checked}
-                data-toggle="toggle" data-size="sm" data-on="Active" data-off="Inactive"
+                data-bs-toggle="toggle" data-size="sm" data-on="Active" data-off="Inactive"
                 data-onstyle="success" data-offstyle="danger">`;
     }
   }

@@ -1,21 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Weekly Planning Report</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Weekly Planning Report</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Weekly Planning Report',
+    'icon' => 'fas fa-file-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Weekly Planning', 'url' => base_url('admin/weekly_planning')],
+        ['label' => 'Report', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
@@ -84,10 +78,10 @@
               <button type="button" id="btn-view-report" class="btn btn-primary">
                 <i class="fas fa-search"></i> Generate Report
               </button>
-              <button type="button" id="btn-reset" class="btn btn-default">
+              <button type="button" id="btn-reset" class="btn btn-secondary">
                 <i class="fas fa-undo"></i> Reset
               </button>
-              <div class="btn-group float-right">
+              <div class="btn-group float-end">
                 <button type="button" id="btn-export-pdf" class="btn btn-danger" disabled>
                   <i class="fas fa-file-pdf"></i> PDF
                 </button>
@@ -106,7 +100,7 @@
     <div class="col-12">
       <div id="report-loader" class="text-center" style="display: none;">
         <div class="spinner-border text-primary" role="status">
-          <span class="sr-only">Loading...</span>
+          <span class="visually-hidden">Loading...</span>
         </div>
         <p>Loading report data...</p>
       </div>

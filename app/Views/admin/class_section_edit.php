@@ -12,41 +12,31 @@
     //print_r($classSections_info);
 ?>
 
-<!-- Page Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>
-          <i class="fas fa-layer-group mr-1"></i> <?= esc($header) ?>
-          <?php if (empty($classSections_info->cls_sec_id)): ?>
-            <span class="badge badge-success ml-2 p-2" data-toggle="tooltip" title="This is step 6 of 10 in your setup wizard.">
-              Step 6 of 10 - System Configuration
-            </span>
-            
-            <audio autoplay controls class="ml-2" style="vertical-align: middle; width: 200px;">
-              <source src="<?= base_url('audio/Step8ClassSection.m4a') ?>" type="audio/mpeg">
-              Your browser does not support the audio element.
-            </audio>
-          <?php endif; ?>
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Class Section</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php
+$classSecSetupBadge = empty($classSections_info->cls_sec_id)
+    ? '<span class="badge text-bg-success" data-bs-toggle="tooltip" title="Step 6 of 10 in setup wizard">Step 6 of 10 - System Configuration</span>'
+    : '';
+$classSecSetupAudio = empty($classSections_info->cls_sec_id)
+    ? '<audio autoplay controls hidden><source src="' . esc(base_url('audio/Step8ClassSection.m4a'), 'attr') . '" type="audio/mpeg"></audio>'
+    : '';
+?>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-layer-group',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Sections', 'url' => base_url('admin/class_section')],
+        ['label' => empty($classSections_info->cls_sec_id) ? 'Add' : 'Edit', 'active' => true],
+    ],
+    'actionsHtml' => $classSecSetupBadge . $classSecSetupAudio,
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
   <div class="container-fluid">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-th-large mr-1"></i> Class Section Matrix</h3>
+        <h3 class="card-title"><i class="fas fa-th-large me-1"></i> Class Section Matrix</h3>
       </div>
       <div class="card-body">
         <div id="subjectsection" class="table-responsive border rounded p-3 bg-light">
@@ -58,14 +48,14 @@
         </div>
 
        <?php if ($showWizardStep): ?>
-  <div class="mt-4 text-right">
+  <div class="mt-4 text-end">
     <?php if (!$subjectinfo): ?>
       <a href="<?= base_url('admin/subjects/add') ?>" class="btn btn-warning btn-lg">
-        No subjects found – Add Subjects <i class="fas fa-arrow-right ml-1"></i>
+        No subjects found – Add Subjects <i class="fas fa-arrow-right ms-1"></i>
       </a>
     <?php else: ?>
       <a href="<?= base_url('admin/subjects/add') ?>" class="btn btn-success btn-lg">
-        Next Step <i class="fas fa-arrow-right ml-1"></i>
+        Next Step <i class="fas fa-arrow-right ms-1"></i>
       </a>
     <?php endif; ?>
   </div>
@@ -78,7 +68,7 @@
 <!-- Scripts -->
 <script>
 $(document).ready(function () {
-  $('[data-toggle="tooltip"]').tooltip();
+  $('[data-bs-toggle="tooltip"]').tooltip();
 
   $.ajax({
     url: '<?= base_url('admin/class-section/data2') ?>',

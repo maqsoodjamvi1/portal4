@@ -53,7 +53,12 @@ class AddBulkStudents extends BaseController
     $campus_bill_info = $this->db->table('campus_bills')->where(['status' => 1, 'campus_id' => $campusid])->get()->getRow();
     $max_student_limit = $campus_bill_info->max_students ?? 0;
 
-    $students_info = $this->db->query("SELECT COUNT(student_id) AS studentTotal FROM students WHERE student_id IN (SELECT student_id FROM student_class WHERE status = 1) AND campus_id = {$campusid}")->getRow();
+    $students_info = $this->db->table('students')
+        ->selectCount('students.student_id', 'studentTotal')
+        ->join('student_class', 'student_class.student_id = students.student_id AND student_class.status = 1', 'inner')
+        ->where('students.campus_id', (int) $campusid)
+        ->get()
+        ->getRow();
     $noOfstudent = $students_info->studentTotal ?? 0;
 
     $this->template_data['max_limit'] = $noOfstudent >= $max_student_limit ? '<div class="col-lg-12">Maximum Limit Exceeded</div>' : '';
@@ -577,30 +582,67 @@ public function updateStudentInfo()
     }
 }
 
-public function update_student_name()
+public function updateStudentName()
 {
-    $student_id = $this->request->getPost('student_id');
-    $first_name = $this->request->getPost('first_name');
-    $last_name = $this->request->getPost('last_name');
-    $user_id = session('member_userid');
-    $date = date('Y-m-d H:i:s');
-    
-    if (!$student_id || !$first_name) {
+    if (!$this->request->isAJAX()) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg' => 'Invalid request'
+        ]);
+    }
+
+    $student_id = (int) $this->request->getPost('student_id');
+    $first_name = trim((string) $this->request->getPost('first_name'));
+    $last_name  = trim((string) $this->request->getPost('last_name'));
+    $user_id    = (int) session('member_userid');
+    $campusid   = (int) session('member_campusid');
+    $date       = date('Y-m-d H:i:s');
+
+    if (!$student_id || $first_name === '') {
         return $this->response->setJSON([
             'success' => false,
             'msg' => 'Student ID and First Name are required'
         ]);
     }
-    
-    $this->db->table('students')
+
+    if (mb_strlen($first_name) < 2) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg' => 'First name must be at least 2 characters'
+        ]);
+    }
+
+    $existingStudent = $this->db->table('students')
+        ->where([
+            'student_id' => $student_id,
+            'campus_id'  => $campusid,
+        ])
+        ->get()
+        ->getRow();
+
+    if (!$existingStudent) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg' => 'Student not found or access denied'
+        ]);
+    }
+
+    $updated = $this->db->table('students')
         ->where('student_id', $student_id)
         ->update([
-            'first_name' => $first_name,
-            'last_name' => $last_name,
+            'first_name'   => $first_name,
+            'last_name'    => $last_name,
             'updated_date' => $date,
-            'user_id' => $user_id
+            'user_id'      => $user_id,
         ]);
-    
+
+    if (!$updated) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg' => 'Failed to update student name'
+        ]);
+    }
+
     return $this->response->setJSON([
         'success' => true,
         'msg' => 'Student name updated successfully'
@@ -725,19 +767,14 @@ public function generateSlc()
             throw new \Exception('Transaction failed');
         }
         
-        // Get school settings
-        $settings = [];
-        $settingsQuery = $db->table('settings')->get();
-        if ($settingsQuery) {
-            foreach ($settingsQuery->getResultArray() as $row) {
-                $settings[$row['key']] = $row['value'] ?? '';
-            }
-        }
-        
-        // Add additional data to response
-        $insertedSlc['school_name'] = $settings['school_name'] ?? 'YOUR SCHOOL NAME';
-        $insertedSlc['school_address'] = $settings['school_address'] ?? 'School Address';
-        $insertedSlc['school_contact'] = $settings['school_contact'] ?? 'Contact Details';
+        // School display fields: use system + campus (no `settings` table in this schema)
+        $school = getSchoolInfo();
+        $campusId = (int) session('member_campusid');
+        $campusRow = $db->table('campus')->where('campus_id', $campusId)->get()->getRowArray() ?? [];
+
+        $insertedSlc['school_name'] = $school->system_name ?? 'YOUR SCHOOL NAME';
+        $insertedSlc['school_address'] = $campusRow['location'] ?? ($school->address ?? 'School Address');
+        $insertedSlc['school_contact'] = $campusRow['landline'] ?? ($school->landline_number ?? 'Contact Details');
         
         return $this->response->setJSON([
             'success' => true,
@@ -1089,10 +1126,10 @@ $cls_sec_id = (int) ($this->request->getVar('cls_sec_id') ?? 0);
                             <input type="hidden" name="reg_no[]" value="<?= esc($s->reg_no ?? '') ?>">
                         </td>
                         <td class="align-middle">
-                            <span class="badge badge-success">Active</span>
+                            <span class="badge text-bg-success">Active</span>
                         </td>
                         <td class="text-center align-middle">
-                            <button type="button" class="btn btn-xs btn-outline-danger btn-drop-student" 
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-drop-student" 
                                     data-student-id="<?= $s->student_id ?>" data-student-name="<?= esc($fullName) ?>">
                                 <i class="fas fa-user-slash"></i>
                             </button>
@@ -1131,7 +1168,7 @@ $cls_sec_id = (int) ($this->request->getVar('cls_sec_id') ?? 0);
                         </td>
                         <td class="align-middle text-muted small">Auto-generated</td>
                         <td class="text-center align-middle">
-                            <button type="button" class="btn btn-xs btn-link text-danger btn-remove-new-row"><i class="fas fa-times"></i></button>
+                            <button type="button" class="btn btn-sm btn-link text-danger btn-remove-new-row"><i class="fas fa-times"></i></button>
                         </td>
                     </tr>
                 </tbody>

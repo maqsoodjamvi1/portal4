@@ -3,10 +3,8 @@
   <div class="form-group col-lg-4">
     <label>Date Paid:</label>
     <div class="input-group date" id="datepicker2" data-target-input="nearest">
-      <input type="text" id="datePaid" name="paid_date" autocomplete="off" class="form-control datetimepicker-input" data-target="#datepicker2" />
-      <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-      </div>
+      <input type="text" id="datePaid" name="paid_date" autocomplete="off" class="form-control datetimepicker-input" data-bs-target="#datepicker2" />
+      <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
     </div>
   </div>
   <div class="col-lg-4">

@@ -222,7 +222,7 @@ private function generate_modals_and_js($ci, $students, $campus_id, $session_id,
         <div class="modal-dialog"><div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Student Advance Fee</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body"><form id="AdvanceFee"><div class="row">';
 
@@ -241,7 +241,7 @@ private function generate_modals_and_js($ci, $students, $campus_id, $session_id,
 
     $modals_js .= '</div></form></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" id="advFeePay" class="btn btn-primary">Pay Advance Fee</button>
             </div>
         </div></div>
@@ -251,7 +251,7 @@ private function generate_modals_and_js($ci, $students, $campus_id, $session_id,
         <div class="modal-dialog"><div class="modal-content">
             <div class="modal-header">   
                 <h5 class="modal-title">Update Student Fee</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body"><form id="discountUpdate"><div class="row">';
 
@@ -286,7 +286,7 @@ private function generate_modals_and_js($ci, $students, $campus_id, $session_id,
     $modals_js .= '<div class="col-lg-6">Total Fee</div><div class="col-lg-6">'.$totalFee.'</div>
             </div></form></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" id="discUpdate" class="btn btn-primary">Update</button>
             </div>
         </div></div>
@@ -446,8 +446,8 @@ private function build_student_row($ci, $student, $campus_info, $session_id) {
             <td>'.($chalan->amount - $chalan->discount).'/-</td>
             <td>
                 <button class="btn btn-primary pay-button" 
-                    data-toggle="modal" 
-                    data-target="#payfee"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#payfee"
                     data-chalanid="'.$chalan->chalan_id.'"
                     data-studentid="'.$student->student_id.'"
                     data-feeamount="'.($chalan->amount - $chalan->discount).'">

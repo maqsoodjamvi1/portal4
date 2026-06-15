@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>House-wise Points & Position Holders</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports</a></li>
-          <li class="breadcrumb-item active">Report</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'House-wise Points & Position Holders',
+    'icon' => 'fas fa-medal',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Points Report', 'active' => true],
+    ],
+]) ?>
 
 <style>
 /* Top totals */
@@ -185,7 +180,7 @@
     <div class="card-header">
       <div class="report-toolbar">
         <div class="grow">
-          <label class="mb-0 mr-2">Event</label>
+          <label class="mb-0 me-2">Event</label>
           <select id="event_id" class="form-control d-inline-block" style="max-width:420px">
             <option value="0">— All Events —</option>
             <?php foreach (($events ?? []) as $e): ?>
@@ -196,7 +191,7 @@
           </select>
         </div>
         <div>
-          <label class="mb-0 mr-2">Order By</label>
+          <label class="mb-0 me-2">Order By</label>
           <select id="order_by" class="form-control d-inline-block" style="width:180px">
             <option value="position">Position</option>
             <option value="event">Event</option>
@@ -204,9 +199,9 @@
           </select>
         </div>
 
-        <button id="btnReload" class="btn btn-secondary ml-2">Reload</button>
+        <button id="btnReload" class="btn btn-secondary ms-2">Reload</button>
         <!-- PRINT BUTTON (works fine on B&W printer) -->
-        <button type="button" class="btn btn-default ml-2" onclick="window.print()">
+        <button type="button" class="btn btn-secondary ms-2" onclick="window.print()">
           <i class="fas fa-print"></i> Print
         </button>
       </div>

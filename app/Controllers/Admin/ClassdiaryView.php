@@ -14,7 +14,60 @@ class ClassdiaryView extends BaseController
     public function __construct()
     {
         check_permission('admin-classdairy');
+        helper(['role', 'server', 'school']);
         $this->db = \Config\Database::connect();
+    }
+
+    private function isTeacherUser(): bool
+    {
+        return isCurrentUserTeacher();
+    }
+
+    private function diaryAccessMessage(string $message, string $type = 'warning'): string
+    {
+        return '<div class="col-lg-12 bg-' . esc($type, 'attr') . ' text-center p-3">'
+            . esc($message)
+            . '</div>';
+    }
+
+    /**
+     * Apply teacher section scoping to a class_section query builder.
+     *
+     * @return true|string true on success, or an HTML error message string
+     */
+    private function applySectionAccessFilter($classQuery, $section_id)
+    {
+        if (! $this->isTeacherUser()) {
+            if (! empty($section_id)) {
+                $classQuery->where('cls_sec_id', (int) $section_id);
+            }
+
+            return true;
+        }
+
+        $allowedIds = getTeacherAllowedClassSectionIds();
+        if ($allowedIds === []) {
+            return $this->diaryAccessMessage(
+                'No class sections are assigned to you yet. Please contact your administrator.'
+            );
+        }
+
+        $sectionId = (int) $section_id;
+        if ($sectionId > 0) {
+            if (! teacherCanViewClassSection($sectionId)) {
+                return $this->diaryAccessMessage(
+                    'You do not have access to view the diary for this class section.'
+                );
+            }
+
+            $classQuery->where('cls_sec_id', $sectionId);
+
+            return true;
+        }
+
+        $classQuery->whereIn('cls_sec_id', $allowedIds);
+
+        return true;
     }
 
     public function index()
@@ -22,20 +75,31 @@ class ClassdiaryView extends BaseController
         $campus_id = (int) session('member_campusid');
         $sessionid = (int) session('member_sessionid');
         $system_id = (int) getSchoolInfo()->system_id;
+        $isTeacher = $this->isTeacherUser();
 
         // Today in Karachi, normalized to Y-m-d
         $today = (new \CodeIgniter\I18n\Time('now', 'Asia/Karachi'))->toDateString();
 
         // Get sections for filter dropdown
-        $sections = $this->db->table('class_section cs')
-            ->select('cs.cls_sec_id, CONCAT(c.class_name, " - ", s.section_name) as section_name')
-            ->join('classes c', 'c.class_id = cs.class_id')
-            ->join('sections s', 's.section_id = cs.section_id')
-            ->where('cs.campus_id', $campus_id)
-            ->where('cs.status', 1)
-            ->orderBy('c.class_name', 'ASC')
-            ->get()
-            ->getResultArray();
+        if ($isTeacher) {
+            $sections = [];
+            foreach (getTeacherSubjectSections() as $row) {
+                $sections[] = [
+                    'cls_sec_id'   => (int) $row['cls_sec_id'],
+                    'section_name' => (string) ($row['sectionclassname'] ?? ''),
+                ];
+            }
+        } else {
+            $sections = $this->db->table('class_section cs')
+                ->select('cs.cls_sec_id, CONCAT(c.class_name, " - ", s.section_name) as section_name')
+                ->join('classes c', 'c.class_id = cs.class_id')
+                ->join('sections s', 's.section_id = cs.section_id')
+                ->where('cs.campus_id', $campus_id)
+                ->where('cs.status', 1)
+                ->orderBy('c.class_name', 'ASC')
+                ->get()
+                ->getResultArray();
+        }
 
         // 1) All terms for dropdown
         $terms_session_info = $this->db->table('terms_session ts')
@@ -104,6 +168,7 @@ class ClassdiaryView extends BaseController
 
         $data = [
             'sections'                => $sections,
+            'isTeacher'               => $isTeacher,
             'sessionData'             => ['campusid' => $campus_id, 'sessionid' => $sessionid],
             'terms_session_info'      => $terms_session_info,
             'current_term_session_id' => $currentTermSessionId,
@@ -113,50 +178,73 @@ class ClassdiaryView extends BaseController
         return view('admin/classdiary_view', $data);
     }
 
-    // Get weeks for a term
+    // Get weeks for a term (used by Add Class Diary + Daily Diary view)
     public function getWeeks()
     {
-        $termId = $this->request->getPost('term_id');
-        $system_id = (int) getSchoolInfo()->system_id;
-        
-        if ($termId) {
-            $weeks = $this->db->table('term_weeks')
-                ->select('term_weeks_id, week_no, start_date, end_date')
-                ->where('term_session_id', $termId)
-                ->where('system_id', $system_id)
-                ->orderBy('start_date', 'ASC')
-                ->get()
-                ->getResult();
-            
-            return $this->response->setJSON(['weeks' => $weeks]);
-        }
-        
-        return $this->response->setJSON(['weeks' => []]);
+        return $this->response->setJSON([
+            'weeks' => $this->fetchTermWeeksForSession((int) $this->request->getPost('term_id')),
+        ]);
     }
 
-
-     public function getAllWeeks()
+    public function getAllWeeks()
     {
-        $termId = $this->request->getPost('term_id');
-        $system_id = (int) getSchoolInfo()->system_id;
-        
-        if ($termId) {
-            $weeks = $this->db->table('term_weeks')
-                ->select('term_weeks_id, week_no, start_date, end_date')
-                ->where('term_session_id', $termId)
-                ->where('system_id', $system_id)
-                ->orderBy('start_date', 'ASC')
-                ->get()
-                ->getResult();
-            
-            return $this->response->setJSON(['weeks' => $weeks]);
+        return $this->response->setJSON([
+            'weeks' => $this->fetchTermWeeksForSession((int) $this->request->getPost('term_id')),
+        ]);
+    }
+
+    /**
+     * Load weeks for a term session — match Classdiary::add() (no term_weeks.system_id filter).
+     * Scope via terms_session.session_id so weeks are not hidden for non-first terms.
+     *
+     * @return list<object>
+     */
+    private function fetchTermWeeksForSession(int $termSessionId): array
+    {
+        if ($termSessionId <= 0) {
+            return [];
         }
-        
-        return $this->response->setJSON(['weeks' => []]);
+
+        $sessionId = (int) session('member_sessionid');
+        if ($sessionId <= 0) {
+            return [];
+        }
+
+        $termExists = $this->db->table('terms_session')
+            ->where('term_session_id', $termSessionId)
+            ->where('session_id', $sessionId)
+            ->countAllResults() > 0;
+
+        if (! $termExists) {
+            return [];
+        }
+
+        return $this->db->table('term_weeks')
+            ->select('term_weeks_id, week_no, start_date, end_date, week_name')
+            ->where('term_session_id', $termSessionId)
+            ->orderBy('start_date', 'ASC')
+            ->get()
+            ->getResult();
     }
 
 
    public function data()
+    {
+        try {
+            return $this->renderDiaryData();
+        } catch (\Throwable $e) {
+            log_message('error', 'ClassdiaryView::data failed: {msg} @ {file}:{line}', [
+                'msg'  => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return '<div class="alert alert-danger mb-0">Unable to load diary view. '
+                . 'If this persists, run <code>php spark fix:school-timings</code> on the server.</div>';
+        }
+    }
+
+   private function renderDiaryData()
     {
         $campusid = session('member_campusid');
         $sessionid = session('member_sessionid');
@@ -194,14 +282,15 @@ class ClassdiaryView extends BaseController
             return '<div class="col-lg-12 bg-danger text-center">Select Term Week </div>';
         }
 
-        // Get class info - filter by section if selected
+        // Get class info - filter by section if selected (teachers: only assigned sections)
         $classQuery = $this->db->table('class_section')
             ->where(['campus_id' => $campusid, 'status' => 1]);
-        
-        if (!empty($section_id)) {
-            $classQuery->where('cls_sec_id', $section_id);
+
+        $access = $this->applySectionAccessFilter($classQuery, $section_id);
+        if ($access !== true) {
+            return $access;
         }
-        
+
         $class_info = $classQuery->get()->getResult();
 
         $term_weeks = $this->db->table('term_weeks')
@@ -249,6 +338,27 @@ private function getAllWeeksData($campusid, $sessionid, $term_session_id, $secti
 
     if (empty($weeks)) {
         return '<div class="col-lg-12 bg-danger text-center">No weeks found for this term</div>';
+    }
+
+    $section_id = (int) $section_id;
+
+    if ($this->isTeacherUser()) {
+        $allowedIds = getTeacherAllowedClassSectionIds();
+        if ($allowedIds === []) {
+            return $this->diaryAccessMessage(
+                'No class sections are assigned to you yet. Please contact your administrator.'
+            );
+        }
+
+        if ($section_id <= 0) {
+            return $this->diaryAccessMessage('Please select a specific class section.');
+        }
+
+        if (! teacherCanViewClassSection($section_id)) {
+            return $this->diaryAccessMessage(
+                'You do not have access to view the diary for this class section.'
+            );
+        }
     }
 
     // Get class info - ONLY for selected section (not all sections)
@@ -417,6 +527,11 @@ private function getAllWeeksData($campusid, $sessionid, $term_session_id, $secti
      private function processDiaryData($class_info, $period, $term_weeks_id, $campusid, $sessionid)
     {
         $data = [];
+        $campusId = (int) $campusid;
+        $clsSecIds = array_map(static fn ($section) => (int) $section->cls_sec_id, $class_info);
+        $allowedDaysBySection = buildAllowedWorkingDaysMap(
+            getSchoolTimingsForSections($clsSecIds, $campusId)
+        );
 
         foreach ($class_info as $sections) {
             $section_subjects = $this->db->table('section_subjects')
@@ -438,12 +553,7 @@ private function getAllWeeksData($campusid, $sessionid, $term_session_id, $secti
 
                 $week_dates[] = $date;
 
-                $schoolTimingsInfo = $this->db->query(
-                    "SELECT * FROM school_timings WHERE dayname=? AND cls_sec_id=? AND type_id=(SELECT type_id FROM school_timing_types WHERE status=1 AND campus_id=?)",
-                    [$name_of_day, $sections->cls_sec_id, $campusid]
-                )->getRow();
-
-                if (!$schoolTimingsInfo || $schoolTimingsInfo->checkin_timing == $schoolTimingsInfo->checkout_timing) {
+                if (! isWorkingDayForSection((int) $sections->cls_sec_id, $name_of_day, $allowedDaysBySection)) {
                     continue;
                 }
 
@@ -533,13 +643,14 @@ private function getAllWeeksData($campusid, $sessionid, $term_session_id, $secti
                 ->where('session_id', $sessionid)
                 ->get()->getRow();
 
-            $sectioninfo = getClassSection($sections->cls_sec_id);
+            $sectioninfo = getClassSection($sections->cls_sec_id) ?: [];
+            $classLabel  = (string) ($sectioninfo['sectionclassname'] ?? ('Section ' . $sections->cls_sec_id));
 
             $data[] = [
-                'class' => $sectioninfo['sectionclassname'],
-                'class_full_name' => $sectioninfo['sectionclassname'],
+                'class' => $classLabel,
+                'class_full_name' => $classLabel,
                 'cls_sec_id' => $sections->cls_sec_id,
-                'session_name' => $session_info->session_name,
+                'session_name' => $session_info->session_name ?? '',
                 'week_dates' => $week_dates,
                 'result' => $resultcard,
                 'audio_tasks' => $audioTasks,
@@ -556,9 +667,24 @@ private function getAllWeeksData($campusid, $sessionid, $term_session_id, $secti
 
    public function getClassDiary()
     {
-        $campusid = $this->session->get('member_campusid');
+        $campusid = session('member_campusid');
         $term_weeks_id = $this->request->getPost('term_weeks');
-        $sec_sub_id = $this->request->getPost('sec_sub_id');
+        $sec_sub_id = (int) $this->request->getPost('sec_sub_id');
+
+        if ($sec_sub_id > 0 && $this->isTeacherUser()) {
+            $secSub = $this->db->table('section_subjects')
+                ->select('cls_sec_id')
+                ->where('sec_sub_id', $sec_sub_id)
+                ->where('status', 1)
+                ->get()
+                ->getRow();
+
+            if (! $secSub || ! teacherCanViewClassSection((int) $secSub->cls_sec_id)) {
+                return $this->response->setBody(
+                    '<div class="col-lg-10 text-danger text-center">You do not have access to view the diary for this class section.</div>'
+                );
+            }
+        }
 
         $term_weeks = $this->db->table('term_weeks')->where('term_weeks_id', $term_weeks_id)->get()->getRow();
 

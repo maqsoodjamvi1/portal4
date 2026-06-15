@@ -2,413 +2,232 @@
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 
 <style>
-    :root {
-        --primary-color: #4361ee;
-        --secondary-color: #3f37c9;
-        --success-color: #4cc9f0;
-        --info-color: #4895ef;
-        --warning-color: #f72585;
-        --light-bg: #f8f9fa;
-        --border-radius: 12px;
-        --box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    .fc-chalan-page { --fc-accent: #2563eb; --fc-accent2: #1d4ed8; --fc-muted: #64748b; --fc-border: #e2e8f0; --fc-bg: #f8fafc; }
+    .fc-chalan-page .fc-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--fc-accent) 55%, #0ea5e9 100%);
+        color: #fff;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
     }
-
-    .filter-card {
+    .fc-chalan-page .fc-hero h2 { font-size: 1.35rem; font-weight: 700; margin: 0 0 .35rem; }
+    .fc-chalan-page .fc-hero p { margin: 0; opacity: .95; font-size: .95rem; line-height: 1.5; }
+    .fc-chalan-page .fc-card {
         background: #fff;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
-        padding: 25px;
-        margin-bottom: 25px;
-        border: none;
+        border: 1px solid var(--fc-border);
+        border-radius: 12px;
+        padding: 1.25rem 1.35rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
-    
-    .filter-section {
-        background: var(--light-bg);
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .filter-section h4 {
-        margin-top: 0;
-        margin-bottom: 20px;
-        color: var(--primary-color);
-        font-size: 16px;
-        font-weight: 700;
+    .fc-chalan-page .fc-card h3 {
+        font-size: .78rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        letter-spacing: .06em;
+        color: var(--fc-muted);
+        font-weight: 700;
+        margin: 0 0 1rem;
     }
-    
-    .filter-section h4 i {
-        font-size: 18px;
-    }
-    
-    .select2-container--bootstrap {
-        width: 100% !important;
-    }
-    
-    .preview-info {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-left: none;
-        padding: 15px 20px;
-        margin-bottom: 20px;
-        border-radius: 50px;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .preview-info i {
-        margin-right: 8px;
-    }
-    
-    .view-type-cards {
+    .fc-chalan-page .fc-view-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
-        margin-top: 10px;
+        gap: 12px;
     }
-    
-    .view-type-card {
-        background: white;
-        border: 2px solid #e9ecef;
+    @media (max-width: 992px) { .fc-chalan-page .fc-view-grid { grid-template-columns: repeat(2, 1fr); } }
+    .fc-chalan-page .fc-view-tile {
+        border: 2px solid var(--fc-border);
         border-radius: 10px;
-        padding: 15px;
+        padding: 14px 10px;
         text-align: center;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: border-color .2s, box-shadow .2s, transform .15s;
+        background: #fff;
     }
-    
-    .view-type-card:hover {
-        border-color: var(--primary-color);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.1);
+    .fc-chalan-page .fc-view-tile:hover { border-color: #93c5fd; transform: translateY(-1px); }
+    .fc-chalan-page .fc-view-tile.selected {
+        border-color: var(--fc-accent);
+        background: linear-gradient(160deg, #eff6ff 0%, #fff 100%);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
     }
-    
-    .view-type-card.selected {
-        border-color: var(--primary-color);
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .view-type-card.selected i {
-        color: white;
-    }
-    
-    .view-type-card i {
-        font-size: 32px;
-        color: var(--primary-color);
-        margin-bottom: 10px;
-    }
-    
-    .view-type-card.selected i {
-        color: white;
-    }
-    
-    .view-type-card .card-title {
-        font-weight: 600;
-        font-size: 14px;
-        margin: 5px 0;
-    }
-    
-    .view-type-card .card-subtitle {
-        font-size: 11px;
-        color: #6c757d;
-    }
-    
-    .view-type-card.selected .card-subtitle {
-        color: rgba(255,255,255,0.9);
-    }
-    
-    .toggle-switch-container {
+    .fc-chalan-page .fc-view-tile i { font-size: 1.65rem; color: var(--fc-accent); margin-bottom: 8px; display: block; }
+    .fc-chalan-page .fc-view-tile.selected i { color: var(--fc-accent2); }
+    .fc-chalan-page .fc-view-tile .title { font-weight: 600; font-size: .9rem; color: #0f172a; }
+    .fc-chalan-page .fc-view-tile .sub { font-size: .72rem; color: var(--fc-muted); margin-top: 4px; }
+    .fc-chalan-page .fc-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+    .fc-chalan-page .fc-toolbar .form-group { margin-bottom: 0; min-width: 160px; }
+    .fc-chalan-page .fc-actions {
         display: flex;
-        align-items: center;
-        gap: 15px;
         flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+        padding-top: .5rem;
+        border-top: 1px solid var(--fc-border);
+        margin-top: 1rem;
     }
-    
-    .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-    
-    .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    
-    .toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-        border-radius: 34px;
-    }
-    
-    .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-    }
-    
-    input:checked + .toggle-slider {
-        background-color: var(--primary-color);
-    }
-    
-    input:checked + .toggle-slider:before {
-        transform: translateX(26px);
-    }
-    
-    .toggle-label {
-        font-weight: 500;
-        color: #495057;
-    }
-    
-    .message-box {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        border: 2px solid #e9ecef;
-    }
-    
-    .message-options {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 15px;
-        padding: 10px;
-        background: var(--light-bg);
+    .fc-chalan-page .fc-btn-primary {
+        background: linear-gradient(135deg, var(--fc-accent) 0%, var(--fc-accent2) 100%);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        padding: .55rem 1.35rem;
         border-radius: 8px;
     }
-    
-    .message-option {
-        display: flex;
+    .fc-chalan-page .fc-btn-primary:hover { color: #fff; opacity: .94; }
+    .fc-chalan-page .fc-preview {
+        background: var(--fc-bg);
+        border: 1px dashed var(--fc-border);
+        border-radius: 10px;
+        padding: .75rem 1rem;
+        font-size: .88rem;
+        color: #334155;
+    }
+    .fc-chalan-page .select2-container--bootstrap { width: 100% !important; }
+    .fc-chalan-page .fc-collapse-h {
+        font-weight: 600;
+        color: #0f172a;
+        text-decoration: none;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
     }
-    
-    .message-option input[type="radio"] {
-        accent-color: var(--primary-color);
-        width: 18px;
-        height: 18px;
-    }
-    
-    .char-counter {
-        font-size: 12px;
-        color: #6c757d;
-        margin-top: 5px;
-        text-align: right;
-    }
-    
-    .char-counter.warning {
-        color: #f39c12;
-    }
-    
-    .char-counter.danger {
-        color: #e74c3c;
-    }
-    
-    .badge-feature {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        margin-left: 10px;
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: flex-end;
-        margin-top: 20px;
-    }
-    
-    .btn-view {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        color: white;
-        padding: 12px 30px;
-        border-radius: 50px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-view:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn-reset {
-        background: #e9ecef;
-        border: none;
-        color: #495057;
-        padding: 12px 30px;
-        border-radius: 50px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-reset:hover {
-        background: #dee2e6;
-    }
-    
-    @media (max-width: 768px) {
-        .view-type-cards {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
+    .fc-chalan-page .fc-collapse-h:hover { text-decoration: none; color: var(--fc-accent); }
+    .fc-chalan-page .char-counter { font-size: 12px; color: var(--fc-muted); text-align: right; margin-top: 4px; }
+    .fc-chalan-page .char-counter.warning { color: #d97706; }
+    .fc-chalan-page .char-counter.danger { color: #dc2626; }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-file-invoice mr-2"></i>Fee Chalan Generator</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/fee-management') ?>">Fee Management</a></li>
-                    <li class="breadcrumb-item active">Generate Chalan</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Generate fee challan',
+    'icon' => 'fas fa-file-invoice-dollar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee_chalan')],
+        ['label' => 'Generate challan', 'active' => true],
+    ],
+]) ?>
 
-<section class="content">
+<section class="content fc-chalan-page">
     <div class="container-fluid">
-        <form action="<?= base_url('admin/fee-chalan/generate') ?>" method="get" id="chalanForm" target="_blank">
-            <div class="filter-card">
-                <!-- View Type Selection - Card Based -->
-                <div class="filter-section">
-                    <h4><i class="fas fa-layer-group"></i> 1. Select View Type</h4>
-                    
-                    <!-- View Type Cards -->
-                    <div class="view-type-cards">
-                        <div class="view-type-card <?= ($selected_view ?? 'student_three_copy') == 'student_three_copy' ? 'selected' : '' ?>" 
-                             data-value="student_three_copy">
-                            <i class="fas fa-user-graduate"></i>
-                            <div class="card-title">Student Wise</div>
-                            <div class="card-subtitle">3 Copies per Student</div>
-                        </div>
-                        
-                        <div class="view-type-card <?= ($selected_view ?? '') == 'student_single_page' ? 'selected' : '' ?>" 
-                             data-value="student_single_page">
-                            <i class="fas fa-users"></i>
-                            <div class="card-title">Student Wise</div>
-                            <div class="card-subtitle">Single Page (3 Students)</div>
-                        </div>
-                        
-                        <div class="view-type-card <?= ($selected_view ?? '') == 'family_three_copy' ? 'selected' : '' ?>" 
-                             data-value="family_three_copy">
-                            <i class="fas fa-family"></i>
-                            <div class="card-title">Family Wise</div>
-                            <div class="card-subtitle">3 Copies per Student</div>
-                        </div>
-                        
-                        <div class="view-type-card <?= ($selected_view ?? '') == 'family_single_page' ? 'selected' : '' ?>" 
-                             data-value="family_single_page">
-                            <i class="fas fa-people-arrows"></i>
-                            <div class="card-title">Family Wise</div>
-                            <div class="card-subtitle">All Students on One Page</div>
+        <form action="<?= base_url('admin/fee-chalan/generate') ?>" method="post" id="chalanForm" target="_blank" autocomplete="off">
+            <?= csrf_field() ?>
+            <div class="fc-hero">
+                <h2><i class="fas fa-magic me-2"></i>Fee challan generator</h2>
+                <p class="mb-2">
+                    <strong>Step 1 — Choose layout.</strong> Then open optional filters only if you need a class, section, or search.
+                </p>
+                <p class="mb-0 small">
+                    Student-wise lists are built from <strong>actual unpaid fee lines</strong> in your database (then class/search narrow the list).
+                    Family-wise groups amounts by parent. Leave filters empty to print everyone who still owes fees (can be large — use month or class to shrink).
+                </p>
+            </div>
+
+            <div class="fc-card">
+                <h3><i class="fas fa-th-large me-1"></i>Step 1 — Output type</h3>
+                <div class="fc-view-grid">
+                    <div class="fc-view-tile <?= ($selected_view ?? 'student_three_copy') === 'student_three_copy' ? 'selected' : '' ?>" data-value="student_three_copy">
+                        <i class="fas fa-clone"></i>
+                        <div class="title">Student-wise · 3 copies</div>
+                        <div class="sub">Each student: Bank, School, Student copy (landscape)</div>
+                    </div>
+                    <div class="fc-view-tile <?= ($selected_view ?? '') === 'student_single_page' ? 'selected' : '' ?>" data-value="student_single_page">
+                        <i class="fas fa-columns"></i>
+                        <div class="title">Student-wise · single page</div>
+                        <div class="sub">Up to 3 students per printed page</div>
+                    </div>
+                    <div class="fc-view-tile <?= ($selected_view ?? '') === 'family_three_copy' ? 'selected' : '' ?>" data-value="family_three_copy">
+                        <i class="fas fa-home"></i>
+                        <div class="title">Family-wise · 3 copies</div>
+                        <div class="sub">By family; each child still gets 3 slips</div>
+                    </div>
+                    <div class="fc-view-tile <?= ($selected_view ?? '') === 'family_single_page' ? 'selected' : '' ?>" data-value="family_single_page">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="title">Family-wise · one page</div>
+                        <div class="sub">All siblings of a family on one sheet</div>
+                    </div>
+                </div>
+                <select name="view_type" id="view_type" class="d-none">
+                    <option value="student_three_copy" <?= ($selected_view ?? 'student_three_copy') === 'student_three_copy' ? 'selected' : '' ?>>Student Wise - 3 Copies</option>
+                    <option value="student_single_page" <?= ($selected_view ?? '') === 'student_single_page' ? 'selected' : '' ?>>Student Wise - Single Page</option>
+                    <option value="family_three_copy" <?= ($selected_view ?? '') === 'family_three_copy' ? 'selected' : '' ?>>Family Wise - 3 Copies</option>
+                    <option value="family_single_page" <?= ($selected_view ?? '') === 'family_single_page' ? 'selected' : '' ?>>Family Wise - Single Page</option>
+                </select>
+                <p class="text-muted small mb-0 mt-2" id="viewHelpText"></p>
+            </div>
+
+            <div class="fc-card">
+                <h3><i class="fas fa-sliders-h me-1"></i>Step 2 — Quick options</h3>
+                <div class="fc-toolbar">
+                    <div class="form-group">
+                        <label class="d-block mb-1"><strong>Discount column</strong></label>
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" name="show_discount" id="show_discount" value="yes"
+                                   <?= ($show_discount ?? 'yes') === 'yes' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="show_discount"><span id="discountLabel"><?= ($show_discount ?? 'yes') === 'yes' ? 'Show' : 'Hide' ?></span></label>
                         </div>
                     </div>
-                    
-                    <!-- Hidden select for form submission -->
-                    <select name="view_type" id="view_type" class="d-none">
-                        <option value="student_three_copy" <?= ($selected_view ?? 'student_three_copy') == 'student_three_copy' ? 'selected' : '' ?>>Student Wise - 3 Copies</option>
-                        <option value="student_single_page" <?= ($selected_view ?? '') == 'student_single_page' ? 'selected' : '' ?>>Student Wise - Single Page</option>
-                        <option value="family_three_copy" <?= ($selected_view ?? '') == 'family_three_copy' ? 'selected' : '' ?>>Family Wise - 3 Copies</option>
-                        <option value="family_single_page" <?= ($selected_view ?? '') == 'family_single_page' ? 'selected' : '' ?>>Family Wise - Single Page</option>
-                    </select>
-                    
-                    <div class="row mt-3">
-                        <div class="col-md-4">
-                            <div class="toggle-switch-container">
-                                <span class="toggle-label">Discount Column:</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="show_discount" value="yes" 
-                                           <?= ($show_discount ?? 'yes') == 'yes' ? 'checked' : '' ?>>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <span class="toggle-label" id="discountLabel">Show</span>
-                            </div>
+                    <div class="form-group flex-grow-1" style="min-width: 200px;">
+                        <label for="fee_month"><strong>Fee month</strong> <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="month" class="form-control" name="fee_month" id="fee_month" value="<?= esc($fee_month ?? '') ?>">
+                        <small class="text-muted">Empty = all unpaid months</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" name="show_payment_history" id="show_payment_history" value="1"
+                                   <?= !empty($show_payment_history) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="show_payment_history"><strong>Payment history</strong></label>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label><i class="fas fa-calendar-alt mr-1"></i>Fee Month</label>
-                                <input type="month" class="form-control" name="fee_month" 
-                                       value="<?= $fee_month ?? '' ?>" 
-                                       placeholder="Select Month">
-                                <small class="text-muted">Leave empty to show all unpaid months</small>
-                            </div>
+                        <small class="text-muted d-block">Last 12 months</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="fine_after_due_date" id="fine_after_due_date" value="1"
+                                   <?= !empty($fine_after_due_date) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="fine_after_due_date"><strong>Late fine line</strong></label>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Hidden fields to store selected IDs -->
-                <input type="hidden" name="selected_student_id" id="selected_student_id" value="">
-                <input type="hidden" name="selected_parent_id" id="selected_parent_id" value="">
-                
-                <!-- Search Section -->
-                <div class="filter-section">
-                    <h4><i class="fas fa-search"></i> 2. Search</h4>
+            <input type="hidden" name="selected_student_id" id="selected_student_id" value="">
+            <input type="hidden" name="selected_parent_id" id="selected_parent_id" value="">
+
+            <div class="fc-card">
+                <a class="fc-collapse-h" data-bs-toggle="collapse" href="#fcOptionalFilters" role="button" aria-expanded="true" aria-controls="fcOptionalFilters">
+                    <i class="fas fa-filter"></i> Step 3 — Optional filters <small class="text-muted fw-normal">(class, section, search…)</small>
+                    <i class="fas fa-chevron-down small ms-1"></i>
+                </a>
+                <div class="collapse show mt-3" id="fcOptionalFilters">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-lg-8">
                             <div class="form-group">
-                                <label><strong><i class="fas fa-user mr-1"></i>Search by Name / Reg No / CNIC</strong></label>
+                                <label><strong>Search student or family</strong></label>
                                 <select class="form-control" id="search_select" name="search">
-                                    <option value="">Type at least 3 characters to search...</option>
+                                    <option value="">Type at least 3 characters…</option>
                                 </select>
                                 <input type="hidden" name="selected_item_id" id="selected_item_id" value="">
-                                <small class="text-muted" id="searchHelp">
-                                    <i class="fas fa-info-circle"></i> 
-                                    Search for student name, father name, or registration number
-                                </small>
+                                <small class="text-muted" id="searchHelp">Name, father name, or registration number</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-lg-4">
                             <div class="form-group">
-                                <label><strong><i class="fas fa-id-card mr-1"></i>Or Direct Family ID</strong></label>
-                                <input type="number" class="form-control" name="family_id" 
-                                       value="<?= $family_id ?? '' ?>" placeholder="Enter Family ID">
+                                <label><strong>Family ID</strong></label>
+                                <input type="number" class="form-control" name="family_id" id="family_id" value="<?= esc($family_id ?? '') ?>" placeholder="Parent / family id">
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Class Filters (shown only for student-wise) -->
-                <div class="filter-section" id="classFilters" style="<?= (strpos($selected_view ?? 'student_three_copy', 'student') !== false) ? 'display:block;' : 'display:none;' ?>">
-                    <h4><i class="fas fa-school"></i> 3. Class Filter (Student Wise Only)</h4>
-                    <div class="row">
+                    <div class="row" id="classFilters" style="<?= (strpos($selected_view ?? 'student_three_copy', 'student') !== false) ? '' : 'display:none;' ?>">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label><strong>Class</strong></label>
                                 <select name="class_id" id="class_id" class="form-control select2">
-                                    <option value="">All Classes</option>
+                                    <option value="">All classes</option>
                                     <?php foreach ($classes ?? [] as $class): ?>
-                                        <option value="<?= $class['class_id'] ?>" <?= ($class_id ?? '') == $class['class_id'] ? 'selected' : '' ?>>
+                                        <option value="<?= esc($class['class_id']) ?>" <?= (string) ($class_id ?? '') === (string) $class['class_id'] ? 'selected' : '' ?>>
                                             <?= esc($class['class_name']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -419,10 +238,15 @@
                             <div class="form-group">
                                 <label><strong>Section</strong></label>
                                 <select name="section_id" id="section_id" class="form-control select2">
-                                    <option value="">All Sections</option>
+                                    <option value="">All sections</option>
                                     <?php foreach ($sectionsclassinfo ?? [] as $section): ?>
-                                        <option value="<?= $section['section_id'] ?>" <?= ($section_id ?? '') == $section['section_id'] ? 'selected' : '' ?>>
-                                            <?= esc($section['sectionclassname']) ?>
+                                        <?php
+                                        $secVal = (string) ($section['cls_sec_id'] ?? '');
+                                        $selSec = (string) ($section_id ?? '');
+                                        $secSelected = ($selSec !== '' && ($selSec === $secVal || $selSec === (string) ($section['section_id'] ?? '')));
+                                        ?>
+                                        <option value="<?= esc($secVal) ?>" <?= $secSelected ? 'selected' : '' ?>>
+                                            <?= esc($section['sectionclassname'] ?? '') ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -430,283 +254,213 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Message Options - Replaces Footer Lines -->
-                <div class="filter-section">
-                    <h4><i class="fas fa-envelope"></i> 4. Message Options</h4>
-                    
-                    <div class="message-box">
-                        <div class="message-options">
-                            <div class="message-option">
-                                <input type="radio" name="message_position" id="pos_header" value="header" 
-                                       <?= (!isset($message_position) || $message_position == 'header') ? 'checked' : '' ?>>
-                                <label for="pos_header"><i class="fas fa-arrow-up text-success"></i> Show in Header</label>
-                            </div>
-                            <div class="message-option">
-                                <input type="radio" name="message_position" id="pos_footer" value="footer"
-                                       <?= ($message_position ?? '') == 'footer' ? 'checked' : '' ?>>
-                                <label for="pos_footer"><i class="fas fa-arrow-down text-info"></i> Show in Footer</label>
-                            </div>
-                            <div class="message-option">
-                                <input type="radio" name="message_position" id="pos_none" value="none"
-                                       <?= ($message_position ?? '') == 'none' ? 'checked' : '' ?>>
-                                <label for="pos_none"><i class="fas fa-ban text-danger"></i> Don't Show</label>
-                            </div>
+            <div class="fc-card">
+                <a class="fc-collapse-h" data-bs-toggle="collapse" href="#fcMessageBlock" role="button" aria-expanded="false" aria-controls="fcMessageBlock">
+                    <i class="fas fa-comment-alt"></i> Message on challan <small class="text-muted fw-normal">(optional)</small>
+                    <i class="fas fa-chevron-down small ms-1"></i>
+                </a>
+                <div class="collapse mt-3" id="fcMessageBlock">
+                    <div class="d-flex flex-wrap mb-3">
+                        <div class="form-check form-check me-4 mb-2">
+                            <input class="form-check-input" type="radio" name="message_position" id="msg_pos_header" value="header"
+                                   <?= (!isset($message_position) || $message_position === 'header') ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="msg_pos_header">Header</label>
                         </div>
-                        
-                        <div class="form-group">
-                            <label><strong>Message Text</strong></label>
-                            <textarea class="form-control" name="message_text" id="message_text" rows="3" 
-                                      placeholder="Enter your message here..." maxlength="200"><?= $message_text ?? '' ?></textarea>
-                            <div class="char-counter" id="charCounter">
-                                <span id="charCount">0</span>/200 characters
-                            </div>
+                        <div class="form-check form-check me-4 mb-2">
+                            <input class="form-check-input" type="radio" name="message_position" id="msg_pos_footer" value="footer"
+                                   <?= ($message_position ?? '') === 'footer' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="msg_pos_footer">Footer</label>
                         </div>
-                        
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            Message will be displayed at the selected position on all chalans. Max 200 characters.
+                        <div class="form-check form-check me-4 mb-2">
+                            <input class="form-check-input" type="radio" name="message_position" id="msg_pos_none" value="none"
+                                   <?= ($message_position ?? '') === 'none' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="msg_pos_none">Do not show</label>
                         </div>
                     </div>
-                </div>
-
-                <!-- Additional Options -->
-                <div class="filter-section">
-                    <h4><i class="fas fa-cog"></i> 5. Additional Options</h4>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" 
-                                       name="show_payment_history" id="show_payment_history" value="1"
-                                       <?= ($show_payment_history ?? 0) ? 'checked' : '' ?>>
-                                <label class="custom-control-label" for="show_payment_history">
-                                    <strong>Payment History</strong>
-                                </label>
-                                <small class="d-block text-muted">Show last 12 months payments</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="custom-control custom-switch">
-                                <input class="custom-control-input" type="checkbox" 
-                                       name="fine_after_due_date" id="fine_after_due_date" value="1"
-                                       <?= ($fine_after_due_date ?? 0) ? 'checked' : '' ?>>
-                                <label class="custom-control-label" for="fine_after_due_date">
-                                    <strong>Display Fine</strong>
-                                </label>
-                                <small class="d-block text-muted">Show late fee calculation</small>
-                            </div>
-                        </div>
+                    <div class="form-group mb-0">
+                        <label>Message text <span class="text-muted">(max 200)</span></label>
+                        <textarea class="form-control" name="message_text" id="message_text" rows="2" maxlength="200" placeholder="Short note on every slip…"><?= esc($message_text ?? '') ?></textarea>
+                        <div class="char-counter" id="charCounter"><span id="charCount">0</span>/200</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button type="submit" class="btn btn-view" id="generateBtn">
-                        <i class="fas fa-file-pdf mr-2"></i> View Chalans
-                    </button>
-                    <button type="reset" class="btn btn-reset">
-                        <i class="fas fa-undo mr-2"></i> Reset
-                    </button>
+            <div class="fc-card">
+                <div class="fc-actions">
+                    <button type="button" class="btn btn-outline-secondary" id="fcResetBtn"><i class="fas fa-undo me-1"></i> Clear filters</button>
+                    <button type="submit" class="fc-btn-primary" id="generateBtn"><i class="fas fa-external-link-alt me-2"></i>Open challans</button>
+                </div>
+                <div class="fc-preview mt-3 mb-0">
+                    <strong>Summary:</strong> <span id="previewText"><?php
+                    $selectedView = $selected_view ?? 'student_three_copy';
+                    $showDiscount = $show_discount ?? 'yes';
+                    $feeMonth = $fee_month ?? '';
+                    $messagePos = $message_position ?? 'header';
+                    $preview = '';
+                    if (strpos($selectedView, 'student') !== false) {
+                        $preview .= 'Student · ';
+                        $preview .= strpos($selectedView, 'three_copy') !== false ? '3 copies' : 'single page';
+                    } else {
+                        $preview .= 'Family · ';
+                        $preview .= strpos($selectedView, 'three_copy') !== false ? '3 copies' : 'single page';
+                    }
+                    $preview .= ' · Discount ' . ($showDiscount === 'yes' ? 'on' : 'off');
+                    $preview .= ' · Month: ' . (!empty($feeMonth) ? $feeMonth : 'all unpaid');
+                    $preview .= ' · Message: ' . ($messagePos === 'none' ? 'off' : $messagePos);
+                    echo esc($preview);
+                    ?></span>
                 </div>
             </div>
         </form>
-
-        <!-- Preview Info -->
-        <div class="preview-info" id="previewInfo">
-            <i class="fas fa-info-circle"></i>
-            <strong>Current Selection:</strong> 
-            <span id="previewText">
-                <?php 
-                $selectedView = $selected_view ?? 'student_three_copy';
-                $showDiscount = $show_discount ?? 'yes';
-                $feeMonth = $fee_month ?? '';
-                $messagePos = $message_position ?? 'header';
-                
-                $preview = '';
-                if (strpos($selectedView, 'student') !== false) {
-                    $preview .= 'Student Wise - ';
-                    $preview .= strpos($selectedView, 'three_copy') !== false ? '3 Copies per Student' : 'Single Page (3 Students)';
-                } else {
-                    $preview .= 'Family Wise - ';
-                    $preview .= strpos($selectedView, 'three_copy') !== false ? '3 Copies per Student' : 'All Family Students on One Page';
-                }
-                $preview .= ' | Discount: ' . ($showDiscount == 'yes' ? 'Shown' : 'Hidden');
-                $preview .= ' | Month: ' . (!empty($feeMonth) ? $feeMonth : 'All Months');
-                $preview .= ' | Message: ' . ($messagePos == 'none' ? 'Hidden' : ucfirst($messagePos));
-                echo $preview;
-                ?>
-            </span>
-        </div>
     </div>
 </section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
 <script>
 $(document).ready(function() {
-    // Initialize Select2
-    $('.select2').select2({
-        theme: 'bootstrap',
-        width: '100%'
-    });
-    
-    // Initialize Select2 for search
+    function csrfPair() {
+        if (window.adminCsrfPayload) {
+            return window.adminCsrfPayload();
+        }
+        var $i = $('#chalanForm input[name="csrf_test_name"]');
+        if (!$i.length && window.ADMIN_CSRF) {
+            var o = {};
+            o[window.ADMIN_CSRF.name] = window.ADMIN_CSRF.hash;
+            return o;
+        }
+        if (!$i.length) {
+            return {};
+        }
+        var o = {};
+        o[$i.attr('name')] = $i.val();
+        return o;
+    }
+
+    $('.select2').select2({ theme: 'bootstrap-5', width: '100%' });
     initSearch();
-    
-    // View Type Card Selection
-    $('.view-type-card').click(function() {
-        $('.view-type-card').removeClass('selected');
+    syncViewTiles();
+
+    $('.fc-view-tile').on('click', function() {
+        $('.fc-view-tile').removeClass('selected');
         $(this).addClass('selected');
-        const value = $(this).data('value');
-        $('#view_type').val(value).trigger('change');
+        $('#view_type').val($(this).data('value')).trigger('change');
     });
-    
-    // Handle view type change
-    $('#view_type').change(function() {
-        const viewType = $(this).val();
-        const isStudentWise = viewType.includes('student');
-        
-        // Clear search selections when changing view type
-        $('#search_select').val(null).trigger('change');
-        $('#selected_student_id').val('');
-        $('#selected_parent_id').val('');
-        $('input[name="search"]').val('');
-        $('input[name="family_id"]').val('');
-        
-        // Update class filters visibility
+
+    function syncViewTiles() {
+        var v = $('#view_type').val();
+        $('.fc-view-tile').removeClass('selected');
+        $('.fc-view-tile[data-value="' + v + '"]').addClass('selected');
+    }
+
+    $('#view_type').on('change', function(ev, meta) {
+        syncViewTiles();
+        var viewType = $(this).val();
+        var isStudentWise = viewType.indexOf('student') !== -1;
+        if (!meta || !meta.skipClear) {
+            $('#search_select').val(null).trigger('change');
+            $('#selected_student_id').val('');
+            $('#selected_parent_id').val('');
+            $('#family_id').val('');
+        }
         if (isStudentWise) {
             $('#classFilters').slideDown();
-            $('#searchHelp').text('Search for student name, father name, or registration number');
+            $('#searchHelp').text('Name, father name, or registration number');
             initStudentSearch();
         } else {
             $('#classFilters').slideUp();
-            $('#searchHelp').text('Search for father name, CNIC, or contact number');
+            $('#searchHelp').text('Father name, CNIC, or contact');
             initFamilySearch();
         }
-        
         updatePreviewText();
-        
-        // Update help text
-        let helpText = '';
-        if (viewType == 'student_three_copy') {
-            helpText = 'Each student gets 3 separate copies (Bank, School, Student)';
-        } else if (viewType == 'student_single_page') {
-            helpText = '3 students per page, each with a single copy';
-        } else if (viewType == 'family_three_copy') {
-            helpText = 'Grouped by family, each student gets 3 copies';
+        var helpText = '';
+        if (viewType === 'student_three_copy') {
+            helpText = 'Each student: three separate slips (bank, school, student).';
+        } else if (viewType === 'student_single_page') {
+            helpText = 'Up to three students per printed page.';
+        } else if (viewType === 'family_three_copy') {
+            helpText = 'Grouped by family; each student still gets three copies.';
         } else {
-            helpText = 'All students of a family on one page with single copies';
+            helpText = 'One page per family with all students.';
         }
         $('#viewHelpText').text(helpText);
     });
 
-    // Discount toggle
-    $('input[name="show_discount"]').change(function() {
+    $('#show_discount').on('change', function() {
         $('#discountLabel').text($(this).is(':checked') ? 'Show' : 'Hide');
         updatePreviewText();
     });
 
-    // Function to update preview text
+    $('#fee_month').on('input change', updatePreviewText);
+    $('input[name="message_position"]').on('change', updatePreviewText);
+
     function updatePreviewText() {
-        const viewType = $('#view_type').val();
-        const isStudentWise = viewType.includes('student');
-        const layout = viewType.includes('three_copy') ? '3 Copies' : 'Single Page';
-        const grouping = isStudentWise ? 'Student Wise' : 'Family Wise';
-        const discount = $('input[name="show_discount"]').is(':checked') ? 'Shown' : 'Hidden';
-        const month = $('input[name="fee_month"]').val();
-        const monthDisplay = month ? month : 'All Months';
-        const messagePos = $('input[name="message_position"]:checked').val();
-        const messageDisplay = messagePos == 'none' ? 'Hidden' : (messagePos == 'header' ? 'Header' : 'Footer');
-        
-        let preview = grouping + ' - ' + layout;
-        preview += ' | Discount: ' + discount;
-        preview += ' | Month: ' + monthDisplay;
-        preview += ' | Message: ' + messageDisplay;
-        $('#previewText').text(preview);
+        var viewType = $('#view_type').val();
+        var isStudentWise = viewType.indexOf('student') !== -1;
+        var layout = viewType.indexOf('three_copy') !== -1 ? '3 copies' : 'single page';
+        var grouping = isStudentWise ? 'Student' : 'Family';
+        var discount = $('#show_discount').is(':checked') ? 'on' : 'off';
+        var month = $('#fee_month').val();
+        var monthDisplay = month ? month : 'all unpaid';
+        var messagePos = $('input[name="message_position"]:checked').val() || 'header';
+        var messageDisplay = messagePos === 'none' ? 'off' : messagePos;
+        $('#previewText').text(
+            grouping + ' · ' + layout + ' · Discount ' + discount + ' · Month: ' + monthDisplay + ' · Message: ' + messageDisplay
+        );
     }
 
-    // Discount option change
-    $('input[name="show_discount"]').change(function() {
-        updatePreviewText();
-    });
-
-    // Fee month change
-    $('input[name="fee_month"]').on('input change', function() {
-        updatePreviewText();
-    });
-
-    // Message position change
-    $('input[name="message_position"]').change(function() {
-        updatePreviewText();
-    });
-
-    // Character counter for message text
     $('#message_text').on('input', function() {
-        const count = $(this).val().length;
+        var count = $(this).val().length;
         $('#charCount').text(count);
-        const counter = $('.char-counter');
+        var counter = $('#charCounter');
         counter.removeClass('warning danger');
-        if (count > 180) {
-            counter.addClass('warning');
-        }
-        if (count > 195) {
-            counter.addClass('danger');
-        }
+        if (count > 180) { counter.addClass('warning'); }
+        if (count > 195) { counter.addClass('danger'); }
     }).trigger('input');
 
-    // Class change - reload sections
-    $('#class_id').change(function() {
-        const classId = $(this).val();
-        if (classId) {
-            loadSections(classId);
-        }
+    $('#class_id').on('change', function() {
+        var classId = $(this).val();
+        if (classId) { loadSections(classId); }
     });
 
-    // Handle student/family selection
     $('#search_select').on('select2:select', function(e) {
         var data = e.params.data;
         var viewType = $('#view_type').val();
-        var isStudentWise = viewType.includes('student');
-        
+        var isStudentWise = viewType.indexOf('student') !== -1;
         if (isStudentWise) {
-            $('input[name="search"]').val(data.id);
             $('#selected_student_id').val(data.id);
             $('#selected_parent_id').val('');
             $('#family_id').val('');
         } else {
             var parentId = data.parent_id || data.id;
-            $('input[name="search"]').val(parentId);
             $('#selected_parent_id').val(parentId);
             $('#selected_student_id').val('');
             $('#family_id').val(parentId);
         }
     });
 
-    // Handle clearing the selection
-    $('#search_select').on('select2:clear', function(e) {
-        $('input[name="search"]').val('');
+    $('#search_select').on('select2:clear', function() {
         $('#selected_student_id').val('');
         $('#selected_parent_id').val('');
-        $('#family_id').val('');
     });
 
-    // Initialize search based on current view
     function initSearch() {
-        if ($('#view_type').val().includes('student')) {
+        if ($('#view_type').val().indexOf('student') !== -1) {
             initStudentSearch();
         } else {
             initFamilySearch();
         }
     }
 
-    // Initialize student search
     function initStudentSearch() {
         if ($('#search_select').hasClass('select2-hidden-accessible')) {
             $('#search_select').select2('destroy');
         }
-        
         $('#search_select').select2({
-            theme: 'bootstrap',
-            placeholder: 'Search by student name, reg no...',
+            theme: 'bootstrap-5',
+            placeholder: 'Search student…',
             allowClear: true,
             minimumInputLength: 3,
             ajax: {
@@ -714,20 +468,22 @@ $(document).ready(function() {
                 type: 'POST',
                 dataType: 'json',
                 delay: 300,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 data: function(params) {
-                    return {
+                    return $.extend({
                         term: params.term,
                         class_id: $('#class_id').val(),
                         section_id: $('#section_id').val()
-                    };
+                    }, csrfPair());
                 },
                 processResults: function(data) {
-                    return {
-                        results: data
-                    };
+                    if (data && data.error) {
+                        return { results: [] };
+                    }
+                    if (!Array.isArray(data)) {
+                        return { results: [] };
+                    }
+                    return { results: data };
                 }
             },
             templateResult: formatStudentResult,
@@ -736,15 +492,13 @@ $(document).ready(function() {
         });
     }
 
-    // Initialize family search
     function initFamilySearch() {
         if ($('#search_select').hasClass('select2-hidden-accessible')) {
             $('#search_select').select2('destroy');
         }
-        
         $('#search_select').select2({
-            theme: 'bootstrap',
-            placeholder: 'Search by father name, CNIC...',
+            theme: 'bootstrap-5',
+            placeholder: 'Search family…',
             allowClear: true,
             minimumInputLength: 3,
             ajax: {
@@ -752,18 +506,12 @@ $(document).ready(function() {
                 type: 'POST',
                 dataType: 'json',
                 delay: 300,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 data: function(params) {
-                    return {
-                        term: params.term
-                    };
+                    return $.extend({ term: params.term }, csrfPair());
                 },
                 processResults: function(data) {
-                    return {
-                        results: data
-                    };
+                    return { results: Array.isArray(data) ? data : [] };
                 }
             },
             templateResult: formatFamilyResult,
@@ -772,82 +520,142 @@ $(document).ready(function() {
         });
     }
 
-    // Format student dropdown items
     function formatStudentResult(item) {
-        if (item.loading) return item.text;
+        if (item.loading) { 
+            return item.text; 
+        }
         
-        var parts = item.text.split('|');
-        var mainText = parts[0] || item.text;
-        var subText = parts[1] || '';
+        var $div = $('<div class="p-2">');
+        $div.append('<strong>' + (item.student_name || item.text) + '</strong>');
         
-        return $('<div class="p-2"><strong>' + mainText + '</strong>' + 
-                (subText ? '<br><small class="text-muted">' + subText + '</small>' : '') + '</div>');
+        if (item.reg_no) {
+            $div.append('<br><small class="text-muted">Reg: ' + item.reg_no + '</small>');
+        }
+        if (item.father_name) {
+            $div.append('<br><small class="text-muted">Father: ' + item.father_name + '</small>');
+        }
+        if (item.class_name) {
+            $div.append('<br><small class="text-muted">Class: ' + item.class_name);
+            if (item.section_name) {
+                $div.append(' ' + item.section_name);
+            }
+            $div.append('</small>');
+        }
+        
+        return $div;
     }
 
     function formatStudentSelection(item) {
-        if (!item.id) return item.text;
-        var parts = item.text.split('|');
-        return parts[0] || item.text;
+        if (!item.id) { 
+            return item.text; 
+        }
+        return item.student_name || item.text;
     }
 
     function formatFamilyResult(item) {
-        if (item.loading) return item.text;
+        if (item.loading) { 
+            return item.text; 
+        }
+        var $div = $('<div class="p-2">');
+        $div.append('<strong>' + (item.father_name || item.text) + '</strong>');
         
-        var parts = item.text.split(' - ');
-        var mainText = parts[0] || item.text;
-        var subText = parts.slice(1).join(' - ') || '';
+        if (item.father_cnic) {
+            $div.append('<br><small class="text-muted">CNIC: ' + item.father_cnic + '</small>');
+        }
+        if (item.children_count) {
+            $div.append('<br><small class="text-muted">Children: ' + item.children_count + '</small>');
+        }
         
-        return $('<div class="p-2"><strong>' + mainText + '</strong>' + 
-                (subText ? '<br><small class="text-muted">' + subText + '</small>' : '') + '</div>');
+        return $div;
     }
 
     function formatFamilySelection(item) {
-        if (!item.id) return item.text;
-        var parts = item.text.split(' - ');
-        return parts[0] || item.text;
+        if (!item.id) { 
+            return item.text; 
+        }
+        return item.father_name || item.text;
     }
 
-    // Load sections for selected class
     function loadSections(classId) {
         $.ajax({
             url: '<?= base_url('admin/fee-chalan/get-sections-by-class') ?>',
-            data: {class_id: classId},
+            data: { class_id: classId },
             success: function(data) {
-                const $section = $('#section_id');
-                $section.html('<option value="">All Sections</option>');
-                data.forEach(function(s) {
-                    $section.append('<option value="' + s.section_id + '">' + s.section_name + '</option>');
-                });
+                var $section = $('#section_id');
+                $section.html('<option value="">All sections</option>');
+                if (data && Array.isArray(data)) {
+                    (data || []).forEach(function(s) {
+                        var v = (s.cls_sec_id !== undefined && s.cls_sec_id !== null) ? s.cls_sec_id : s.section_id;
+                        $section.append('<option value="' + v + '">' + (s.section_name || '') + '</option>');
+                    });
+                }
                 $section.trigger('change');
+            },
+            error: function(xhr, status, error) {
+                console.error('Load sections error:', error);
             }
         });
     }
-    
-    // Form submission
-    $('#chalanForm').submit(function(e) {
+
+    $('#fcResetBtn').on('click', function() {
+        $('#class_id').val('').trigger('change');
+        $('#section_id').val('').trigger('change');
+        $('#family_id').val('');
+        $('#fee_month').val('');
+        $('#search_select').val(null).trigger('change');
+        $('#selected_student_id').val('');
+        $('#selected_parent_id').val('');
+        $('#message_text').val('').trigger('input');
+        $('#msg_pos_header').prop('checked', true);
+        updatePreviewText();
+    });
+
+    $('#chalanForm').on('submit', function() {
         var viewType = $('#view_type').val();
-        var isStudentWise = viewType.includes('student');
-        
+        var isStudentWise = viewType.indexOf('student') !== -1;
         if (isStudentWise) {
             var studentId = $('#selected_student_id').val();
             if (studentId) {
-                $('input[name="search"]').val(studentId);
+                if ($('#search_select').find('option[value="' + studentId + '"]').length === 0) {
+                    var txt = $('#search_select option:selected').text() || 'Selected student';
+                    $('#search_select').append(new Option(txt, studentId, true, true));
+                }
+                $('#search_select').val(studentId).trigger('change');
             }
         } else {
             var parentId = $('#selected_parent_id').val();
             if (parentId) {
-                $('input[name="family_id"]').val(parentId);
-                $('input[name="search"]').val('');
+                $('#family_id').val(parentId);
             }
         }
-        
-        $('#generateBtn').html('<i class="fas fa-spinner fa-spin mr-2"></i> Generating...').prop('disabled', true);
-        
+        $('#generateBtn').html('<i class="fas fa-spinner fa-spin me-2"></i>Opening…').prop('disabled', true);
         setTimeout(function() {
-            $('#generateBtn').html('<i class="fas fa-file-pdf mr-2"></i> View Chalans').prop('disabled', false);
-        }, 5000);
+            $('#generateBtn').html('<i class="fas fa-external-link-alt me-2"></i>Open challans').prop('disabled', false);
+        }, 8000);
     });
+
+    if ($('#view_type').val().indexOf('student') !== -1) {
+        $('#classFilters').show();
+    } else {
+        $('#classFilters').hide();
+    }
+    
+    (function setInitialViewHelp() {
+        var viewType = $('#view_type').val();
+        var helpText = '';
+        if (viewType === 'student_three_copy') {
+            helpText = 'Each student: three separate slips (bank, school, student).';
+        } else if (viewType === 'student_single_page') {
+            helpText = 'Up to three students per printed page.';
+        } else if (viewType === 'family_three_copy') {
+            helpText = 'Grouped by family; each student still gets three copies.';
+        } else {
+            helpText = 'One page per family with all students.';
+        }
+        $('#viewHelpText').text(helpText);
+    })();
+    
+    updatePreviewText();
 });
 </script>
-
 <?= $this->endSection() ?>

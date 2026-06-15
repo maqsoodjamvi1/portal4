@@ -27,6 +27,96 @@ class FeeChalanBalance extends BaseController
             'fee_type' => $fee_type
         ]);
     }
+
+    /**
+     * Daily collection summary: one row per paid date with total amount only (no payer detail).
+     */
+    public function dailyCollection()
+    {
+        return view('admin/fee_chalan_daily_collection');
+    }
+
+    /**
+     * POST paid_date_from, paid_date_to (DD/MM/YYYY) — returns HTML table fragment.
+     */
+    public function getDailyCollection()
+    {
+        $db      = \Config\Database::connect();
+        $session = session();
+        $request = service('request');
+
+        $campusid = (int) $session->get('member_campusid');
+
+        $paid_date_from = date('Y-m-d', strtotime(str_replace('/', '-', $request->getPost('paid_date_from'))));
+        $paid_date_to   = date('Y-m-d', strtotime(str_replace('/', '-', $request->getPost('paid_date_to'))));
+
+        $rows = $db->query(
+            'SELECT DATE(fc.paid_date) AS paid_day,
+                    SUM(fc.amount - fc.discount) AS day_total
+             FROM fee_chalan fc
+             INNER JOIN students s ON fc.student_id = s.student_id
+             WHERE s.campus_id = ?
+               AND fc.status = ? 
+               AND fc.paid_date BETWEEN ? AND ?
+             GROUP BY DATE(fc.paid_date)
+             HAVING SUM(fc.amount - fc.discount) > 0
+             ORDER BY paid_day ASC',
+            [$campusid, 'paid', $paid_date_from, $paid_date_to]
+        )->getResult();
+
+        $campusName = '';
+        $campusRow = $db->table('campus')->select('campus_name')->where('campus_id', $campusid)->get()->getRow();
+        if ($campusRow) {
+            $campusName = (string) $campusRow->campus_name;
+        }
+
+        $grand = 0;
+        foreach ($rows as $r) {
+            $grand += (float) $r->day_total;
+        }
+        $grand = (int) round($grand);
+
+        $output  = '<div id="dailyCollReportInner" class="daily-coll-report-inner">';
+        $output .= '<div class="daily-coll-summary mb-3 p-3 border rounded bg-light">';
+        $output .= '<div class="d-flex flex-wrap justify-content-between align-items-baseline">';
+        $output .= '<div><span class="text-muted text-uppercase small d-block">Total collected (range)</span>';
+        $output .= '<span class="h5 mb-0 fw-bold text-success">' . esc(money_from_base($grand)) . '/-</span></div>';
+        if ($campusName !== '') {
+            $output .= '<div class="small text-muted">Campus: ' . esc($campusName) . '</div>';
+        }
+        $output .= '</div></div>';
+
+        if ($rows === []) {
+            $output .= '<p class="text-muted mb-0">No fee collections found for the selected paid date range.</p></div>';
+
+            return $this->response->setBody($output);
+        }
+
+        $output .= '<div class="table-responsive daily-coll-table-wrap">';
+        $output .= '<table class="table table-bordered table-sm fee-balance-print-table daily-coll-table">';
+        $output .= '<thead><tr><th class="text-center" style="width:4rem">#</th><th>Paid date</th><th class="text-end">Collection amount</th></tr></thead><tbody>';
+
+        $i = 1;
+        foreach ($rows as $r) {
+            $dayKey = (string) $r->paid_day;
+            $dayLabel = date('l, d M Y', strtotime($dayKey));
+            $amt = (int) round((float) $r->day_total);
+            $output .= sprintf(
+                '<tr><td class="text-center">%d</td><td>%s</td><td class="text-end fw-bold">%s</td></tr>',
+                $i++,
+                esc($dayLabel),
+                esc(money_from_base($amt))
+            );
+        }
+
+        $output .= '</tbody><tfoot><tr class="daily-coll-tfoot">';
+        $output .= '<th colspan="2" class="text-end">Grand total</th>';
+        $output .= '<th class="text-end">' . esc(money_from_base($grand)) . '/-</th>';
+        $output .= '</tr></tfoot></table></div></div>';
+
+        return $this->response->setBody($output);
+    }
+
 public function getTotalfee()
 {
     $db      = \Config\Database::connect();
@@ -121,24 +211,83 @@ public function getTotalfee()
         $paid_date_to
     ])->getResult();
 
-    // ===== OUTPUT =====
-    $output  = "Payment Received: " . money_from_base($totals->paid_total ?? 0) . "/-<br>";
-    $output .= "Payment Balance: " . money_from_base($totals->unpaid_total ?? 0) . "/-<br>";
-    $output .= "<table class='table'><tr><th>#</th><th>Parent Name</th><th>Students</th><th>Paid Date</th><th>Amount</th></tr>";
-
-    $i = 1;
-    foreach ($payments as $payment) {
-        $output .= sprintf(
-            "<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-            $i++,
-            esc($payment->f_name),
-            esc($payment->students),
-            date("d M Y l", strtotime($payment->paid_date)),
-            money_from_base(round($payment->total))
-        );
+    $campusName = '';
+    $campusRow = $db->table('campus')->select('campus_name')->where('campus_id', $campusid)->get()->getRow();
+    if ($campusRow) {
+        $campusName = (string) $campusRow->campus_name;
     }
 
-    $output .= "</table>";
+    // Group parent-wise rows by calendar paid_date (daily collection sections)
+    $byDay = [];
+    foreach ($payments as $payment) {
+        $dayKey = date('Y-m-d', strtotime((string) $payment->paid_date));
+        if (! isset($byDay[$dayKey])) {
+            $byDay[$dayKey] = [
+                'sum'  => 0,
+                'rows' => [],
+            ];
+        }
+        $amt = (float) $payment->total;
+        $byDay[$dayKey]['sum'] += $amt;
+        $byDay[$dayKey]['rows'][] = $payment;
+    }
+    ksort($byDay);
+
+    // ===== OUTPUT (markup tuned for A4 print in fee_chalan_balance view) =====
+    $output  = '<div id="feeBalanceReportInner" class="fee-balance-report-inner">';
+    $output .= '<div class="fee-balance-totals mb-3">';
+    $output .= '<div class="fee-balance-totals-row">';
+    $output .= '<div class="fee-balance-total-item">';
+    $output .= '<span class="fee-balance-total-label">Payment received (range)</span>';
+    $output .= '<span class="fee-balance-total-value">' . esc(money_from_base($totals->paid_total ?? 0)) . '/-</span>';
+    $output .= '</div>';
+    $output .= '<div class="fee-balance-total-item fee-balance-total-item--balance">';
+    $output .= '<span class="fee-balance-total-label">Payment balance (outstanding)</span>';
+    $output .= '<span class="fee-balance-total-value">' . esc(money_from_base($totals->unpaid_total ?? 0)) . '/-</span>';
+    $output .= '</div>';
+    $output .= '</div>';
+    if ($campusName !== '') {
+        $output .= '<div class="small text-muted fee-balance-campus-line mt-2">Campus: ' . esc($campusName) . '</div>';
+    }
+    $output .= '</div>';
+
+    if ($byDay === []) {
+        $output .= '<p class="text-muted mb-0">No fee collections found for the selected paid date range.</p></div>';
+
+        return $this->response->setBody($output);
+    }
+
+    foreach ($byDay as $dayKey => $block) {
+        $dayLabel = date('l, d M Y', strtotime($dayKey));
+        $daySum   = (int) round($block['sum']);
+        $rowNum   = 1;
+
+        $output .= '<section class="fee-balance-day-block mb-4">';
+        $output .= '<div class="fee-balance-day-head-row">';
+        $output .= '<div class="fee-balance-day-heading">' . esc($dayLabel) . '</div>';
+        $output .= '<div class="fee-balance-day-balance">';
+        $output .= '<span class="fee-balance-day-total-label">Day wise balance</span>';
+        $output .= '<span class="fee-balance-day-total-value">' . esc(money_from_base($daySum)) . '/-</span>';
+        $output .= '</div></div>';
+
+        $output .= '<div class="table-responsive fee-balance-table-wrap">';
+        $output .= '<table class="table table-bordered table-sm fee-balance-print-table fee-balance-day-table">';
+        $output .= '<thead><tr><th class="text-center" style="width:3rem">#</th><th>Parent name</th><th>Students</th><th class="text-end">Amount</th></tr></thead><tbody>';
+
+        foreach ($block['rows'] as $payment) {
+            $output .= sprintf(
+                '<tr><td class="text-center">%d</td><td>%s</td><td>%s</td><td class="text-end fw-bold">%s</td></tr>',
+                $rowNum++,
+                esc($payment->f_name),
+                esc($payment->students),
+                esc(money_from_base(round((float) $payment->total)))
+            );
+        }
+
+        $output .= '</tbody></table></div></section>';
+    }
+
+    $output .= '</div>';
 
     return $this->response->setBody($output);
 }

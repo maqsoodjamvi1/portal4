@@ -19,17 +19,242 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         min-height: 100vh;
     }
 
-    /* ============================================
-       SCHOOL HEADER STYLES
-    ============================================ */
+    /* —— Parent hub-only dashboard shell —— */
+    .parent-dash-page {
+        min-height: calc(100vh - 4.5rem);
+        margin: 0 auto;
+        max-width: 1180px;
+        padding: 6px 6px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: linear-gradient(165deg, #eef2ff 0%, #f8fafc 38%, #e2e8f0 100%);
+        border-radius: 0;
+    }
+    @media (min-width: 768px) {
+        .parent-dash-page {
+            padding: 12px 20px 36px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            gap: 16px;
+        }
+    }
+
+    .parent-dash-context {
+        border-radius: 16px !important;
+        overflow: hidden;
+        border: 1px solid rgba(226, 232, 240, 0.95) !important;
+        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.07) !important;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    }
+    .parent-dash-context .card-body {
+        padding: 14px 16px !important;
+    }
+    @media (min-width: 768px) {
+        .parent-dash-context .card-body {
+            padding: 18px 22px !important;
+        }
+    }
+    .parent-dash-context-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 2px solid #e2e8f0;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+    .parent-dash-context-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .parent-dash-context-welcome {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 2px;
+    }
+    .parent-dash-context-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.25;
+    }
+    @media (min-width: 768px) {
+        .parent-dash-context-name { font-size: 1.35rem; }
+    }
+
+    .parent-dash-hub-badge {
+        border-radius: 999px;
+        padding: 0.45em 0.85em;
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+    }
+
+    .parent-dash-footer {
+        margin-top: auto;
+        padding: 16px 12px 8px;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.45;
+        max-width: 520px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .parent-dash-footer kbd {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    /* Mobile dashboard: natural scroll (bottom nav clearance in parent-portal-hub.css) */
+    body.parent-portal-client .parent-dash-root {
+        display: flex;
+        flex-direction: column;
+    }
+    body.parent-portal-client .parent-dash-page {
+        flex: 1 1 auto;
+    }
+    body.parent-portal-client .parent-dash-app {
+        display: flex;
+        flex-direction: column;
+    }
+    body.parent-portal-client .parent-dash-hub-wrap {
+        display: flex;
+        flex-direction: column;
+    }
+    body.parent-portal-client .parent-dash-hub-wrap .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+    body.parent-portal-client .parent-hub-grid {
+        align-content: start;
+    }
+
+    /* Kids: photo strip only (no “select” card) */
+    .parent-dash-kids-strip {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 4px 4px;
+    }
+    .kid-bubble {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #e2e8f0;
+        flex-shrink: 0;
+        display: block;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+    .kid-bubble:hover {
+        transform: scale(1.06);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2);
+    }
+    .kid-bubble.active {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    }
+    .kid-bubble img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .kid-bubble-ph {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .parent-dash-page {
+            gap: 6px !important;
+            padding: 4px 4px 12px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .parent-dash-context .card-body {
+            padding: 10px 12px !important;
+        }
+        .parent-dash-context-name {
+            font-size: 1.05rem !important;
+        }
+        .parent-dash-kids-strip {
+            gap: 8px;
+            padding: 2px 0;
+        }
+        .kid-bubble {
+            width: 42px;
+            height: 42px;
+        }
+        .parent-hub-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 8px !important;
+        }
+        .parent-hub-tile {
+            min-height: 72px !important;
+            padding: 8px 4px 10px !important;
+            border-radius: 12px !important;
+        }
+        .parent-hub-icon {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 0.85rem !important;
+            border-radius: 10px !important;
+        }
+        .parent-hub-label {
+            font-size: 9px !important;
+        }
+        .parent-dash-hub-wrap .card-body {
+            padding: 8px 8px 12px !important;
+        }
+        .parent-dash-hub-badge {
+            display: none !important;
+        }
+        .parent-dash-footer {
+            display: none !important;
+        }
+    }
+
     .school-header {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 55%, #1e3a5f 100%);
         border-radius: 20px;
-        padding: 10px 15px;
-        margin-bottom: 25px;
+        padding: 12px 16px;
+        margin-bottom: 0;
         color: white;
         display: flex;
         align-items: center;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .logo-wrapper {
@@ -111,23 +336,39 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
     .kids-scroll {
         overflow-x: auto;
         white-space: nowrap;
-        padding-bottom: 15px;
-        margin-bottom: 10px;
+        padding-bottom: 4px;
+        margin-bottom: 2px;
         -webkit-overflow-scrolling: touch;
+    }
+
+    .parent-dash-students-card > .card-header.bg-white {
+        padding: 0.35rem 0.75rem !important;
+    }
+    .parent-dash-students-card > .card-body {
+        padding: 0.2rem 0.65rem 0.35rem !important;
+    }
+    .parent-dash-students-card .select-children-label {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.2;
     }
 
     .kid-card {
         display: inline-flex;
         flex-direction: column;
         align-items: center;
-        width: 100px;
-        min-height: 140px;
-        margin-right: 12px;
+        justify-content: flex-start;
+        width: 72px;
+        min-height: 0;
+        height: auto;
+        margin-right: 6px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
-        border-radius: 15px;
-        padding: 12px 8px;
+        border-radius: 10px;
+        padding: 3px 3px 5px;
+        gap: 1px;
         background: white;
         border: 2px solid transparent;
         vertical-align: top;
@@ -145,30 +386,30 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
     }
 
     .kid-avatar {
-        width: 60px;
-        height: 60px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         object-fit: cover;
-        border: 3px solid #e2e8f0;
-        margin-bottom: 8px;
+        border: 2px solid #e2e8f0;
+        margin: 0;
         flex-shrink: 0;
     }
 
     .kid-avatar-placeholder {
-        width: 60px;
-        height: 60px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: linear-gradient(135deg, #4f46e5, #7c3aed);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 8px;
+        margin: 0;
         flex-shrink: 0;
-        border: 3px solid #e2e8f0;
+        border: 2px solid #e2e8f0;
     }
 
     .kid-avatar-placeholder span {
-        font-size: 24px;
+        font-size: 15px;
         font-weight: 600;
         color: white;
         text-transform: uppercase;
@@ -181,22 +422,25 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
 
     .kid-name {
         font-weight: 600;
-        font-size: 12px;
-        margin-bottom: 4px;
+        font-size: 10px;
+        margin: 0;
+        padding-top: 1px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 90px;
-        line-height: 1.3;
+        max-width: 68px;
+        line-height: 1.15;
     }
 
     .kid-class {
-        font-size: 10px;
+        font-size: 8px;
         color: #64748b;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 90px;
+        max-width: 68px;
+        line-height: 1.15;
+        margin: 0;
     }
 
     .kid-age {
@@ -213,24 +457,9 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         color: #6b7280;
     }
 
-    /* ============================================
-       STICKY ACTIVE STUDENT BAR
-    ============================================ */
+    /* Legacy bar (unused on hub layout — kept if re-enabled) */
     .active-student-sticky {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: none;
     }
 
     /* ============================================
@@ -339,7 +568,7 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         padding: 10px 15px;
         border-radius: 10px;
         margin: 10px 0;
-        border-left: 4px solid #4f46e5;
+        border-start: 4px solid #4f46e5;
     }
 
     .task-caption p {
@@ -634,6 +863,9 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
        RESPONSIVE DESIGN
     ============================================ */
     @media (max-width: 768px) {
+        .school-header {
+            margin-bottom: 6px;
+        }
         .school-name {
             font-size: 1.2rem;
         }
@@ -664,30 +896,30 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         }
 
         .kid-card {
-            width: 85px;
-            min-height: 125px;
-            padding: 10px 5px;
-            margin-right: 8px;
+            width: 70px;
+            min-height: 0;
+            padding: 3px 2px 4px;
+            margin-right: 6px;
         }
 
         .kid-avatar,
         .kid-avatar-placeholder {
-            width: 50px;
-            height: 50px;
+            width: 38px;
+            height: 38px;
         }
 
         .kid-avatar-placeholder span {
-            font-size: 20px;
+            font-size: 14px;
         }
 
         .kid-name {
-            font-size: 11px;
-            max-width: 75px;
+            font-size: 9px;
+            max-width: 64px;
         }
 
         .kid-class {
-            font-size: 9px;
-            max-width: 75px;
+            font-size: 8px;
+            max-width: 64px;
         }
 
         .prayer-grid {
@@ -730,36 +962,40 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         }
 
         .kid-card {
-            width: 75px;
-            min-height: 115px;
-            padding: 8px 4px;
+            width: 66px;
+            min-height: 0;
+            padding: 2px 2px 4px;
+            margin-right: 5px;
         }
 
         .kid-avatar,
         .kid-avatar-placeholder {
-            width: 45px;
-            height: 45px;
+            width: 36px;
+            height: 36px;
         }
 
         .kid-avatar-placeholder span {
-            font-size: 18px;
+            font-size: 13px;
         }
 
         .kid-name {
-            font-size: 10px;
+            font-size: 9px;
+            max-width: 62px;
         }
 
         .kid-class {
-            font-size: 8px;
+            font-size: 7px;
+            max-width: 62px;
         }
 
         .kid-age {
-            font-size: 8px;
+            font-size: 7px;
         }
 
         .active-student-sticky {
-            font-size: 12px;
-            padding: 8px 12px;
+            font-size: 11px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
         }
     }
 /* ============================================
@@ -1169,7 +1405,7 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
     font-size: 11px;
     color: #1e293b;
     margin-bottom: 10px;
-    border-left: 3px solid #4f46e5;
+    border-start: 3px solid #4f46e5;
 }
 
 /* Submissions */
@@ -1850,6 +2086,218 @@ if (isset($campusInfo) && is_object($campusInfo) && !empty($campusInfo->currency
         font-size: 12px;
     }
 }
+
+    /* ============================================
+       PARENT DASH — app-style hub & panels
+    ============================================ */
+    .parent-dash-app {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+    }
+    .parent-dash-hub-wrap {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        border-radius: 18px !important;
+        box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1) !important;
+        border: 1px solid rgba(226, 232, 240, 0.9) !important;
+        background: #fff !important;
+        min-height: 0;
+    }
+    .parent-dash-hub-wrap .card-body {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    @media (max-width: 767.98px) {
+        .parent-dash-hub-wrap {
+            border-radius: 16px !important;
+        }
+    }
+    .parent-hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        flex: 1 1 auto;
+        align-content: start;
+    }
+    @media (min-width: 400px) {
+        .parent-hub-grid {
+            grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+            gap: 12px;
+        }
+    }
+    @media (min-width: 768px) {
+        .parent-hub-grid {
+            grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+            gap: 16px;
+        }
+    }
+    @media (min-width: 1200px) {
+        .parent-hub-grid {
+            grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+            gap: 18px;
+        }
+    }
+    .parent-hub-tile {
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 16px;
+        padding: 12px 8px 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 96px;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        -webkit-tap-highlight-color: transparent;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    @media (min-width: 992px) {
+        .parent-hub-tile {
+            min-height: 112px;
+            padding: 16px 12px 18px;
+            border-radius: 18px;
+        }
+    }
+    .parent-hub-tile:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+        transform: translateY(-2px);
+        background: linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%);
+    }
+    .parent-hub-tile:active {
+        transform: scale(0.98);
+    }
+    .parent-hub-tile.active {
+        background: linear-gradient(145deg, #eef2ff, #e0e7ff);
+        box-shadow: 0 0 0 2px #4f46e5;
+    }
+    a.parent-hub-tile {
+        text-decoration: none;
+        color: inherit;
+        box-sizing: border-box;
+    }
+    a.kid-card {
+        text-decoration: none;
+        color: inherit;
+    }
+    .parent-hub-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.05rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    @media (min-width: 992px) {
+        .parent-hub-icon {
+            width: 52px;
+            height: 52px;
+            font-size: 1.2rem;
+            border-radius: 16px;
+        }
+    }
+    .parent-hub-icon.bg-fee { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .parent-hub-icon.bg-att { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .parent-hub-icon.bg-bmi { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .parent-hub-icon.bg-ds { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .parent-hub-icon.bg-res { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .parent-hub-icon.bg-diary { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .parent-hub-icon.bg-bag { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+    .parent-hub-icon.bg-pray { background: linear-gradient(135deg, #10b981, #059669); }
+    .parent-hub-icon.bg-profile { background: linear-gradient(135deg, #64748b, #334155); }
+    .parent-hub-icon.bg-quiz { background: linear-gradient(135deg, #d946ef, #86198f); }
+    .parent-hub-icon.bg-vocab { background: linear-gradient(135deg, #f59e0b, #b45309); }
+    .parent-hub-icon.bg-hifz { background: linear-gradient(135deg, #059669, #047857); }
+    .parent-hub-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.25;
+        max-width: 100%;
+        word-break: break-word;
+    }
+    @media (min-width: 992px) {
+        .parent-hub-label {
+            font-size: 12px;
+        }
+    }
+    .parent-dash-panels .parent-dash-panel > .card {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    @media (max-width: 767.98px) {
+        .parent-dash-panels .parent-dash-panel > .card {
+            border-radius: 14px;
+        }
+        .school-header {
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 6px;
+        }
+        .school-name { font-size: 1.35rem !important; }
+        .logo-wrapper { width: 64px; height: 64px; margin-right: 10px; }
+        .kid-card {
+            width: 72px;
+            min-height: 0;
+            padding: 4px 3px 5px;
+        }
+        .kid-avatar, .kid-avatar-placeholder {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .kids-scroll {
+            white-space: normal;
+            overflow-x: visible;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 8px 14px;
+        }
+        .kid-card {
+            margin-right: 0;
+            width: 92px;
+            padding: 10px 8px 12px;
+            border-radius: 14px;
+        }
+        .kid-avatar,
+        .kid-avatar-placeholder {
+            width: 52px;
+            height: 52px;
+        }
+        .kid-avatar-placeholder span {
+            font-size: 18px;
+        }
+        .kid-name {
+            font-size: 11px;
+            max-width: 88px;
+        }
+        .kid-class {
+            font-size: 9px;
+            max-width: 88px;
+        }
+        .parent-dash-students-card > .card-body {
+            padding: 0.5rem 1rem 0.75rem !important;
+        }
+    }
 </style>
 
 <!-- School Header -->
@@ -1927,7 +2375,10 @@ if ($schoolName === 'School Management System') {
 // echo '<!-- Logo Path: ' . $logoPath . ', Exists: ' . ($logoExists ? 'Yes' : 'No') . ' -->';
 ?>
 
-<div class="school-header d-flex align-items-center">
+<div class="parent-dash-root">
+<div class="parent-dash-page">
+
+<div class="school-header d-none d-md-flex align-items-center">
     <?php if ($logoExists && !empty($logoPath)): ?>
         <div class="logo-wrapper">
             <img src="<?= base_url($logoPath) ?>" alt="School Logo" class="school-logo" onerror="this.onerror=null; this.parentElement.style.display='none'; this.parentElement.nextElementSibling?.style.setProperty('display', 'flex');">
@@ -1939,1529 +2390,157 @@ if ($schoolName === 'School Management System') {
     <?php endif; ?>
     <div>
         <h2 class="mb-0 school-name"><?= esc($schoolName) ?></h2>
-        <p class="mb-0 opacity-75">Parent Portal</p>
+        <?php
+        $__plang = strtolower(trim((string) (session()->get('language') ?: 'en')));
+        $__portalTag = ($__plang === 'ur') ? 'والدین کا پورٹل' : 'Parent Portal';
+        ?>
+        <p class="mb-0 opacity-75 small"><?= esc($__portalTag) ?></p>
     </div>
 </div>
 
-<!-- Sticky Active Student Bar -->
-<div class="active-student-sticky" id="activeStudentBar">
-    <div>
-        <i class="fa fa-user-circle me-2"></i>
-        <strong>Active Student:</strong> <span id="activeStudentName"><?= esc($activeStudentName) ?></span>
-        <?php if ($currentClassInfo): ?>
-            <span class="ms-2 badge bg-white text-success"><?= esc($currentClassInfo['class_display']) ?></span>
-        <?php endif; ?>
-    </div>
-    
-</div>
-<!-- ==================== KIDS SECTION ==================== -->
-<?php if (!empty($children)): ?>
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="fa fa-users me-2 text-primary"></i> Students</h5>
-        </div>
-        <div class="card-body">
-            <div class="kids-scroll">
-                <?php foreach ($children as $child): ?>
-                    <?php 
-                    // Calculate age from date_of_birth
-                    $age = '';
-                    if (!empty($child['date_of_birth'])) {
-                        $dob = new DateTime($child['date_of_birth']);
-                        $today = new DateTime();
-                        $age = $dob->diff($today)->y;
-                    }
-                    // Limit name to 11 characters
-                    $shortName = strlen($child['name']) > 11 ? substr($child['name'], 0, 10) . '...' : $child['name'];
-                    ?>
-                    <div class="kid-card <?= $activeStudentId === (int)$child['student_id'] ? 'active' : '' ?>" 
-                         onclick="event.preventDefault(); switchStudent(<?= $child['student_id'] ?>, '<?= esc($child['name']) ?>')">
-                        
-                        <!-- Show photo if exists, otherwise show name initial -->
-                        <?php if (!empty($child['profile_photo_url']) && $child['profile_photo_url'] != base_url()): ?>
-                            <img src="<?= esc($child['profile_photo_url']) ?>" alt="<?= esc($child['name']) ?>" class="kid-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="kid-avatar-placeholder" style="display: none;">
-                                <span><?= strtoupper(substr($child['name'], 0, 1)) ?></span>
-                            </div>
-                        <?php else: ?>
-                            <div class="kid-avatar-placeholder">
-                                <span><?= strtoupper(substr($child['name'], 0, 1)) ?></span>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <div class="kid-name" title="<?= esc($child['name']) ?>"><?= esc($shortName) ?></div>
-                        <div class="kid-class">
-                            <?= esc($child['class_display']) ?>
-                            <?php if ($age > 0): ?>
-                                <span class="kid-age">(<?= $age ?>y)</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
-
-
-<!-- ==================== FEE HISTORY SECTION ==================== -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-2">
-        <h5 class="mb-0 fs-6"><i class="fa fa-credit-card me-2 text-primary"></i> Family Fee History</h5>
-    </div>
-    <div class="card-body p-0">
-        <?php if (!empty($feeHistory)): ?>
-            <div class="fee-table-wrapper">
-                <table class="fee-history-table">
-                    <thead>
-                        <tr>
-                            <th class="month-col">Month</th>
-                            <?php foreach ($feeHistory as $record): ?>
-                                <th class="month-name"><?= esc(date('M', strtotime($record['month'] . '-01'))) ?></th>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="row-label">Monthly</td>
-                            <?php foreach ($feeHistory as $record): ?>
-                                <td class="amount-cell">
-                                    <?php if ($record['monthly_paid'] > 0): ?>
-                                        <span class="amount-paid"><?= number_format($record['monthly_paid'], 0) ?></span>
-                                    <?php else: ?>
-                                        <span class="amount-na">—</span>
-                                    <?php endif; ?>
-                                </td>
-                            <?php endforeach; ?>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Other</td>
-                            <?php foreach ($feeHistory as $record): ?>
-                                <td class="amount-cell">
-                                    <?php if ($record['other_paid'] > 0): ?>
-                                        <span class="amount-other"><?= number_format($record['other_paid'], 0) ?></span>
-                                    <?php else: ?>
-                                        <span class="amount-na">—</span>
-                                    <?php endif; ?>
-                                </td>
-                            <?php endforeach; ?>
-                        </tr>
-                        <tr>
-                            <td class="row-label total-label">Total</td>
-                            <?php foreach ($feeHistory as $record): ?>
-                                <td class="amount-cell total-cell">
-                                    <?php if ($record['total_paid'] > 0): ?>
-                                        <span class="amount-total"><?= number_format($record['total_paid'], 0) ?></span>
-                                    <?php else: ?>
-                                        <span class="amount-na">—</span>
-                                    <?php endif; ?>
-                                </td>
-                            <?php endforeach; ?>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <?php 
-            $unpaidData = $totalUnpaidAmount ?? ['monthly' => 0, 'other' => 0, 'total' => 0];
-            if ($unpaidData['total'] > 0): 
-            ?>
-                <div class="balance-summary">
-                    <div class="balance-item">
-                        <div class="balance-label">Monthly Bal.</div>
-                        <div class="balance-amount monthly-bal"><?= number_format($unpaidData['monthly'], 0) ?></div>
-                    </div>
-                    <div class="balance-item">
-                        <div class="balance-label">Other Bal.</div>
-                        <div class="balance-amount other-bal"><?= number_format($unpaidData['other'], 0) ?></div>
-                    </div>
-                    <div class="balance-item">
-                        <div class="balance-label">Total Bal.</div>
-                        <div class="balance-amount total-bal"><?= number_format($unpaidData['total'], 0) ?></div>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="paid-status">
-                    <i class="fa fa-check-circle"></i> All fees are paid up to date!
-                </div>
-            <?php endif; ?>
-        <?php else: ?>
-            <div class="empty-state">
-                <i class="fa fa-credit-card fa-2x mb-2 opacity-50"></i>
-                <p>No fee history available.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- ==================== ATTENDANCE SECTION ==================== -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap">
-        <h5 class="mb-0"><i class="fa fa-calendar-check me-2 text-primary"></i> This Week's Attendance</h5>
-        <?php if (!empty($currentWeekAttendance)): ?>
-            <div class="mt-2 mt-sm-0">
-                
-                <span class="badge bg-danger me-2">Absent: <?= $currentWeekAttendance['absent_days'] ?></span>
-                
-            </div>
-        <?php endif; ?>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($currentWeekAttendance['week_days'])): ?>
-            <div class="attendance-grid">
-                <?php foreach ($currentWeekAttendance['week_days'] as $day): ?>
-                    <div class="attendance-day">
-                        <div class="fw-bold"><?= esc($day['day_short']) ?></div>
-                        <div class="attendance-status <?= $day['status_class'] ?>">
-                            <?= esc($day['status']) ?>
-                        </div>
-                        <?php if ($day['status'] !== '—' && $day['status'] !== 'OFF'): ?>
-                         
-                        <?php elseif ($day['status'] === 'OFF' && !$day['is_school_day']): ?>
-                            <small class="text-muted d-block mt-1">Holiday</small>
-                        <?php elseif ($day['status'] === 'OFF' && $day['is_past_day']): ?>
-                            
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <div class="text-center mt-3 text-muted small">
-                <i class="fa fa-info-circle me-1"></i>
-                <?php if ($currentWeekAttendance['working_days'] > 0): ?>
-                    Attendance: <strong><?= $currentWeekAttendance['attendance_percentage'] ?>%</strong>
-                <?php else: ?>
-                    No school days this week
-                <?php endif; ?>
-            </div>
-        <?php else: ?>
-            <div class="text-center py-3 text-muted">
-                <i class="fa fa-calendar fa-2x mb-2 opacity-50"></i>
-                <p>No attendance data available.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- ==================== BMI & HEALTH SECTION ==================== -->
 <?php
 $currentLang = session()->get('language') ?: 'en';
-$isUrdu = ($currentLang == 'ur');
-
-// Calculate age if student info is available
+$portalLang   = strtolower(trim((string) $currentLang));
+$isUrdu       = ($portalLang === 'ur');
 $studentAge = 0;
 if (!empty($studentInfo) && isset($studentInfo->date_of_birth)) {
     $studentAge = date_diff(date_create($studentInfo->date_of_birth), date_create('today'))->y;
 }
-?>
-
-<div class="card shadow-sm mb-4">
-    <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <div>
-            <h5 class="mb-1"><i class="fa fa-heartbeat me-2 text-danger"></i> 
-                <?= $isUrdu ? 'صحت اور بی ایم آئی مانیٹر' : 'Health & BMI Monitor' ?>
-            </h5>
-            <?php if ($bmiData && $bmiData->bmi_updated_date): ?>
-                <small class="text-muted">
-                    <?= $isUrdu ? 'آخری اپ ڈیٹ:' : 'Last updated:' ?> 
-                    <?= date('M d, Y', strtotime($bmiData->bmi_updated_date)) ?>
-                </small>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="card-body">
-        <?php if ($bmiData && $bmiData->height && $bmiData->weight): ?>
-            <!-- 4 Cards in a Row - Height, Weight, BMI, Age -->
-            <div class="row g-2 mb-4">
-                <!-- Height Card -->
-                <div class="col-3">
-                    <div class="bmi-card text-center p-2 bg-light rounded">
-                        <div class="bmi-card-label"><?= $isUrdu ? 'قد' : 'Height' ?></div>
-                        <div class="bmi-card-value"><?= round($bmiData->height) ?></div>
-                        <div class="bmi-card-unit"><?= $isUrdu ? 'سینٹی میٹر' : 'cm' ?></div>
-                    </div>
-                </div>
-                <!-- Weight Card -->
-                <div class="col-3">
-                    <div class="bmi-card text-center p-2 bg-light rounded">
-                        <div class="bmi-card-label"><?= $isUrdu ? 'وزن' : 'Weight' ?></div>
-                        <div class="bmi-card-value"><?= round($bmiData->weight) ?></div>
-                        <div class="bmi-card-unit"><?= $isUrdu ? 'کلوگرام' : 'kg' ?></div>
-                    </div>
-                </div>
-
-                <div class="col-3">
-    <div class="bmi-card text-center p-2 bg-primary text-white rounded">
-        <div class="bmi-card-label"><?= $isUrdu ? 'عمر' : 'Age' ?></div>
-        <div class="bmi-card-value">
-            <?php
-            // Calculate age with years and months
-            $ageYears = 0;
-            $ageMonths = 0;
-            $ageDisplay = '0 years';
-            
-            if (!empty($studentInfo)) {
-                $dob = null;
-                if (isset($studentInfo->db_status) && $studentInfo->db_status == 1 && !empty($studentInfo->date_of_birth_age)) {
-                    $dob = new DateTime($studentInfo->date_of_birth_age);
-                } elseif (!empty($studentInfo->date_of_birth)) {
-                    $dob = new DateTime($studentInfo->date_of_birth);
-                }
-                
-                if ($dob) {
-                    $today = new DateTime();
-                    $diff = $dob->diff($today);
-                    $ageYears = $diff->y;
-                    $ageMonths = $diff->m;
-                    
-                    if ($ageYears > 0) {
-                        $ageDisplay = $ageYears . 'y';
-                        if ($ageMonths > 0) {
-                            $ageDisplay .= ' ' . $ageMonths . 'm';
-                        }
-                    } elseif ($ageMonths > 0) {
-                        $ageDisplay = $ageMonths . 'm';
-                    } else {
-                        $ageDisplay = '0y';
-                    }
-                }
-            }
-            ?>
-            <?= $ageDisplay ?>
-        </div>
-        <div class="bmi-card-unit"><?= $isUrdu ? 'سال' : 'years' ?></div>
-    </div>
-</div>
-                <!-- BMI Card -->
-                <div class="col-3">
-                    <div class="bmi-card text-center p-2 rounded text-white <?= 
-                        $bmiData->bmi_category == 'normal' ? 'bg-success' : 
-                        ($bmiData->bmi_category == 'underweight' ? 'bg-warning text-dark' : 
-                        ($bmiData->bmi_category == 'overweight' ? 'bg-info' : 'bg-danger')) 
-                    ?>">
-                        <div class="bmi-card-label"><?= $isUrdu ? 'بی ایم آئی' : 'BMI' ?></div>
-                        <div class="bmi-card-value"><?= round($bmiData->bmi) ?></div>
-                        <div class="bmi-card-unit">
-                            <?php
-                            if ($isUrdu) {
-                                $categoryUrdu = [
-                                    'underweight' => 'کم وزن',
-                                    'normal' => 'معمول',
-                                    'overweight' => 'زیادہ وزن',
-                                    'obese' => 'موٹاپا'
-                                ];
-                                echo $categoryUrdu[$bmiData->bmi_category] ?? $bmiData->bmi_category;
-                            } else {
-                                echo ucfirst($bmiData->bmi_category ?? 'Normal');
-                            }
-                            ?>
-                        </div>
-                    </div>
-                </div>
-                <!-- Age Card -->
-              <!-- Age Card -->
-
-            </div>
-            
-            <!-- BMI Scale Indicator -->
-            <div class="mt-2 mb-3">
-                <div class="progress" style="height: 6px;">
-                    <div class="progress-bar bg-warning" style="width: 18.5%;"></div>
-                    <div class="progress-bar bg-success" style="width: 6%;"></div>
-                    <div class="progress-bar bg-info" style="width: 10%;"></div>
-                    <div class="progress-bar bg-danger" style="width: 10%;"></div>
-                </div>
-                <div class="d-flex justify-content-between small mt-1 px-1">
-                    <span class="text-warning" style="font-size: 9px;">&lt;18.5</span>
-                    <span class="text-success" style="font-size: 9px;">18.5-24.9</span>
-                    <span class="text-info" style="font-size: 9px;">25-29.9</span>
-                    <span class="text-danger" style="font-size: 9px;">≥30</span>
-                </div>
-                <div class="mt-1 text-center">
-                    <i class="fa fa-arrow-down text-primary"></i>
-                    <small class="text-primary"><?= round($bmiData->bmi) ?></small>
-                </div>
-            </div>
-            
-            <!-- Health Recommendations -->
-            <div class="mt-3">
-                <?php if ($bmiData->bmi_category == 'underweight'): ?>
-                    <div class="alert alert-warning py-2 mb-2">
-                        <i class="fa fa-exclamation-triangle"></i>
-                        <strong><?= $isUrdu ? 'کم وزن' : 'Underweight' ?></strong>
-                        <p class="mb-0 small"><?= $isUrdu ? 'وزن کم ہے۔ صحت مند غذا کا استعمال بڑھائیں۔' : 'Weight is low. Increase healthy food intake.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light mb-2">
-                        <div class="text-success fw-bold small mb-1"><i class="fa fa-apple"></i> <?= $isUrdu ? 'غذائی تجاویز' : 'Diet Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'پروٹین اور صحت مند چکنائی والی غذائیں شامل کریں۔ دودھ، انڈے، دالیں، گری دار میوے کھائیں۔' : 'Add protein and healthy fats. Eat milk, eggs, lentils, nuts.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light">
-                        <div class="text-primary fw-bold small mb-1"><i class="fa fa-futbol"></i> <?= $isUrdu ? 'ورزش کی تجاویز' : 'Exercise Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'وزن بڑھانے کے لیے طاقت کی مشقیں کریں۔' : 'Do strength training to gain weight.' ?></p>
-                    </div>
-                <?php elseif ($bmiData->bmi_category == 'overweight'): ?>
-                    <div class="alert alert-info py-2 mb-2">
-                        <i class="fa fa-info-circle"></i>
-                        <strong><?= $isUrdu ? 'وزن زیادہ ہے' : 'Overweight' ?></strong>
-                        <p class="mb-0 small"><?= $isUrdu ? 'وزن زیادہ ہے۔ متوازن غذا اور باقاعدہ ورزش کریں۔' : 'Weight is high. Balanced diet and regular exercise.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light mb-2">
-                        <div class="text-success fw-bold small mb-1"><i class="fa fa-apple"></i> <?= $isUrdu ? 'غذائی تجاویز' : 'Diet Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'چکنائی اور میٹھی چیزیں کم کریں۔ سبزیاں، پھل زیادہ کھائیں۔' : 'Reduce fats and sugars. Eat more vegetables and fruits.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light">
-                        <div class="text-primary fw-bold small mb-1"><i class="fa fa-futbol"></i> <?= $isUrdu ? 'ورزش کی تجاویز' : 'Exercise Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'روزانہ 30-45 منٹ ورزش کریں۔' : 'Exercise 30-45 minutes daily.' ?></p>
-                    </div>
-                <?php elseif ($bmiData->bmi_category == 'obese'): ?>
-                    <div class="alert alert-danger py-2 mb-2">
-                        <i class="fa fa-exclamation-circle"></i>
-                        <strong><?= $isUrdu ? 'موٹاپا' : 'Obese' ?></strong>
-                        <p class="mb-0 small"><?= $isUrdu ? 'موٹاپا ہے۔ ڈاکٹر سے رجوع کریں۔' : 'Obese. Consult a doctor.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light mb-2">
-                        <div class="text-success fw-bold small mb-1"><i class="fa fa-apple"></i> <?= $isUrdu ? 'غذائی تجاویز' : 'Diet Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'میٹھا، تلی ہوئی چیزیں کم کریں۔ سبزیاں، پھل زیادہ کھائیں۔' : 'Reduce sugar and fried foods. Eat more vegetables and fruits.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light">
-                        <div class="text-primary fw-bold small mb-1"><i class="fa fa-futbol"></i> <?= $isUrdu ? 'ورزش کی تجاویز' : 'Exercise Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'روزانہ چہل قدمی سے شروع کریں۔' : 'Start with daily walking.' ?></p>
-                    </div>
-                <?php else: ?>
-                    <div class="alert alert-success py-2 mb-2">
-                        <i class="fa fa-check-circle"></i>
-                        <strong><?= $isUrdu ? 'وزن معمول پر ہے' : 'Normal Weight' ?></strong>
-                        <p class="mb-0 small"><?= $isUrdu ? 'وزن معمول پر ہے۔ صحت مند طرز زندگی جاری رکھیں۔' : 'Weight is normal. Maintain healthy lifestyle.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light mb-2">
-                        <div class="text-success fw-bold small mb-1"><i class="fa fa-apple"></i> <?= $isUrdu ? 'غذائی تجاویز' : 'Diet Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'متوازن غذا کھائیں۔' : 'Eat balanced diet.' ?></p>
-                    </div>
-                    <div class="border rounded p-2 bg-light">
-                        <div class="text-primary fw-bold small mb-1"><i class="fa fa-futbol"></i> <?= $isUrdu ? 'ورزش کی تجاویز' : 'Exercise Tips' ?></div>
-                        <p class="mb-0 small"><?= $isUrdu ? 'روزانہ 30 منٹ ورزش کریں۔' : 'Exercise 30 minutes daily.' ?></p>
-                    </div>
-                <?php endif; ?>
-            </div>
-            
-         <!-- BMI History -->
-<?php if (!empty($bmiHistory) && count($bmiHistory) > 0): ?>
-<div class="mt-3">
-  <h6 class="mb-2 fw-bold" style="font-size: 1.5rem;"><i class="fa fa-line-chart"></i> <?= $isUrdu ? 'بی ایم آئی ہسٹری' : 'BMI History' ?></h6>
-    <div class="table-responsive">
-        <table class="table table-sm table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th class="text-center"><?= $isUrdu ? 'مہینہ' : 'Month' ?></th>
-                    <th class="text-center"><?= $isUrdu ? 'قد (سینٹی میٹر)' : 'Height (cm)' ?></th>
-                    <th class="text-center"><?= $isUrdu ? 'وزن (کلوگرام)' : 'Weight (kg)' ?></th>
-                    <th class="text-center"><?= $isUrdu ? 'بی ایم آئی' : 'BMI' ?></th>
-                    <th class="text-center"><?= $isUrdu ? 'کیٹیگری' : 'Category' ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($bmiHistory as $history): ?>
-                <tr>
-                    <td class="text-center small fw-bold"><?= esc($history['month_display']) ?></td>
-                    <td class="text-center small"><?= round($history['height']) ?></td>
-                    <td class="text-center small"><?= round($history['weight']) ?></td>
-                    <td class="text-center small fw-bold"><?= round($history['bmi']) ?></td>
-                    <td class="text-center">
-                        <span class="badge <?= 
-                            $history['bmi_category'] == 'normal' ? 'bg-success' : 
-                            ($history['bmi_category'] == 'underweight' ? 'bg-warning' : 
-                            ($history['bmi_category'] == 'overweight' ? 'bg-info' : 'bg-danger')) 
-                        ?>">
-                            <?= ucfirst($history['bmi_category']) ?>
-                        </span>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-<?php endif; ?>
-
-        <?php else: ?>
-            <div class="text-center py-4 text-muted">
-                <i class="fa fa-heartbeat fa-3x mb-3 opacity-50"></i>
-                <p><?= $isUrdu ? 'اس طالب علم کے لیے کوئی ہیلتھ ریکارڈ موجود نہیں۔' : 'No health records available for this student.' ?></p>
-                <p class="small"><?= $isUrdu ? 'براہ کرم قد اور وزن اپ ڈیٹ کرنے کے لیے اسکول سے رابطہ کریں۔' : 'Please contact the school to update height and weight measurements.' ?></p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-<!-- ==================== TODAY'S DIARY SECTION ==================== -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="fa fa-book-open me-2 text-primary"></i> 
-            <?php 
-            if (!empty($todayDiary) && isset($todayDiary[0]['diary_day_name'])) {
-                echo 'Diary - ' . $todayDiary[0]['diary_day_name'];
-            } else {
-                echo 'Today\'s Diary - ' . date('l');
-            }
-            ?>
-        </h5>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($todayDiary)): ?>
-            <div class="diary-accordion">
-                <?php foreach ($todayDiary as $index => $diary): ?>
-                    <div class="diary-card">
-                        <div class="diary-card-header" data-card="<?= $diary['did'] ?>">
-                            <span>
-                                <i class="fa fa-graduation-cap me-2"></i> 
-                                <strong><?= esc($diary['subject_name']) ?></strong>
-                            </span>
-                            <div class="d-flex align-items-center gap-2">
-                                <?php if ($diary['has_quiz']): ?>
-                                    <a href="<?= base_url('student/quizzes/start/' . $diary['quiz_id'] . '?sid=' . $activeStudentId) ?>" 
-                                       class="quiz-btn btn-sm" onclick="event.stopPropagation()">
-                                        <i class="fa fa-play-circle me-1"></i> Quiz
-                                    </a>
-                                <?php endif; ?>
-                                <i class="fa fa-chevron-down toggle-icon"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="diary-card-body" data-body="<?= $diary['did'] ?>">
-                            
-                            <!-- ========== CLASS WORK & HOMEWORK - SIDE BY SIDE ========== -->
-                            <div class="diary-section">
-                                <div class="row g-3">
-                                    <!-- Class Work -->
-                                    <div class="col-md-6">
-                                        <div class="content-box">
-                                            <div class="section-title">
-                                                <i class="fa fa-chalkboard text-primary"></i>
-                                                <span>Class Work</span>
-                                            </div>
-                                            <div class="content-text"><?= strip_tags($diary['classwork_formatted']) ?></div>
-                                        </div>
-                                    </div>
-                                    <!-- Homework -->
-                                    <div class="col-md-6">
-                                        <div class="content-box">
-                                            <div class="section-title">
-                                                <i class="fa fa-pencil-alt text-warning"></i>
-                                                <span>Homework</span>
-                                            </div>
-                                            <div class="content-text"><?= strip_tags($diary['homework_formatted']) ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                      <!-- ========== TASKS SECTION - AUDIO, VIDEO, PICTURE ========== -->
-<?php if ($diary['requires_audio'] || $diary['requires_video'] || $diary['requires_picture']): ?>
-<div class="diary-section">
-    <div class="tasks-title">
-        <i class="fa fa-tasks me-2"></i> Required Tasks
-    </div>
-    <div class="row g-3">
-        
-        <!-- Audio Task - ONLY show if required -->
-        <?php if ($diary['requires_audio']): ?>
-        <div class="col-md-4">
-            <div class="task-box">
-                <div class="task-header">
-                    <i class="fa fa-microphone text-danger"></i>
-                    <span>Audio Task</span>
-                    <?php if (!empty($diary['audio_recordings'])): ?>
-                        <span class="task-badge"><?= count($diary['audio_recordings']) ?> uploaded</span>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if (!empty($diary['audio_caption'])): ?>
-                    <div class="task-caption"><?= nl2br(esc($diary['audio_caption'])) ?></div>
-                <?php endif; ?>
-                
-                <?php if (!empty($diary['audio_recordings'])): ?>
-                    <?php foreach ($diary['audio_recordings'] as $audio): ?>
-                        <div class="submission-item">
-                            <audio controls class="submission-audio">
-                                <source src="<?= base_url($audio['audio_file_path']) ?>" type="audio/webm">
-                            </audio>
-                            <span class="badge <?= $audio['status'] === 'approved' ? 'bg-success' : ($audio['status'] === 'rejected' ? 'bg-danger' : 'bg-warning') ?>">
-                                <?= ucfirst($audio['status']) ?>
-                            </span>
-                        </div>
-                        <?php if ($audio['teacher_feedback']): ?>
-                            <small class="feedback-text"><?= esc($audio['teacher_feedback']) ?></small>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <div class="task-actions">
-                    <button class="task-btn audio-record-btn" data-diary-id="<?= $diary['did'] ?>" data-student-id="<?= $activeStudentId ?>">
-                        <i class="fa fa-microphone"></i> Record
-                    </button>
-                    <button class="task-btn task-stop-btn audio-stop-btn" data-diary-id="<?= $diary['did'] ?>" style="display: none;">
-                        <i class="fa fa-stop"></i> Stop
-                    </button>
-                    <span class="audio-timer" id="audio-timer-<?= $diary['did'] ?>"></span>
-                </div>
-                <div id="upload-status-<?= $diary['did'] ?>" class="upload-status"></div>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Video Task - ONLY show if required -->
-        <?php if ($diary['requires_video']): ?>
-        <div class="col-md-4">
-            <div class="task-box">
-                <div class="task-header">
-                    <i class="fa fa-video-camera text-primary"></i>
-                    <span>Video Task</span>
-                    <?php if (!empty($diary['video_recordings'])): ?>
-                        <span class="task-badge"><?= count($diary['video_recordings']) ?> uploaded</span>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if (!empty($diary['video_caption'])): ?>
-                    <div class="task-caption"><?= nl2br(esc($diary['video_caption'])) ?></div>
-                <?php endif; ?>
-                
-                <?php if (!empty($diary['video_recordings'])): ?>
-                    <?php foreach ($diary['video_recordings'] as $video): ?>
-                        <div class="submission-item">
-                            <video controls class="submission-video">
-                                <source src="<?= base_url($video['video_file_path']) ?>" type="video/mp4">
-                            </video>
-                            <span class="badge <?= $video['status'] === 'approved' ? 'bg-success' : ($video['status'] === 'rejected' ? 'bg-danger' : 'bg-warning') ?>">
-                                <?= ucfirst($video['status'] ?? 'pending') ?>
-                            </span>
-                        </div>
-                        <?php if (!empty($video['teacher_remarks'])): ?>
-                            <small class="feedback-text"><?= esc($video['teacher_remarks']) ?></small>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <div class="task-actions">
-                    <button class="task-btn video-record-btn" data-diary-id="<?= $diary['did'] ?>" data-student-id="<?= $activeStudentId ?>">
-                        <i class="fa fa-video-camera"></i> Record
-                    </button>
-                    <label class="task-btn task-upload">
-                        <i class="fa fa-upload"></i> Upload
-                        <input type="file" accept="video/*" class="d-none video-file-input" data-diary-id="<?= $diary['did'] ?>" data-student-id="<?= $activeStudentId ?>">
-                    </label>
-                </div>
-                <div class="video-status" id="video-status-<?= $diary['did'] ?>"></div>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Picture Task - ONLY show if required -->
-        <?php if ($diary['requires_picture']): ?>
-        <div class="col-md-4">
-            <div class="task-box">
-                <div class="task-header">
-                    <i class="fa fa-camera text-success"></i>
-                    <span>Picture Task</span>
-                    <?php if (!empty($diary['picture_recordings'])): ?>
-                        <span class="task-badge"><?= count($diary['picture_recordings']) ?> uploaded</span>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if (!empty($diary['picture_caption'])): ?>
-                    <div class="task-caption"><?= nl2br(esc($diary['picture_caption'])) ?></div>
-                <?php endif; ?>
-                
-                <?php if (!empty($diary['picture_recordings'])): ?>
-                    <?php foreach ($diary['picture_recordings'] as $picture): ?>
-                        <div class="submission-item">
-                            <img src="<?= base_url($picture['picture_path']) ?>" class="submission-image">
-                            <span class="badge <?= $picture['status'] === 'approved' ? 'bg-success' : ($picture['status'] === 'rejected' ? 'bg-danger' : 'bg-warning') ?>">
-                                <?= ucfirst($picture['status'] ?? 'pending') ?>
-                            </span>
-                        </div>
-                        <?php if (!empty($picture['teacher_remarks'])): ?>
-                            <small class="feedback-text"><?= esc($picture['teacher_remarks']) ?></small>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <div class="task-actions">
-                    <button class="task-btn picture-capture-btn" data-diary-id="<?= $diary['did'] ?>" data-student-id="<?= $activeStudentId ?>">
-                        <i class="fa fa-camera"></i> Capture
-                    </button>
-                    <label class="task-btn task-upload">
-                        <i class="fa fa-upload"></i> Upload
-                        <input type="file" accept="image/*" class="d-none picture-file-input" data-diary-id="<?= $diary['did'] ?>" data-student-id="<?= $activeStudentId ?>">
-                    </label>
-                </div>
-                <div class="picture-status" id="picture-status-<?= $diary['did'] ?>"></div>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-    </div>
-</div>
-<?php endif; ?>                            
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="text-center py-4 text-muted">
-                <i class="fa fa-calendar-alt fa-3x mb-3 opacity-50"></i>
-                <h5>No diary entries for today</h5>
-                <p>Check back later for today's homework and activities.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php
-// Calculate student age for prayer tracking
-$studentAge = 0;
-if (!empty($studentInfo) && isset($studentInfo->date_of_birth)) {
-    $studentAge = date_diff(date_create($studentInfo->date_of_birth), date_create('today'))->y;
-}
-
 $campusPrayerStartAge = isset($campusInfo->prayer_tracking_start_age) ? $campusInfo->prayer_tracking_start_age : 7;
 $campusPrayerMandatoryAge = isset($campusInfo->prayer_tracking_mandatory_age) ? $campusInfo->prayer_tracking_mandatory_age : 10;
-
 $isEligibleForPrayer = $studentAge >= $campusPrayerStartAge;
 $isMandatory = $studentAge >= $campusPrayerMandatoryAge;
+$dsDash = $dashboardUnannouncedDatesheet ?? ['show' => false];
 
-// Debug - remove after testing
-// echo '<!-- Age: ' . $studentAge . ', Eligible: ' . ($isEligibleForPrayer ? 'Yes' : 'No') . ', Mandatory: ' . ($isMandatory ? 'Yes' : 'No') . ' -->';
+$welcomePhrase   = $isUrdu ? 'خوش آمدید' : 'Welcome';
+$hubSubtitle     = $isUrdu ? 'فیس، حاضری، شیڈول اور مزید' : 'Fees, attendance, datesheet & more';
+$hubSubtitleLong = $isUrdu ? 'فیس، حاضری، شیڈول اور مزید — ایک ٹیپ میں' : 'Fees, attendance, datesheet & more — one tap away';
+$footerHint      = $isUrdu ? 'ذیل کے مینو سے سروس کھولیں۔ بچے تبدیل کرنے کے لیے اوپر تصاویر پر ٹیپ کریں۔' : 'Tap a tile to open that service. Tap a photo above to switch the active child.';
 ?>
-<!-- ==================== BAG PACK + PRAYER TRACKING SECTION ==================== -->
-<div class="row">
-    <!-- Bag Pack Section - Takes full width if prayer is hidden, otherwise half -->
-    <div class="<?= ($isEligibleForPrayer ?? false) ? 'col-md-6' : 'col-md-12' ?>">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0"><i class="fa fa-bag-shopping me-2 text-primary"></i> 
-                    <?php
-                    $todayNum = date('N');
-                    $dayNames = [
-                        1 => 'Tuesday',      // Monday -> pack for Tuesday
-                        2 => 'Wednesday',    // Tuesday -> pack for Wednesday
-                        3 => 'Thursday',     // Wednesday -> pack for Thursday
-                        4 => 'Friday',       // Thursday -> pack for Friday
-                        5 => 'Monday',       // Friday -> pack for Monday
-                        6 => 'Monday',       // Saturday -> pack for Monday
-                        7 => 'Monday'        // Sunday -> pack for Monday
-                    ];
-                    echo $dayNames[$todayNum] . '\'s Bag Pack';
-                    ?>
-                </h5>
+
+<div class="card parent-dash-context parent-dash-welcome-compact border-0 shadow-sm">
+    <div class="card-body py-2 py-md-3">
+        <div class="min-w-0">
+            <span class="parent-dash-context-welcome d-none d-md-block"><?= esc($welcomePhrase) ?></span>
+            <div class="parent-dash-context-name text-truncate">
+                <span class="d-md-none text-muted fw-normal"><?= esc($welcomePhrase) ?>, </span><strong><?= esc($name ?? '') ?></strong>
             </div>
-            <div class="card-body">
-                <?php if (!empty($bagPackItems)): ?>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-borderless">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Item</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $counter = 1; ?>
-                                <?php foreach ($bagPackItems as $item): ?>
-                                    <tr>
-                                        <td><?= $counter++ ?>.</td>
-                                        <td>
-                                            <i class="fa <?= esc($item['icon']) ?> me-2 text-primary"></i>
-                                            <?= esc($item['item_name']) ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="alert alert-info mt-3 mb-0">
-                        <i class="fa fa-lightbulb me-2"></i>
-                        <?php
-                        $todayNum = date('N');
-                        if ($todayNum == 5 || $todayNum == 6 || $todayNum == 7) {
-                            echo 'Get ready for Monday! Pack these items.';
-                        } else {
-                            echo 'Don\'t forget to pack these items for tomorrow!';
-                        }
-                        ?>
-                    </div>
-                <?php else: ?>
-                    <div class="text-center py-3 text-muted">
-                        <i class="fa fa-bag-shopping fa-2x mb-2 opacity-50"></i>
-                        <p>No items to pack.</p>
-                    </div>
+        </div>
+    </div>
+</div>
+
+<?= view('frontend/dashboard/partials/parent_notices', ['portalNotices' => $portalNotices ?? []]) ?>
+<?= view('frontend/dashboard/partials/parent_hifz_summary', ['hifzSummary' => $hifzSummary ?? null]) ?>
+<?= view('frontend/dashboard/partials/parent_action_center', ['parentActionCenter' => $parentActionCenter ?? []]) ?>
+
+<?php if (!empty($children)): ?>
+    <div class="parent-dash-kids-strip" aria-hidden="false">
+                <?php foreach ($children as $child): ?>
+                    <?php
+                    $isActiveBubble = $activeStudentId === (int) $child['student_id'];
+                    $photoOk = ! empty($child['profile_photo_url']) && $child['profile_photo_url'] !== base_url();
+                    ?>
+                    <a class="kid-bubble <?= $isActiveBubble ? 'active' : '' ?>"
+                       href="<?= esc(base_url('student/switch/' . (int) $child['student_id'] . '?to=' . rawurlencode('student/dashboard'))) ?>"
+                       title="<?= esc($child['name']) ?>"
+                       aria-label="<?= esc($child['name']) ?>">
+                        <?php if ($photoOk): ?>
+                            <img src="<?= esc($child['profile_photo_url']) ?>" alt="" loading="lazy">
+                        <?php else: ?>
+                            <span class="kid-bubble-ph"><?= esc(strtoupper(substr($child['name'], 0, 1))) ?></span>
+                        <?php endif; ?>
+                    </a>
+                <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<div class="parent-dash-app" id="parentDashApp">
+    <div class="card shadow-sm border-0 parent-dash-hub-wrap mb-0">
+        <div class="card-body py-3 px-3 px-sm-4 py-md-4">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+                <div class="min-w-0">
+                    <div class="text-uppercase small text-muted fw-bold letter-spacing-1"><?= $isUrdu ? 'مینو' : 'Quick menu' ?></div>
+                    <div class="small text-muted mt-1 mb-0 d-none d-md-block"><?= esc($hubSubtitleLong) ?></div>
+                </div>
+                <?php if (! empty($activeStudentId)): ?>
+                    <span class="badge text-bg-primary parent-dash-hub-badge align-self-start"><?= $isUrdu ? 'طالب علم منتخب' : 'Child linked' ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="parent-hub-grid" role="navigation" aria-label="<?= $isUrdu ? 'ڈیش بورڈ مینو' : 'Dashboard sections' ?>">
+                <a href="<?= base_url('student/profile') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-profile"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'پروفائل' : 'Profile' ?></span>
+                </a>
+                <a href="<?= base_url('student/fees') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-fee"><i class="fa fa-credit-card" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'فیس' : 'Fees' ?></span>
+                </a>
+                <a href="<?= base_url('student/attendance') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-att"><i class="fa fa-calendar-check" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'حاضری' : 'Attendance' ?></span>
+                </a>
+                <a href="<?= base_url('student/dashboard/section/bmi') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-bmi"><i class="fa fa-heartbeat" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'صحت / BMI' : 'Health / BMI' ?></span>
+                </a>
+                <?php if (!empty($activeStudentId) && !empty($dsDash['show'])): ?>
+                <a href="<?= base_url('student/datesheet') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-ds"><i class="fa fa-calendar-alt" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'شیڈول' : 'Datesheet' ?></span>
+                </a>
+                <?php endif; ?>
+                <?php if (!empty($activeStudentId)): ?>
+                <a href="<?= base_url('student/results') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-res"><i class="fa fa-chart-line" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'نتائج' : 'Results' ?></span>
+                </a>
+                <a href="<?= base_url('student/quizzes/all') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-quiz"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'کوئز' : 'Quizzes' ?></span>
+                </a>
+                <a href="<?= base_url('student/vocabbank') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-vocab"><i class="fa fa-book" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'ذخیرہ الفاظ' : 'Vocabulary' ?></span>
+                </a>
+                <a href="<?= base_url('student/dashboard/section/diary') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-diary"><i class="fa fa-book-open" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'ڈائری' : 'Diary' ?></span>
+                </a>
+                <a href="<?= base_url('student/dashboard/section/bag') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-bag"><i class="fa fa-shopping-bag" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= $isUrdu ? 'بیگ' : 'Bag pack' ?></span>
+                </a>
+                <?php if (!empty($isEligibleForPrayer)): ?>
+                <a href="<?= base_url('student/dashboard/section/prayers') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-pray"><i class="fa fa-mosque" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= esc(lang('ParentPortal.hub_namaz_short')) ?></span>
+                </a>
+                <?php endif; ?>
+                <?php if (!empty($showHifzPortal)): ?>
+                <a href="<?= base_url('student/dashboard/section/hifz') ?>" class="parent-hub-tile">
+                    <span class="parent-hub-icon bg-hifz"><i class="fa fa-quran" aria-hidden="true"></i></span>
+                    <span class="parent-hub-label"><?= esc(lang('ParentPortal.hub_hifz_short')) ?></span>
+                </a>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    
-    <!-- Prayer Tracking Card - Only shown if student is eligible (age >= 7) -->
-    <?php if ($isEligibleForPrayer ?? false): ?>
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-4 prayer-card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0"><i class="fa fa-mosque me-2 text-success"></i> Daily Prayers</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="prayer-body">
-                    <?php if ($isMandatory ?? false): ?>
-                        <div class="alert alert-warning py-2 mb-3">
-                            <i class="fa fa-exclamation-triangle"></i> <strong>Mandatory:</strong> You must offer all 5 prayers daily.
-                        </div>
-                    <?php else: ?>
-                        <div class="alert alert-info py-2 mb-3">
-                            <i class="fa fa-info-circle"></i> <strong>Encouraged:</strong> Start building the habit of 5 daily prayers.
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="prayer-grid" id="prayerGrid">
-                        <div class="prayer-item" data-prayer="fajr">
-                            <i class="fa fa-star-of-david"></i>
-                            <span>Fajr</span>
-                        </div>
-                        <div class="prayer-item" data-prayer="dhuhr">
-                            <i class="fa fa-sun"></i>
-                            <span>Dhuhr</span>
-                        </div>
-                        <div class="prayer-item" data-prayer="asr">
-                            <i class="fa fa-cloud-sun"></i>
-                            <span>Asr</span>
-                        </div>
-                        <div class="prayer-item" data-prayer="maghrib">
-                            <i class="fa fa-moon"></i>
-                            <span>Maghrib</span>
-                        </div>
-                        <div class="prayer-item" data-prayer="isha">
-                            <i class="fa fa-star-and-crescent"></i>
-                            <span>Isha</span>
-                        </div>
-                    </div>
-                    
-                    <div class="prayer-progress">
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" id="prayerProgressBar" style="width: 0%"></div>
-                        </div>
-                        <div class="text-center mt-2">
-                            <span id="prayerCount">0</span>/5 Prayers Offered
-                        </div>
-                    </div>
-                    
-                    <div class="prayer-stats">
-                        <div class="prayer-stat">
-                            <div class="number" id="weeklyStreak">0</div>
-                            <div class="label">Days This Week</div>
-                        </div>
-                        <div class="prayer-stat">
-                            <div class="number" id="monthlyStreak">0</div>
-                            <div class="label">Days This Month</div>
-                        </div>
-                        <div class="prayer-stat">
-                            <div class="number" id="totalDays">0</div>
-                            <div class="label">Total Days</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
+
+</div><!-- #parentDashApp -->
+
+<div class="parent-dash-footer">
+    <?= esc($footerHint) ?>
 </div>
 
+</div><!-- .parent-dash-page -->
+
+</div><!-- .parent-dash-root -->
 
 <?= csrf_field() ?>
 
 <script>
-// ============================================
-// SWITCH STUDENT
-// ============================================
-function switchStudent(studentId, studentName) {
-    document.getElementById('activeStudentName').innerHTML = studentName;
-    window.location.href = '<?= base_url("student/switch/") ?>' + studentId;
-}
-
-// ============================================
-// EXPANDABLE CARDS
-// ============================================
-document.querySelectorAll('.diary-card-header').forEach(header => {
-    header.addEventListener('click', function(e) {
-        if (e.target.closest('.quiz-btn')) return;
-        
-        const cardId = this.dataset.card;
-        const body = document.querySelector(`.diary-card-body[data-body="${cardId}"]`);
-        const isActive = body.classList.contains('active');
-        
-        document.querySelectorAll('.diary-card-body').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.diary-card-header').forEach(h => h.classList.remove('active'));
-        
-        if (!isActive) {
-            body.classList.add('active');
-            this.classList.add('active');
-        }
-    });
-});
-
-const firstCard = document.querySelector('.diary-card-header');
-if (firstCard) firstCard.click();
-
-// ============================================
-// AUDIO RECORDING - Updated Selectors
-// ============================================
-let mediaRecorder = null;
-let audioChunks = [];
-let timerInterval = null;
-let startTime = 0;
-
-function startAudioTimer(diaryId) {
-    const timerDiv = document.getElementById(`audio-timer-${diaryId}`);
-    let seconds = 0;
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        seconds++;
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        if (timerDiv) timerDiv.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }, 1000);
-}
-
-function stopAudioTimer(diaryId) {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-    const timerDiv = document.getElementById(`audio-timer-${diaryId}`);
-    if (timerDiv) timerDiv.textContent = '';
-}
-
-// Audio Record Button
-document.querySelectorAll('.audio-record-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-        const diaryId = this.dataset.diaryId;
-        const studentId = this.dataset.studentId;
-        const stopBtn = document.querySelector(`.audio-stop-btn[data-diary-id="${diaryId}"]`);
-        const uploadStatus = document.getElementById(`upload-status-${diaryId}`);
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
-            
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const formData = new FormData();
-                formData.append('audio_recording', audioBlob, 'recording.webm');
-                formData.append('student_id', studentId);
-                formData.append('diary_id', diaryId);
-                formData.append('duration', Math.floor(Date.now() / 1000) - startTime);
-                
-                if (uploadStatus) uploadStatus.innerHTML = '<span class="text-info">Uploading...</span>';
-                
-                const response = await fetch('<?= base_url("student/upload-audio") ?>', {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    if (uploadStatus) uploadStatus.innerHTML = '<span class="text-success">✓ Uploaded! Refreshing...</span>';
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    if (uploadStatus) uploadStatus.innerHTML = '<span class="text-danger">✗ Failed: ' + result.message + '</span>';
-                }
-                
-                stream.getTracks().forEach(track => track.stop());
-            };
-            
-            mediaRecorder.start();
-            startTime = Math.floor(Date.now() / 1000);
-            
-            // Update UI
-            this.style.display = 'none';
-            if (stopBtn) stopBtn.style.display = 'inline-flex';
-            startAudioTimer(diaryId);
-            
-        } catch (err) {
-            alert('Unable to access microphone. Please check permissions.');
-        }
-    });
-});
-
-// Audio Stop Button
-document.querySelectorAll('.audio-stop-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const diaryId = this.dataset.diaryId;
-        const recordBtn = document.querySelector(`.audio-record-btn[data-diary-id="${diaryId}"]`);
-        
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-            this.style.display = 'none';
-            if (recordBtn) recordBtn.style.display = 'inline-flex';
-            stopAudioTimer(diaryId);
-        }
-    });
-});
-
-// ============================================
-// VIDEO RECORDING
-// ============================================
-let videoMediaRecorder = null;
-let videoChunks = [];
-let isVideoRecording = false;
-let videoStartTime = 0;
-let currentVideoStream = null;
-
-document.querySelectorAll('.video-record-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-        const diaryId = this.dataset.diaryId;
-        const studentId = this.dataset.studentId;
-        const statusDiv = document.getElementById(`video-status-${diaryId}`);
-        
-        if (isVideoRecording && videoMediaRecorder && videoMediaRecorder.state === 'recording') {
-            videoMediaRecorder.stop();
-            isVideoRecording = false;
-            this.innerHTML = '<i class="fa fa-video-camera"></i> Record';
-            this.classList.remove('btn-danger');
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-muted">Processing video...</span>';
-            return;
-        }
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            currentVideoStream = stream;
-            showVideoModal(stream, diaryId, studentId);
-        } catch (err) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">Unable to access camera: ' + err.message + '</span>';
-        }
-    });
-});
-function showVideoModal(stream, diaryId, studentId) {
-    // Remove existing modal if any
-    if (document.getElementById('videoModal')) {
-        document.getElementById('videoModal').remove();
-    }
-    
-    const modalHtml = `
-        <div id="videoModal" class="video-modal">
-            <div class="video-modal-content">
-                <div class="video-modal-header">
-                    <h4 class="video-modal-title">
-                        <i class="fa fa-video-camera"></i> Record Video
-                    </h4>
-                    <button class="video-modal-close" id="closeVideoModalBtn">
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>
-                <div class="video-modal-body">
-                    <div class="video-preview-container">
-                        <video id="videoPreview" class="video-preview" autoplay playsinline muted></video>
-                        <div class="video-recording-indicator" id="videoRecordingIndicator" style="display: none;">
-                            <span class="recording-dot"></span>
-                            <span class="recording-text">RECORDING</span>
-                            <span class="recording-timer" id="videoTimer">00:00</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="video-modal-footer">
-                    <button class="video-btn video-btn-record" id="startVideoRecordBtn">
-                        <i class="fa fa-circle"></i> Record
-                    </button>
-                    <button class="video-btn video-btn-stop" id="stopVideoRecordBtn" style="display: none;">
-                        <i class="fa fa-stop"></i> Stop
-                    </button>
-                    <button class="video-btn video-btn-close" id="cancelVideoBtn">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    const videoElement = document.getElementById('videoPreview');
-    videoElement.srcObject = stream;
-    
-    let mediaRecorder = null;
-    let recordedChunks = [];
-    let isRecording = false;
-    let recordStartTime = 0;
-    let timerInterval = null;
-    
-    const startBtn = document.getElementById('startVideoRecordBtn');
-    const stopBtn = document.getElementById('stopVideoRecordBtn');
-    const closeBtn = document.getElementById('closeVideoModalBtn');
-    const cancelBtn = document.getElementById('cancelVideoBtn');
-    const recordingIndicator = document.getElementById('videoRecordingIndicator');
-    const timerDisplay = document.getElementById('videoTimer');
-    
-    // Format time as MM:SS
-    function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    
-    // Start recording
-    startBtn.onclick = () => {
-        recordedChunks = [];
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                recordedChunks.push(event.data);
-            }
-        };
-        
-        mediaRecorder.onstop = async () => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const duration = Math.floor((Date.now() - recordStartTime) / 1000);
-            
-            // Stop timer
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            
-            // Show uploading state
-            startBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Uploading...';
-            
-            await uploadVideo(blob, diaryId, studentId, duration);
-            
-            // Close modal after upload
-            setTimeout(() => {
-                if (currentVideoStream) {
-                    currentVideoStream.getTracks().forEach(track => track.stop());
-                }
-                document.getElementById('videoModal').remove();
-            }, 1500);
-        };
-        
-        mediaRecorder.start(1000);
-        isRecording = true;
-        recordStartTime = Date.now();
-        
-        // Update UI
-        startBtn.style.display = 'none';
-        stopBtn.style.display = 'flex';
-        recordingIndicator.style.display = 'flex';
-        
-        // Start timer
-        timerInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
-            timerDisplay.textContent = formatTime(elapsed);
-        }, 1000);
-    };
-    
-    // Stop recording
-    stopBtn.onclick = () => {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            stopBtn.disabled = true;
-            stopBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
-            recordingIndicator.style.display = 'none';
-        }
-    };
-    
-    // Close modal function
-    function closeModal() {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-        }
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
-        if (currentVideoStream) {
-            currentVideoStream.getTracks().forEach(track => track.stop());
-        }
-        document.getElementById('videoModal').remove();
-    }
-    
-    closeBtn.onclick = closeModal;
-    cancelBtn.onclick = closeModal;
-    
-    // Close on backdrop click
-    document.querySelector('.video-modal').onclick = (e) => {
-        if (e.target === document.querySelector('.video-modal')) {
-            closeModal();
-        }
-    };
-}
-async function uploadVideo(blob, diaryId, studentId, duration) {
-    const statusDiv = document.getElementById(`video-status-${diaryId}`);
-    if (statusDiv) statusDiv.innerHTML = '<span class="text-info">Uploading video...</span>';
-    
-    const formData = new FormData();
-    formData.append('video_recording', blob, 'recording.webm');
-    formData.append('student_id', studentId);
-    formData.append('diary_id', diaryId);
-    formData.append('duration', duration);
-    
-    try {
-        const response = await fetch('<?= base_url("student/upload-video") ?>', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const result = await response.json();
-        if (result.success) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-success">✓ Video uploaded! Refreshing...</span>';
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Upload failed: ' + (result.message || 'Unknown error') + '</span>';
-        }
-    } catch (err) {
-        if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Network error: ' + err.message + '</span>';
-    }
-}
-
-// Video file upload
-document.querySelectorAll('.video-file-input').forEach(input => {
-    input.addEventListener('change', async function() {
-        const diaryId = this.dataset.diaryId;
-        const studentId = this.dataset.studentId;
-        const statusDiv = document.getElementById(`video-status-${diaryId}`);
-        
-        if (this.files.length === 0) return;
-        const file = this.files[0];
-        
-        if (!file.type.startsWith('video/')) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">Please select a video file.</span>';
-            return;
-        }
-        if (file.size > 100 * 1024 * 1024) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">File too large. Max 100MB.</span>';
-            return;
-        }
-        
-        await uploadVideo(file, diaryId, studentId, 0);
-        this.value = '';
-    });
-});
-
-// ============================================
-// PICTURE CAPTURE
-// ============================================
-document.querySelectorAll('.picture-capture-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-        const diaryId = this.dataset.diaryId;
-        const studentId = this.dataset.studentId;
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            showPictureModal(stream, diaryId, studentId);
-        } catch (err) {
-            alert('Unable to access camera. Please check permissions.');
-        }
-    });
-});
-function showPictureModal(stream, diaryId, studentId) {
-    // Remove existing modal if any
-    if (document.getElementById('pictureModal')) {
-        document.getElementById('pictureModal').remove();
-    }
-    
-    const modalHtml = `
-        <div id="pictureModal" class="picture-modal">
-            <div class="picture-modal-content">
-                <div class="picture-modal-header">
-                    <h4 class="picture-modal-title">
-                        <i class="fa fa-camera"></i> Capture Picture
-                    </h4>
-                    <button class="picture-modal-close" id="closePictureModalBtn">
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>
-                <div class="picture-modal-body">
-                    <div class="camera-preview-container">
-                        <video id="cameraPreview" class="camera-preview" autoplay playsinline></video>
-                        <canvas id="photoCanvas" style="display: none;"></canvas>
-                        <div class="camera-guide">
-                            <div class="guide-frame"></div>
-                        </div>
-                    </div>
-                    <div id="capturedPreview" class="captured-preview" style="display: none;">
-                        <img id="capturedImage" class="captured-image">
-                        <div class="captured-actions">
-                            <button class="capture-btn recapture-btn" id="recaptureBtn">
-                                <i class="fa fa-refresh"></i> Retake
-                            </button>
-                            <button class="capture-btn submit-btn" id="submitPictureBtn">
-                                <i class="fa fa-check"></i> Submit
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="picture-modal-footer">
-                    <button class="picture-btn capture-btn-main" id="capturePhotoBtn">
-                        <i class="fa fa-camera"></i>
-                    </button>
-                    <button class="picture-btn cancel-btn" id="cancelPictureBtn">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    const videoElement = document.getElementById('cameraPreview');
-    const canvas = document.getElementById('photoCanvas');
-    const capturedPreview = document.getElementById('capturedPreview');
-    const cameraContainer = document.querySelector('.camera-preview-container');
-    const captureBtn = document.getElementById('capturePhotoBtn');
-    const recaptureBtn = document.getElementById('recaptureBtn');
-    const submitBtn = document.getElementById('submitPictureBtn');
-    const closeBtn = document.getElementById('closePictureModalBtn');
-    const cancelBtn = document.getElementById('cancelPictureBtn');
-    const capturedImage = document.getElementById('capturedImage');
-    
-    videoElement.srcObject = stream;
-    
-    let capturedImageData = null;
-    
-    // Function to close modal
-    function closeModal() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-        document.getElementById('pictureModal').remove();
-    }
-    
-    // Capture photo
-    captureBtn.onclick = () => {
-        const context = canvas.getContext('2d');
-        
-        // Set canvas dimensions to match video
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-        
-        // Draw video frame to canvas
-        context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-        
-        // Get image data
-        capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
-        capturedImage.src = capturedImageData;
-        
-        // Hide camera preview, show captured preview
-        cameraContainer.style.display = 'none';
-        capturedPreview.style.display = 'block';
-        captureBtn.style.display = 'none';
-        
-        // Add animation
-        capturedPreview.classList.add('fade-in');
-    };
-    
-    // Retake photo
-    recaptureBtn.onclick = () => {
-        // Show camera preview again
-        cameraContainer.style.display = 'block';
-        capturedPreview.style.display = 'none';
-        captureBtn.style.display = 'flex';
-        capturedImageData = null;
-    };
-    
-    // Submit photo
-    submitBtn.onclick = async () => {
-        if (!capturedImageData) return;
-        
-        // Show loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Uploading...';
-        
-        const blob = await (await fetch(capturedImageData)).blob();
-        const formData = new FormData();
-        formData.append('picture', blob, 'capture.jpg');
-        formData.append('student_id', studentId);
-        formData.append('diary_id', diaryId);
-        
-        const statusDiv = document.getElementById(`picture-status-${diaryId}`);
-        if (statusDiv) statusDiv.innerHTML = '<span class="text-info">Uploading picture...</span>';
-        
-        try {
-            const response = await fetch('<?= base_url("student/upload-picture") ?>', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const result = await response.json();
-            if (result.success) {
-                if (statusDiv) statusDiv.innerHTML = '<span class="text-success">✓ Picture uploaded! Refreshing...</span>';
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Upload failed: ' + (result.message || 'Unknown error') + '</span>';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa fa-check"></i> Submit';
-            }
-        } catch (err) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Network error: ' + err.message + '</span>';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa fa-check"></i> Submit';
-        }
-    };
-    
-    // Close modal
-    closeBtn.onclick = closeModal;
-    cancelBtn.onclick = closeModal;
-    
-    // Close on backdrop click
-    document.querySelector('.picture-modal').onclick = (e) => {
-        if (e.target === document.querySelector('.picture-modal')) {
-            closeModal();
-        }
-    };
-}
-
-// Picture file upload
-document.querySelectorAll('.picture-file-input').forEach(input => {
-    input.addEventListener('change', async function() {
-        const diaryId = this.dataset.diaryId;
-        const studentId = this.dataset.studentId;
-        const statusDiv = document.getElementById(`picture-status-${diaryId}`);
-        
-        if (this.files.length === 0) return;
-        const file = this.files[0];
-        
-        if (!file.type.startsWith('image/')) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">Please select an image file.</span>';
-            return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">File too large. Max 5MB.</span>';
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('picture', file);
-        formData.append('student_id', studentId);
-        formData.append('diary_id', diaryId);
-        
-        if (statusDiv) statusDiv.innerHTML = '<span class="text-info">Uploading picture...</span>';
-        
-        try {
-            const response = await fetch('<?= base_url("student/upload-picture") ?>', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const result = await response.json();
-            if (result.success) {
-                if (statusDiv) statusDiv.innerHTML = '<span class="text-success">✓ Picture uploaded! Refreshing...</span>';
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Upload failed: ' + (result.message || 'Unknown error') + '</span>';
-            }
-        } catch (err) {
-            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger">✗ Network error: ' + err.message + '</span>';
-        }
-        
-        this.value = '';
-    });
-});
-
-
-// ============================================
-// PRAYER TRACKING
-// ============================================
-let currentPrayers = {
-    fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0
-};
-
-function loadPrayerStatus() {
-    const studentId = <?= $activeStudentId ?>;
-    fetch('<?= base_url("student/get-prayer-status") ?>?student_id=' + studentId + '&date=<?= date('Y-m-d') ?>', {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            currentPrayers = data.prayers;
-            updatePrayerUI();
-        }
-    })
-    .catch(err => console.error('Error loading prayer status:', err));
-}
-
-function updatePrayerUI() {
-    let offeredCount = 0;
-    const prayerItems = document.querySelectorAll('.prayer-item');
-    
-    prayerItems.forEach(item => {
-        const prayer = item.dataset.prayer;
-        if (currentPrayers[prayer] === 1) {
-            item.classList.add('offered');
-            offeredCount++;
-        } else {
-            item.classList.remove('offered');
-        }
-    });
-    
-    const percentage = (offeredCount / 5) * 100;
-    document.getElementById('prayerProgressBar').style.width = percentage + '%';
-    document.getElementById('prayerCount').innerText = offeredCount;
-}
-
-document.querySelectorAll('.prayer-item').forEach(item => {
-    item.addEventListener('click', function() {
-        const prayer = this.dataset.prayer;
-        const studentId = <?= $activeStudentId ?>;
-        const newValue = currentPrayers[prayer] === 1 ? 0 : 1;
-        
-        fetch('<?= base_url("student/save-prayer") ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({
-                student_id: studentId,
-                prayer_date: '<?= date('Y-m-d') ?>',
-                prayer_name: prayer,
-                value: newValue,
-                csrf_test_name: document.querySelector('input[name="csrf_test_name"]')?.value || ''
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                currentPrayers[prayer] = newValue;
-                updatePrayerUI();
-                loadPrayerStats();
-            }
-        })
-        .catch(err => console.error('Error saving prayer:', err));
-    });
-});
-
-function loadPrayerStats() {
-    const studentId = <?= $activeStudentId ?>;
-    fetch('<?= base_url("student/get-prayer-stats") ?>?student_id=' + studentId, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('weeklyStreak').innerText = data.weekly_streak || 0;
-            document.getElementById('monthlyStreak').innerText = data.monthly_streak || 0;
-            document.getElementById('totalDays').innerText = data.total_days || 0;
-        }
-    })
-    .catch(err => console.error('Error loading prayer stats:', err));
-}
-
-// Initialize
-loadPrayerStatus();
-loadPrayerStats();
+/* Parent hub opens separate pages; student switch uses links with ?to= */
 </script>
 
 <?= $this->endSection() ?>

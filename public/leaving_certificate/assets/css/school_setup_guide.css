@@ -1,0 +1,327 @@
+/* School setup guide — Getting Started hub + admin banner */
+
+.text-navy {
+  color: #1e3a5f;
+}
+
+.setup-progress-card {
+  border: none;
+  border-radius: 12px;
+}
+
+.setup-progress-bar {
+  height: 10px;
+  background: #e9ecef;
+}
+
+.setup-continue-btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.setup-header-badge {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.setup-step-card {
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.setup-step-card--active {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.15rem rgba(0, 123, 255, 0.15);
+}
+
+.setup-step-card--done {
+  border-color: #c3e6cb;
+  background: #f8fff9;
+}
+
+.setup-step-card--locked {
+  opacity: 0.72;
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.setup-step-card--locked.setup-step-card--active {
+  border-color: #dee2e6;
+  box-shadow: none;
+}
+
+.setup-step-num.is-locked {
+  background: #adb5bd;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.setup-substep.is-locked {
+  color: #adb5bd;
+}
+
+.setup-substep.is-locked span {
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.setup-substep-progress {
+  font-size: 0.8125rem;
+}
+
+.setup-step-num {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: #e9ecef;
+  color: #495057;
+}
+
+.setup-step-num.is-active {
+  background: #007bff;
+  color: #fff;
+}
+
+.setup-step-num.is-done {
+  background: #28a745;
+  color: #fff;
+}
+
+.setup-step-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.setup-substeps {
+  font-size: 0.875rem;
+}
+
+.setup-substep {
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setup-substep a {
+  color: #495057;
+}
+
+.setup-substep.is-done a {
+  color: #28a745;
+}
+
+/* Persistent admin banner */
+.admin-setup-guide {
+  background: linear-gradient(90deg, #1e3a5f 0%, #2a5298 100%);
+  color: #fff;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  z-index: 1035;
+}
+
+.admin-setup-guide__text {
+  margin: 0;
+  flex: 1 1 200px;
+}
+
+.admin-setup-guide__text strong {
+  font-weight: 600;
+}
+
+.admin-setup-guide__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-setup-guide .btn-continue {
+  background: #fff;
+  color: #1e3a5f;
+  font-weight: 600;
+  border: none;
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.admin-setup-guide .btn-continue:hover {
+  background: #f0f4fa;
+  color: #1e3a5f;
+}
+
+.admin-setup-guide .btn-hub {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8125rem;
+  text-decoration: underline;
+}
+
+.admin-setup-guide .setup-mini-dots {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.admin-setup-guide .setup-mini-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.admin-setup-guide .setup-mini-dot.is-done {
+  background: #28a745;
+}
+
+.admin-setup-guide .setup-mini-dot.is-current {
+  background: #ffc107;
+}
+
+/* Step context strip on setup pages */
+.setup-step-context {
+  background: #f0f4fa;
+  border: 1px solid #d0dbe8;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.setup-step-context__label {
+  font-weight: 600;
+  color: #1e3a5f;
+  margin: 0;
+}
+
+.setup-step-context__dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.setup-step-context__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ced4da;
+}
+
+.setup-step-context__dot.is-done {
+  background: #28a745;
+}
+
+.setup-step-context__dot.is-current {
+  background: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+.setup-step-context__link {
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Language welcome card */
+.setup-lang-card {
+  border: 1px solid #d0dbe8;
+  border-radius: 12px;
+}
+
+.setup-lang-buttons .btn.active {
+  font-weight: 600;
+}
+
+.setup-step-body {
+  margin-inline-start: 1rem;
+}
+
+/* RTL layout for Urdu / Arabic */
+[dir="rtl"] .setup-step-num {
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+[dir="rtl"] .setup-step-body {
+  margin-inline-start: 0;
+  margin-inline-end: 1rem;
+}
+
+[dir="rtl"] .setup-step-card .d-flex.align-items-start {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .setup-step-title .fas,
+[dir="rtl"] .setup-continue-btn .fas,
+[dir="rtl"] .setup-step-context__link .fas,
+[dir="rtl"] .admin-setup-guide__text .fas {
+  margin-right: 0 !important;
+  margin-left: 0.25rem;
+}
+
+[dir="rtl"] .setup-substep {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+[dir="rtl"] .admin-setup-guide {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .admin-setup-guide__actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .admin-setup-guide .setup-mini-dots {
+  margin-left: 0;
+  margin-right: 0.35rem;
+}
+
+[dir="rtl"] .setup-step-context {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .setup-step-context__label,
+[dir="rtl"] .setup-step-context__link {
+  text-align: right;
+}
+
+[dir="rtl"] .setup-lang-buttons {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .setup-progress-card .d-flex {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .content-header .text-sm-right {
+  text-align: left !important;
+}
+
+[dir="rtl"] .setup-step-card .btn .fas.fa-external-link-alt {
+  margin-left: 0 !important;
+  margin-right: 0.25rem;
+}
+
+[dir="rtl"] .setup-substep-progress {
+  margin-left: 0 !important;
+  margin-right: 0.25rem;
+}

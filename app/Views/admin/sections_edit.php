@@ -1,28 +1,25 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-8">
-        <h1><i class="fas fa-school"></i> Add Section
-          <?php if (empty($sections_info->section_id)) : ?>
-            <span class="badge badge-success float-right">Step 5 of 10: System Configuration</span>
-            <audio autoplay controls hidden>
-              <source src="audio/Step6sections.m4a" type="audio/mpeg">
-            </audio>
-          <?php endif; ?>
-        </h1>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Section</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php
+$setupBadge = empty($sections_info->section_id)
+    ? '<span class="badge text-bg-success">Step 5 of 10: System Configuration</span>'
+    : '';
+$setupAudio = empty($sections_info->section_id)
+    ? '<audio autoplay controls hidden><source src="audio/Step6sections.m4a" type="audio/mpeg"></audio>'
+    : '';
+?>
+<?= view('components/page_header', [
+    'title' => 'Section',
+    'icon' => 'fas fa-school',
+    'subtitle' => empty($sections_info->section_id) ? 'Add section' : 'Edit section',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sections', 'url' => base_url('admin/sections')],
+        ['label' => empty($sections_info->section_id) ? 'Add' : 'Edit', 'active' => true],
+    ],
+    'actionsHtml' => $setupBadge . $setupAudio,
+]) ?>
 
 <section class="content">
   <div class="card card-primary">
@@ -37,7 +34,7 @@
       <div class="table-responsive">
 
         <table class="table table-bordered table-striped" id="dynamic_field">
-          <thead class="thead-light">
+          <thead class="table-light">
             <tr>
               <th>Section Name</th>
               <th>Short Name</th>
@@ -90,7 +87,7 @@ endif; ?>
         <button type="button" name="add" id="add" class="btn btn-success"><i class="fas fa-plus"></i> Add Row</button>
       </div>
 
-      <div class="mt-4 text-right">
+      <div class="mt-4 text-end">
         <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
         <button type="reset" class="btn btn-secondary">Reset</button>
         <button type="button" onclick="history.back();" class="btn btn-light">Cancel</button>

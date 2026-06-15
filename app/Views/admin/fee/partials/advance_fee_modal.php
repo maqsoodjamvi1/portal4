@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title">Advance Fee Payment</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body" id="advanceFeeModalBody">
         <!-- Loaded dynamically -->

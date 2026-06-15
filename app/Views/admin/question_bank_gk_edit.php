@@ -26,24 +26,16 @@
 
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Learning Question Bank
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Learning Question Bank</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Learning Question Bank',
+    'icon' => 'fas fa-brain',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Learning Question Bank', 'url' => base_url('admin/question_bank_gk')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -114,12 +106,12 @@
 		    </thead>
 		    <tbody>
            <tr>
-		      <td style="border: 4px solid blue; border-right: 0 none !important;">	
+		      <td style="border: 4px solid blue; border-end: 0 none !important;">	
 		      	<input type="hidden" name="questioncount[]" value="1" />
 	    		<h4>Question English</h4>
 				<textarea class="form-control editor" name="question_text0" id="question_text0"></textarea>
 		      </td>
-			  <td style="border: 4px solid blue; border-left: 0 none !important;">
+			  <td style="border: 4px solid blue; border-start: 0 none !important;">
 				<h4>Answer English</h4>
 				<textarea class="form-control editor" name="answer_text0" id="answer_text0"></textarea>
 			  </td>
@@ -128,7 +120,7 @@
 		  <tfoot>
         <tr>
         <td colspan="5" style="text-align: left;">
-              <input type="button" class="btn btn-lg btn-block btn-primary"  id="addrow" value="Add Question" />
+              <input type="button" class="btn btn-lg w-100 btn-primary"  id="addrow" value="Add Question" />
          </td>
         </tr>
         <tr>
@@ -140,8 +132,8 @@
 		 <div class="col-lg-3">
          <div class="form-group">
            <button type="submit" class="btn btn-primary">Save</button>
-           <button type="reset" class="btn btn-default">Reset</button>
-           <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+           <button type="reset" class="btn btn-secondary">Reset</button>
+           <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
          </div>
 		 </div>
 		 </div>
@@ -161,9 +153,9 @@ $(document).ready(function () {
     $("#addrow").on("click", function () {
         var newRow = $("<tr>");
         var cols = "";
-        cols += '<td style="border: 4px solid blue; border-right: 0 none !important;"><input type="hidden" name="questioncount[]" value="1" /> <textarea class="form-control editor2" name="question_text'+ counter +'" placeholder="Question" id="question_text'+ counter +'" style="margin-bottom: 4px;"></textarea></td><td style="border: 4px solid blue; border-right: 0 none !important;border-left: 0 none !important;"><textarea class="form-control editor2" name="answer_text'+ counter +'" placeholder="Answer" id="answer_text'+ counter +'"></textarea></td>';
+        cols += '<td style="border: 4px solid blue; border-end: 0 none !important;"><input type="hidden" name="questioncount[]" value="1" /> <textarea class="form-control editor2" name="question_text'+ counter +'" placeholder="Question" id="question_text'+ counter +'" style="margin-bottom: 4px;"></textarea></td><td style="border: 4px solid blue; border-end: 0 none !important;border-start: 0 none !important;"><textarea class="form-control editor2" name="answer_text'+ counter +'" placeholder="Answer" id="answer_text'+ counter +'"></textarea></td>';
 	   
-        cols += '<td style="border: 4px solid blue; border-left: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
+        cols += '<td style="border: 4px solid blue; border-start: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
         newRow.append(cols);
         $("table.order-list").append(newRow);
 		

@@ -1,21 +1,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>Make Students Current</h1>
-      </div>
-      <div class="col-sm-6 text-right">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Make Current</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Make Students Current',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Make Current', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <div class="container-fluid">
@@ -31,14 +24,14 @@
         </ul>
       </div>
       <div class="card-header">
-        <div class="form-row">
+        <div class="row">
           <div class="col-lg-6 mb-2">
             <label for="student_search"><strong>Student</strong></label>
             <select class="form-control" id="student_search" style="width:100%"></select>
             <small class="text-muted">Type 2+ letters. Only inactive students are shown.</small>
           </div>
           <div class="col-lg-6 mb-2 d-flex align-items-end">
-            <button type="button" id="reloadBtn" class="btn btn-primary ml-auto">Reload</button>
+            <button type="button" id="reloadBtn" class="btn btn-primary ms-auto">Reload</button>
           </div>
         </div>
       </div>
@@ -52,7 +45,7 @@
                 <th class="sticky-col-2">Student Name</th>
                 <th>Reg No</th>
                 <th>Status</th>
-                <th class="text-right" style="width:140px;">Action</th>
+                <th class="text-end" style="width:140px;">Action</th>
               </tr>
             </thead>
             <tbody id="studentsTbody">
@@ -66,7 +59,7 @@
 
       <div id="loader-1" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);">
         <div style="position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);">
-          <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           <div>Loading...</div>
         </div>
       </div>
@@ -81,7 +74,7 @@
     <form id="makeCurrentForm" class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="makeCurrentLabel">Make Current — <span id="mcStudentName"></span></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span>&times;</span>
         </button>
       </div>
@@ -103,7 +96,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-light" type="button" data-dismiss="modal">Cancel</button>
+        <button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancel</button>
         <button class="btn btn-success" type="submit">Make current</button>
       </div>
     </form>
@@ -181,7 +174,7 @@
     templateResult: function (item) {
       if (item.loading) return item.text;
       const $c = $('<div>').text(item.text);
-      if (item.badge) $c.append($('<small class="text-muted ml-2">').text(item.badge));
+      if (item.badge) $c.append($('<small class="text-muted ms-2">').text(item.badge));
       return $c;
     },
     templateSelection: function (item) { return item.text || item.id; }

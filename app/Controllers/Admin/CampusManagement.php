@@ -3,6 +3,8 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\MemberAcl;
+use App\Libraries\SafeQuery;
 
 class CampusManagement extends BaseController
 {
@@ -13,7 +15,7 @@ class CampusManagement extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form']);
+        helper(['form', 'role']);
         check_permission('admin-permissions');
     }
 
@@ -66,12 +68,6 @@ class CampusManagement extends BaseController
                 $failedCampuses[] = "Campus ID {$campusId} not found";
                 continue;
             }
-
-            // Get campus info for logging
-            $schoolInfo = $this->db->table('system')
-                ->where('system_id', $campus->system_id)
-                ->get()
-                ->getRow();
 
             // ========== COLLECT FILE PATHS BEFORE DELETING RECORDS ==========
             $photoPaths = [];
@@ -126,62 +122,25 @@ class CampusManagement extends BaseController
             $staffIds = array_column($staff, 'id');
             $totalStaffDeleted += count($staffIds);
 
-            // Delete student related records
-            if (!empty($studentIds)) {
-                $studentIdsList = implode(',', $studentIds);
-                
-                $studentTables = [
-                    'a_student_subjects', 'student_class', 'fee_chalan', 'attendance',
-                    'd_exam_results', 'subject_results', 'test_results', 'leave_applications',
-                    'student_notices', 'h_student_bed', 'vehicle_students', 'quiz_attempts',
-                    'student_quiz_levels', 'ai_quiz_decisions', 'complaints', 'attachements',
-                    'school_leaving_certificates'
-                ];
-                
-                foreach ($studentTables as $table) {
-                    $this->db->query("DELETE FROM {$table} WHERE student_id IN ({$studentIdsList})");
-                }
-                
-                // Delete students
-                $this->db->query("DELETE FROM students WHERE student_id IN ({$studentIdsList})");
+            if (! empty($studentIds)) {
+                $this->purgeStudentRecords(SafeQuery::intIds($studentIds));
             }
-            
-            // Delete staff related records
-            if (!empty($staffIds)) {
-                $staffIdsList = implode(',', $staffIds);
-                
-                $staffTables = [
-                    'attendance_employee', 'monthly_attendance_summary', 'salary_slips',
-                    'advance_salaries', 'bonuses', 'deduction_exceptions', 'employee_salary_rules',
-                    'security_deposits', 'teacher_qr_codes', 'teacher_section', 'teacher_subjects',
-                    'employee_leaves', 'employees_leave_applications', 'emp_timings', 'emp_salary',
-                    'user_perms', 'user_roles'
-                ];
-                
-                foreach ($staffTables as $table) {
-                    $this->db->query("DELETE FROM {$table} WHERE user_id IN ({$staffIdsList}) OR emp_id IN ({$staffIdsList}) OR teacher_id IN ({$staffIdsList}) OR tid IN ({$staffIdsList})");
-                }
-                
-                // Delete messages
-                $this->db->query("DELETE FROM messages WHERE sender_id IN ({$staffIdsList}) OR receiver_id IN ({$staffIdsList})");
-                $this->db->query("DELETE FROM chat_box WHERE sender_id IN ({$staffIdsList}) OR receiver_id IN ({$staffIdsList})");
-                
-                // Delete users
-                $this->db->query("DELETE FROM users WHERE id IN ({$staffIdsList})");
+
+            if (! empty($staffIds)) {
+                $this->purgeStaffRecords(SafeQuery::intIds($staffIds));
             }
-            
-            // Delete parents
+
             $parents = $this->db->table('parents')
                 ->select('parent_id')
                 ->where('campus_id', $campusId)
                 ->get()
                 ->getResult();
-            
-            if (!empty($parents)) {
-                $parentIdsList = implode(',', array_column($parents, 'parent_id'));
-                $this->db->query("DELETE FROM parents WHERE parent_id IN ({$parentIdsList})");
-                $this->db->query("DELETE FROM communication_logs WHERE parent_id IN ({$parentIdsList})");
-                $this->db->query("DELETE FROM whatsapp_log WHERE parent_id IN ({$parentIdsList})");
+
+            if (! empty($parents)) {
+                $parentIds = SafeQuery::intIds(array_column($parents, 'parent_id'));
+                SafeQuery::deleteWhereIn($this->db, 'parents', 'parent_id', $parentIds);
+                SafeQuery::deleteWhereIn($this->db, 'communication_logs', 'parent_id', $parentIds);
+                SafeQuery::deleteWhereIn($this->db, 'whatsapp_log', 'parent_id', $parentIds);
             }
             
             // Delete class sections
@@ -191,26 +150,14 @@ class CampusManagement extends BaseController
                 ->get()
                 ->getResult();
             
-            if (!empty($classSections)) {
-                $clsSecIdsList = implode(',', array_column($classSections, 'cls_sec_id'));
-                
-                $sectionTables = [
-                    'section_subjects', 'classdairy', 'school_timings', 'time_table', 'mark_attendance'
-                ];
-                
-                foreach ($sectionTables as $table) {
-                    $this->db->query("DELETE FROM {$table} WHERE cls_sec_id IN ({$clsSecIdsList})");
-                }
-                
-                $this->db->query("DELETE FROM class_section WHERE cls_sec_id IN ({$clsSecIdsList})");
+            if (! empty($classSections)) {
+                $this->purgeClassSections(SafeQuery::intIds(array_column($classSections, 'cls_sec_id')));
             }
             
             // Delete other campus related records
             $deleteTables = [
-                'a_class_subjects', 'a_group_teacher', 'a_subject_group', 'a_groups', 'a_subject', 'a_classes',
-                'fee_amount', 'h_fee_amount', 'fee_plan_months', 'invoices',
-                'h_block_rooms', 'h_blocks', 'h_checkinout', 'h_rooms', 'h_room_beds', 'h_beds',
-                'vehicles', 'expenses', 'assets', 'exp_estimation', 'income_estimation',
+                'fee_amount', 'fee_plan_months', 'invoices',
+                'expenses', 'assets', 'exp_estimation', 'income_estimation',
                 'campus_chalan', 'campus_bills', 'attendance_settings', 'campus_wifi_rules',
                 'campus_salary_settings', 'campus_flags', 'notices', 'meetings', 'sms', 'sms_settings',
                 'pdf_documents', 'slots', 'sports_event_entries', 'sports_event_results',
@@ -249,7 +196,7 @@ class CampusManagement extends BaseController
             // Log deletion
             $this->db->table('changes')->insert([
                 'heading' => 'Campus Deleted (Bulk)',
-                'detail' => "Campus '{$campus->campus_name}' (ID: {$campusId}) from School '{$schoolInfo->system_name}' was deleted with " . count($studentIds) . " students and " . count($staffIds) . " staff members.",
+                'detail' => "Campus '{$campus->campus_name}' (ID: {$campusId}) was deleted with " . count($studentIds) . " students and " . count($staffIds) . " staff members.",
                 'changing_date' => date('Y-m-d H:i:s'),
                 'user_name' => session('member_username'),
                 'user_id' => session('member_userid'),
@@ -367,6 +314,20 @@ class CampusManagement extends BaseController
             ->get()
             ->getResult();
 
+        $campusIds = array_map(static fn ($r) => (int) $r->campus_id, $results);
+        $ownersByCampus = $this->batchLoadCampusOwners($campusIds);
+
+        $userPlanMap = [];
+        foreach ($results as $row) {
+            $campusId = (int) $row->campus_id;
+            $owner = $ownersByCampus[$campusId] ?? null;
+            $planId = (int) ($row->plan_id ?? 0);
+            if ($owner && $planId > 0) {
+                $userPlanMap[(int) $owner->id] = $planId;
+            }
+        }
+        $rolesByUser = $this->batchLoadOwnerRolesForUsers($userPlanMap);
+
         $data = [];
         $start = (int)$request->getPost('start');
         $count = $start + 1;
@@ -384,6 +345,25 @@ class CampusManagement extends BaseController
                 ->where('status', 1)
                 ->countAllResults();
 
+            $campusId = (int) $row->campus_id;
+            $owner = $ownersByCampus[$campusId] ?? null;
+            $roleInfo = $owner
+                ? ($rolesByUser[(int) $owner->id] ?? [
+                    'role_names' => [],
+                    'has_director_system' => false,
+                    'has_only_director_system' => false,
+                ])
+                : [
+                    'role_names' => [],
+                    'has_director_system' => false,
+                    'has_only_director_system' => false,
+                ];
+
+            $ownerName = '';
+            if ($owner) {
+                $ownerName = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
+            }
+
             $data[] = [
                 'sno' => $count++,
                 'campus_id' => $row->campus_id,
@@ -392,6 +372,12 @@ class CampusManagement extends BaseController
                 'campus_address' => $row->campus_address ?? 'N/A',
                 'contact' => $row->campus_landline ?: ($row->campus_mobile ?: 'N/A'),
                 'campus_status' => $row->campus_status ?? 'inactive',
+                'owner_username' => $owner ? (string) ($owner->username ?? '') : '',
+                'owner_name' => $ownerName,
+                'owner_status' => $owner ? (int) ($owner->status ?? 0) : null,
+                'owner_roles' => $roleInfo['role_names'],
+                'owner_has_director_system' => $roleInfo['has_director_system'],
+                'owner_has_only_director_system' => $roleInfo['has_only_director_system'],
                 'total_students' => $studentCount,
                 'total_staff' => $staffCount,
                 'campus_expiry' => $row->campus_expiry,
@@ -432,12 +418,6 @@ public function delete()
     $this->db->transBegin();
 
     try {
-        // Get campus info for logging
-        $schoolInfo = $this->db->table('system')
-            ->where('system_id', $campus->system_id)
-            ->get()
-            ->getRow();
-
         // Get all students in this campus (including active ones)
         $students = $this->db->table('students')
             ->select('student_id')
@@ -456,196 +436,44 @@ public function delete()
         
         $staffIds = array_column($staff, 'id');
 
-        // ========== DELETE STUDENT RELATED RECORDS FIRST ==========
-        if (!empty($studentIds)) {
-            $studentIdsList = implode(',', $studentIds);
-            
-            // Student subjects
-            $this->db->query("DELETE FROM a_student_subjects WHERE student_id IN ({$studentIdsList})");
-            
-            // Student class records
-            $this->db->query("DELETE FROM student_class WHERE student_id IN ({$studentIdsList})");
-            
-            // Fee challans
-            $this->db->query("DELETE FROM fee_chalan WHERE student_id IN ({$studentIdsList})");
-            
-            // Attendance records
-            $this->db->query("DELETE FROM attendance WHERE student_id IN ({$studentIdsList})");
-            
-            // Exam results
-            $this->db->query("DELETE FROM d_exam_results WHERE student_id IN ({$studentIdsList})");
-            
-            // Subject results
-            $this->db->query("DELETE FROM subject_results WHERE student_id IN ({$studentIdsList})");
-            
-            // Test results
-            $this->db->query("DELETE FROM test_results WHERE student_id IN ({$studentIdsList})");
-            
-            // Leave applications
-            $this->db->query("DELETE FROM leave_applications WHERE student_id IN ({$studentIdsList})");
-            
-            // Student notices
-            $this->db->query("DELETE FROM student_notices WHERE std_id IN ({$studentIdsList})");
-            
-            // Hostel student beds
-            $this->db->query("DELETE FROM h_student_bed WHERE student_id IN ({$studentIdsList})");
-            
-            // Vehicle students
-            $this->db->query("DELETE FROM vehicle_students WHERE student_id IN ({$studentIdsList})");
-            
-            // Quiz attempts
-            $this->db->query("DELETE FROM quiz_attempts WHERE student_id IN ({$studentIdsList})");
-            $this->db->query("DELETE FROM student_quiz_levels WHERE student_id IN ({$studentIdsList})");
-            
-            // AI quiz decisions
-            $this->db->query("DELETE FROM ai_quiz_decisions WHERE student_id IN ({$studentIdsList})");
-            
-            // Complaints
-            $this->db->query("DELETE FROM complaints WHERE student_id IN ({$studentIdsList})");
-            
-            // Attachments
-            $this->db->query("DELETE FROM attachements WHERE student_id IN ({$studentIdsList})");
-            
-            // School leaving certificates
-            $this->db->query("DELETE FROM school_leaving_certificates WHERE student_id IN ({$studentIdsList})");
-            
-            // Finally delete students
-            $this->db->query("DELETE FROM students WHERE student_id IN ({$studentIdsList})");
+        if (! empty($studentIds)) {
+            $this->purgeStudentRecords(SafeQuery::intIds($studentIds));
         }
-        
-        // ========== DELETE STAFF/USER RELATED RECORDS ==========
-        if (!empty($staffIds)) {
-            $staffIdsList = implode(',', $staffIds);
-            
-            // Employee attendance
-            $this->db->query("DELETE FROM attendance_employee WHERE emp_id IN ({$staffIdsList})");
-            
-            // Monthly attendance summary
-            $this->db->query("DELETE FROM monthly_attendance_summary WHERE user_id IN ({$staffIdsList})");
-            
-            // Salary slips
-            $this->db->query("DELETE FROM salary_slips WHERE user_id IN ({$staffIdsList})");
-            
-            // Advance salaries
-            $this->db->query("DELETE FROM advance_salaries WHERE user_id IN ({$staffIdsList})");
-            
-            // Bonuses
-            $this->db->query("DELETE FROM bonuses WHERE user_id IN ({$staffIdsList})");
-            
-            // Deduction exceptions
-            $this->db->query("DELETE FROM deduction_exceptions WHERE user_id IN ({$staffIdsList})");
-            
-            // Employee salary rules
-            $this->db->query("DELETE FROM employee_salary_rules WHERE user_id IN ({$staffIdsList})");
-            
-            // Security deposits
-            $this->db->query("DELETE FROM security_deposits WHERE user_id IN ({$staffIdsList})");
-            
-            // Teacher QR codes
-            $this->db->query("DELETE FROM teacher_qr_codes WHERE teacher_id IN ({$staffIdsList})");
-            
-            // Teacher sections
-            $this->db->query("DELETE FROM teacher_section WHERE tid IN ({$staffIdsList})");
-            
-            // Teacher subjects
-            $this->db->query("DELETE FROM teacher_subjects WHERE tid IN ({$staffIdsList})");
-            
-            // Employee leaves
-            $this->db->query("DELETE FROM employee_leaves WHERE employee_id IN ({$staffIdsList})");
-            $this->db->query("DELETE FROM employees_leave_applications WHERE emp_id IN ({$staffIdsList})");
-            
-            // Employee timings
-            $this->db->query("DELETE FROM emp_timings WHERE user_id IN ({$staffIdsList})");
-            
-            // Employee salary
-            $this->db->query("DELETE FROM emp_salary WHERE emp_id IN ({$staffIdsList})");
-            
-            // Messages
-            $this->db->query("DELETE FROM messages WHERE sender_id IN ({$staffIdsList}) OR receiver_id IN ({$staffIdsList})");
-            
-            // Chat box
-            $this->db->query("DELETE FROM chat_box WHERE sender_id IN ({$staffIdsList}) OR receiver_id IN ({$staffIdsList})");
-            
-            // User permissions
-            $this->db->query("DELETE FROM user_perms WHERE userID IN ({$staffIdsList})");
-            $this->db->query("DELETE FROM user_roles WHERE userID IN ({$staffIdsList})");
-            
-            // Finally delete users
-            $this->db->query("DELETE FROM users WHERE id IN ({$staffIdsList})");
+
+        if (! empty($staffIds)) {
+            $this->purgeStaffRecords(SafeQuery::intIds($staffIds));
         }
-        
-        // ========== DELETE PARENTS RELATED RECORDS ==========
-        // Get parents for this campus
+
         $parents = $this->db->table('parents')
             ->select('parent_id')
             ->where('campus_id', $campusId)
             ->get()
             ->getResult();
-        
-        if (!empty($parents)) {
-            $parentIdsList = implode(',', array_column($parents, 'parent_id'));
-            $this->db->query("DELETE FROM parents WHERE parent_id IN ({$parentIdsList})");
-            $this->db->query("DELETE FROM communication_logs WHERE parent_id IN ({$parentIdsList})");
-            $this->db->query("DELETE FROM whatsapp_log WHERE parent_id IN ({$parentIdsList})");
+
+        if (! empty($parents)) {
+            $parentIds = SafeQuery::intIds(array_column($parents, 'parent_id'));
+            SafeQuery::deleteWhereIn($this->db, 'parents', 'parent_id', $parentIds);
+            SafeQuery::deleteWhereIn($this->db, 'communication_logs', 'parent_id', $parentIds);
+            SafeQuery::deleteWhereIn($this->db, 'whatsapp_log', 'parent_id', $parentIds);
         }
-        
-        // ========== DELETE CLASS/SECTION RELATED RECORDS ==========
-        // Get class sections for this campus
+
         $classSections = $this->db->table('class_section')
             ->select('cls_sec_id')
             ->where('campus_id', $campusId)
             ->get()
             ->getResult();
-        
-        if (!empty($classSections)) {
-            $clsSecIdsList = implode(',', array_column($classSections, 'cls_sec_id'));
-            
-            // Section subjects
-            $this->db->query("DELETE FROM section_subjects WHERE cls_sec_id IN ({$clsSecIdsList})");
-            
-            // Class dairy
-            $this->db->query("DELETE FROM classdairy WHERE cls_sec_id IN ({$clsSecIdsList})");
-            
-            // School timings
-            $this->db->query("DELETE FROM school_timings WHERE cls_sec_id IN ({$clsSecIdsList})");
-            
-            // Time table
-            $this->db->query("DELETE FROM time_table WHERE cls_sec_id IN ({$clsSecIdsList})");
-            
-            // Mark attendance
-            $this->db->query("DELETE FROM mark_attendance WHERE cls_sec_id IN ({$clsSecIdsList})");
-            
-            // Delete class sections
-            $this->db->query("DELETE FROM class_section WHERE cls_sec_id IN ({$clsSecIdsList})");
+
+        if (! empty($classSections)) {
+            $this->purgeClassSections(SafeQuery::intIds(array_column($classSections, 'cls_sec_id')));
         }
         
         // ========== DELETE OTHER CAMPUS RELATED RECORDS ==========
         $deleteTables = [
-            // Academic
-            'a_class_subjects',
-            'a_group_teacher',
-            'a_subject_group',
-            'a_groups',
-            'a_subject',
-            'a_classes',
-            
             // Fee related
             'fee_amount',
-            'h_fee_amount',
             'fee_plan_months',
             'invoice_sequencesdd',
             'invoices',
-            
-            // Hostel related
-            'h_block_rooms',
-            'h_blocks',
-            'h_checkinout',
-            'h_rooms',
-            'h_room_beds',
-            'h_beds',
-            
-            // Vehicle
-            'vehicles',
             
             // Expenses and assets
             'expenses',
@@ -750,7 +578,7 @@ public function delete()
         // Log deletion
         $this->db->table('changes')->insert([
             'heading' => 'Campus Deleted',
-            'detail' => "Campus '{$campus->campus_name}' (ID: {$campusId}) from School '{$schoolInfo->system_name}' was deleted with all associated records including " . count($studentIds) . " students and " . count($staffIds) . " staff members.",
+            'detail' => "Campus '{$campus->campus_name}' (ID: {$campusId}) was deleted with all associated records including " . count($studentIds) . " students and " . count($staffIds) . " staff members.",
             'changing_date' => date('Y-m-d H:i:s'),
             'user_name' => session('member_username'),
             'user_id' => session('member_userid'),
@@ -1020,11 +848,959 @@ public function delete()
         ]);
     }
 
+    public function getPaymentHistory()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        $campus = $this->db->table('campus')->where('campus_id', $campusId)->get()->getRow();
+        if (!$campus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Campus not found',
+            ]);
+        }
+
+        try {
+            $history = $this->buildCampusPaymentHistory($campusId);
+            $activeBill = $this->getCampusBillForExpiry($campusId);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'campus_name' => $campus->campus_name,
+                    'currency_code' => $campus->currency_code ?? 'PKR',
+                    'current_expiry' => $activeBill ? ($activeBill->campus_expiry ?? null) : null,
+                    'current_bill_amount' => $activeBill ? ($activeBill->bill_amount ?? null) : null,
+                    'current_bill_status' => $activeBill ? ($activeBill->bill_status ?? null) : null,
+                    'payments' => $history['payments'],
+                    'summary' => $history['summary'],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'getPaymentHistory campus ' . $campusId . ': ' . $e->getMessage());
+
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Could not load payment history. ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function getCampusOwner()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        $campus = $this->db->table('campus')->where('campus_id', $campusId)->get()->getRow();
+        if (!$campus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Campus not found',
+            ]);
+        }
+
+        $owner = $this->getCampusOwnerUser($campusId);
+        if (!$owner) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No owner user found for this campus',
+            ]);
+        }
+
+        $bill = $this->getCampusBillForExpiry($campusId);
+        $planId = (int) ($bill->plan_id ?? 0);
+        $roleInfo = $this->getOwnerRoleInfo((int) $owner->id, $planId);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => [
+                'campus_name' => $campus->campus_name,
+                'plan_id' => $planId,
+                'plan_name' => $this->getPlanName($planId),
+                'owner' => [
+                    'id' => $owner->id,
+                    'first_name' => $owner->first_name,
+                    'last_name' => $owner->last_name,
+                    'username' => $owner->username,
+                    'email' => $owner->email,
+                    'status' => (int) ($owner->status ?? 0),
+                    'is_active' => (int) ($owner->status ?? 0) === 1,
+                ],
+                'current_roles' => $roleInfo['role_names'],
+                'has_director_system' => $roleInfo['has_director_system'],
+                'has_only_director_system' => $roleInfo['has_only_director_system'],
+                'director_system_role_id' => $roleInfo['director_system_role_id'],
+                'campus_expiry' => $bill->campus_expiry ?? null,
+                'campus_expired' => $bill && date('Y-m-d') > (string) ($bill->campus_expiry ?? ''),
+            ],
+        ]);
+    }
+
+    public function assignOwnerDirectorSystem()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        $campus = $this->db->table('campus')->where('campus_id', $campusId)->get()->getRow();
+        if (!$campus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Campus not found',
+            ]);
+        }
+
+        $owner = $this->getCampusOwnerUser($campusId);
+        if (!$owner) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No owner user found for this campus',
+            ]);
+        }
+
+        $planId = $this->getCampusPlanId($campusId);
+        if ($planId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No active subscription plan found for this campus',
+            ]);
+        }
+
+        $directorSystemRoleId = resolveRoleIdForPlan('Director System', $planId);
+        if ($directorSystemRoleId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Director System role is not configured for this campus plan',
+            ]);
+        }
+
+        $ownerId = (int) $owner->id;
+        $roleInfo = $this->getOwnerRoleInfo($ownerId, $planId);
+        $oldRolesLabel = $roleInfo['role_names'] !== [] ? implode(', ', $roleInfo['role_names']) : 'None';
+
+        if ($roleInfo['has_only_director_system']) {
+            return $this->response->setJSON([
+                'success' => true,
+                'msg' => 'Owner already has only the Director System role for this plan. Ask them to log out and log back in if the menu still looks limited.',
+                'data' => [
+                    'owner_email' => $owner->email,
+                    'old_roles' => $oldRolesLabel,
+                    'new_role' => 'Director System',
+                    'already_assigned' => true,
+                ],
+            ]);
+        }
+
+        $this->db->transStart();
+
+        $this->db->table('user_roles')->where('userID', $ownerId)->delete();
+        $this->db->table('user_roles')->insert([
+            'userID'  => $ownerId,
+            'roleID'  => $directorSystemRoleId,
+            'addDate' => date('Y-m-d H:i:s'),
+        ]);
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Could not assign Director System role',
+            ]);
+        }
+
+        (new MemberAcl($ownerId))->clearUserCaches($ownerId);
+
+        $ownerLabel = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? '')) ?: $owner->username;
+
+        try {
+            $this->db->table('changes')->insert([
+                'heading' => 'Campus Owner Role Assigned',
+                'detail' => "Assigned Director System (role ID {$directorSystemRoleId}, plan {$planId}) to campus owner '{$ownerLabel}' (user ID: {$ownerId}) of campus '{$campus->campus_name}' (ID: {$campusId}). Previous roles: {$oldRolesLabel}.",
+                'changing_date' => date('Y-m-d H:i:s'),
+                'user_name' => session('member_username') ?? '',
+                'user_id' => session('member_userid') ?? 0,
+                'campus_id' => $campusId,
+                'created_date' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Owner role assign audit log failed: ' . $e->getMessage());
+        }
+
+        $hadExtraRoles = $roleInfo['has_director_system'] || $roleInfo['role_names'] !== [];
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg' => $hadExtraRoles
+                ? 'Previous roles removed. Director System is now the only role. Ask the owner to log out and log back in to refresh the menu.'
+                : 'Director System role assigned. Ask the owner to log out and log back in to refresh the menu.',
+            'data' => [
+                'owner_email' => $owner->email,
+                'old_roles' => $oldRolesLabel,
+                'new_role' => 'Director System',
+                'role_id' => $directorSystemRoleId,
+                'plan_id' => $planId,
+                'already_assigned' => false,
+                'roles_stripped' => $hadExtraRoles,
+            ],
+        ]);
+    }
+
+    public function activateOwner()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        $owner = $this->getCampusOwnerUser($campusId);
+        if (!$owner) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No owner user found for this campus',
+            ]);
+        }
+
+        if ((int) ($owner->status ?? 0) === 1) {
+            return $this->response->setJSON([
+                'success' => true,
+                'msg' => 'Owner account is already active',
+            ]);
+        }
+
+        $this->db->table('users')->where('id', $owner->id)->update(['status' => 1]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg' => 'Campus owner account activated. They can log in now (if campus expiry is also valid).',
+        ]);
+    }
+
+    public function updateExpiry()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        $expiry = trim((string) $this->request->getPost('campus_expiry'));
+
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', $expiry);
+        if (!$date || $date->format('Y-m-d') !== $expiry) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Please enter a valid expiry date',
+            ]);
+        }
+
+        $campus = $this->db->table('campus')->where('campus_id', $campusId)->get()->getRow();
+        if (!$campus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Campus not found',
+            ]);
+        }
+
+        $bill = $this->getCampusBillForExpiry($campusId);
+        if (!$bill) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No subscription bill found for this campus',
+            ]);
+        }
+
+        $oldExpiry = $bill->campus_expiry;
+
+        $billUpdate = ['campus_expiry' => $expiry];
+        if ($expiry >= date('Y-m-d')) {
+            $billUpdate['status'] = 1;
+        }
+
+        $this->db->table('campus_bills')
+            ->where('bill_id', $bill->bill_id)
+            ->update($billUpdate);
+
+        // Extending expiry: reactivate campus owner so they can log in after subscription fix
+        if ($expiry >= date('Y-m-d')) {
+            $owner = $this->getCampusOwnerUser($campusId);
+            if ($owner && (int) ($owner->status ?? 0) !== 1) {
+                $this->db->table('users')->where('id', $owner->id)->update(['status' => 1]);
+            }
+        }
+
+        $dbError = $this->db->error();
+        if (! empty($dbError['code'])) {
+            $dbMessage = trim((string) ($dbError['message'] ?? ''));
+
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => $dbMessage !== '' ? ('Database error: ' . $dbMessage) : 'Could not update campus expiry',
+            ]);
+        }
+
+        try {
+            $this->db->table('changes')->insert([
+                'heading' => 'Campus Expiry Updated',
+                'detail' => "Campus '{$campus->campus_name}' (ID: {$campusId}) expiry changed from {$oldExpiry} to {$expiry}.",
+                'changing_date' => date('Y-m-d H:i:s'),
+                'user_name' => session('member_username') ?? '',
+                'user_id' => session('member_userid') ?? 0,
+                'campus_id' => $campusId,
+                'created_date' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Campus expiry audit log failed: ' . $e->getMessage());
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg' => 'Campus expiry updated successfully',
+            'campus_expiry' => $expiry,
+        ]);
+    }
+
+    public function resetOwnerPassword()
+    {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)->setJSON([
+                'success' => false,
+                'msg' => 'Invalid request method',
+            ]);
+        }
+
+        $campusId = (int) $this->request->getPost('campus_id');
+        $password = trim((string) $this->request->getPost('password'));
+        $confirm = trim((string) $this->request->getPost('confirm_password'));
+
+        if ($campusId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Invalid campus',
+            ]);
+        }
+
+        if (strlen($password) < 6) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Password must be at least 6 characters',
+            ]);
+        }
+
+        if ($password !== $confirm) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Passwords do not match',
+            ]);
+        }
+
+        $campus = $this->db->table('campus')->where('campus_id', $campusId)->get()->getRow();
+        if (!$campus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Campus not found',
+            ]);
+        }
+
+        $owner = $this->getCampusOwnerUser($campusId);
+        if (!$owner) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'No owner user found for this campus',
+            ]);
+        }
+
+        $update = [
+            'password' => password_hash($password, PASSWORD_BCRYPT),
+        ];
+
+        if ($this->db->fieldExists('wpwd', 'users')) {
+            $update['wpwd'] = $password;
+        }
+
+        $this->db->table('users')->where('id', $owner->id)->update($update);
+
+        $dbError = $this->db->error();
+        if (! empty($dbError['code'])) {
+            $dbMessage = trim((string) ($dbError['message'] ?? ''));
+
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => $dbMessage !== '' ? ('Database error: ' . $dbMessage) : 'Could not reset password',
+            ]);
+        }
+
+        $ownerLabel = trim($owner->first_name . ' ' . $owner->last_name) ?: $owner->username;
+
+        try {
+            $this->db->table('changes')->insert([
+                'heading' => 'Campus Owner Password Reset',
+                'detail' => "Password reset for campus owner '{$ownerLabel}' (user ID: {$owner->id}) of campus '{$campus->campus_name}' (ID: {$campusId}).",
+                'changing_date' => date('Y-m-d H:i:s'),
+                'user_name' => session('member_username') ?? '',
+                'user_id' => session('member_userid') ?? 0,
+                'campus_id' => $campusId,
+                'created_date' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Owner password reset audit log failed: ' . $e->getMessage());
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg' => 'Owner password reset successfully',
+        ]);
+    }
+
+    /**
+     * Subscription payment rows from campus_bills (newest first).
+     */
+    private function buildCampusPaymentHistory(int $campusId): array
+    {
+        $rows = $this->db->table('campus_bills')
+            ->where('campus_id', $campusId)
+            ->orderBy('bill_id', 'DESC')
+            ->get()
+            ->getResult();
+
+        $planNames = $this->loadSystemPlanNames($rows);
+        $payments = [];
+        $totalPaid = 0.0;
+        $paidCount = 0;
+
+        foreach ($rows as $row) {
+            $billAmount = (float) ($row->bill_amount ?? 0);
+            $discount = isset($row->discount) ? (float) $row->discount : 0.0;
+            $isPaid = strtolower((string) ($row->bill_status ?? '')) === 'paid'
+                || (isset($row->paid_date) && $row->paid_date !== null && $row->paid_date !== '' && $row->paid_date !== '0000-00-00');
+
+            $paymentDate = $this->resolveBillPaymentDate($row, $isPaid);
+            $planId = (int) ($row->plan_id ?? 0);
+            $planName = $planNames[$planId] ?? ('Plan #' . ($planId ?: '—'));
+
+            if ($isPaid) {
+                $totalPaid += $billAmount;
+                $paidCount++;
+            }
+
+            $payments[] = [
+                'bill_id' => (int) ($row->bill_id ?? 0),
+                'plan_name' => $planName,
+                'bill_amount' => $billAmount,
+                'discount' => $discount,
+                'bill_status' => $row->bill_status ?? 'unknown',
+                'is_paid' => $isPaid,
+                'is_active' => (int) ($row->status ?? 0) === 1,
+                'bill_issue_date' => $this->formatDateOnly($row->bill_issue_date ?? null),
+                'paid_date' => $this->formatDateOnly($row->paid_date ?? null),
+                'payment_date' => $paymentDate,
+                'campus_expiry' => $this->formatDateOnly($row->campus_expiry ?? null),
+                'install_months' => (int) ($row->install_id ?? 0),
+            ];
+        }
+
+        return [
+            'payments' => $payments,
+            'summary' => [
+                'total_records' => count($payments),
+                'paid_count' => $paidCount,
+                'total_paid_amount' => round($totalPaid, 2),
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, object> $billRows
+     * @return array<int, string>
+     */
+    private function loadSystemPlanNames(array $billRows): array
+    {
+        $planIds = [];
+        foreach ($billRows as $row) {
+            $planId = (int) ($row->plan_id ?? 0);
+            if ($planId > 0) {
+                $planIds[$planId] = $planId;
+            }
+        }
+
+        if ($planIds === []) {
+            return [];
+        }
+
+        if (! $this->db->tableExists('system_plans')) {
+            return [];
+        }
+
+        $plans = $this->db->table('system_plans')
+            ->select('plan_id, plan_name')
+            ->whereIn('plan_id', array_values($planIds))
+            ->get()
+            ->getResult();
+
+        $map = [];
+        foreach ($plans as $plan) {
+            $map[(int) $plan->plan_id] = (string) ($plan->plan_name ?? '');
+        }
+
+        return $map;
+    }
+
+    private function resolveBillPaymentDate(object $row, bool $isPaid): ?string
+    {
+        if (! $isPaid) {
+            return null;
+        }
+
+        if (isset($row->paid_date) && $row->paid_date !== null && $row->paid_date !== '' && $row->paid_date !== '0000-00-00') {
+            return $this->formatDateOnly($row->paid_date);
+        }
+
+        if (isset($row->updated_date) && $row->updated_date !== null && $row->updated_date !== '' && $row->updated_date !== '0000-00-00') {
+            return $this->formatDateOnly($row->updated_date);
+        }
+
+        return $this->formatDateOnly($row->created_date ?? null);
+    }
+
+    private function formatDateOnly($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $ts = strtotime((string) $value);
+
+        return $ts ? date('Y-m-d', $ts) : null;
+    }
+
+    /**
+     * Active campus bill, or latest bill if none is marked active.
+     */
+    private function getCampusBillForExpiry(int $campusId): ?object
+    {
+        $bill = $this->db->table('campus_bills')
+            ->where('campus_id', $campusId)
+            ->where('status', 1)
+            ->orderBy('bill_id', 'DESC')
+            ->get()
+            ->getRow();
+
+        if ($bill) {
+            return $bill;
+        }
+
+        return $this->db->table('campus_bills')
+            ->where('campus_id', $campusId)
+            ->orderBy('bill_id', 'DESC')
+            ->get()
+            ->getRow();
+    }
+
+    /**
+     * @param list<int> $campusIds
+     * @return array<int, object>
+     */
+    private function batchLoadCampusOwners(array $campusIds): array
+    {
+        $campusIds = array_values(array_unique(array_filter(array_map('intval', $campusIds))));
+        if ($campusIds === []) {
+            return [];
+        }
+
+        $subRows = $this->db->table('users')
+            ->select('campus_id, MIN(id) AS owner_id', false)
+            ->whereIn('campus_id', $campusIds)
+            ->groupBy('campus_id')
+            ->get()
+            ->getResult();
+
+        if ($subRows === []) {
+            return [];
+        }
+
+        $ownerIds = array_map(static fn ($r) => (int) $r->owner_id, $subRows);
+        $owners = $this->db->table('users')
+            ->select('id, campus_id, first_name, last_name, username, email, status')
+            ->whereIn('id', $ownerIds)
+            ->get()
+            ->getResult();
+
+        $map = [];
+        foreach ($owners as $owner) {
+            $map[(int) $owner->campus_id] = $owner;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Plan-aware role names for campus owners (batch; mirrors getOwnerRoleInfo).
+     *
+     * @param array<int, int> $userPlanMap user_id => plan_id
+     * @return array<int, array{role_names: list<string>, has_director_system: bool, has_only_director_system: bool}>
+     */
+    private function batchLoadOwnerRolesForUsers(array $userPlanMap): array
+    {
+        $default = [
+            'role_names' => [],
+            'has_director_system' => false,
+            'has_only_director_system' => false,
+        ];
+
+        if ($userPlanMap === []) {
+            return [];
+        }
+
+        $userIds = array_map('intval', array_keys($userPlanMap));
+        $planIds = array_values(array_unique(array_filter(array_map('intval', array_values($userPlanMap)))));
+
+        $result = [];
+        foreach ($userIds as $userId) {
+            $result[$userId] = $default;
+        }
+
+        if ($planIds === []) {
+            return $result;
+        }
+
+        $directorRoleByPlan = [];
+        foreach ($planIds as $planId) {
+            $directorRoleByPlan[$planId] = resolveRoleIdForPlan('Director System', $planId);
+        }
+
+        $roleRows = $this->db->table('roles r')
+            ->select('r.id, r.role_name_id, r.plan_id, rn.rolename')
+            ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+            ->whereIn('r.plan_id', $planIds)
+            ->get()
+            ->getResult();
+
+        $rolesByPlanPrimary = [];
+        $rolesByPlanLegacy = [];
+        foreach ($roleRows as $roleRow) {
+            $planId = (int) $roleRow->plan_id;
+            $roleId = (int) $roleRow->id;
+            $roleNameId = (int) $roleRow->role_name_id;
+            $roleName = trim((string) ($roleRow->rolename ?? ''));
+            if ($roleName === '') {
+                continue;
+            }
+            $rolesByPlanPrimary[$planId][$roleId] = $roleName;
+            $rolesByPlanLegacy[$planId][$roleNameId] = $roleName;
+        }
+
+        $userRoleRows = $this->db->table('user_roles')
+            ->whereIn('userID', $userIds)
+            ->get()
+            ->getResult();
+
+        $storedRoleIdsByUser = [];
+        foreach ($userRoleRows as $userRoleRow) {
+            $userId = (int) $userRoleRow->userID;
+            $storedRoleIdsByUser[$userId][] = (int) ($userRoleRow->roleID ?? 0);
+        }
+
+        foreach ($userRoleRows as $userRoleRow) {
+            $userId = (int) $userRoleRow->userID;
+            $storedRoleId = (int) ($userRoleRow->roleID ?? 0);
+            $planId = (int) ($userPlanMap[$userId] ?? 0);
+            if ($planId <= 0 || $storedRoleId <= 0) {
+                continue;
+            }
+
+            $roleName = $rolesByPlanPrimary[$planId][$storedRoleId]
+                ?? $rolesByPlanLegacy[$planId][$storedRoleId]
+                ?? null;
+            if ($roleName === null || $roleName === '') {
+                continue;
+            }
+
+            if (! in_array($roleName, $result[$userId]['role_names'], true)) {
+                $result[$userId]['role_names'][] = $roleName;
+            }
+
+            $directorSystemRoleId = $directorRoleByPlan[$planId] ?? 0;
+            if ($storedRoleId === $directorSystemRoleId || strcasecmp($roleName, 'Director System') === 0) {
+                $result[$userId]['has_director_system'] = true;
+            }
+        }
+
+        $directorSystemRoleNameId = getRoleNameId('Director System');
+        foreach ($userIds as $userId) {
+            $planId = (int) ($userPlanMap[$userId] ?? 0);
+            $directorSystemRoleId = $directorRoleByPlan[$planId] ?? 0;
+            $storedIds = $storedRoleIdsByUser[$userId] ?? [];
+            if (count($storedIds) !== 1) {
+                continue;
+            }
+
+            $storedRoleId = $storedIds[0];
+            if ($storedRoleId === $directorSystemRoleId) {
+                $result[$userId]['has_only_director_system'] = true;
+            } elseif ($directorSystemRoleNameId > 0 && $storedRoleId === $directorSystemRoleNameId) {
+                $result[$userId]['has_only_director_system'] = true;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * First user created for the campus (campus director / owner).
+     */
+    private function getCampusOwnerUser(int $campusId): ?object
+    {
+        return $this->db->table('users')
+            ->select('id, first_name, last_name, username, email, status, created_date')
+            ->where('campus_id', $campusId)
+            ->orderBy('id', 'ASC')
+            ->limit(1)
+            ->get()
+            ->getRow();
+    }
+
+    private function getCampusPlanId(int $campusId): int
+    {
+        $bill = $this->getCampusBillForExpiry($campusId);
+
+        return (int) ($bill->plan_id ?? 0);
+    }
+
+    private function getPlanName(int $planId): string
+    {
+        if ($planId <= 0) {
+            return '';
+        }
+
+        $row = $this->db->table('system_plans')
+            ->select('plan_name')
+            ->where('plan_id', $planId)
+            ->limit(1)
+            ->get()
+            ->getRow();
+
+        return (string) ($row->plan_name ?? '');
+    }
+
+    /**
+     * @return array{role_names: list<string>, has_director_system: bool, has_only_director_system: bool, director_system_role_id: int}
+     */
+    private function getOwnerRoleInfo(int $userId, int $planId): array
+    {
+        $directorSystemRoleId = $planId > 0 ? resolveRoleIdForPlan('Director System', $planId) : 0;
+        $roleNames = [];
+        $hasDirectorSystem = false;
+
+        if ($userId <= 0 || $planId <= 0) {
+            return [
+                'role_names' => $roleNames,
+                'has_director_system' => false,
+                'has_only_director_system' => false,
+                'director_system_role_id' => $directorSystemRoleId,
+            ];
+        }
+
+        $primary = $this->db->table('user_roles ur')
+            ->select('r.id, rn.rolename')
+            ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+            ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+            ->where('ur.userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        $legacy = $this->db->table('user_roles ur')
+            ->select('r.id, rn.rolename')
+            ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+            ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+            ->where('ur.userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        $seen = [];
+        foreach (array_merge($primary, $legacy) as $row) {
+            $name = trim((string) ($row['rolename'] ?? ''));
+            $rid  = (int) ($row['id'] ?? 0);
+            if ($name === '' || isset($seen[$name])) {
+                continue;
+            }
+            $seen[$name] = true;
+            $roleNames[] = $name;
+            if ($rid === $directorSystemRoleId || strcasecmp($name, 'Director System') === 0) {
+                $hasDirectorSystem = true;
+            }
+        }
+
+        return [
+            'role_names' => $roleNames,
+            'has_director_system' => $hasDirectorSystem,
+            'has_only_director_system' => $this->ownerHasExclusiveDirectorSystemRole($userId, $directorSystemRoleId),
+            'director_system_role_id' => $directorSystemRoleId,
+        ];
+    }
+
+    /**
+     * True when user_roles contains exactly one row mapped to Director System.
+     */
+    private function ownerHasExclusiveDirectorSystemRole(int $userId, int $directorSystemRoleId): bool
+    {
+        if ($userId <= 0 || $directorSystemRoleId <= 0) {
+            return false;
+        }
+
+        $rows = $this->db->table('user_roles')
+            ->where('userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        if (count($rows) !== 1) {
+            return false;
+        }
+
+        $storedRoleId = (int) ($rows[0]['roleID'] ?? 0);
+        if ($storedRoleId === $directorSystemRoleId) {
+            return true;
+        }
+
+        $directorSystemRoleNameId = getRoleNameId('Director System');
+
+        return $directorSystemRoleNameId > 0 && $storedRoleId === $directorSystemRoleNameId;
+    }
+
     private function getSchools()
     {
         return $this->db->table('system')
             ->orderBy('system_name', 'asc')
             ->get()
             ->getResult();
+    }
+
+    /**
+     * @param list<int> $studentIds
+     */
+    private function purgeStudentRecords(array $studentIds): void
+    {
+        if ($studentIds === []) {
+            return;
+        }
+
+        foreach ([
+            'a_student_subjects', 'student_class', 'fee_chalan', 'attendance',
+            'd_exam_results', 'subject_results', 'test_results', 'leave_applications',
+            'vehicle_students', 'quiz_attempts',
+            'student_quiz_levels', 'ai_quiz_decisions', 'complaints', 'attachements',
+            'school_leaving_certificates',
+        ] as $table) {
+            SafeQuery::deleteWhereIn($this->db, $table, 'student_id', $studentIds);
+        }
+
+        SafeQuery::deleteWhereIn($this->db, 'student_notices', 'std_id', $studentIds);
+        SafeQuery::deleteWhereIn($this->db, 'students', 'student_id', $studentIds);
+    }
+
+    /**
+     * @param list<int> $staffIds
+     */
+    private function purgeStaffRecords(array $staffIds): void
+    {
+        if ($staffIds === []) {
+            return;
+        }
+
+        SafeQuery::deleteWhereIn($this->db, 'attendance_employee', 'emp_id', $staffIds);
+        foreach ([
+            'monthly_attendance_summary', 'salary_slips', 'advance_salaries', 'bonuses',
+            'deduction_exceptions', 'employee_salary_rules', 'security_deposits', 'emp_timings',
+        ] as $table) {
+            SafeQuery::deleteWhereIn($this->db, $table, 'user_id', $staffIds);
+        }
+
+        SafeQuery::deleteWhereIn($this->db, 'teacher_qr_codes', 'teacher_id', $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'teacher_section', 'tid', $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'teacher_subjects', 'tid', $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'employee_leaves', 'employee_id', $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'employees_leave_applications', 'emp_id', $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'emp_salary', 'emp_id', $staffIds);
+
+        foreach ([
+            'user_perms', 'user_roles',
+        ] as $table) {
+            SafeQuery::deleteWhereIn($this->db, $table, 'userID', $staffIds);
+        }
+
+        SafeQuery::deleteMessagesForUsers($this->db, $staffIds);
+        SafeQuery::deleteWhereIn($this->db, 'users', 'id', $staffIds);
+    }
+
+    /**
+     * @param list<int> $clsSecIds
+     */
+    private function purgeClassSections(array $clsSecIds): void
+    {
+        if ($clsSecIds === []) {
+            return;
+        }
+
+        foreach ([
+            'section_subjects', 'classdairy', 'school_timings', 'time_table', 'mark_attendance',
+        ] as $table) {
+            SafeQuery::deleteWhereIn($this->db, $table, 'cls_sec_id', $clsSecIds);
+        }
+
+        SafeQuery::deleteWhereIn($this->db, 'class_section', 'cls_sec_id', $clsSecIds);
     }
 }

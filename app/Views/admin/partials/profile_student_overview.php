@@ -21,7 +21,7 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
                     <?= $profilePhoto ?>
                 </div>
                 <div class="sp-quick-actions d-none d-md-block mt-2">
-                    <a href="<?= esc($editUrl) ?>" class="btn btn-sm btn-outline-primary btn-block">
+                    <a href="<?= esc($editUrl) ?>" class="btn btn-sm btn-outline-primary w-100">
                         <i class="fas fa-edit"></i> Edit student
                     </a>
                 </div>
@@ -32,16 +32,16 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
                         <h3 class="sp-name mb-1"><?= esc(trim(($info->first_name ?? '') . ' ' . ($info->last_name ?? ''))) ?: 'Student' ?></h3>
                         <div class="sp-meta text-muted small">
                             <?php if (!empty($info->reg_no)): ?>
-                                <span class="mr-3"><i class="fas fa-id-badge"></i> Reg: <strong><?= esc($info->reg_no) ?></strong></span>
+                                <span class="me-3"><i class="fas fa-id-badge"></i> Reg: <strong><?= esc($info->reg_no) ?></strong></span>
                             <?php endif; ?>
                             <?php if (!empty($info->family_id ?? null)): ?>
-                                <span class="mr-3"><i class="fas fa-users"></i> Family: <?= esc($info->family_id) ?></span>
+                                <span class="me-3"><i class="fas fa-users"></i> Family: <?= esc($info->family_id) ?></span>
                             <?php endif; ?>
-                            <span class="badge badge-<?= esc($statusClass) ?>"><?= esc($statusLabel) ?></span>
+                            <span class="badge text-bg-<?=  esc($statusClass) ?>"><?= esc($statusLabel) ?></span>
                         </div>
                     </div>
                     <div class="d-flex flex-wrap sp-actions-top">
-                        <a href="<?= esc($editUrl) ?>" class="btn btn-primary btn-sm d-md-none mr-1"><i class="fas fa-edit"></i> Edit</a>
+                        <a href="<?= esc($editUrl) ?>" class="btn btn-primary btn-sm d-md-none me-1"><i class="fas fa-edit"></i> Edit</a>
                         <button type="button" class="btn btn-outline-secondary btn-sm no-print" onclick="window.print()"><i class="fas fa-print"></i></button>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
 
                 <div class="row">
                     <div class="col-lg-6">
-                        <h6 class="text-uppercase text-muted font-weight-bold small sp-section-title"><i class="fas fa-user mr-1"></i> Student</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small sp-section-title"><i class="fas fa-user me-1"></i> Student</h6>
                         <dl class="row sp-dl small mb-0">
                             <dt class="col-sm-4">CNIC</dt><dd class="col-sm-8"><?= esc($info->std_cnic ?? '—') ?></dd>
                             <dt class="col-sm-4">Date of birth</dt><dd class="col-sm-8"><?= esc($info->date_of_birth ?? '—') ?></dd>
@@ -70,7 +70,7 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
                         </dl>
                     </div>
                     <div class="col-lg-6 mt-3 mt-lg-0">
-                        <h6 class="text-uppercase text-muted font-weight-bold small sp-section-title"><i class="fas fa-users mr-1"></i> Parents</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small sp-section-title"><i class="fas fa-users me-1"></i> Parents</h6>
                         <dl class="row sp-dl small mb-0">
                             <dt class="col-sm-4">Father</dt><dd class="col-sm-8"><?= esc($parentInfo->f_name ?? '—') ?></dd>
                             <dt class="col-sm-4">Father CNIC</dt><dd class="col-sm-8"><?= esc($parentInfo->father_cnic ?? '—') ?></dd>
@@ -84,7 +84,7 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
 
                 <div class="row">
                     <div class="col-lg-12">
-                        <h6 class="text-uppercase text-muted font-weight-bold small sp-section-title"><i class="fas fa-phone-alt mr-1"></i> Contact</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small sp-section-title"><i class="fas fa-phone-alt me-1"></i> Contact</h6>
                         <dl class="row sp-dl small mb-0">
                             <dt class="col-sm-4 col-lg-2">WhatsApp</dt><dd class="col-sm-8 col-lg-4"><?= esc($parentInfo->whatsapp ?? '—') ?></dd>
                             <dt class="col-sm-4 col-lg-2">Email</dt><dd class="col-sm-8 col-lg-4"><?= esc($parentInfo->father_email ?? '—') ?></dd>
@@ -107,10 +107,10 @@ $statusClass = $status === 1 ? 'success' : 'secondary';
                 </div>
             <?php endif; ?>
             <div class="col">
-                <div class="font-weight-bold"><?= esc($systemName) ?></div>
+                <div class="fw-bold"><?= esc($systemName) ?></div>
                 <?php if ($slogan): ?><div class="small text-muted"><?= esc($slogan) ?></div><?php endif; ?>
             </div>
-            <div class="col-auto small text-muted text-md-right">
+            <div class="col-auto small text-muted text-md-end">
                 <?php if (!empty($schoolinfo->mob_number)): ?>
                     <div><i class="fas fa-phone"></i> <?= esc($schoolinfo->mob_number) ?></div>
                 <?php endif; ?>

@@ -113,11 +113,11 @@ foreach ($student_class as $row) {
       '<td class="p-1 contact-cell">'.
         '<div class="contacts-grid">'.
           // Father
-          '<div class="ico" data-toggle="tooltip" title="Father contact"><i class="fas fa-user-tie"></i></div>'.
+          '<div class="ico" data-bs-toggle="tooltip" title="Father contact"><i class="fas fa-user-tie"></i></div>'.
           '<input type="text" class="form-control form-control-sm father-contact" placeholder="Father" value="'.$father.'">'.
 
           // Mother
-          '<div class="ico" data-toggle="tooltip" title="Mother contact"><i class="fas fa-female"></i></div>'.
+          '<div class="ico" data-bs-toggle="tooltip" title="Mother contact"><i class="fas fa-female"></i></div>'.
           '<input type="text" class="form-control form-control-sm mother-contact" placeholder="Mother" value="'.$mother.'">'.
         '</div>'.
       '</td>'.
@@ -126,18 +126,18 @@ foreach ($student_class as $row) {
       '<td class="p-1 contact-cell">'.
         '<div class="contacts-grid">'.
           // WhatsApp
-          '<div class="ico" data-toggle="tooltip" title="WhatsApp number"><i class="fab fa-whatsapp text-success"></i></div>'.
+          '<div class="ico" data-bs-toggle="tooltip" title="WhatsApp number"><i class="fab fa-whatsapp text-success"></i></div>'.
           '<input type="text" class="form-control form-control-sm whatsapp-contact" placeholder="WhatsApp" value="'.$wa.'">'.
 
           // Emergency
-          '<div class="ico" data-toggle="tooltip" title="Emergency contact"><i class="fas fa-phone-alt text-danger"></i></div>'.
+          '<div class="ico" data-bs-toggle="tooltip" title="Emergency contact"><i class="fas fa-phone-alt text-danger"></i></div>'.
           '<input type="text" class="form-control form-control-sm emergency-contact" placeholder="Emergency" value="'.$emerg.'">'.
         '</div>'.
       '</td>'.
 
       // Action
       '<td class="text-nowrap">'.
-        '<button type="button" class="btn btn-primary btn-xs save-contacts" '.
+        '<button type="button" class="btn btn-primary btn-sm save-contacts" '.
         'data-parent-id="'.(int)$stu->parent_id.'" data-student-id="'.(int)$stu->student_id.'">Save</button>'.
       '</td>'.
     '</tr>';

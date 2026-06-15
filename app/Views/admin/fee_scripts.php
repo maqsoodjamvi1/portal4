@@ -1,8 +1,8 @@
 <?php // app/Views/admin/fee_scripts.php ?>
 
-<!-- Bootstrap Switch CSS -->
-<link rel="stylesheet" href="<?= base_url('assets/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css'); ?>">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
 
 
 
@@ -10,24 +10,118 @@
 <script>
 // ✅ Global fee pool — accessible to all scripts
 var feePool = [];
+var financeAccountsEnabled = <?= ! empty($finance_enabled ?? false) ? 'true' : 'false' ?>;
+var defaultCollectionAccountId = <?= (int) ($default_collection_account_id ?? 0) ?>;
 
+function applyFinanceAccountsPayload(r) {
+    if (!r || !r.success) return;
+    financeAccountsEnabled = !!r.enabled;
+    defaultCollectionAccountId = r.default_account_id || defaultCollectionAccountId || 0;
+    if (!$('#collectionAccountId').length) return;
 
-let lastMoveType = null;
-
-// ✅ Helper to clear pool safely
-function clearFeePool() {
-    feePool = [];
-    renderFeePool();
-    showStatus('Payment pool cleared');
+    var $sel = $('#collectionAccountId').empty();
+    if (!financeAccountsEnabled) {
+        $('#financeReceiveRow').hide();
+        return;
+    }
+    $('#financeReceiveRow').show();
+    (r.accounts || []).forEach(function (a) {
+        $sel.append($('<option>', { value: a.account_id, text: a.label || a.account_name }));
+    });
+    if (defaultCollectionAccountId) {
+        $sel.val(String(defaultCollectionAccountId));
+    }
+    if (r.received_by) {
+        $('#receivedByLabel').val(r.received_by);
+    }
 }
 
+function loadFinanceAccounts() {
+    if (!$('#collectionAccountId').length) return;
 
+    if (window.FINANCE_ACCOUNTS_BOOT && window.FINANCE_ACCOUNTS_BOOT.enabled) {
+        applyFinanceAccountsPayload(window.FINANCE_ACCOUNTS_BOOT);
+    }
 
-// // ✅ Function to clear both data & UI
-// function clearFeePool() {
-//     feePool = [];
-//     $('#fee-pool').empty(); // Clear the pool container
-// }
+    $.get('<?= base_url('admin/campus-finance-accounts/accounts-json') ?>', function (r) {
+        applyFinanceAccountsPayload(r);
+    }, 'json').fail(function () {
+        if (!financeAccountsEnabled && window.FINANCE_ACCOUNTS_BOOT) {
+            applyFinanceAccountsPayload(window.FINANCE_ACCOUNTS_BOOT);
+        }
+    });
+}
+
+window.FINANCE_ACCOUNTS_BOOT = <?= json_encode([
+    'success' => true,
+    'enabled' => ! empty($finance_enabled ?? false),
+    'accounts' => $finance_accounts ?? [],
+    'default_account_id' => (int) ($default_collection_account_id ?? 0),
+    'received_by' => $received_by_name ?? '',
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+$(function () { loadFinanceAccounts(); });
+
+var FEE_CSRF_NAME = <?= json_encode(csrf_token()) ?>;
+var FEE_CSRF_HASH = <?= json_encode(csrf_hash()) ?>;
+var FEE_CSRF_HEADER = <?= json_encode(csrf_header()) ?>;
+
+function getFeeCsrfPair() {
+    var meta = document.getElementById('csrf-meta-pay-chalan');
+    if (meta) {
+        FEE_CSRF_NAME = meta.getAttribute('name') || FEE_CSRF_NAME;
+        FEE_CSRF_HASH = meta.getAttribute('content') || FEE_CSRF_HASH;
+    }
+    return { name: FEE_CSRF_NAME, value: FEE_CSRF_HASH };
+}
+
+function refreshFeeCsrfFromXHR(xhr) {
+    if (!xhr || !xhr.getResponseHeader) return;
+    var hash = xhr.getResponseHeader(FEE_CSRF_HEADER)
+        || xhr.getResponseHeader('X-CSRF-TOKEN');
+    if (!hash) return;
+    FEE_CSRF_HASH = hash;
+    var meta = document.getElementById('csrf-meta-pay-chalan');
+    if (meta) meta.setAttribute('content', hash);
+}
+
+function appendFeeCsrfToAjax(options) {
+    var pair = getFeeCsrfPair();
+    if (!pair.name || pair.value == null) return;
+
+    options.headers = $.extend({}, options.headers || {});
+    options.headers[FEE_CSRF_HEADER] = pair.value;
+
+    if (options.data instanceof FormData) {
+        options.data.append(pair.name, pair.value);
+        return;
+    }
+
+    if (typeof options.data === 'string') {
+        options.data += (options.data ? '&' : '')
+            + encodeURIComponent(pair.name) + '=' + encodeURIComponent(pair.value);
+        return;
+    }
+
+    options.data = options.data || {};
+    if (typeof options.data === 'object') {
+        options.data[pair.name] = pair.value;
+    }
+}
+
+$.ajaxPrefilter(function (options) {
+    var method = (options.type || 'GET').toUpperCase();
+    if (method !== 'POST' && method !== 'PUT' && method !== 'PATCH' && method !== 'DELETE') {
+        return;
+    }
+    appendFeeCsrfToAjax(options);
+});
+
+$(document).ajaxComplete(function (_e, xhr) {
+    refreshFeeCsrfFromXHR(xhr);
+});
+
+let lastMoveType = null;
 
 // Enhanced fee scripts with additional functionality
 $(document).ready(function() {
@@ -42,17 +136,30 @@ $(document).ready(function() {
         placeholder: 'Search by student name or ID',
         minimumInputLength: 2,
         width: '100%',
+        dropdownParent: $('#student_id').closest('.card-body, .content-wrapper, body').first(),
         ajax: {
-            url: '<?= base_url('admin/fee-chalan-pay/get-studentinfo'); ?>',
+            url: '<?= base_url('admin/fee-chalan-pay/get-student-info'); ?>',
             type: 'POST',
             dataType: 'json',
             delay: 250,
             data: function(params) {
-                return {
-                    term: params.term // search term
-                };
+                var payload = { term: params.term || '' };
+                if (typeof window.adminCsrfPayload === 'function') {
+                    return window.adminCsrfPayload(payload);
+                }
+                var pair = getFeeCsrfPair();
+                if (pair.name) payload[pair.name] = pair.value;
+                return payload;
             },
             processResults: function(data) {
+                if (data && data.error) {
+                    console.error('Student search error:', data.error);
+                    return { results: [] };
+                }
+                if (!Array.isArray(data)) {
+                    console.error('Student search: invalid response', data);
+                    return { results: [] };
+                }
                 return {
                     results: $.map(data, function(item) {
                         return {
@@ -62,7 +169,15 @@ $(document).ready(function() {
                     })
                 };
             },
-            cache: true
+            error: function(xhr, status) {
+                // Select2 aborts the previous request when the user keeps typing — not a real error.
+                if (status === 'abort') {
+                    return;
+                }
+                console.error('Student search failed', xhr.status, xhr.responseText);
+                refreshFeeCsrfFromXHR(xhr);
+            },
+            cache: false
         },
         templateResult: formatStudent,
         templateSelection: formatStudentSelection
@@ -102,7 +217,8 @@ function loadStudentCard(student_id) {
         type: 'POST',
         data: { student_id: student_id },
         dataType: 'json',
-        success: function(response) {
+        success: function(response, _textStatus, xhr) {
+            refreshFeeCsrfFromXHR(xhr);
             if (response.success) {
                 lastStudentCardAjaxResponse = response;
                 $('#student-card-container').html(response.html);
@@ -127,11 +243,15 @@ function loadStudentCard(student_id) {
                     fetchParentFeeSummary(response.parent_id);
                 }
                 $('#parentSummary').hide();
+                $('#lastFamilyPayments').hide();
             }
         },
-        error: function() {
+        error: function(xhr) {
+            console.error('Student card load failed', xhr.status, xhr.responseText);
             $('#student-card-container').html('<div class="alert alert-danger">Error loading student data</div>');
             $('#parentSummary').hide();
+            $('#lastFamilyPayments').hide();
+            refreshFeeCsrfFromXHR(xhr);
         }
     });
 }
@@ -162,34 +282,54 @@ function fetchParentFeeSummary(parentId) {
 
                 $('#todayDateLabel').text(todayFormatted);
                 $('#monthLabel').text(monthFormatted);
+
+                const lastBody = $('#lastFamilyPaymentsBody');
+                lastBody.empty();
+                if (response.last_payments && response.last_payments.length) {
+                    response.last_payments.forEach(function (payment) {
+                        lastBody.append(
+                            '<tr>' +
+                                '<td class="py-0 ps-0">' + payment.payment_date_label + '</td>' +
+                                '<td class="py-0 pe-0 text-end fw-bold">' +
+                                    parseFloat(payment.total_received || 0).toFixed(0) +
+                                '</td>' +
+                            '</tr>'
+                        );
+                    });
+                    $('#lastFamilyPayments').show();
+                } else {
+                    lastBody.append('<tr><td colspan="2" class="py-0 ps-0 text-muted">No prior payments</td></tr>');
+                    $('#lastFamilyPayments').show();
+                }
             } else {
                 $('#parentSummary').hide();
+                $('#lastFamilyPayments').hide();
             }
         },
         error: function() {
-            
-            showStatus('Failed to load parent fee summary')
             $('#parentSummary').hide();
+            $('#lastFamilyPayments').hide();
         }
     });
 }
 
 
 
-function markFeeUnpaid(chalanId, studentId, parentId) {
-    $.post('<?= base_url('admin/fee-chalan-pay/make-unpaid') ?>', { chalan_id: chalanId }, function(resp) {
+function markFeeUnpaid(chalanId, studentId, parentId, reverseDiscount) {
+    const undoDiscount = reverseDiscount === 1 || reverseDiscount === true;
+    $.post('<?= base_url('admin/fee-chalan-pay/make-unpaid') ?>', {
+        chalan_id: chalanId,
+        reverse_discount: undoDiscount ? 1 : 0
+    }, function(resp) {
         if (resp.success) {
-            showStatus('Marked as unpaid');
             const parentId = $('#student-card-container .student-card').data('parent-id');
-        if (!parentId) {
-            showStatus('Unable to refresh family info: missing parent ID');
-            return;
-        }
+            if (!parentId) {
+                return;
+            }
             loadStudentCard(studentId);
-             fetchParentFeeSummary(parentId);      // ✅ Refresh summary
-        loadPaidFeeTable(parentId);           // ✅ Refresh paid records
-            
-
+            fetchParentFeeSummary(parentId);
+            loadPaidFeeTable(parentId);
+            showToast(resp.message || (undoDiscount ? 'Discount reversed' : 'Marked unpaid'), 'success');
         } else {
             showToast(resp.message || 'Failed to update status', 'danger');
         }
@@ -201,8 +341,8 @@ function showToast(message, type = 'success') {
     const toast = `
         <div id="${toastId}" class="toast bg-${type} text-white fade show" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; min-width: 250px; z-index: 1050;">
             <div class="toast-header bg-${type} text-white">
-                <strong class="mr-auto"><i class="fas fa-info-circle"></i> Info</strong>
-                <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast" aria-label="Close">
+                <strong class="me-auto"><i class="fas fa-info-circle"></i> Info</strong>
+                <button type="button" class="ms-2 mb-1 close text-white" data-bs-dismiss="toast" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -221,6 +361,9 @@ function showToast(message, type = 'success') {
 
 function loadPaidFeeTable(parentId) {
     $.post('<?= base_url('admin/fee-chalan-pay/get-monthly-paid-fees') ?>', { parent_id: parentId }, function(resp) {
+        if (!resp || typeof resp !== 'object') {
+            return;
+        }
         if (resp.success) {
             const tbody = $('#paidFeeTableBody');
             tbody.empty();
@@ -230,45 +373,62 @@ function loadPaidFeeTable(parentId) {
                 return;
             }
 resp.data.forEach((fee, index) => {
-    const today = new Date();
+    const isTodayUpdate = fee.can_reverse_today === true || fee.can_reverse_today === 1;
+    const entryType = fee.entry_type || 'payment';
+    const isDiscountEntry = entryType === 'discount' || entryType === 'discount_pending';
+    const amount = parseFloat(fee.amount) || 0;
+    const discount = parseFloat(fee.discount) || 0;
+    const net = parseFloat(fee.net_amount) || (amount - discount);
 
-    let isTodayUpdate = false;
-    if (fee.updated_date) {
-        // Convert updated_date string to a Date object
-        const updatedDate = new Date(fee.updated_date.replace(/-/g, '/')); // Safari-safe parsing
+    const highlight = index === 0
+        ? (isDiscountEntry ? 'table-warning' : 'table-success')
+        : '';
 
-        // Compare year, month, and day
-        isTodayUpdate =
-            updatedDate.getFullYear() === today.getFullYear() &&
-            updatedDate.getMonth() === today.getMonth() &&
-            updatedDate.getDate() === today.getDate();
+    let amountHtml;
+    if (isDiscountEntry) {
+        amountHtml = `<div class="text-warning fw-bold">Discount: Rs ${discount.toFixed(0)}</div>`;
+        if (entryType === 'discount_pending') {
+            amountHtml += '<small class="text-muted">Pending in pool</small>';
+        }
+    } else {
+        amountHtml = `<div>Rs ${net.toFixed(0)}</div>`;
     }
 
-    const highlight = index === 0 ? 'table-success' : '';
+    if (fee.paid_date && !isDiscountEntry) {
+        amountHtml += `<small class="text-muted d-block">${fee.paid_date}</small>`;
+    }
+
+    const reverseFlag = isDiscountEntry ? 1 : 0;
+    const btnClass = isDiscountEntry ? 'btn-warning' : 'btn-danger';
+    const btnLabel = isDiscountEntry ? 'Undo disc.' : 'Unpaid';
     const canUnpaid = isTodayUpdate
-        ? `<button class="btn btn-sm btn-danger" onclick="markFeeUnpaid(${fee.chalan_id}, ${fee.student_id}, ${fee.parent_id})">Unpaid</button>`
+        ? `<button class="btn btn-sm ${btnClass}" onclick="markFeeUnpaid(${fee.chalan_id}, ${fee.student_id}, ${fee.parent_id || 0}, ${reverseFlag})">${btnLabel}</button>`
         : '';
 
     tbody.append(`
         <tr class="${highlight}">
             <td>${fee.first_name} ${fee.last_name}</td>
             <td>${fee.fee_type_name}<br><small class="text-muted">(${fee.fee_month})</small></td>
-            <td>
-                <div>Rs ${(parseFloat(fee.amount) - parseFloat(fee.discount || 0)).toFixed(0)}</div>
-                <small class="text-muted">${fee.paid_date}</small>
-            </td>
+            <td>${amountHtml}</td>
             <td>${canUnpaid}</td>
         </tr>
     `);
 });
 
-            // Scroll to table
-            $('html, body').animate({
-                scrollTop: $('#paidFeeTableWrapper').offset().top - 100
-            }, 500);
+            var $scrollTarget = $('#paidFeeTableWrapper');
+            if (!$scrollTarget.length) {
+                $scrollTarget = $('#parentSummary');
+            }
+            var offset = $scrollTarget.length ? $scrollTarget.offset() : null;
+            if (offset) {
+                $('html, body').animate({ scrollTop: offset.top - 100 }, 500);
+            }
         } else {
-            showStatus('Failed to load paid fee data');
+            $('#paidFeeTableBody').empty();
         }
+    }).fail(function(xhr) {
+        refreshFeeCsrfFromXHR(xhr);
+        $('#paidFeeTableBody').empty();
     });
 }
 
@@ -338,16 +498,14 @@ function clearFeePool() {
 
         feePool = [];
         renderFeePool();
-        showStatus('Payment pool cleared');
     
 }
 
 
 
 function removeFeeFromPool(index) {
-    const removed = feePool.splice(index, 1)[0]; // Remove the item from pool
+    const removed = feePool.splice(index, 1)[0];
     renderFeePool();
-    showStatus('Value moved from pool to student card');
 
     if (removed && removed.chalan_id) {
         const $btn = $('#fee-btn-' + removed.chalan_id);
@@ -402,13 +560,11 @@ $('#confirmPaymentBtn').click(function () {
         data: {
             fees: JSON.stringify(feePool),
             paid_date: paid_date,
-            student_id: studentId
+            student_id: studentId,
+            account_id: financeAccountsEnabled ? ($('#collectionAccountId').val() || defaultCollectionAccountId) : ''
         },
         success: function (response) {
             if (response.success) {
-                showStatus('Payment confirmed successfully');
-
-                // ✅ Reload student card with latest data
                 loadStudentCard(studentId);
 
                 // ✅ Refresh parent summary
@@ -473,20 +629,6 @@ function restoreFeeRowFromCard(chalan_id) {
     $('#fee-row-' + chalan_id).removeClass('d-none');
 }
 
-function showStatus(message, color = '#00a65a') {
-    const $status = $('#status-message');
-    $status.css('background', color)
-           .text(message)
-           .fadeIn(200);
-
-    clearTimeout($status.data('timeout')); // prevent overlap timing
-    const timeout = setTimeout(() => {
-        $status.fadeOut(200);
-    }, 2000);
-
-    $status.data('timeout', timeout);
-}
-
 
 function submitPartial() {
     const chalanId = $('#partialChalanId').val();
@@ -518,7 +660,6 @@ function submitPartial() {
         },
         success: function(response) {
             if (response.success) {
-                showStatus('Partial payment processed successfully');
                 $('#partialModal').modal('hide');
                 const remainingBalance = paid + discount;
                 // 1️⃣ Push the paid portion into the pool
@@ -556,12 +697,11 @@ function submitPartial() {
                     }
                 });
             } else {
-                showStatus(response.message || 'Partial payment failed');
+                toastr.error(response.message || 'Partial payment failed');
             }
         },
         error: function() {
-            
-             showStatus('Error processing partial payment');
+            toastr.error('Error processing partial payment');
         }
     });
 }
@@ -607,9 +747,8 @@ function paySingleFee(button) {
         $btn.hide();
 
         renderFeePool();
-        showToast('Fee added to pool');
 
-        lastMoveType = 'single'; // update tracker
+        lastMoveType = 'single';
     } else {
         // Partial move
         if (lastMoveType === 'student' || lastMoveType === 'family') {
@@ -685,9 +824,6 @@ function addAllUnpaidFeesToPool(button) {
 
                 if (addedCount > 0) {
                     renderFeePool();
-                    showStatus(`Added ${addedCount} unpaid fees to payment pool`);
-                } else {
-                    toastr.info('No new unpaid fees to add');
                 }
             } else {
                 toastr.warning(response.message || 'No unpaid fees found');
@@ -747,9 +883,6 @@ function addFamilyUnpaidFeesToPool(parentId) {
 
                 if (addedCount > 0) {
                     renderFeePool();
-                    showStatus(`Added ${addedCount} unpaid family fees to payment pool`);
-                } else {
-                    toastr.info('No new unpaid family fees to add');
                 }
             } else {
                 toastr.warning(response.message || 'No unpaid family fees found');
@@ -806,7 +939,7 @@ function loadFamilyFeeHistory() {
     }
     if (res && res.success) {
       $('#familyHistoryContainer').html(res.html || '');
-      $('[data-toggle="tooltip"]').tooltip({container:'body'});
+      $('[data-bs-toggle="tooltip"]').tooltip({container:'body'});
     } else {
       $('#familyHistoryContainer').html(res?.html || '<div class="alert alert-danger">Request failed.</div>');
     }
@@ -871,9 +1004,9 @@ let firstStudentId = null;
         <div class="modal-content">
           <div class="modal-header py-2">
             <h5 class="modal-title" id="editStudentFeeModalLabel">
-              <i class="fas fa-edit mr-2"></i>Edit Monthly Fees
+              <i class="fas fa-edit me-2"></i>Edit Monthly Fees
             </h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
           </div>
 
           <div class="modal-body p-2">
@@ -881,31 +1014,31 @@ let firstStudentId = null;
             <div id="feeSummary" class="row text-center mx-1 mb-2" style="gap:8px;">
               <div class="col bg-light rounded py-2">
                 <div class="small text-muted">Total Class Fee</div>
-                <div id="sumClassFee" class="font-weight-bold">Rs 0.00</div>
+                <div id="sumClassFee" class="fw-bold">Rs 0.00</div>
               </div>
               <div class="col bg-light rounded py-2">
                 <div class="small text-muted">Total Current Fee</div>
-                <div id="sumCurrentFee" class="font-weight-bold">Rs 0.00</div>
+                <div id="sumCurrentFee" class="fw-bold">Rs 0.00</div>
               </div>
               <div class="col bg-light rounded py-2">
                 <div class="small text-muted">Total New Fee</div>
-                <div id="sumNewFee" class="font-weight-bold">Rs 0.00</div>
+                <div id="sumNewFee" class="fw-bold">Rs 0.00</div>
               </div>
               <div class="col bg-light rounded py-2">
                 <div class="small text-muted">Δ (New - Current)</div>
-                <div id="sumDelta" class="font-weight-bold">Rs 0.00</div>
+                <div id="sumDelta" class="fw-bold">Rs 0.00</div>
               </div>
             </div>
 
             <div class="table-responsive">
               <table class="table table-sm table-striped table-hover mb-0">
-                <thead class="thead-dark">
+                <thead class="table-dark">
                   <tr>
                     <th style="width:56px;">S#</th>
                     <th>Student</th>
                     <th>Class</th>
-                    <th class="text-right">Class Fee</th>
-                    <th class="text-right">Current Fee</th>
+                    <th class="text-end">Class Fee</th>
+                    <th class="text-end">Current Fee</th>
                     <th style="min-width:140px;">New Fee</th>
                   </tr>
                 </thead>
@@ -917,10 +1050,10 @@ let firstStudentId = null;
           </div>
 
           <div class="modal-footer py-2">
-            <div class="mr-auto small text-muted">Adjust the “New Fee” column; totals update live.</div>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <div class="me-auto small text-muted">Adjust the “New Fee” column; totals update live.</div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button id="saveFeeChanges" type="button" class="btn btn-primary">
-              <i class="fas fa-save mr-1"></i>Save Changes
+              <i class="fas fa-save me-1"></i>Save Changes
             </button>
           </div>
         </div>
@@ -998,13 +1131,13 @@ window.showEditStudentFeeModal = function showEditStudentFeeModal(student_id) {
                 data-current-fee="${currentFee}">
               <td class="align-middle text-muted">${idx++}</td>
               <td class="align-middle">
-                <div class="font-weight-600">${name}</div>
+                <div class="fw-semibold">${name}</div>
               </td>
               <td class="align-middle">
-                <span class="badge badge-info">${classLabel}</span>
+                <span class="badge text-bg-info">${classLabel}</span>
               </td>
-              <td class="align-middle text-right">${fmtCurrency(classFee)}</td>
-              <td class="align-middle text-right">${fmtCurrency(currentFee)}</td>
+              <td class="align-middle text-end">${fmtCurrency(classFee)}</td>
+              <td class="align-middle text-end">${fmtCurrency(currentFee)}</td>
               <td class="align-middle">
                 <input type="number" step="0.01" min="0" 
                        name="new_fee[${sid}]" 
@@ -1022,7 +1155,7 @@ window.showEditStudentFeeModal = function showEditStudentFeeModal(student_id) {
         $('#studentFeeEditBody').on('input', 'input.new-fee', recalcTotals);
 
         // Tooltips inside modal (optional)
-        $modal.find('[data-toggle="tooltip"]').tooltip({ container: 'body' });
+        $modal.find('[data-bs-toggle="tooltip"]').tooltip({ container: 'body' });
 
       } else {
         $('#studentFeeEditBody').html('<tr><td colspan="6" class="text-center p-4 text-muted">No student found.</td></tr>');
@@ -1108,9 +1241,10 @@ function showAdvanceFeeStudentModal(student_id) {
                         <tr>
                             <td>${name}</td>
                             <td>Rs ${dues.toFixed(2)}</td>
+                            <td class="text-end text-muted">Rs ${advanceFee.toFixed(2)}</td>
                             <td>
-                                <input type="number" step="0.01" name="advance_fee[${student.student_id}]"
-                                    class="form-control" value="${advanceFee.toFixed(2)}" ${readOnly}>
+                                <input type="number" step="0.01" min="0" name="advance_fee[${student.student_id}]"
+                                    class="form-control" value="" placeholder="0.00" ${readOnly}>
                             </td>
                         </tr>
                     `;
@@ -1146,7 +1280,11 @@ $('#saveAdvanceFee').on('click', function () {
     $.ajax({
         url: '<?= base_url('admin/fee-chalan-pay/saveAdvanceFee'); ?>', // ✅ Save endpoint
         method: 'POST',
-        data: { fees: JSON.stringify(data) },
+        data: {
+            fees: JSON.stringify(data),
+            paid_date: $('#datePaid').val() || '',
+            account_id: financeAccountsEnabled ? ($('#collectionAccountId').val() || defaultCollectionAccountId) : ''
+        },
         dataType: 'json',
         success: function (res) {
             if (res.success) {

@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Bulk Create Events</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active">Bulk Create</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Bulk Create Events',
+    'icon' => 'fas fa-layer-group',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Bulk Create', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -24,7 +19,7 @@
     <div class="card-body">
 
       <?= csrf_field() ?>
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-3">
           <label>Event Type</label>
           <select id="f_type" class="form-control">
@@ -45,7 +40,7 @@
           <input type="date" id="f_date" class="form-control">
         </div>
         <div class="form-group col-md-3 d-flex align-items-end">
-          <button id="btnFetch" class="btn btn-outline-secondary btn-block">Load Existing</button>
+          <button id="btnFetch" class="btn btn-outline-secondary w-100">Load Existing</button>
         </div>
       </div>
 
@@ -55,13 +50,13 @@
         <h5 class="mb-0">Add Rows</h5>
         <div>
           <button id="btnAddRow" type="button" class="btn btn-sm btn-primary">Add Row</button>
-          <button id="btnClear"  type="button" class="btn btn-sm btn-warning ml-1">Clear</button>
+          <button id="btnClear"  type="button" class="btn btn-sm btn-warning ms-1">Clear</button>
         </div>
       </div>
 
       <div class="table-responsive">
         <table class="table table-bordered" id="rowsTable">
-          <thead class="thead-light">
+          <thead class="table-light">
             <tr>
               <th width="32">#</th>
               <th>Event Name</th>
@@ -75,7 +70,7 @@
         </table>
       </div>
 
-      <div class="text-right">
+      <div class="text-end">
         <button id="btnSave" class="btn btn-success"><i class="fas fa-save"></i> Save All</button>
       </div>
 

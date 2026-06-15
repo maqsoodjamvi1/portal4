@@ -1,7 +1,7 @@
 <form id="schoolWizardForm">
 <div class="table-responsive">
   <table class="table table-bordered table-striped" id="dynamic_field">
-    <thead class="thead-light">
+    <thead class="table-light">
       <tr>
         <th>Class Name</th>
         <th>Short Name</th>

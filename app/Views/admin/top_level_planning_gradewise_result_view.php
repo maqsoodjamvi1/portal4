@@ -23,7 +23,7 @@
             if (isset($subject_data['objectives'][$first_term_id]['tlp_id'])):
     ?>
                 <a href="<?= site_url('admin/top_level_planning_gradewise/edit/' . $subject_data['objectives'][$first_term_id]['tlp_id']) ?>" 
-                   class="btn btn-xs btn-primary">
+                   class="btn btn-sm btn-primary">
                     <i class="fas fa-edit"></i>
                 </a>
                 
@@ -75,7 +75,7 @@
         <?php foreach ($grouped_data as $class_id => $class_data): ?>
             <div class="table-responsive mb-4">
                 <table class="table table-bordered">
-                    <thead class="thead-light">
+                    <thead class="table-light">
                         <tr>
                             <th style="width:20%;">Subject</th>
                             <?php foreach ($class_data['terms'] as $term_id => $term_name): ?>
@@ -105,7 +105,7 @@
                                             </div>
                                             <div class="action-buttons no-print mt-2">
                                                 <a href="<?= site_url('admin/top_level_planning_gradewise/edit/' . $subject_data['objectives'][$term_id]['tlp_id']) ?>" 
-                                                   class="btn btn-xs btn-primary">
+                                                   class="btn btn-sm btn-primary">
                                                     <i class="fas fa-edit"></i> Edit
                                                 </a>
                                             

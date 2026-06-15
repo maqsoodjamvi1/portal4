@@ -174,16 +174,16 @@ canvas {
   }
   .attendance-status-card {
     background: #f8f9fa;
-    border-left: 4px solid #28a745;
+    border-start: 4px solid #28a745;
   }
   .attendance-status-card.late {
-    border-left-color: #ffc107;
+    border-start-color: #ffc107;
   }
   .attendance-status-card.checkout {
-    border-left-color: #17a2b8;
+    border-start-color: #17a2b8;
   }
   .attendance-status-card.pending {
-    border-left-color: #6c757d;
+    border-start-color: #6c757d;
   }
   .recent-attendance-list {
     max-height: 200px;
@@ -254,7 +254,7 @@ canvas {
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-chart-line mr-2"></i>
+                    <i class="fas fa-chart-line me-2"></i>
                     Fee Collection Report
                 </h3>
             </div>
@@ -288,7 +288,7 @@ canvas {
         <div class="card card-success">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-chart-bar mr-2"></i>
+                    <i class="fas fa-chart-bar me-2"></i>
                     Fee Collection - <?= esc($chartTitle) ?>
                 </h3>
                 <div class="card-tools">
@@ -317,16 +317,16 @@ canvas {
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-qrcode mr-2"></i>
+                        <i class="fas fa-qrcode me-2"></i>
                         QR Attendance Scanner
                     </h3>
                     <!-- Compact Date/Time in Header -->
-                    <div class="text-right">
+                    <div class="text-end">
                         <div id="currentDateTimeCompact" class="d-flex align-items-center">
-                            <i class="fas fa-calendar-alt mr-2"></i>
-                            <span id="currentDayCompact" class="mr-2">Monday</span>
-                            <span id="currentDateCompact" class="mr-2">24 Mar 2026</span>
-                            <i class="fas fa-clock ml-2 mr-1"></i>
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <span id="currentDayCompact" class="me-2">Monday</span>
+                            <span id="currentDateCompact" class="me-2">24 Mar 2026</span>
+                            <i class="fas fa-clock ms-2 me-1"></i>
                             <span id="currentTimeCompact">10:30:45 AM</span>
                         </div>
                     </div>
@@ -362,7 +362,7 @@ canvas {
                     <div class="col-md-6">
                         <div class="bg-white rounded p-2">
                             <h6 class="text-dark mb-2">
-                                <i class="fas fa-history mr-2 text-primary"></i>
+                                <i class="fas fa-history me-2 text-primary"></i>
                                 Recent Attendance
                             </h6>
                             <div id="recentAttendanceList" style="max-height: 250px; overflow-y: auto;">
@@ -380,7 +380,7 @@ canvas {
   <!-- Info Boxes Row 1 -->
   <div class="row">
     <?php if(hasPermission('admin-db-students')): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/students?status=1') ?>">  
           <div class="info-box">
             <span class="info-box-icon bg-primary"><i class="fas fa-user-graduate"></i></span>
@@ -394,7 +394,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-teacher')): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/users') ?>">  
           <div class="info-box">
             <span class="info-box-icon bg-danger"><i class="fas fa-chalkboard-teacher"></i></span>
@@ -408,7 +408,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-fee-collection') && isset($monthlyFee)): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/fee-chalan') ?>"> 
           <div class="info-box">
             <span class="info-box-icon bg-success"><i class="far fa-money-bill-alt"></i></span>
@@ -426,7 +426,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-attendance')): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/students_attendance/add') ?>"> 
           <div class="info-box">
             <span class="info-box-icon bg-warning"><i class="fas fa-receipt"></i></span> 
@@ -555,7 +555,7 @@ canvas {
   <!-- Session Info Boxes Row 3 -->
   <div class="row mt-3">
     <?php if(hasPermission('admin-db-session') && isset($academic_session)): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/academic_session') ?>">  
           <div class="info-box">
             <span class="info-box-icon bg-info"><i class="far fa-calendar-alt"></i></span>
@@ -572,7 +572,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-term') && isset($termInfo)): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/terms') ?>">  
           <div class="info-box">
             <span class="info-box-icon bg-purple"><i class="fas fa-book"></i></span>
@@ -591,7 +591,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-week') && isset($termWeeksInfo)): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/weeks') ?>"> 
           <div class="info-box">
             <span class="info-box-icon bg-teal"><i class="fas fa-calendar-week"></i></span>
@@ -608,7 +608,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-exam') && isset($examsInfo)): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/exams') ?>"> 
           <div class="info-box">
             <span class="info-box-icon bg-orange"><i class="fas fa-file-alt"></i></span>
@@ -625,7 +625,7 @@ canvas {
     <?php endif; ?>
 
     <?php if(hasPermission('admin-db-expense')): ?>
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-3 col-sm-6 col-12">
         <a href="<?= base_url('admin/profit_loss_report') ?>"> 
           <div class="info-box">
             <span class="info-box-icon bg-maroon"><i class="fas fa-calculator"></i></span>
@@ -650,7 +650,7 @@ canvas {
       <div class="card-header">
         <h3 class="card-title">Pending Attendance — <?= date('D j M Y', strtotime($attendanceDate ?? date('Y-m-d'))) ?></h3>
         <div class="card-tools">
-          <span class="badge badge-danger"><?= (int)($pendingCount ?? 0) ?> pending</span>
+          <span class="badge text-bg-danger"><?= (int)($pendingCount ?? 0) ?> pending</span>
         </div>
       </div>
 
@@ -684,7 +684,7 @@ canvas {
                     <td class="text-center"><?= (int)($row['el_count'] ?? 0) ?></td>
                     <td class="text-center"><?= (int)($row['lc_count'] ?? 0) ?></td>
                     <td>
-                      <a class="btn btn-xs btn-primary"
+                      <a class="btn btn-sm btn-primary"
                          href="<?= base_url('admin/students_attendance/add?cls_sec_id=' . urlencode($row['cls_sec_id']) . '&date=' . urlencode($attendanceDate ?? date('Y-m-d'))) ?>">
                         Mark now
                       </a>
@@ -833,7 +833,8 @@ canvas {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
 
 
 <!-- Load QR Scanner Library -->
@@ -922,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (todayAtt.checkout && todayAtt.checkout !== '-') {
                     // Completed Attendance
                     container.innerHTML = `
-                        <div class="bg-white text-dark rounded p-3" style="border-left: 4px solid #28a745;">
+                        <div class="bg-white text-dark rounded p-3" style="border-start: 4px solid #28a745;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class="fas fa-check-circle text-success"></i>
@@ -941,7 +942,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Checked In Only
                     const isLate = todayAtt.status === 'late';
                     container.innerHTML = `
-                        <div class="bg-white text-dark rounded p-3" style="border-left: 4px solid ${isLate ? '#ffc107' : '#17a2b8'};">
+                        <div class="bg-white text-dark rounded p-3" style="border-start: 4px solid ${isLate ? '#ffc107' : '#17a2b8'};">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class="fas fa-clock ${isLate ? 'text-warning' : 'text-info'}"></i>
@@ -959,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Not Checked In
                 container.innerHTML = `
-                    <div class="bg-white text-dark rounded p-3" style="border-left: 4px solid #6c757d;">
+                    <div class="bg-white text-dark rounded p-3" style="border-start: 4px solid #6c757d;">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="fas fa-hourglass-half text-secondary"></i>
@@ -978,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', err);
             if (container) {
                 container.innerHTML = `
-                    <div class="bg-white text-dark rounded p-3 text-center" style="border-left: 4px solid #dc3545;">
+                    <div class="bg-white text-dark rounded p-3 text-center" style="border-start: 4px solid #dc3545;">
                         <i class="fas fa-exclamation-triangle text-danger"></i>
                         <span class="ms-1">Unable to load status</span>
                         <button class="btn btn-sm btn-link" onclick="location.reload()">Refresh</button>

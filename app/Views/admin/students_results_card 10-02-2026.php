@@ -211,7 +211,7 @@ $csrfTokenValue = csrf_hash();
             <small class="no-print text-danger">🔧 Before printing or exporting to PDF, enable “Background graphics” in the print dialog.</small>
 
             <!-- Actions -->
-            <div class="form-group text-right mt-2">
+            <div class="form-group text-end mt-2">
               <button type="button" class="btn btn-primary" id="ViewResult">View Result Card</button>
               <button type="button" class="btn btn-success" onclick="window.print();">Export to PDF</button>
             </div>

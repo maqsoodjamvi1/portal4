@@ -18,7 +18,6 @@
     'no_discount'  => ['title' => 'Without Discount',                   'url' => base_url('admin/print-fee-chalan/without-discount')],
     'familywise'   => ['title' => 'Family-wise',                        'url' => base_url('admin/print-fee-chalan/familywise')],
     'family_single'=> ['title' => 'Family-wise (Single Copy)',          'url' => base_url('admin/print-fee-chalan/familywise/single-copy')],
-    'hostel'       => ['title' => 'Hostel Fee',                         'url' => base_url('admin/print-fee-chalan/hostel')],
     'with_header'  => ['title' => 'With Header',                        'url' => base_url('admin/print-fee-chalan/with-header')],
   ];
 
@@ -28,41 +27,36 @@
   }
 ?>
 
-<!-- Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
-      <div>
-        <h1 class="mb-0">Print Fee Chalan</h1>
-        <small class="text-muted">Choose a template to preview/print. Your default will be remembered.</small>
-      </div>
-      <ol class="breadcrumb float-sm-right mb-0">
-        <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-        <li class="breadcrumb-item active">Fee Chalan</li>
-      </ol>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Print Fee Chalan',
+    'icon' => 'fas fa-print',
+    'subtitle' => 'Choose a template to preview/print. Your default will be remembered.',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee_chalan')],
+        ['label' => 'Print', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main -->
 <section class="content">
   <div class="container-fluid">
 
     <!-- Template Picker -->
-    <div class="card shadow-sm mb-3">
+    <div class="card sms-card shadow-sm mb-3">
       <div class="card-header bg-white d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center">
-          <i class="fas fa-file-invoice-dollar mr-2 text-primary"></i>
-          <strong class="mr-2">Template Picker</strong>
-          <span class="badge badge-light border">Default: <span id="current-default-template" class="font-weight-600"><?= esc($templates[$defaultTemplate]['title']) ?></span></span>
+          <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+          <strong class="me-2">Template Picker</strong>
+          <span class="badge text-bg-light border">Default: <span id="current-default-template" class="fw-semibold"><?= esc($templates[$defaultTemplate]['title']) ?></span></span>
         </div>
         <div class="d-none d-md-flex align-items-center">
-          <div class="custom-control custom-switch mr-2">
-            <input type="checkbox" class="custom-control-input" id="rememberChoiceSwitch" checked>
-            <label class="custom-control-label" for="rememberChoiceSwitch">Remember my choice</label>
+          <div class="form-check form-switch me-2">
+            <input type="checkbox" class="form-check-input" id="rememberChoiceSwitch" checked>
+            <label class="form-check-label" for="rememberChoiceSwitch">Remember my choice</label>
           </div>
           <button id="btnOpenTemplate" class="btn btn-primary">
-            <i class="fas fa-external-link-alt mr-1"></i> Open Template
+            <i class="fas fa-external-link-alt me-1"></i> Open Template
           </button>
         </div>
       </div>
@@ -70,7 +64,7 @@
       <div class="card-body">
         <!-- Mobile compact select -->
         <div class="d-md-none mb-3">
-          <label class="mb-1 font-weight-600">Select Template</label>
+          <label class="mb-1 fw-semibold">Select Template</label>
           <select id="templateSelect" class="form-control">
             <?php foreach ($templates as $key => $tpl): ?>
               <option value="<?= esc($key) ?>" <?= $key === $defaultTemplate ? 'selected' : '' ?>>
@@ -79,12 +73,12 @@
             <?php endforeach; ?>
           </select>
           <div class="mt-2 d-flex align-items-center justify-content-between">
-            <div class="custom-control custom-switch">
-              <input type="checkbox" class="custom-control-input" id="rememberChoiceSwitchMobile" checked>
-              <label class="custom-control-label" for="rememberChoiceSwitchMobile">Remember</label>
+            <div class="form-check form-switch">
+              <input type="checkbox" class="form-check-input" id="rememberChoiceSwitchMobile" checked>
+              <label class="form-check-label" for="rememberChoiceSwitchMobile">Remember</label>
             </div>
             <button id="btnOpenTemplateMobile" class="btn btn-primary btn-sm">
-              <i class="fas fa-external-link-alt mr-1"></i> Open
+              <i class="fas fa-external-link-alt me-1"></i> Open
             </button>
           </div>
         </div>
@@ -112,11 +106,11 @@
           Tip: You can change your default anytime.
         </div>
         <div class="d-none d-md-flex align-items-center">
-          <button id="btnSaveDefault" class="btn btn-outline-secondary mr-2">
-            <i class="far fa-star mr-1"></i> Set as Default
+          <button id="btnSaveDefault" class="btn btn-outline-secondary me-2">
+            <i class="far fa-star me-1"></i> Set as Default
           </button>
           <button id="btnOpenTemplateFooter" class="btn btn-primary">
-            <i class="fas fa-external-link-alt mr-1"></i> Open Template
+            <i class="fas fa-external-link-alt me-1"></i> Open Template
           </button>
         </div>
       </div>
@@ -125,7 +119,7 @@
     <!-- Data table -->
     <div class="card card-primary card-outline">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <div><i class="fas fa-table mr-2 text-primary"></i><strong>Chalan Records</strong></div>
+        <div><i class="fas fa-table me-2 text-primary"></i><strong>Chalan Records</strong></div>
         <div class="text-muted small">Server-side • Searchable Columns</div>
       </div>
 
@@ -167,7 +161,7 @@
   .template-title{ font-weight:700; color:#0f172a; }
   .template-desc{ font-size:12px; color:#64748b; }
 
-  .font-weight-600{ font-weight:600; }
+  
 </style>
 
 <script src="<?= base_url('resource/bootstrap-switch/js/bootstrap-switch.min.js') ?>"></script>
@@ -187,7 +181,7 @@
   .template-title{ font-weight:700; color:#0f172a; }
   .template-desc{ font-size:12px; color:#64748b; }
 
-  .font-weight-600{ font-weight:600; }
+  
 </style>
 
 <script src="<?= base_url('resource/bootstrap-switch/js/bootstrap-switch.min.js') ?>"></script>

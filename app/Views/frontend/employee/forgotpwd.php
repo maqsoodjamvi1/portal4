@@ -21,7 +21,7 @@
             <div class="col-lg-12">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-envelope"></i>
                         </span>
                         <input type="text" name="forgot_email" class="form-control" id="email-forgot-pwd" placeholder="Email">
@@ -31,15 +31,15 @@
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <div class="form-group pull-right">
-                    <span class="small pull-left">Not a user yet? </span><a href="<?php print site_url(); ?>signup" class="small pull-left">&nbsp;Register Now</a>
+                <div class="form-group float-end">
+                    <span class="small float-start">Not a user yet? </span><a href="<?php print site_url(); ?>signup" class="small float-start">&nbsp;Register Now</a>
                 </div>
             </div>
         </div>
 
         <div class="row">
             <div class="col-lg-12">
-                <div class="form-group pull-right">
+                <div class="form-group float-end">
                     <button type="submit" id="login" class="btn btn-info">Send</button>
                 </div>
             </div>

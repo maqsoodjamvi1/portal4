@@ -24,10 +24,60 @@ class Users extends BaseController
     {
         $this->db = db_connect();
         $this->session = session();
-        helper(['form', 'url']);
-        
+        helper(['form', 'url', 'role']);
+
         // Get current user's role and level
         $this->setCurrentUserRoleInfo();
+    }
+
+    private function requireAdminUsersPermission(bool $json = false): ?\CodeIgniter\HTTP\ResponseInterface
+    {
+        helper('permission');
+        if (function_exists('hasPermission') && hasPermission('admin-users')) {
+            return null;
+        }
+
+        if ($json) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg'     => 'You do not have permission for this action.',
+            ])->setStatusCode(403);
+        }
+
+        return redirect()->to(base_url('admin/dashboard'))
+            ->with('error', 'You do not have permission to access this page.');
+    }
+
+    private function requireFullEditPermission(bool $json = false): ?\CodeIgniter\HTTP\ResponseInterface
+    {
+        if (canFullEditEmployeeProfile()) {
+            return null;
+        }
+
+        if ($json) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg'     => 'Only administrators can fully edit employee profiles.',
+            ])->setStatusCode(403);
+        }
+
+        if (canSelfEditLimitedProfile()) {
+            return redirect()->to(base_url('admin/profile/edit'))
+                ->with('error', 'Use Update My Details to change your contact information.');
+        }
+
+        return redirect()->to(base_url('admin/dashboard'))
+            ->with('error', 'You do not have permission to edit employee profiles.');
+    }
+
+    private function assertCanViewProfile(int $targetUserId): ?\CodeIgniter\HTTP\ResponseInterface
+    {
+        if (canViewEmployeeProfile($targetUserId)) {
+            return null;
+        }
+
+        return redirect()->to(base_url('admin/dashboard'))
+            ->with('error', 'You do not have permission to view this profile.');
     }
 
 
@@ -36,11 +86,16 @@ class Users extends BaseController
  */
 public function salary($id)
 {
+    $id = (int) $id;
+    if ($deny = $this->assertCanViewProfile($id)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $user = $db->table('users')->where('id', $id)->get()->getRow();
     
     if (!$user) {
-        return redirect()->to('admin/users')->with('error', 'User not found');
+        return redirect()->to('admin/dashboard')->with('error', 'User not found');
     }
     
     $salaryModel = new \App\Models\SalaryModel();
@@ -60,7 +115,7 @@ public function salary($id)
     // Get campus settings
     $campusSettings = $salaryModel->getCampusSettings($user->campus_id);
     
-    return view('admin/user_views/users_view', [
+    return view('admin/user_views/users_view', $this->mergeUserViewSidebarData([
         'user' => $user,
         'currentSalary' => $currentSalary,
         'salaryHistory' => $salaryHistory,
@@ -68,7 +123,7 @@ public function salary($id)
         'employeeRules' => $employeeRules,
         'campusSettings' => $campusSettings,
         'activeTab' => 'salary'
-    ]);
+    ]));
 }
 
 /**
@@ -76,6 +131,11 @@ public function salary($id)
  */
 public function updateSalary()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
+    helper(['permission', 'role']);
     $db = $this->db ?? \Config\Database::connect();
     $userId = $this->request->getPost('user_id');
     $newSalary = $this->request->getPost('basic_salary');
@@ -136,6 +196,11 @@ public function updateSalary()
  */
 public function saveSalaryRules()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
+    helper(['permission', 'role']);
     $db = $this->db ?? \Config\Database::connect();
     $userId = $this->request->getPost('user_id');
     $user = $db->table('users')->where('id', $userId)->get()->getRow();
@@ -175,10 +240,80 @@ public function saveSalaryRules()
 }
 
 /**
+ * Legacy route alias — redirects to viewSalarySlip.
+ */
+public function salarySlip($id, $slipId)
+{
+    return redirect()->to(base_url('admin/users/view-salary-slip/' . $id . '/' . $slipId));
+}
+
+/**
+ * Export salary slips for an employee as CSV.
+ */
+public function exportSalary($id)
+{
+    $id = (int) $id;
+    helper('role');
+    if (isSelfProfile($id) && ! canFullEditEmployeeProfile()) {
+        return redirect()->to(base_url('admin/users/salary/' . $id))
+            ->with('error', 'You do not have permission to export salary data.');
+    }
+    if ($deny = $this->requireAdminUsersPermission()) {
+        return $deny;
+    }
+
+    $db = $this->db ?? \Config\Database::connect();
+    $user = $db->table('users')->where('id', $id)->get()->getRow();
+
+    if (!$user) {
+        return redirect()->to('admin/users')->with('error', 'User not found');
+    }
+
+    $salaryModel = new \App\Models\SalaryModel();
+    $slips = $salaryModel->getSalarySlips($id);
+
+    $filename = 'salary-slips-' . preg_replace('/[^a-z0-9_-]+/i', '-', $user->username ?? (string) $id) . '.csv';
+
+    $output = fopen('php://temp', 'r+');
+    fputcsv($output, [
+        'Slip No', 'Month', 'Year', 'Basic Salary', 'Net Salary',
+        'Total Earnings', 'Total Deductions', 'Payment Status', 'Payment Date',
+    ]);
+
+    foreach ($slips as $slip) {
+        fputcsv($output, [
+            $slip->slip_no,
+            $slip->month,
+            $slip->year,
+            $slip->basic_salary,
+            $slip->net_salary,
+            $slip->total_earnings,
+            $slip->total_deductions,
+            $slip->payment_status,
+            $slip->payment_date ?? '',
+        ]);
+    }
+
+    rewind($output);
+    $csv = stream_get_contents($output);
+    fclose($output);
+
+    return $this->response
+        ->setHeader('Content-Type', 'text/csv')
+        ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+        ->setBody($csv);
+}
+
+/**
  * View salary slip
  */
 public function viewSalarySlip($id, $slipId)
 {
+    $id = (int) $id;
+    if ($deny = $this->assertCanViewProfile($id)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $session = session();
     
@@ -343,6 +478,10 @@ private function getDynamicSchoolInfo($campus_id = null)
  */
 public function updatePaymentStatus()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $session = session();
     
@@ -416,7 +555,21 @@ public function updatePaymentStatus()
         );
         
         if ($result) {
-            // Log the payment transaction
+            $campusId = (int) session('member_campusid');
+            $paidFromAccount = (int) $this->request->getPost('paid_from_account_id');
+            $finance = new \App\Libraries\CampusFinanceService($db);
+            $netSalary = (float) ($slip->net_salary ?? 0);
+            if ($finance->campusHasFinanceAccounts($campusId) && $netSalary > 0) {
+                $finance->recordSalaryPayment(
+                    (int) $slipId,
+                    $campusId,
+                    $netSalary,
+                    $paidFromAccount,
+                    (int) session('member_userid'),
+                    'Salary slip #' . ($slip->slip_no ?? $slipId)
+                );
+            }
+
             $salaryModel->logPaymentTransaction(
                 $slipId,
                 $slip->user_id,
@@ -540,7 +693,7 @@ public function qr($id)
         ->get()
         ->getResult();
     
-    return view('admin/user_views/users_view', $data);
+    return view('admin/user_views/users_view', $this->mergeUserViewSidebarData($data));
 }
 
 // In your controller or a helper file
@@ -759,6 +912,17 @@ private function saveSubjectAssignments($teacherId, $selectedSubjects)
         
         // Add new assignments - and remove from other teachers
         foreach ($subjectsToAdd as $secSubId) {
+            $sectionSubject = $db->table('section_subjects')
+                ->select('cls_sec_id')
+                ->where('sec_sub_id', $secSubId)
+                ->where('status', 1)
+                ->get()
+                ->getRow();
+
+            if (! $sectionSubject) {
+                continue;
+            }
+
             // First, remove this subject from any other teacher
             $db->table('teacher_subjects')
                 ->where('sec_sub_id', $secSubId)
@@ -769,6 +933,7 @@ private function saveSubjectAssignments($teacherId, $selectedSubjects)
             $db->table('teacher_subjects')->insert([
                 'tid' => $teacherId,
                 'sec_sub_id' => $secSubId,
+                'cls_sec_id' => $sectionSubject->cls_sec_id,
                 'status' => 1,
                 'created_date' => date('Y-m-d H:i:s'),
                 'updated_date' => date('Y-m-d H:i:s'),
@@ -867,6 +1032,10 @@ private function saveClassTeacherAssignments($teacherId, $selectedClasses)
  */
 public function add()
 {
+    if ($deny = $this->requireAdminUsersPermission()) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $campusId = $this->session->get('member_campusid');
     
@@ -884,6 +1053,7 @@ public function add()
         'currentUserLevel' => $this->currentUserLevel,
         'currentUserRoleName' => $this->currentUserRole->rolename ?? 'Unknown',
         'canAssignMultipleRoles' => $this->canAssignMultipleRoles(),
+        'requireOldPasswordForPasswordChange' => $this->currentUserRequiresOldPasswordForUserPasswordChange(),
         'levelNames' => $this->getAllLevelNames(),
         'availableSubjects' => $availableSubjects,
         'availableClasses' => $availableClasses,
@@ -896,25 +1066,49 @@ public function add()
 
 public function edit($id)
 {
+    $id = (int) $id;
+    if ($deny = $this->requireFullEditPermission()) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
-    $campusId = $this->session->get('member_campusid');
+    $sessionCampusId = (int) $this->session->get('member_campusid');
     
     $user = $db->table('users')->where('id', $id)->get()->getRow();
     
     if (!$user) {
         return redirect()->to('admin/users')->with('error', 'User not found');
     }
+    $campusId = (int) ($user->campus_id ?? $sessionCampusId);
+    $planId = $this->getCampusPlanId($campusId);
     
-    $empSalary = $db->table('emp_salary')->where(['emp_id' => $id, 'status' => 1])->get()->getRow();
-
-    // Get user's current roles
-    $userRoles = $db->table('user_roles ur')
-        ->select('ur.roleID, r.issys, rn.rolename, rn.detail')
-        ->join('roles r', 'ur.roleID = r.id')
+    // Get user's current roles (strictly scoped to the edited user's campus plan)
+    $userRolesPrimary = $db->table('user_roles ur')
+        ->select('r.id as roleID, r.issys, rn.rolename, rn.detail')
+        ->join('roles r', 'ur.roleID = r.id AND r.plan_id = ' . (int) $planId, 'inner')
         ->join('role_name rn', 'r.role_name_id = rn.role_name_id')
         ->where('ur.userID', $id)
         ->get()
         ->getResult();
+
+    // Legacy fallback: old rows where user_roles.roleID stored role_name_id.
+    $userRolesLegacy = $db->table('user_roles ur')
+        ->select('r.id as roleID, r.issys, rn.rolename, rn.detail')
+        ->join('roles r', 'ur.roleID = r.role_name_id AND r.plan_id = ' . (int) $planId, 'inner')
+        ->join('role_name rn', 'r.role_name_id = rn.role_name_id')
+        ->where('ur.userID', $id)
+        ->get()
+        ->getResult();
+
+    $userRoles = [];
+    $seenRoleIds = [];
+    foreach (array_merge($userRolesPrimary, $userRolesLegacy) as $role) {
+        $rid = (int) ($role->roleID ?? 0);
+        if ($rid > 0 && !isset($seenRoleIds[$rid])) {
+            $seenRoleIds[$rid] = true;
+            $userRoles[] = $role;
+        }
+    }
     
     $selectedRoleIds = array_map(function($role) {
         return (int) $role->roleID;
@@ -953,7 +1147,7 @@ public function edit($id)
         return $item->cls_sec_id;
     }, $currentClasses);
 
-    $assignableRoles = $this->getAssignableRoles();
+    $assignableRoles = $this->getAssignableRoles($campusId);
     $levelNames = $this->getAllLevelNames();
     
     // Get available subjects and classes
@@ -962,13 +1156,13 @@ public function edit($id)
 
     return view('admin/users_edit', [
         'info' => $user,
-        'emp_salary_info' => $empSalary,
         'assignableRoles' => $assignableRoles,
         'selectedRoleIds' => $selectedRoleIds,
         'selectedRoleDetails' => $selectedRoleDetails,
         'currentUserLevel' => $this->currentUserLevel,
         'currentUserRoleName' => $this->currentUserRole->rolename ?? 'Unknown',
         'canAssignMultipleRoles' => $this->canAssignMultipleRoles(),
+        'requireOldPasswordForPasswordChange' => $this->currentUserRequiresOldPasswordForUserPasswordChange(),
         'levelNames' => $levelNames,
         'availableSubjects' => $availableSubjects,
         'availableClasses' => $availableClasses,
@@ -977,11 +1171,201 @@ public function edit($id)
     ]);
 }
 
+public function checkAvailability()
+{
+    $field = (string) $this->request->getGet('field');
+    $value = trim((string) $this->request->getGet('value'));
+    $id = (int) $this->request->getGet('id');
+
+    if (!in_array($field, ['username', 'email'], true)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'available' => false,
+            'msg' => 'Invalid availability check'
+        ]);
+    }
+
+    if ($value === '') {
+        return $this->response->setJSON([
+            'success' => true,
+            'available' => false,
+            'msg' => ucfirst($field) . ' is required'
+        ]);
+    }
+
+    if ($field === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+        return $this->response->setJSON([
+            'success' => true,
+            'available' => false,
+            'msg' => 'Invalid email format'
+        ]);
+    }
+
+    $builder = $this->db->table('users')->where($field, $value);
+    if ($id > 0) {
+        $builder->where('id !=', $id);
+    }
+
+    $exists = (bool) $builder->get()->getRow();
+    $label = $field === 'email' ? 'Email' : 'Username';
+
+    return $this->response->setJSON([
+        'success' => true,
+        'available' => !$exists,
+        'msg' => $exists ? $label . ' is already taken' : $label . ' is available'
+    ]);
+}
+
+public function debugRoleMapping($id)
+{
+    $db = $this->db ?? \Config\Database::connect();
+
+    $user = $db->table('users')->where('id', $id)->get()->getRow();
+    if (!$user) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'User not found',
+            'user_id' => (int) $id,
+        ]);
+    }
+
+    $sessionCampusId = (int) $this->session->get('member_campusid');
+    $userCampusId = (int) ($user->campus_id ?? 0);
+    $sessionPlanId = $this->getCampusPlanId($sessionCampusId);
+    $userPlanId = $this->getCampusPlanId($userCampusId);
+
+    $userRoleRows = $db->table('user_roles')
+        ->select('userID, roleID, addDate')
+        ->where('userID', $id)
+        ->orderBy('roleID', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    $matchedByRoleId = $db->table('user_roles ur')
+        ->select('ur.userID, ur.roleID as stored_roleID, r.id as resolved_role_id, r.role_name_id, r.plan_id, r.issys, rn.rolename, rn.detail')
+        ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $userPlanId, 'inner')
+        ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+        ->where('ur.userID', $id)
+        ->orderBy('rn.rolename', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    $matchedByRoleNameId = $db->table('user_roles ur')
+        ->select('ur.userID, ur.roleID as stored_roleID, r.id as resolved_role_id, r.role_name_id, r.plan_id, r.issys, rn.rolename, rn.detail')
+        ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . (int) $userPlanId, 'inner')
+        ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+        ->where('ur.userID', $id)
+        ->orderBy('rn.rolename', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    $assignableRoles = array_map(static function ($role) {
+        return [
+            'id' => (int) ($role->id ?? 0),
+            'role_name_id' => (int) ($role->role_name_id ?? 0),
+            'plan_id' => (int) ($role->plan_id ?? 0),
+            'rolename' => (string) ($role->rolename ?? ''),
+            'issys' => (int) ($role->issys ?? 0),
+            'level' => (int) ($role->level ?? 0),
+        ];
+    }, $this->getAssignableRoles($userCampusId));
+
+    $groupByRoleName = static function (array $rows, string $nameKey = 'rolename', string $idKey = 'resolved_role_id') {
+        $grouped = [];
+        foreach ($rows as $row) {
+            $name = trim((string) ($row[$nameKey] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            if (!isset($grouped[$name])) {
+                $grouped[$name] = [
+                    'count' => 0,
+                    'resolved_role_ids' => [],
+                    'role_name_ids' => [],
+                    'stored_role_ids' => [],
+                ];
+            }
+            $grouped[$name]['count']++;
+            $resolvedRoleId = (int) ($row[$idKey] ?? 0);
+            $roleNameId = (int) ($row['role_name_id'] ?? 0);
+            $storedRoleId = (int) ($row['stored_roleID'] ?? 0);
+            if ($resolvedRoleId > 0 && !in_array($resolvedRoleId, $grouped[$name]['resolved_role_ids'], true)) {
+                $grouped[$name]['resolved_role_ids'][] = $resolvedRoleId;
+            }
+            if ($roleNameId > 0 && !in_array($roleNameId, $grouped[$name]['role_name_ids'], true)) {
+                $grouped[$name]['role_name_ids'][] = $roleNameId;
+            }
+            if ($storedRoleId > 0 && !in_array($storedRoleId, $grouped[$name]['stored_role_ids'], true)) {
+                $grouped[$name]['stored_role_ids'][] = $storedRoleId;
+            }
+        }
+        ksort($grouped);
+        return $grouped;
+    };
+
+    $assignableGrouped = [];
+    foreach ($assignableRoles as $row) {
+        $name = trim((string) ($row['rolename'] ?? ''));
+        if ($name === '') {
+            continue;
+        }
+        if (!isset($assignableGrouped[$name])) {
+            $assignableGrouped[$name] = [
+                'count' => 0,
+                'role_ids' => [],
+                'role_name_ids' => [],
+            ];
+        }
+        $assignableGrouped[$name]['count']++;
+        if (!in_array((int) $row['id'], $assignableGrouped[$name]['role_ids'], true)) {
+            $assignableGrouped[$name]['role_ids'][] = (int) $row['id'];
+        }
+        if (!in_array((int) $row['role_name_id'], $assignableGrouped[$name]['role_name_ids'], true)) {
+            $assignableGrouped[$name]['role_name_ids'][] = (int) $row['role_name_id'];
+        }
+    }
+    ksort($assignableGrouped);
+
+    $payload = [
+        'success' => true,
+        'debug_for_user_id' => (int) $id,
+        'session_context' => [
+            'session_campus_id' => $sessionCampusId,
+            'session_plan_id' => $sessionPlanId,
+            'current_user_level' => (int) ($this->currentUserLevel ?? 0),
+            'current_user_role' => (string) ($this->currentUserRole->rolename ?? ''),
+        ],
+        'target_user_context' => [
+            'target_user_id' => (int) $user->id,
+            'target_username' => (string) ($user->username ?? ''),
+            'target_campus_id' => $userCampusId,
+            'target_plan_id' => $userPlanId,
+        ],
+        'user_roles_table_rows' => $userRoleRows,
+        'resolved_matches_by_roles_id' => $matchedByRoleId,
+        'resolved_matches_by_roles_role_name_id_legacy' => $matchedByRoleNameId,
+        'grouped_duplicates' => [
+            'by_roles_id_match' => $groupByRoleName($matchedByRoleId),
+            'by_legacy_role_name_id_match' => $groupByRoleName($matchedByRoleNameId),
+            'assignable_roles_on_edit' => $assignableGrouped,
+        ],
+        'assignable_roles_used_in_edit' => $assignableRoles,
+    ];
+
+    return $this->response
+        ->setHeader('Content-Type', 'application/json')
+        ->setBody(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
 /**
  * Update the save method to handle subject and class assignments
  */
 public function save()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     // Enable error reporting for debugging
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
@@ -998,8 +1382,32 @@ public function save()
         
         // Get selected roles
         $selectedRoles = $this->request->getPost('role_ids') ?: [];
+        if (!is_array($selectedRoles)) {
+            $selectedRoles = [$selectedRoles];
+        }
         if (empty($selectedRoles) && $this->request->getPost('role_id')) {
             $selectedRoles = [$this->request->getPost('role_id')];
+        }
+        $selectedRoles = array_values(array_unique(array_filter(array_map('intval', $selectedRoles))));
+
+        $targetCampusId = (int) $campusId;
+        if (! empty($id)) {
+            $existingTarget = $db->table('users')->select('campus_id')->where('id', (int) $id)->get()->getRow();
+            if ($existingTarget) {
+                $targetCampusId = (int) ($existingTarget->campus_id ?? $targetCampusId);
+            }
+        }
+        $targetPlanId = $this->getCampusPlanId($targetCampusId);
+        if ($targetPlanId > 0 && ! empty($selectedRoles)) {
+            helper('role');
+            $selectedRoles = normalizeRoleIdsForPlan($selectedRoles, $targetPlanId);
+        }
+
+        if (empty($id) && empty($selectedRoles)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'Please select at least one role before saving employee.'
+            ]);
         }
         
         // Get selected subjects and classes
@@ -1009,7 +1417,7 @@ public function save()
         // Validate role permissions
         if (!empty($selectedRoles)) {
             foreach ($selectedRoles as $roleId) {
-                if (!$this->canAssignRole($roleId)) {
+                if (!$this->canAssignRole($roleId, $targetCampusId)) {
                     return $this->response->setJSON([
                         'success' => false, 
                         'msg' => 'You do not have permission to assign one of the selected roles'
@@ -1021,6 +1429,11 @@ public function save()
         // Validate unique email and username
         $username = $this->request->getPost('username');
         $email = $this->request->getPost('email');
+        $rawPassword = (string) $this->request->getPost('password');
+        $newPassword = (string) $this->request->getPost('new_password');
+        $confirmPassword = (string) $this->request->getPost('confirm_password');
+        $confirmNewPassword = (string) $this->request->getPost('confirm_new_password');
+        $currentPassword = (string) $this->request->getPost('current_password');
         
         if (empty($username)) {
             return $this->response->setJSON([
@@ -1034,6 +1447,40 @@ public function save()
                 'success' => false, 
                 'msg' => 'Email is required'
             ]);
+        }
+        
+        if (empty($id)) {
+            if (strlen($rawPassword) < 6) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => 'Password is required and must be at least 6 characters'
+                ]);
+            }
+            if ($rawPassword !== $confirmPassword) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => 'Password and confirm password do not match'
+                ]);
+            }
+        } elseif ($newPassword !== '' || $confirmNewPassword !== '') {
+            if (strlen($newPassword) < 6) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => 'New password must be at least 6 characters'
+                ]);
+            }
+            if ($newPassword !== $confirmNewPassword) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => 'New password and confirm password do not match'
+                ]);
+            }
+            if ($this->currentUserRequiresOldPasswordForUserPasswordChange() && $currentPassword === '') {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => 'Current password is required for your role to change password'
+                ]);
+            }
         }
         
         $usernameCheck = $db->table('users')
@@ -1156,7 +1603,7 @@ public function save()
             
             if (empty($id)) {
                 // Insert new user
-                $data['password'] = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
+                $data['password'] = password_hash($rawPassword, PASSWORD_DEFAULT);
                 $data['created_date'] = date('Y-m-d H:i:s');
                 $data['status'] = 1;
                 
@@ -1176,17 +1623,18 @@ public function save()
                     }
                 }
                 
-                // Save salary to emp_salary table
+                // Record initial salary in history when set
                 $salary = $this->request->getPost('salary');
-                if ($salary) {
-                    $db->table('emp_salary')->insert([
-                        'emp_id' => $newUserId,
-                        'salary' => $salary,
-                        'status' => 1,
-                        'date' => date('Y-m-d'),
-                        'created_date' => date('Y-m-d H:i:s'),
-                        'user_id' => $userId
-                    ]);
+                if ($salary && (float) $salary > 0) {
+                    $salaryModel = new \App\Models\SalaryModel();
+                    $salaryModel->recordIncrement(
+                        $newUserId,
+                        (int) $data['campus_id'],
+                        0,
+                        (float) $salary,
+                        'Initial salary on employee creation',
+                        $userId
+                    );
                 }
                 
                 // Save subject assignments if method exists
@@ -1207,80 +1655,85 @@ public function save()
                 
             } else {
                 // Update existing user
+                $existingUser = $db->table('users')->where('id', $id)->get()->getRow();
+                if (!$existingUser) {
+                    throw new \Exception('User not found');
+                }
+
+                if ($newPassword !== '' || $confirmNewPassword !== '') {
+                    if ($this->currentUserRequiresOldPasswordForUserPasswordChange()) {
+                        $actor = $db->table('users')->where('id', $userId)->get()->getRow();
+                        if (!$actor || empty($actor->password) || !password_verify($currentPassword, $actor->password)) {
+                            throw new \Exception('Current password is incorrect');
+                        }
+                    }
+                    $data['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                }
+
                 if (!$db->table('users')->where('id', $id)->update($data)) {
                     throw new \Exception('Failed to update user data');
                 }
                 $newUserId = $id;
                 
-                // Handle role assignments
-                if (!empty($selectedRoles)) {
-                    $existingRoles = $db->table('user_roles')
+                // Handle role assignments (add, replace, or remove all)
+                $existingRoles = $db->table('user_roles')
+                    ->where('userID', $id)
+                    ->get()
+                    ->getResult();
+                
+                $existingRoleIds = array_map(function($role) {
+                    return (int) $role->roleID;
+                }, $existingRoles);
+                $selectedRoles = array_map('intval', (array) $selectedRoles);
+                
+                $rolesToAdd = array_diff($selectedRoles, $existingRoleIds);
+                $rolesToRemove = array_diff($existingRoleIds, $selectedRoles);
+                
+                foreach ($rolesToAdd as $roleId) {
+                    $db->table('user_roles')->insert([
+                        'userID' => $id,
+                        'roleID' => $roleId,
+                        'addDate' => date('Y-m-d H:i:s')
+                    ]);
+                }
+                
+                if (!empty($rolesToRemove)) {
+                    $db->table('user_roles')
                         ->where('userID', $id)
-                        ->get()
-                        ->getResult();
-                    
-                    $existingRoleIds = array_map(function($role) {
-                        return $role->roleID;
-                    }, $existingRoles);
-                    
-                    $rolesToAdd = array_diff($selectedRoles, $existingRoleIds);
-                    $rolesToRemove = array_diff($existingRoleIds, $selectedRoles);
-                    
-                    foreach ($rolesToAdd as $roleId) {
-                        $db->table('user_roles')->insert([
-                            'userID' => $id,
-                            'roleID' => $roleId,
-                            'addDate' => date('Y-m-d H:i:s')
-                        ]);
-                    }
-                    
-                    if (!empty($rolesToRemove)) {
-                        $db->table('user_roles')
-                            ->where('userID', $id)
-                            ->whereIn('roleID', $rolesToRemove)
-                            ->delete();
-                    }
+                        ->whereIn('roleID', $rolesToRemove)
+                        ->delete();
                 }
                 
-                // Update salary
+                // Record salary change in history when basic_salary changes
                 $salary = $this->request->getPost('salary');
-                if ($salary) {
-                    $existingSalary = $db->table('emp_salary')
-                        ->where(['emp_id' => $id, 'status' => 1])
-                        ->get()
-                        ->getRow();
-                        
-                    if ($existingSalary) {
-                        $db->table('emp_salary')
-                            ->where('salary_id', $existingSalary->salary_id)
-                            ->update([
-                                'salary' => $salary,
-                                'updated_date' => date('Y-m-d H:i:s')
-                            ]);
-                    } else {
-                        $db->table('emp_salary')->insert([
-                            'emp_id' => $id,
-                            'salary' => $salary,
-                            'status' => 1,
-                            'date' => date('Y-m-d'),
-                            'created_date' => date('Y-m-d H:i:s'),
-                            'user_id' => $userId
-                        ]);
+                if ($salary !== null && $salary !== '') {
+                    $oldBasic = (float) ($existingUser->basic_salary ?? 0);
+                    $newBasic = (float) $salary;
+                    if ($newBasic !== $oldBasic) {
+                        $salaryModel = new \App\Models\SalaryModel();
+                        $salaryModel->recordIncrement(
+                            (int) $id,
+                            (int) ($existingUser->campus_id ?? $this->session->get('member_campusid')),
+                            $oldBasic,
+                            $newBasic,
+                            'Updated via employee edit form',
+                            $userId
+                        );
                     }
                 }
                 
-                // Save subject assignments if method exists
-                if (method_exists($this, 'saveSubjectAssignments')) {
+                // Subject/class assignments are saved via AJAX toggles on the edit form.
+                // Only bulk-sync when explicit POST arrays are sent (legacy/add flows).
+                if (! empty($selectedSubjects) && method_exists($this, 'saveSubjectAssignments')) {
                     $subjectResult = $this->saveSubjectAssignments($id, $selectedSubjects);
-                    if (!$subjectResult['success']) {
+                    if (! $subjectResult['success']) {
                         throw new \Exception($subjectResult['message']);
                     }
                 }
-                
-                // Save class teacher assignments if method exists
-                if (method_exists($this, 'saveClassTeacherAssignments')) {
+
+                if (! empty($selectedClassTeachers) && method_exists($this, 'saveClassTeacherAssignments')) {
                     $classResult = $this->saveClassTeacherAssignments($id, $selectedClassTeachers);
-                    if (!$classResult['success']) {
+                    if (! $classResult['success']) {
                         throw new \Exception($classResult['message']);
                     }
                 }
@@ -1293,7 +1746,14 @@ public function save()
             }
             
             log_message('debug', 'User saved successfully. ID: ' . $newUserId);
-            
+
+            $acl = new \App\Libraries\MemberAcl((int) $newUserId);
+            $acl->clearUserCaches((int) $newUserId);
+            \App\Libraries\RoleMenuAccess::clearCacheForUser((int) $newUserId);
+            if ((int) $newUserId === (int) session()->get('member_userid')) {
+                \App\Libraries\MemberCurrentUser::clearCache();
+            }
+
             // Prepare success response
             $responseData = [
                 'success' => true, 
@@ -1336,10 +1796,17 @@ public function save()
  */
 public function getTeacherSubjects($teacherId)
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
-    $campusId = $this->session->get('member_campusid');
+    $teacherId = (int) $teacherId;
+
+    $userRow = $db->table('users')->select('campus_id')->where('id', $teacherId)->get()->getRow();
+    $campusId = (int) ($userRow->campus_id ?? $this->session->get('member_campusid'));
     
-    // Get current assignments
+    // Get current subject assignments
     $currentSubjects = $db->table('teacher_subjects')
         ->select('sec_sub_id')
         ->where('tid', $teacherId)
@@ -1347,9 +1814,20 @@ public function getTeacherSubjects($teacherId)
         ->get()
         ->getResult();
     
-    $selectedSubjectIds = array_map(function($item) {
-        return $item->sec_sub_id;
+    $selectedSubjectIds = array_map(static function ($item) {
+        return (int) $item->sec_sub_id;
     }, $currentSubjects);
+
+    $currentClassSections = $db->table('teacher_section')
+        ->select('cls_sec_id')
+        ->where('tid', $teacherId)
+        ->where('status', 1)
+        ->get()
+        ->getResult();
+
+    $selectedClassSectionIds = array_map(static function ($item) {
+        return (int) $item->cls_sec_id;
+    }, $currentClassSections);
     
     // Get available subjects with assignment status
     $subjects = $db->table('section_subjects ss')
@@ -1357,7 +1835,11 @@ public function getTeacherSubjects($teacherId)
                   (SELECT tid FROM teacher_subjects WHERE sec_sub_id = ss.sec_sub_id AND status = 1 LIMIT 1) as assigned_teacher_id,
                   (SELECT CONCAT(u.first_name, " ", u.last_name) FROM teacher_subjects ts 
                    JOIN users u ON ts.tid = u.id 
-                   WHERE ts.sec_sub_id = ss.sec_sub_id AND ts.status = 1 LIMIT 1) as assigned_teacher_name')
+                   WHERE ts.sec_sub_id = ss.sec_sub_id AND ts.status = 1 LIMIT 1) as assigned_teacher_name,
+                  (SELECT tid FROM teacher_section WHERE cls_sec_id = cs.cls_sec_id AND status = 1 LIMIT 1) as section_class_teacher_id,
+                  (SELECT CONCAT(u.first_name, " ", u.last_name) FROM teacher_section ts
+                   JOIN users u ON ts.tid = u.id
+                   WHERE ts.cls_sec_id = cs.cls_sec_id AND ts.status = 1 LIMIT 1) as section_class_teacher_name')
         ->join('class_section cs', 'ss.cls_sec_id = cs.cls_sec_id')
         ->join('classes c', 'cs.class_id = c.class_id')
         ->join('sections s', 'cs.section_id = s.section_id')
@@ -1371,15 +1853,19 @@ public function getTeacherSubjects($teacherId)
     
     $response = [];
     foreach ($subjects as $subject) {
+        $clsSecId = (int) $subject->cls_sec_id;
         $response[] = [
-            'sec_sub_id' => $subject->sec_sub_id,
-            'cls_sec_id' => $subject->cls_sec_id,
+            'sec_sub_id' => (int) $subject->sec_sub_id,
+            'cls_sec_id' => $clsSecId,
             'class_name' => $subject->class_name,
             'section_name' => $subject->section_name,
             'subject_name' => $subject->subject_name,
-            'is_selected' => in_array($subject->sec_sub_id, $selectedSubjectIds),
+            'is_selected' => in_array((int) $subject->sec_sub_id, $selectedSubjectIds, true),
             'assigned_teacher_name' => $subject->assigned_teacher_name,
-            'assigned_teacher_id' => $subject->assigned_teacher_id
+            'assigned_teacher_id' => (int) ($subject->assigned_teacher_id ?? 0),
+            'is_class_teacher' => in_array($clsSecId, $selectedClassSectionIds, true),
+            'section_class_teacher_id' => (int) ($subject->section_class_teacher_id ?? 0),
+            'section_class_teacher_name' => $subject->section_class_teacher_name,
         ];
     }
     
@@ -1392,6 +1878,10 @@ public function getTeacherSubjects($teacherId)
 
 public function assignSubject()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $teacherId = $this->request->getPost('teacher_id');
     $secSubId = $this->request->getPost('sec_sub_id');
@@ -1483,6 +1973,10 @@ public function assignSubject()
  */
 public function getTeacherClasses($teacherId)
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $campusId = $this->session->get('member_campusid');
     
@@ -1533,6 +2027,10 @@ public function getTeacherClasses($teacherId)
  */
 public function assignClassTeacher()
 {
+    if ($deny = $this->requireFullEditPermission(true)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     $teacherId = $this->request->getPost('teacher_id');
     $clsSecId = $this->request->getPost('cls_sec_id');
@@ -1727,59 +2225,168 @@ private function getEmployeePhoto($photo)
  
     public function index()
     {
+        if ($deny = $this->requireAdminUsersPermission()) {
+            return $deny;
+        }
+
         $status = $this->request->getGet('status') ?? '1';
-        return view('admin/users', ['status' => $status]);
+        $roleFilter = $this->request->getGet('role_filter') ?? 'all';
+        return view('admin/users', [
+            'status'       => $status,
+            'role_filter'  => $roleFilter,
+        ]);
     }
 
-private function getAssignableRoles()
+protected function getAssignableRoles(?int $campusId = null)
 {
-    $campusId = $this->session->get('member_campusid');
-    $campusBill = $this->db->table('campus_bills')
-        ->where(['status' => 1, 'campus_id' => $campusId])
-        ->get()
-        ->getRow();
-    $planId = $campusBill->plan_id ?? 1;
+    $campusId = $campusId ?: (int) $this->session->get('member_campusid');
+    $planId = $this->getCampusPlanId($campusId);
+    if ($planId <= 0) {
+        return [];
+    }
 
-    // Get all roles with their level
-    $builder = $this->db->table('roles r')
-        ->select('r.id, r.role_name_id, r.issys, rn.rolename, rn.detail')
+    // One row per role_name_id for the campus plan (prevents duplicate labels).
+    $allRoles = $this->db->table('roles r')
+        ->select('MIN(r.id) as id, r.role_name_id, MAX(r.issys) as issys, rn.rolename, rn.detail')
         ->join('role_name rn', 'r.role_name_id = rn.role_name_id')
-        ->where('r.plan_id', $planId);
+        ->where('r.plan_id', $planId)
+        ->groupBy('r.role_name_id, rn.rolename, rn.detail')
+        ->get()
+        ->getResult();
 
-    $allRoles = $builder->get()->getResult();
-    
-    // Calculate level for each role and add as property
-    $rolesWithLevel = [];
+    if (empty($allRoles)) {
+        return [];
+    }
+
+    // Tree rule: only descendants of current user's role_name(s), excluding self.
+    $allowedRoleNameIds = $this->getDescendantRoleNameIdsForCurrentUser($planId, false);
+    if (empty($allowedRoleNameIds)) {
+        return [];
+    }
+
+    $assignable = [];
     foreach ($allRoles as $role) {
+        if (!in_array((int) $role->role_name_id, $allowedRoleNameIds, true)) {
+            continue;
+        }
+        $role->id = (int) $role->id;
+        $role->role_name_id = (int) $role->role_name_id;
+        $role->issys = (int) $role->issys;
         $role->level = $this->getRoleLevel($role);
-        $rolesWithLevel[] = $role;
-    }
-    
-    // Sort roles by level (lower level = higher position)
-    usort($rolesWithLevel, function($a, $b) {
-        if ($a->level == $b->level) {
-            return strcmp($a->rolename, $b->rolename);
-        }
-        return $a->level - $b->level;
-    });
-
-    // If current user is not Super Admin, filter roles they can assign
-    if ($this->currentUserLevel > 1) {
-        $assignableRoles = [];
-        foreach ($rolesWithLevel as $role) {
-            // Can only assign roles at the same level or lower (higher number = lower level)
-            if ($role->level >= $this->currentUserLevel) {
-                $assignableRoles[] = $role;
-            }
-        }
-        return $assignableRoles;
+        $assignable[] = $role;
     }
 
-    // Super Admin can assign all roles except Super Admin itself
-    return array_filter($rolesWithLevel, function($role) {
-        // Super Admin can't create another Super Admin
-        return !($role->issys == 1 && stripos($role->rolename, 'super') !== false);
+    usort($assignable, function ($a, $b) {
+        return ((int) $a->role_name_id) <=> ((int) $b->role_name_id);
     });
+
+    return $assignable;
+}
+
+private function loadRoleNameTree(): array
+{
+    $rows = $this->db->table('role_name')
+        ->select('role_name_id, parent_id')
+        ->get()
+        ->getResultArray();
+
+    $children = [];
+    foreach ($rows as $row) {
+        $id = (int) ($row['role_name_id'] ?? 0);
+        $parent = (int) ($row['parent_id'] ?? 0);
+        if ($id <= 0) {
+            continue;
+        }
+        if (!isset($children[$parent])) {
+            $children[$parent] = [];
+        }
+        $children[$parent][] = $id;
+    }
+
+    return $children;
+}
+
+private function collectDescendants(array $children, int $rootId, bool $includeSelf = false): array
+{
+    $seen = [];
+    $stack = [$rootId];
+
+    while (!empty($stack)) {
+        $current = array_pop($stack);
+        if (isset($seen[$current])) {
+            continue;
+        }
+        $seen[$current] = true;
+        foreach (($children[$current] ?? []) as $kid) {
+            $stack[] = (int) $kid;
+        }
+    }
+
+    if (!$includeSelf) {
+        unset($seen[$rootId]);
+    }
+
+    return array_map('intval', array_keys($seen));
+}
+
+private function getCurrentUserRoleNameIdsForPlan(int $planId): array
+{
+    $userId = (int) $this->session->get('member_userid');
+    if ($userId <= 0 || $planId <= 0) {
+        return [];
+    }
+
+    // Primary mapping: user_roles.roleID -> roles.id.
+    $primary = $this->db->table('user_roles ur')
+        ->distinct()
+        ->select('r.role_name_id')
+        ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+        ->where('ur.userID', $userId)
+        ->get()
+        ->getResultArray();
+
+    $roleNameIds = array_map(static function ($row) {
+        return (int) ($row['role_name_id'] ?? 0);
+    }, $primary);
+    $roleNameIds = array_values(array_filter($roleNameIds));
+
+    if (!empty($roleNameIds)) {
+        return array_values(array_unique($roleNameIds));
+    }
+
+    // Legacy mapping: user_roles.roleID -> roles.role_name_id.
+    $legacy = $this->db->table('user_roles ur')
+        ->distinct()
+        ->select('r.role_name_id')
+        ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+        ->where('ur.userID', $userId)
+        ->get()
+        ->getResultArray();
+
+    $roleNameIds = array_map(static function ($row) {
+        return (int) ($row['role_name_id'] ?? 0);
+    }, $legacy);
+
+    return array_values(array_unique(array_filter($roleNameIds)));
+}
+
+private function getDescendantRoleNameIdsForCurrentUser(int $planId, bool $includeSelf = false): array
+{
+    $rootRoleNameIds = $this->getCurrentUserRoleNameIdsForPlan($planId);
+    if (empty($rootRoleNameIds)) {
+        return [];
+    }
+
+    $children = $this->loadRoleNameTree();
+    $allowed = [];
+
+    foreach ($rootRoleNameIds as $rootId) {
+        foreach ($this->collectDescendants($children, (int) $rootId, $includeSelf) as $desc) {
+            $allowed[$desc] = true;
+        }
+    }
+
+    return array_map('intval', array_keys($allowed));
 }
 
 
@@ -1802,107 +2409,421 @@ private function getAllLevelNames()
     ];
 }
 
+    /**
+     * Server-side list for employee DataTables (status + optional teachers-only).
+     *
+     * @param mixed $status '1' active, '0' dropped, 'all' both
+     */
+    private function usersListBuilder(int $campusId, $status, string $roleFilter, string $searchValue)
+    {
+        $planId = $this->getCampusPlanId($campusId);
+
+        $builder = $this->db->table('users u');
+        $builder->where('u.campus_id', $campusId);
+
+        if ($status !== 'all' && $status !== '') {
+            $builder->where('u.status', (int) $status);
+        }
+
+        if ($searchValue !== '') {
+            $builder->groupStart()
+                ->like('u.username', $searchValue)
+                ->orLike('u.email', $searchValue)
+                ->orLike('u.first_name', $searchValue)
+                ->orLike('u.last_name', $searchValue)
+                ->orLike('u.mobile_no', $searchValue)
+                ->groupEnd();
+        }
+
+        if ($roleFilter === 'teachers') {
+            if ($planId <= 0) {
+                $builder->where('1 = 0', null, false);
+            } else {
+                $sub = $this->db->table('user_roles ur')
+                    ->select('ur.userID')
+                    ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+                    ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+                    ->groupStart()
+                    ->where('LOWER(rn.rolename) LIKE', '%teacher%', false)
+                    ->orWhere('LOWER(rn.rolename) LIKE', '%faculty%', false)
+                    ->groupEnd()
+                    ->groupBy('ur.userID');
+                $inSql = $sub->getCompiledSelect();
+                $builder->where('u.id IN (' . $inSql . ')', null, false);
+            }
+        }
+
+        return $builder;
+    }
+
+    protected function getCampusPlanId(int $campusId): int
+    {
+        helper('role');
+
+        return getRolePlanId();
+    }
+
+    private function countUsersList(int $campusId, $status, string $roleFilter, string $searchValue): int
+    {
+        $b = $this->usersListBuilder($campusId, $status, $roleFilter, $searchValue);
+
+        return (int) $b->countAllResults(false);
+    }
+
     public function data()
     {
-        $campusId = $this->session->get('member_campusid');
+        $campusId = (int) $this->session->get('member_campusid');
+        $planId = $this->getCampusPlanId($campusId);
         $status = $this->request->getVar('status');
+        $roleFilter = $this->request->getVar('role_filter') ?? 'all';
+        if (! in_array($roleFilter, ['all', 'teachers'], true)) {
+            $roleFilter = 'all';
+        }
+
         $draw = $this->request->getVar('draw');
-        $start = $this->request->getVar('start');
-        $length = $this->request->getVar('length');
-        $searchValue = $this->request->getVar('search')['value'] ?? '';
+        $start = (int) $this->request->getVar('start');
+        $length = (int) $this->request->getVar('length');
+        $searchValue = trim($this->request->getVar('search')['value'] ?? '');
 
-        // Get total records
-        $builder = $this->db->table('users');
-        $builder->select('COUNT(id) as total');
-        $builder->where('campus_id', $campusId);
-        $builder->where('status', $status);
-
-        if ($searchValue !== '') {
-            $builder->groupStart()
-                ->like('username', $searchValue)
-                ->orLike('email', $searchValue)
-                ->orLike('first_name', $searchValue)
-                ->orLike('last_name', $searchValue)
-                ->orLike('mobile_no', $searchValue)
-                ->groupEnd();
+        if ($status === null || $status === '') {
+            $status = '1';
         }
 
-        $totalRecords = $builder->get()->getRow()->total;
+        $recordsTotal = $this->countUsersList($campusId, $status, $roleFilter, '');
+        $recordsFiltered = $this->countUsersList($campusId, $status, $roleFilter, $searchValue);
 
-        // Get filtered data
-        $builder = $this->db->table('users');
-        $builder->select('id, username, email,photo, first_name, last_name, mobile_no, mobile_no2, emergency_contact_no, status, designation');
-        $builder->where('campus_id', $campusId);
-        $builder->where('status', $status);
-
-        if ($searchValue !== '') {
-            $builder->groupStart()
-                ->like('username', $searchValue)
-                ->orLike('email', $searchValue)
-                ->orLike('first_name', $searchValue)
-                ->orLike('last_name', $searchValue)
-                ->orLike('mobile_no', $searchValue)
-                ->groupEnd();
+        $builderData = $this->usersListBuilder($campusId, $status, $roleFilter, $searchValue);
+        $builderData->select('u.id, u.username, u.email, u.photo, u.first_name, u.last_name, u.mobile_no, u.mobile_no2, u.emergency_contact_no, u.status, u.designation');
+        $builderData->orderBy('u.id', 'DESC');
+        if ($length > 0) {
+            $builderData->limit($length, $start);
         }
-
-        $builder->orderBy('id', 'DESC');
-        $builder->limit($length, $start);
-        $users = $builder->get()->getResult();
+        $users = $builderData->get()->getResult();
 
         $response = [
-            'draw' => intval($draw),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalRecords,
-            'data' => []
+            'draw'            => intval($draw),
+            'recordsTotal'    => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data'            => [],
         ];
 
+        $userIds = array_map(static function ($user) {
+            return (int) $user->id;
+        }, $users);
+        $userRolesMap = $this->getUserRolesMap($userIds, $planId);
+
         foreach ($users as $user) {
-            // Get user role
-            $roleName = $this->getUserRole($user->id);
-            
+            $roleNames = $userRolesMap[(int) $user->id] ?? [];
+            $roleDisplay = !empty($roleNames) ? implode(', ', $roleNames) : 'No Role';
+
             $response['data'][] = [
-                'id' => $user->id,
-                'username' => $user->username,
-                'full_name' => trim($user->first_name . ' ' . $user->last_name),
-                'email' => $user->email,
-                'role' => $roleName,
-                'mobile_no' => $user->mobile_no,
+                'id'          => $user->id,
+                'username'    => $user->username,
+                'full_name'   => trim($user->first_name . ' ' . $user->last_name),
+                'email'       => $user->email,
+                'role'        => $roleDisplay,
+                'mobile_no'   => $user->mobile_no,
                 'designation' => $user->designation ?? '',
-                'status' => $user->status
+                'status'      => $user->status,
             ];
         }
 
         return $this->response->setJSON($response);
     }
 
-    private function getUserRole($userId)
+    private function getUserRolesMap(array $userIds, int $planId): array
     {
-        $userRoles = $this->db->table('user_roles')->where('userID', $userId)->get()->getRow();
-        if (!$userRoles) return 'No Role';
-        
-        $campusBill = $this->db->table('campus_bills')
-            ->where(['status' => 1, 'campus_id' => $this->session->get('member_campusid')])
-            ->get()
-            ->getRow();
-        $planId = $campusBill->plan_id ?? null;
-        
-        $role = $this->db->table('roles')
-            ->where(['role_name_id' => $userRoles->roleID ?? 0, 'plan_id' => $planId])
-            ->get()
-            ->getRow();
-        
-        if ($role) {
-            $roleData = $this->db->table('role_name')
-                ->where('role_name_id', $role->role_name_id)
-                ->get()
-                ->getRow();
-            return $roleData->rolename ?? 'Unknown';
+        $map = [];
+        foreach ($userIds as $uid) {
+            $map[(int) $uid] = [];
         }
-        
-        return 'Unknown';
+
+        if (empty($userIds)) {
+            return $map;
+        }
+
+        // Primary mapping: user_roles.roleID -> roles.id (scoped to active campus plan).
+        if ($planId > 0) {
+            $rows = $this->db->table('user_roles ur')
+                ->distinct()
+                ->select('ur.userID, rn.rolename')
+                ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+                ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+                ->whereIn('ur.userID', $userIds)
+                ->orderBy('rn.rolename', 'ASC')
+                ->get()
+                ->getResult();
+        } else {
+            $rows = [];
+        }
+
+        foreach ($rows as $row) {
+            $uid = (int) ($row->userID ?? 0);
+            $name = trim((string) ($row->rolename ?? ''));
+            if ($uid > 0 && $name !== '' && !in_array($name, $map[$uid] ?? [], true)) {
+                $map[$uid][] = $name;
+            }
+        }
+
+        // Legacy fallback: user_roles.roleID stored as roles.role_name_id.
+        $needFallback = array_filter($map, static function ($roles) {
+            return empty($roles);
+        });
+
+        if (!empty($needFallback) && $planId > 0) {
+            $fallbackUserIds = array_keys($needFallback);
+            $legacyRows = $this->db->table('user_roles ur')
+                ->distinct()
+                ->select('ur.userID, rn.rolename')
+                ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+                ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+                ->whereIn('ur.userID', $fallbackUserIds)
+                ->orderBy('rn.rolename', 'ASC')
+                ->get()
+                ->getResult();
+
+            foreach ($legacyRows as $row) {
+                $uid = (int) ($row->userID ?? 0);
+                $name = trim((string) ($row->rolename ?? ''));
+                if ($uid > 0 && $name !== '' && !in_array($name, $map[$uid] ?? [], true)) {
+                    $map[$uid][] = $name;
+                }
+            }
+        }
+
+        return $map;
     }
 
-   
+    private function getUserRoleDetails(int $userId, int $planId): array
+    {
+        if ($userId <= 0 || $planId <= 0) {
+            return [];
+        }
+
+        $roles = [];
+        $seenIds = [];
+
+        $primary = $this->db->table('user_roles ur')
+            ->distinct()
+            ->select('r.id, r.issys, rn.rolename, rn.detail')
+            ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+            ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+            ->where('ur.userID', $userId)
+            ->orderBy('rn.rolename', 'ASC')
+            ->get()
+            ->getResult();
+
+        foreach ($primary as $role) {
+            $rid = (int) ($role->id ?? 0);
+            if ($rid > 0 && !isset($seenIds[$rid])) {
+                $seenIds[$rid] = true;
+                $role->level = $this->getRoleLevel($role);
+                $roles[] = $role;
+            }
+        }
+
+        if (empty($roles)) {
+            $legacy = $this->db->table('user_roles ur')
+                ->distinct()
+                ->select('r.id, r.issys, rn.rolename, rn.detail')
+                ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . (int) $planId, 'inner')
+                ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'inner')
+                ->where('ur.userID', $userId)
+                ->orderBy('rn.rolename', 'ASC')
+                ->get()
+                ->getResult();
+
+            foreach ($legacy as $role) {
+                $rid = (int) ($role->id ?? 0);
+                if ($rid > 0 && !isset($seenIds[$rid])) {
+                    $seenIds[$rid] = true;
+                    $role->level = $this->getRoleLevel($role);
+                    $roles[] = $role;
+                }
+            }
+        }
+
+        usort($roles, static function ($a, $b) {
+            $levelCmp = ((int) ($a->level ?? 999)) <=> ((int) ($b->level ?? 999));
+            if ($levelCmp !== 0) {
+                return $levelCmp;
+            }
+
+            return strcasecmp((string) ($a->rolename ?? ''), (string) ($b->rolename ?? ''));
+        });
+
+        return $roles;
+    }
+
+    /**
+     * Subject assignments for teacher profile (campus-scoped, correct joins).
+     *
+     * @return list<object>
+     */
+    private function getTeacherProfileSubjects(int $teacherId, int $campusId): array
+    {
+        if ($teacherId <= 0 || $campusId <= 0) {
+            return [];
+        }
+
+        return $this->db->table('teacher_subjects ts')
+            ->select('s.subject_name, c.class_name, sec.section_name, ts.created_date, ts.cls_sec_id, ts.sec_sub_id')
+            ->join('section_subjects ss', 'ts.sec_sub_id = ss.sec_sub_id')
+            ->join('allsubject s', 'ss.subject_id = s.sid')
+            ->join('class_section cs', 'ss.cls_sec_id = cs.cls_sec_id')
+            ->join('classes c', 'cs.class_id = c.class_id')
+            ->join('sections sec', 'cs.section_id = sec.section_id')
+            ->where('ts.tid', $teacherId)
+            ->where('ts.status', 1)
+            ->where('ss.status', 1)
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1)
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('sec.section_id', 'ASC')
+            ->orderBy('s.subject_name', 'ASC')
+            ->get()
+            ->getResult();
+    }
+
+    /**
+     * Distinct class-teacher (section incharge) assignments for teacher profile.
+     *
+     * @return list<object>
+     */
+    private function getTeacherProfileClassIncharges(int $teacherId, int $campusId): array
+    {
+        if ($teacherId <= 0 || $campusId <= 0) {
+            return [];
+        }
+
+        return $this->db->table('teacher_section ts')
+            ->select('ts.cls_sec_id, c.class_name, sec.section_name, MIN(ts.created_date) as created_date')
+            ->join('class_section cs', 'ts.cls_sec_id = cs.cls_sec_id')
+            ->join('classes c', 'cs.class_id = c.class_id')
+            ->join('sections sec', 'cs.section_id = sec.section_id')
+            ->where('ts.tid', $teacherId)
+            ->where('ts.status', 1)
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1)
+            ->groupBy('ts.cls_sec_id, c.class_name, sec.section_name, c.class_id, sec.section_id')
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('sec.section_id', 'ASC')
+            ->get()
+            ->getResult();
+    }
+
+    /**
+     * @param list<object> $subjects
+     * @param list<object> $classTeacherInfo
+     *
+     * @return array{
+     *   totalSubjects: int,
+     *   totalClasses: int,
+     *   totalClassIncharges: int,
+     *   totalResponsibilities: int
+     * }
+     */
+    private function buildTeacherProfileStats(array $subjects, array $classTeacherInfo): array
+    {
+        $subjectSectionIds = [];
+        foreach ($subjects as $subject) {
+            $sectionId = (int) ($subject->cls_sec_id ?? 0);
+            if ($sectionId > 0) {
+                $subjectSectionIds[$sectionId] = true;
+            }
+        }
+
+        $classTeacherSectionIds = [];
+        foreach ($classTeacherInfo as $row) {
+            $sectionId = (int) ($row->cls_sec_id ?? 0);
+            if ($sectionId > 0) {
+                $classTeacherSectionIds[$sectionId] = true;
+            }
+        }
+
+        $allSectionIds = $subjectSectionIds + $classTeacherSectionIds;
+
+        return [
+            'totalSubjects'         => count($subjects),
+            'totalClasses'          => count($subjectSectionIds),
+            'totalClassIncharges'   => count($classTeacherSectionIds),
+            'totalResponsibilities' => count($allSectionIds),
+        ];
+    }
+
+    /**
+     * @return array{subjects: list<object>, classTeacherInfo: list<object>, teacherProfileStats: array}
+     */
+    private function loadTeacherProfileAssignmentData(object $user): array
+    {
+        $teacherId = (int) ($user->id ?? 0);
+        $campusId  = (int) ($user->campus_id ?? 0);
+        $subjects  = $this->getTeacherProfileSubjects($teacherId, $campusId);
+        $classTeacherInfo = $this->getTeacherProfileClassIncharges($teacherId, $campusId);
+
+        return [
+            'subjects'            => $subjects,
+            'classTeacherInfo'    => $classTeacherInfo,
+            'teacherProfileStats' => $this->buildTeacherProfileStats($subjects, $classTeacherInfo),
+        ];
+    }
+
+    private function isProfileSalaryReadOnly(object $user): bool
+    {
+        helper('role');
+
+        return isCurrentUserTeacher((int) ($user->id ?? 0));
+    }
+
+    private function mergeUserViewSidebarData(array $data): array
+    {
+        $user = $data['user'] ?? null;
+        if (!$user) {
+            $data['userRoleNames'] = [];
+            $data['userRoles'] = [];
+            $data['passwordDisplay'] = '';
+            $data['passwordIsEncrypted'] = false;
+            return $data;
+        }
+
+        $userId = (int) ($user->id ?? 0);
+        $campusId = (int) ($user->campus_id ?? 0);
+        $data['salaryReadOnly']      = $this->isProfileSalaryReadOnly($user);
+        $data['isSelfProfile']       = isSelfProfile($userId);
+        $data['canFullEditProfile']  = canFullEditEmployeeProfile();
+        $planId = $this->getCampusPlanId($campusId);
+        $roleMap = $this->getUserRolesMap([$userId], $planId);
+        $userRoles = $this->getUserRoleDetails($userId, $planId);
+        $storedPassword = (string) ($user->password ?? '');
+        $data['userRoleNames'] = $roleMap[$userId] ?? [];
+        $data['userRoles'] = $userRoles;
+        $data['passwordIsEncrypted'] = $this->isStoredPasswordHash($storedPassword);
+        $data['passwordDisplay']     = ($data['isSelfProfile'] || ! canFullEditEmployeeProfile() || $data['passwordIsEncrypted'])
+            ? ''
+            : $storedPassword;
+
+        if (empty($data['photoUrl'])) {
+            $photoUrl = base_url('resource/adminlte/dist/img/emp-avatar.jpg');
+            if (!empty($user->photo)) {
+                $photoPath = FCPATH . 'uploads/employees/' . $user->photo;
+                if (file_exists($photoPath)) {
+                    $photoUrl = base_url('uploads/employees/' . $user->photo);
+                }
+            }
+            $data['photoUrl'] = $photoUrl;
+        }
+
+        return $data;
+    }
+
+    private function isStoredPasswordHash(string $stored): bool
+    {
+        if ($stored === '') {
+            return false;
+        }
+
+        return (password_get_info($stored)['algo'] ?? 0) > 0;
+    }
 
     private function canAssignMultipleRoles()
     {
@@ -1913,34 +2834,106 @@ private function getAllLevelNames()
         return false;
     }
 
+    private function currentUserRequiresOldPasswordForUserPasswordChange(): bool
+    {
+        $roles = $this->getCurrentUserRoleNames();
+        if (empty($roles)) {
+            return true;
+        }
+
+        $isTeacher = false;
+        $hasPrivilegedRole = false;
+
+        foreach ($roles as $name) {
+            $n = strtolower(trim((string) $name));
+            if ($n === '') {
+                continue;
+            }
+            if (strpos($n, 'teacher') !== false || strpos($n, 'faculty') !== false) {
+                $isTeacher = true;
+            }
+            if (strpos($n, 'principal') !== false || strpos($n, 'director campus') !== false || strpos($n, 'director system') !== false) {
+                $hasPrivilegedRole = true;
+            }
+        }
+
+        if ($hasPrivilegedRole) {
+            return false;
+        }
+
+        return $isTeacher;
+    }
+
+    private function getCurrentUserRoleNames(): array
+    {
+        $userId = (int) $this->session->get('member_userid');
+        if ($userId <= 0) {
+            return [];
+        }
+
+        $rows = $this->db->table('user_roles ur')
+            ->distinct()
+            ->select('rn.rolename')
+            ->join('roles r', 'r.id = ur.roleID', 'left')
+            ->join('role_name rn', 'rn.role_name_id = r.role_name_id', 'left')
+            ->where('ur.userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        $names = [];
+        foreach ($rows as $row) {
+            $name = trim((string) ($row['rolename'] ?? ''));
+            if ($name !== '' && !in_array($name, $names, true)) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+
   
-    private function canAssignRole($roleId)
+    protected function canAssignRole($roleId, ?int $campusId = null)
     {
         $role = $this->db->table('roles r')
-            ->select('r.*, rn.rolename')
+            ->select('r.id, r.plan_id, r.role_name_id, r.issys, rn.rolename')
             ->join('role_name rn', 'r.role_name_id = rn.role_name_id')
             ->where('r.id', $roleId)
             ->get()
             ->getRow();
-        
+
         if (!$role) return false;
-        
-        $roleLevel = $this->getRoleLevel($role);
-        
-        // Can assign roles at same level or lower
-        return $roleLevel >= $this->currentUserLevel;
+
+        $campusId = $campusId ?: (int) $this->session->get('member_campusid');
+        $campusPlanId = $this->getCampusPlanId($campusId);
+        if ($campusPlanId > 0 && (int) $role->plan_id !== $campusPlanId) {
+            return false;
+        }
+
+        $allowedRoleNameIds = $this->getDescendantRoleNameIdsForCurrentUser((int) $role->plan_id, false);
+        return in_array((int) $role->role_name_id, $allowedRoleNameIds, true);
     }
 
     public function toggleStatus()
     {
-        $userId = $this->request->getPost('id');
-        $status = $this->request->getPost('status');
-        
-        $this->db->table('users')->where('id', $userId)->update([
-            'status' => $status,
-            'updated_date' => date('Y-m-d H:i:s')
+        $userId = (int) $this->request->getPost('id');
+        $status = (int) $this->request->getPost('status');
+        $campusId = (int) $this->session->get('member_campusid');
+
+        $user = $this->db->table('users')
+            ->where('id', $userId)
+            ->where('campus_id', $campusId)
+            ->get()
+            ->getRow();
+
+        if (! $user) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Employee not found']);
+        }
+
+        $this->db->table('users')->where('id', $userId)->where('campus_id', $campusId)->update([
+            'status'       => $status ? 1 : 0,
+            'updated_date' => date('Y-m-d H:i:s'),
         ]);
-        
+
         return $this->response->setJSON(['success' => true]);
     }
 
@@ -1948,6 +2941,11 @@ private function getAllLevelNames()
 
 public function view($id)
 {
+    $id = (int) $id;
+    if ($deny = $this->assertCanViewProfile($id)) {
+        return $deny;
+    }
+
     $db = $this->db ?? \Config\Database::connect();
     
     // Get user data WITHOUT campus filter first
@@ -2021,24 +3019,19 @@ public function view($id)
     // For other tabs, load their respective data
     switch ($tab) {
         case 'subjects':
-            $data['subjects'] = $db->table('teacher_subjects')
-                ->select('teacher_subjects.*, allsubject.subject_name, classes.class_name, sections.section_name')
-                ->join('allsubject', 'allsubject.sid = teacher_subjects.sec_sub_id')
-                ->join('class_section', 'class_section.cls_sec_id = teacher_subjects.cls_sec_id')
-                ->join('classes', 'classes.class_id = class_section.class_id')
-                ->join('sections', 'sections.section_id = class_section.section_id')
-                ->where('teacher_subjects.tid', $id)
-                ->where('teacher_subjects.status', 1)
-                ->get()
-                ->getResult();
+            $assignmentData = $this->loadTeacherProfileAssignmentData($user);
+            $data['subjects'] = $assignmentData['subjects'];
+            $data['classTeacherInfo'] = $assignmentData['classTeacherInfo'];
+            $data['teacherProfileStats'] = $assignmentData['teacherProfileStats'];
             break;
             
         case 'salary':
-            $data['salaries'] = $db->table('emp_salary')
-                ->where('emp_id', $id)
-                ->orderBy('date', 'DESC')
-                ->get()
-                ->getResult();
+            $salaryModel = new \App\Models\SalaryModel();
+            $data['currentSalary'] = $user->basic_salary ?? 0;
+            $data['salaryHistory'] = $salaryModel->getSalaryHistory($id);
+            $data['salarySlips'] = $salaryModel->getSalarySlips($id);
+            $data['employeeRules'] = $salaryModel->getEmployeeRules($id);
+            $data['campusSettings'] = $salaryModel->getCampusSettings($user->campus_id);
             break;
             
         case 'attendance':
@@ -2051,58 +3044,46 @@ public function view($id)
             break;
     }
     
-    return view('admin/user_views/users_view', $data);
+    return view('admin/user_views/users_view', $this->mergeUserViewSidebarData($data));
 }
 
     public function subjects($id)
     {
+        $id = (int) $id;
+        if ($deny = $this->assertCanViewProfile($id)) {
+            return $deny;
+        }
+
         $db = $this->db ?? \Config\Database::connect();
         $user = $db->table('users')->where('id', $id)->get()->getRow();
         
         if (!$user) {
-            return redirect()->to('admin/users')->with('error', 'User not found');
+            return redirect()->to('admin/dashboard')->with('error', 'User not found');
         }
         
-        // Get subjects taught
-        $subjects = $db->table('teacher_subjects ts')
-            ->select('s.subject_name, c.class_name, sec.section_name, ts.created_date')
-            ->join('section_subjects ss', 'ts.sec_sub_id = ss.sec_sub_id')
-            ->join('allsubject s', 'ss.subject_id = s.sid')
-            ->join('class_section cs', 'ss.cls_sec_id = cs.cls_sec_id')
-            ->join('classes c', 'cs.class_id = c.class_id')
-            ->join('sections sec', 'cs.section_id = sec.section_id')
-            ->where('ts.tid', $id)
-            ->where('ts.status', 1)
-            ->orderBy('c.class_id, sec.section_id, s.subject_name')
-            ->get()
-            ->getResult();
-        
-        // Get class teacher assignments
-        $classTeacherInfo = $db->table('teacher_section ts')
-            ->select('c.class_name, sec.section_name, ts.created_date, ts.cls_sec_id')
-            ->join('class_section cs', 'ts.cls_sec_id = cs.cls_sec_id')
-            ->join('classes c', 'cs.class_id = c.class_id')
-            ->join('sections sec', 'cs.section_id = sec.section_id')
-            ->where('ts.tid', $id)
-            ->where('ts.status', 1)
-            ->get()
-            ->getResult();
-        
-        return view('admin/user_views/users_view', [
+        $assignmentData = $this->loadTeacherProfileAssignmentData($user);
+
+        return view('admin/user_views/users_view', $this->mergeUserViewSidebarData([
             'user' => $user,
-            'subjects' => $subjects,
-            'classTeacherInfo' => $classTeacherInfo,
+            'subjects' => $assignmentData['subjects'],
+            'classTeacherInfo' => $assignmentData['classTeacherInfo'],
+            'teacherProfileStats' => $assignmentData['teacherProfileStats'],
             'activeTab' => 'subjects'
-        ]);
+        ]));
     }
 
     public function timetable($id)
     {
+        $id = (int) $id;
+        if ($deny = $this->assertCanViewProfile($id)) {
+            return $deny;
+        }
+
         $db = $this->db ?? \Config\Database::connect();
         $user = $db->table('users')->where('id', $id)->get()->getRow();
         
         if (!$user) {
-            return redirect()->to('admin/users')->with('error', 'User not found');
+            return redirect()->to('admin/dashboard')->with('error', 'User not found');
         }
         
         $timeTable = $db->table('time_table tt')
@@ -2129,12 +3110,12 @@ public function view($id)
             $schedule[$entry->day][] = $entry;
         }
         
-        return view('admin/user_views/users_view', [
+        return view('admin/user_views/users_view', $this->mergeUserViewSidebarData([
             'user' => $user,
             'schedule' => $schedule,
             'days' => $days,
             'activeTab' => 'timetable'
-        ]);
+        ]));
     }
 
   

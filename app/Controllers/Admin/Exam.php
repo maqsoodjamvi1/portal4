@@ -16,11 +16,12 @@ class Exam extends BaseController
         helper(['form', 'url']);
         $this->db = \Config\Database::connect();
         $this->session = session();
+        check_permission('admin-exams');
     }
 
     public function index()
     {
-        return view('admin/exam', []);
+        return redirect()->to(base_url('admin/exam/add'));
     }
 
    public function data()
@@ -98,30 +99,107 @@ public function add()
     $campus_id  = (int) $this->session->get('member_campusid');
     $session_id = (int) $this->session->get('member_sessionid');
 
-    // find current unannounced exam for this campus (same session is sensible)
-    $un = $this->db->table('exam')
-        ->where('campus_id', $campus_id)
-        ->where('session_id', $session_id)
-        ->groupStart()->where('status', '0')->orWhere('status', 0)->groupEnd()
-        ->orderBy('created_date', 'DESC')
-        ->get()->getRow();
+    $currentExams = $this->db->table('exam e')
+        ->select('e.eid, e.exam_name, e.short_name, e.exam_start_date, e.exam_end_date, e.status, e.created_date, t.name AS term_name, a.session_name')
+        ->select('(SELECT COUNT(*) FROM datesheet ds WHERE ds.eid = e.eid) AS datesheet_count', false)
+        ->join('terms t', 't.term_id = e.term_id', 'left')
+        ->join('academic_session a', 'a.session_id = e.session_id', 'left')
+        ->where('e.campus_id', $campus_id)
+        ->where('e.session_id', $session_id)
+        ->orderBy('e.eid', 'ASC')
+        ->get()->getResultArray();
 
-    if ($un) {
-        // If it exists, go to edit. Editing may be locked (we’ll tell the view).
-        return redirect()
-            ->to(base_url('admin/exam/edit?id=' . (int) $un->eid))
-            ->with('flash_msg', 'You already have an unannounced exam. You can edit it here.');
-    }
+    $latestExam = $this->db->table('exam e')
+        ->select('e.eid, e.exam_name, e.status')
+        ->where('e.campus_id', $campus_id)
+        ->where('e.session_id', $session_id)
+        ->orderBy('e.eid', 'DESC')
+        ->get()->getRowArray();
 
-    // no unannounced exam – proceed to normal "add" UI
+    // Business rule: if latest exam in current session is unannounced, block new creation
+    $hasUnannouncedLatest = !empty($latestExam) && ((string)($latestExam['status'] ?? '') === '0');
+
     $data = [
         'sessionData' => [
             'campusid'  => $campus_id,
             'sessionid' => $session_id
         ],
-        'termsinfo' => termSessions()
+        'termsinfo' => termSessions(),
+        'current_session_exams' => $currentExams,
+        'latest_exam' => $latestExam,
+        'has_unannounced_latest' => $hasUnannouncedLatest,
     ];
     return view('admin/exam_add', $data);
+}
+
+public function announce()
+{
+    $examId = (int) ($this->request->getPost('exam_id') ?? 0);
+    $campus_id  = (int) $this->session->get('member_campusid');
+    $session_id = (int) $this->session->get('member_sessionid');
+
+    if ($examId <= 0) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'Invalid exam selection.');
+    }
+
+    $exam = $this->db->table('exam')
+        ->where('eid', $examId)
+        ->where('campus_id', $campus_id)
+        ->where('session_id', $session_id)
+        ->get()->getRow();
+
+    if (!$exam) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'Exam not found for current session.');
+    }
+
+    $this->db->table('exam')
+        ->where('eid', $examId)
+        ->update([
+            'status' => '1',
+            'updated_date' => date('Y-m-d H:i:s'),
+        ]);
+
+    return redirect()->to(base_url('admin/exam/add'))->with('flash_msg', 'Exam announced successfully. You can now create a new exam.');
+}
+
+public function delete()
+{
+    $examId = (int) ($this->request->getPost('exam_id') ?? 0);
+    $campus_id  = (int) $this->session->get('member_campusid');
+    $session_id = (int) $this->session->get('member_sessionid');
+
+    if ($examId <= 0) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'Invalid exam selection.');
+    }
+
+    $exam = $this->db->table('exam')
+        ->where('eid', $examId)
+        ->where('campus_id', $campus_id)
+        ->where('session_id', $session_id)
+        ->get()->getRow();
+
+    if (!$exam) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'Exam not found for current session.');
+    }
+
+    $datesheetCount = (int) ($this->db->table('datesheet')
+        ->where('eid', $examId)
+        ->countAllResults() ?? 0);
+
+    if ($datesheetCount > 0) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'This exam cannot be deleted because a datesheet exists for it.');
+    }
+
+    $this->db->transStart();
+    $this->db->table('exam_days')->where('exam_id', $examId)->delete();
+    $this->db->table('exam')->where('eid', $examId)->delete();
+    $this->db->transComplete();
+
+    if ($this->db->transStatus() === false) {
+        return redirect()->to(base_url('admin/exam/add'))->with('flash_err', 'Exam delete failed.');
+    }
+
+    return redirect()->to(base_url('admin/exam/add'))->with('flash_msg', 'Exam deleted successfully.');
 }
 
    public function edit()
@@ -143,7 +221,7 @@ public function add()
             'sessionid' => $this->session->get('member_sessionid')
         ],
         'academic_session_info' => $this->db->table('academic_session')->get()->getResult(),
-        'termsinfo'             => $this->db->table('terms')->get()->getResult(),
+        'termsinfo'             => termSessions(),
         'info'                  => $info,
         'terms_session'         => $terms_session,
         'locked'                => $this->examLocked($id), // <<< pass lock flag to the view
@@ -169,13 +247,6 @@ public function save_edit()
     $id              = (int) $this->request->getPost('id');
     $term_session_id = (int) $this->request->getPost('term_session_id');
 
- // If trying to update but exam is locked, block immediately
-    if ($id > 0 && $this->examLocked($id)) {
-        return $this->response->setStatusCode(423)->setJSON([
-            'success' => false,
-            'msg'     => 'This exam is locked for editing because a datesheet or results exist.'
-        ]);
-    }
     // Load the term (for term_id and range validation)
     $term = $this->db->table('terms_session')
         ->where('term_session_id', $term_session_id)
@@ -183,6 +254,22 @@ public function save_edit()
 
     if (!$term) {
         return $this->response->setStatusCode(422)->setJSON(['success' => false, 'msg' => 'Invalid term_session_id']);
+    }
+
+    if ($id > 0 && $this->examLocked($id)) {
+        $examTbl->where('eid', $id)->update([
+            'exam_name'    => $this->request->getPost('exam_name'),
+            'short_name'   => $this->request->getPost('short_name'),
+            'session_id'   => (int) $term->session_id,
+            'term_id'      => (int) $term->term_id,
+            'user_id'      => $this->session->get('member_userid'),
+            'updated_date' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'msg'     => 'Exam details updated. Date range remains locked because a datesheet or results exist.'
+        ]);
     }
 
      // 🔽 Use robust normalization for both Y-m-d AND d/m/Y (and d-m-Y)
@@ -203,7 +290,7 @@ public function save_edit()
     // Validate inside the term range (optional but recommended)
     $termStart = date('Y-m-d', strtotime($term->start_date));
     $termEnd   = date('Y-m-d', strtotime($term->end_date));
-    if ($exam_start_date < $termStart || $exam_end_date > $termEnd) {
+    if ($id === 0 && ($exam_start_date < $termStart || $exam_end_date > $termEnd)) {
         return $this->response->setStatusCode(422)->setJSON([
             'success' => false,
             'msg'     => 'Exam date range must be within the selected term range'
@@ -216,7 +303,7 @@ public function save_edit()
         'short_name'      => $this->request->getPost('short_name'),
         'exam_start_date' => $exam_start_date,
         'exam_end_date'   => $exam_end_date,
-        'session_id'      => $this->session->get('member_sessionid'),
+        'session_id'      => (int) $term->session_id,
         'term_id'         => (int) $term->term_id,
         'user_id'         => $this->session->get('member_userid'),
     ];
@@ -260,6 +347,22 @@ public function save_edit()
             // insert exam
             $examTbl->insert($examRow);
             $eid = (int) $db->insertID();
+            if ($eid <= 0) {
+                $inserted = $this->db->table('exam')
+                    ->select('eid')
+                    ->where('campus_id', (int) $campus->campus_id)
+                    ->where('session_id', (int) $examDataCommon['session_id'])
+                    ->where('term_id', (int) $examDataCommon['term_id'])
+                    ->where('exam_name', (string) $examDataCommon['exam_name'])
+                    ->orderBy('eid', 'DESC')
+                    ->get()->getRow();
+                $eid = (int) ($inserted->eid ?? 0);
+            }
+
+            if ($eid <= 0) {
+                $db->transRollback();
+                return $this->response->setStatusCode(500)->setJSON(['success' => false, 'msg' => 'Exam created but exam ID could not be resolved.']);
+            }
 
             // insert days for this exam
             $batch = $buildDaysBatch($eid, $exam_start_date, $exam_end_date, $exam_days);

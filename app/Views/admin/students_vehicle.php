@@ -8,24 +8,14 @@
   }
 ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Students Vehicle
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active">Students Vehicle</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students Vehicle',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students Vehicle', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
     <div class="row">
@@ -39,9 +29,6 @@
         <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Fee Detail</a></li>
         <?php if($campus_info->a_flag == 1){ ?>
         <li class="nav-item"><a class="nav-link"  href="#/students_bulk_academy_fee">Academy Fee Detail</a></li>
-        <?php } ?>
-        <?php if($campus_info->h_flag == 1){ ?>
-        <li class="nav-item"><a class="nav-link"  href="#/h_student_beds?m=add">Student Bed</a></li>
         <?php } ?>
         <?php if($campus_info->t_flag == 1){ ?>
         <li class="nav-item"><a class="nav-link active"  href="#/students_vehicle">Students Vehicle</a></li>

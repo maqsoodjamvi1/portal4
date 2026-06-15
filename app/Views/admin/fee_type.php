@@ -1,27 +1,20 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<!-- Include Bootstrap Toggle CSS -->
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-receipt"></i> Manage Fee Types</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Fee Type</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Manage Fee Types',
+    'icon' => 'fas fa-receipt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Type', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
-  <div class="card card-primary">
+  <div class="card sms-card card-primary">
     <div class="card-header">
       <h3 class="card-title">Fee Type List</h3>
       <div class="card-tools">
@@ -67,7 +60,8 @@ $(function () {
       data: 'is_monthly_fee',
       render: function (data, type, row) {
         const checked = data == 1 ? 'checked' : '';
-        return `<input type="radio" name="monthly_fee" class="set-monthly-fee" data-id="${row.id}" ${checked}>`;
+        const dis = row.monthly_fee_locked ? 'disabled' : '';
+        return '<input type="radio" name="monthly_fee" class="set-monthly-fee" data-id="' + row.id + '" ' + checked + ' ' + dis + '>';
       }
     },
     {
@@ -75,7 +69,7 @@ $(function () {
       render: function (data, type, row) {
         const checked = data == 1 ? 'checked' : '';
         return `<input type="checkbox" class="toggle-status" data-id="${row.id}" ${checked}
-                data-toggle="toggle" data-size="sm" data-on="Active" data-off="Inactive"
+                data-bs-toggle="toggle" data-size="sm" data-on="Active" data-off="Inactive"
                 data-onstyle="success" data-offstyle="danger">`;
       }
     }
@@ -101,8 +95,8 @@ $.ajax({
       if (typeof res.status !== 'undefined') {
         const $row = $('#row-' + rowId);
         $row.find('.status-badge')
-            .toggleClass('badge-success', res.status == 1)
-            .toggleClass('badge-secondary', res.status == 0)
+            .toggleClass('text-bg-success', res.status == 1)
+            .toggleClass('text-bg-secondary', res.status == 0)
             .text(res.status == 1 ? 'Active' : 'Inactive');
       }
     } else {
@@ -117,6 +111,9 @@ $.ajax({
 
     // Set Monthly Fee Handler
     $('.set-monthly-fee').off().on('change', function () {
+      if (this.disabled) {
+        return;
+      }
       const feeTypeId = $(this).data('id');
 
       $.ajax({
@@ -130,13 +127,19 @@ $.ajax({
         success: function (res) {
           if (res.success) {
             toastr.success(res.msg);
-            table.ajax.reload(null, false); // Refresh only data
+            if (res.apply_lock_ui) {
+              window.location.reload();
+            } else {
+              table.ajax.reload(null, false);
+            }
           } else {
             toastr.error(res.msg);
+            table.ajax.reload(null, false);
           }
         },
         error: function () {
           toastr.error('An error occurred while setting monthly fee type.');
+          table.ajax.reload(null, false);
         }
       });
     });

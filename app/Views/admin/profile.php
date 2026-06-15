@@ -3,27 +3,20 @@
 
 <!-- Dependencies used below (already in your stack; keep if not globally loaded) -->
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script> -->
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="d-flex align-items-center justify-content-between flex-wrap">
-      <div>
-        <h1 class="mb-1"><i class="fas fa-user-circle mr-2"></i>Profile</h1>
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Profile</li>
-        </ol>
-      </div>
-      <div class="mt-2 mt-md-0">
-        <a href="<?= base_url('/logout');?>" class="btn btn-danger">
-          <i class="fas fa-sign-out-alt mr-1"></i> Logout
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Profile',
+    'icon' => 'fas fa-user-circle',
+    'actionsHtml' => '<div class="text-sm-right">'
+        . '<a href="' . esc(base_url('/logout'), 'attr') . '" class="btn btn-danger btn-sm">'
+        . '<i class="fas fa-sign-out-alt me-1"></i> Logout</a></div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Profile', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -48,35 +41,35 @@
 
             <ul class="list-group list-group-unbordered mb-3">
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="far fa-calendar-plus mr-1"></i>Join time</span><span><?= esc($user->reg_time) ?></span>
+                <span><i class="far fa-calendar-plus me-1"></i>Join time</span><span><?= esc($user->reg_time) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-sign-in-alt mr-1"></i>Login times</span><span><?= esc($user->login_times) ?></span>
+                <span><i class="fas fa-sign-in-alt me-1"></i>Login times</span><span><?= esc($user->login_times) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="far fa-clock mr-1"></i>Cur Login</span><span><?= esc($user->cur_login_time) ?></span>
+                <span><i class="far fa-clock me-1"></i>Cur Login</span><span><?= esc($user->cur_login_time) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-globe mr-1"></i>Cur IP</span><span><?= esc($user->cur_login_ip) ?></span>
+                <span><i class="fas fa-globe me-1"></i>Cur IP</span><span><?= esc($user->cur_login_ip) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="far fa-compass mr-1"></i>Cur Area</span><span><?= esc($user->cur_login_area) ?></span>
+                <span><i class="far fa-compass me-1"></i>Cur Area</span><span><?= esc($user->cur_login_area) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="far fa-clock mr-1"></i>Last Login</span><span><?= esc($user->last_login_time) ?></span>
+                <span><i class="far fa-clock me-1"></i>Last Login</span><span><?= esc($user->last_login_time) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-network-wired mr-1"></i>Last IP</span><span><?= esc($user->last_login_ip) ?></span>
+                <span><i class="fas fa-network-wired me-1"></i>Last IP</span><span><?= esc($user->last_login_ip) ?></span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="far fa-compass mr-1"></i>Last Area</span><span><?= esc($user->last_login_area) ?></span>
+                <span><i class="far fa-compass me-1"></i>Last Area</span><span><?= esc($user->last_login_area) ?></span>
               </li>
             </ul>
 
-            <div class="custom-file w-100">
-              <input type="file" class="custom-file-input" id="file" name="image" form="user-edit-form"
+            <div class="mb-3 w-100">
+              <input type="file" class="form-control" id="file" name="image" form="user-edit-form"
                      accept="image/*" onchange="loadFile(event)">
-              <label class="custom-file-label" for="file"><i class="fa fa-image mr-1"></i>Upload Photo</label>
+              <label class="form-label" for="file"><i class="fa fa-image me-1"></i>Upload Photo</label>
             </div>
           </div>
         </div>
@@ -87,9 +80,9 @@
         <div class="card card-primary card-outline shadow-sm">
           <div class="card-header p-2">
             <ul class="nav nav-pills">
-              <li class="nav-item"><a class="nav-link active" href="#tab-settings" data-toggle="tab"><i class="fas fa-sliders-h mr-1"></i> Settings</a></li>
+              <li class="nav-item"><a class="nav-link active" href="#tab-settings" data-bs-toggle="tab"><i class="fas fa-sliders-h me-1"></i> Settings</a></li>
               <?php if($_SERVER['HTTP_HOST'] != 'demo.timesoftsol.com'): ?>
-                <li class="nav-item"><a class="nav-link" href="#tab-password" data-toggle="tab"><i class="fas fa-key mr-1"></i> Change Password</a></li>
+                <li class="nav-item"><a class="nav-link" href="#tab-password" data-bs-toggle="tab"><i class="fas fa-key me-1"></i> Change Password</a></li>
               <?php endif; ?>
             </ul>
           </div>
@@ -111,7 +104,7 @@
                   <div class="col-md-6">
                     <label>Username</label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                      <span class="input-group-text"><i class="fas fa-user"></i></span>
                       <input type="text" class="form-control" value="<?= esc($user->username) ?>" readonly>
                     </div>
                   </div>
@@ -119,7 +112,7 @@
                   <div class="col-md-6">
                     <label>Email</label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="far fa-envelope"></i></span></div>
+                      <span class="input-group-text"><i class="far fa-envelope"></i></span>
                       <input type="email" class="form-control" name="email" id="email" value="<?= esc($user->email) ?>" required>
                     </div>
                   </div>
@@ -137,7 +130,7 @@
                   <div class="col-md-6">
                     <label>CNIC <small class="text-muted">(#####-#######-#)</small></label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="far fa-id-card"></i></span></div>
+                      <span class="input-group-text"><i class="far fa-id-card"></i></span>
                       <input type="text" class="form-control" name="cnic" id="cnic"
                              value="<?= esc($user->cnic) ?>"
                              data-inputmask="'mask': '99999-9999999-9'" required>
@@ -163,7 +156,7 @@
                   <div class="col-md-6">
                     <label>Mobile No</label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-mobile-alt"></i></span></div>
+                      <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
                       <input type="text" class="form-control" name="mobile_no" id="mobile_no"
                              value="<?= esc($user->mobile_no) ?>"
                              data-inputmask="'mask': '0399-99999999'" required>
@@ -173,7 +166,7 @@
                   <div class="col-md-6">
                     <label>Mobile 2</label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone"></i></span></div>
+                      <span class="input-group-text"><i class="fas fa-phone"></i></span>
                       <input type="text" class="form-control" name="mobile_no2" id="mobile_no2"
                              value="<?= esc($user->mobile_no2) ?>"
                              data-inputmask="'mask': '0399-99999999'">
@@ -183,13 +176,13 @@
                   <div class="col-md-6">
                     <label>Marital Status</label>
                     <div class="d-flex align-items-center mb-3">
-                      <div class="custom-control custom-radio mr-3">
-                        <input class="custom-control-input" type="radio" id="married" name="marital_status" value="married" <?= ($user->marital_status ?? '')==='married'?'checked':''; ?>>
-                        <label class="custom-control-label" for="married">Married</label>
+                      <div class="form-check form-check me-3">
+                        <input class="form-check-input" type="radio" id="married" name="marital_status" value="married" <?= ($user->marital_status ?? '')==='married'?'checked':''; ?>>
+                        <label class="form-check-label" for="married">Married</label>
                       </div>
-                      <div class="custom-control custom-radio">
-                        <input class="custom-control-input" type="radio" id="single" name="marital_status" value="single" <?= ($user->marital_status ?? '')==='single'?'checked':''; ?>>
-                        <label class="custom-control-label" for="single">Single</label>
+                      <div class="form-check form-check">
+                        <input class="form-check-input" type="radio" id="single" name="marital_status" value="single" <?= ($user->marital_status ?? '')==='single'?'checked':''; ?>>
+                        <label class="form-check-label" for="single">Single</label>
                       </div>
                     </div>
                   </div>
@@ -207,7 +200,7 @@
                   <div class="col-md-6">
                     <label>Emergency Contact No</label>
                     <div class="input-group mb-3">
-                      <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone-alt"></i></span></div>
+                      <span class="input-group-text"><i class="fas fa-phone-alt"></i></span>
                       <input type="text" class="form-control" name="emergency_contact_no" id="emergency_contact_no"
                              value="<?= esc($user->emergency_contact_no) ?>"
                              data-inputmask="'mask': '0399-99999999'">
@@ -231,10 +224,10 @@
 
                   <div class="col-12 d-flex justify-content-end">
                     <button type="submit" id="saveProfile" class="btn btn-primary">
-                      <i class="fas fa-save mr-1"></i> Save
+                      <i class="fas fa-save me-1"></i> Save
                     </button>
-                    <button type="reset" class="btn btn-light border ml-2">Reset</button>
-                    <button type="button" class="btn btn-outline-secondary ml-2" onclick="history.back()">Cancel</button>
+                    <button type="reset" class="btn btn-light border ms-2">Reset</button>
+                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="history.back()">Cancel</button>
                   </div>
                 </div>
 
@@ -250,6 +243,11 @@
 
                 <div class="row">
                   <div class="col-md-6">
+                    <label>Current Password</label>
+                    <input type="password" class="form-control mb-3" name="old_password" id="old_password" required minlength="6">
+                  </div>
+                  <div class="col-md-6"></div>
+                  <div class="col-md-6">
                     <label>New Password</label>
                     <input type="password" class="form-control mb-3" name="password" id="password" required minlength="6">
                   </div>
@@ -260,8 +258,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                  <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save</button>
-                  <button type="reset" class="btn btn-light border ml-2">Reset</button>
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save</button>
+                  <button type="reset" class="btn btn-light border ms-2">Reset</button>
                 </div>
 
                 <?= form_close(); ?>
@@ -282,20 +280,20 @@
 .g-3 > [class*="col-"]{ margin-bottom: 1rem; }
 
 /* sticky action bar */
-.action-bar{ position: sticky; top: 64px; z-index: 9; background:#fff; border:1px solid #e5e7eb; border-left:0;border-right:0; box-shadow:0 4px 16px rgba(0,0,0,.06); margin-bottom:12px; }
+.action-bar{ position: sticky; top: 64px; z-index: 9; background:#fff; border:1px solid #e5e7eb; border-start:0;border-end:0; box-shadow:0 4px 16px rgba(0,0,0,.06); margin-bottom:12px; }
 .gap-2 > *{ margin-left:.25rem; margin-right:.25rem; }
 
 /* nicer inputs */
 .input-group-text{ background:#f8fafc; }
-.custom-file-label::after{ content: "Browse"; }
+.form-label::after{ content: "Browse"; }
 
 /* card accent */
 .card-primary.card-outline{ border-top: 3px solid #2563eb; }
 .card-primary.card-outline:hover{ box-shadow:0 8px 24px rgba(0,0,0,.08); }
 
 /* Select2 sizing */
-.select2-container--bootstrap4 .select2-selection--single{ height:2.6rem; }
-.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered{ line-height:2.5rem; }
+.select2-container--bootstrap-5 .select2-selection--single{ height:2.6rem; }
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered{ line-height:2.5rem; }
 
 /* loader dots */
 .loader{ display:flex; align-items:center; gap:6px; }
@@ -326,7 +324,7 @@
     $('#cnic').inputmask('99999-9999999-9');
 
     // Select2 (if you add any select2 fields here later)
-    $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+    $('.select2').select2({ theme: 'bootstrap-5', width: '100%' });
 
     // Validate: user profile
     $('#user-edit-form').validate({
@@ -373,10 +371,12 @@
         error.addClass('invalid-feedback'); error.insertAfter(element);
       },
       rules:{
+        old_password:{ required:true, minlength:6 },
         password:{ required:true, minlength:6 },
         confirm_password:{ required:true, minlength:6, equalTo:'#password' }
       },
       messages:{
+        old_password:{ required:'Current password is required', minlength:'At least 6 characters' },
         password:{ required:'New password is required', minlength:'At least 6 characters' },
         confirm_password:{ required:'Confirm your new password', equalTo:'Passwords do not match' }
       }

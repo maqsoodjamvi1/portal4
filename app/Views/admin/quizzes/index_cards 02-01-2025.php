@@ -502,17 +502,17 @@
 
   <!-- ===== Pin / shortcuts bar ===== -->
   <div class="pin-bar">
-    <span class="pin-indicator" id="openOnlyIndicator" data-toggle="tooltip" title="Toggle only open quizzes (Shortcut: O)">
-      <i class="fas fa-bolt"></i> Open Only <span class="ml-1">(O)</span>
+    <span class="pin-indicator" id="openOnlyIndicator" data-bs-toggle="tooltip" title="Toggle only open quizzes (Shortcut: O)">
+      <i class="fas fa-bolt"></i> Open Only <span class="ms-1">(O)</span>
     </span>
 
     <div class="pin-hints">
-      <span class="mr-2"><kbd>/</kbd> Search</span>
-      <span class="mr-2"><kbd>←</kbd><kbd>→</kbd> Navigate</span>
-      <span class="mr-2"><kbd>Enter</kbd> Edit</span>
-      <span class="mr-2"><kbd>R</kbd> Results</span>
-      <span class="mr-2"><kbd>P</kbd> Print</span>
-      <span class="mr-2"><kbd>?</kbd> Help</span>
+      <span class="me-2"><kbd>/</kbd> Search</span>
+      <span class="me-2"><kbd>←</kbd><kbd>→</kbd> Navigate</span>
+      <span class="me-2"><kbd>Enter</kbd> Edit</span>
+      <span class="me-2"><kbd>R</kbd> Results</span>
+      <span class="me-2"><kbd>P</kbd> Print</span>
+      <span class="me-2"><kbd>?</kbd> Help</span>
       <span><kbd>Esc</kbd> Reset</span>
     </div>
   </div>
@@ -552,7 +552,7 @@
     <div class="d-flex align-items-end">
       <div class="w-100 d-flex gap-2">
         <input id="fSearch" type="text" class="form-control form-control-sm" placeholder="Search title/instructions...">
-        <button id="fReset" class="btn btn-light btn-sm ml-2" type="button">Reset</button>
+        <button id="fReset" class="btn btn-light btn-sm ms-2" type="button">Reset</button>
       </div>
     </div>
   </div>
@@ -582,13 +582,13 @@
 
             <div class="d-flex align-items-center gap-3">
               <div class="class-metrics">
-                <span class="metric-pill" data-toggle="tooltip" title="Total quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Total quizzes in this class-section">
                   <span class="text-muted">Total:</span> <strong><?= (int)$total ?></strong>
                 </span>
-                <span class="metric-pill" data-toggle="tooltip" title="Open quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Open quizzes in this class-section">
                   <span class="text-muted">Open:</span> <strong><?= (int)$open ?></strong>
                 </span>
-                <span class="metric-pill" data-toggle="tooltip" title="Closed quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Closed quizzes in this class-section">
                   <span class="text-muted">Closed:</span> <strong><?= (int)$closed ?></strong>
                 </span>
               </div>
@@ -596,7 +596,7 @@
               <a href="<?= base_url('admin/quizzes/class-results/' . (int)$clsId) ?>" 
                  class="btn btn-outline-primary btn-sm report-btn"
                  target="_blank">
-                <i class="fas fa-chart-bar mr-1"></i> View Report
+                <i class="fas fa-chart-bar me-1"></i> View Report
               </a>
             </div>
           </div>
@@ -697,23 +697,23 @@
 
                   <div class="quiz-badges">
                     <?php if ($openNow): ?>
-                      <span class="badge badge-success" data-toggle="tooltip" title="Quiz is currently open">Open</span>
+                      <span class="badge text-bg-success" data-bs-toggle="tooltip" title="Quiz is currently open">Open</span>
                     <?php else: ?>
-                      <span class="badge badge-danger" data-toggle="tooltip" title="Quiz is closed">Closed</span>
+                      <span class="badge text-bg-danger" data-bs-toggle="tooltip" title="Quiz is closed">Closed</span>
                     <?php endif; ?>
 
-                    <span class="badge <?= $diff[1] ?>" data-toggle="tooltip" title="<?= esc($diff[2]) ?>">
+                    <span class="badge <?= $diff[1] ?>" data-bs-toggle="tooltip" title="<?= esc($diff[2]) ?>">
                       <?= esc($diff[0]) ?>
                     </span>
 
                     <?php if ($pub): ?>
-                      <span class="badge badge-primary" data-toggle="tooltip" title="Published and visible to students">Published</span>
+                      <span class="badge text-bg-primary" data-bs-toggle="tooltip" title="Published and visible to students">Published</span>
                     <?php else: ?>
-                      <span class="badge badge-secondary" data-toggle="tooltip" title="Draft (not visible to students)">Draft</span>
+                      <span class="badge text-bg-secondary" data-bs-toggle="tooltip" title="Draft (not visible to students)">Draft</span>
                     <?php endif; ?>
 
                     <?php if ($mins): ?>
-                      <span class="badge badge-info" data-toggle="tooltip" title="Time limit"><?= (int)$mins ?> min</span>
+                      <span class="badge text-bg-info" data-bs-toggle="tooltip" title="Time limit"><?= (int)$mins ?> min</span>
                     <?php endif; ?>
                   </div>
                 </div>
@@ -724,7 +724,7 @@
 <div class="d-flex justify-content-between align-items-start mb-1">
   <h3 class="quiz-title"><?= esc($title) ?></h3>
   <span class="qpill"
-        data-toggle="tooltip"
+        data-bs-toggle="tooltip"
         title="Actual questions: <?= (int)$actualTotal ?> | Planned questions: <?= (int)$plannedTotal ?>">
     <i class="fas fa-list-ol"></i>
     <span class="val"><?= (int)$actualTotal ?></span>
@@ -735,17 +735,17 @@
                   <!-- Row 2: Start/End Date Time + Student Count + Max Attempts -->
                   <div class="datetime-row">
                     <?php if ($showWindow): ?>
-                      <span class="datetime-item" data-toggle="tooltip" title="Start Date">
+                      <span class="datetime-item" data-bs-toggle="tooltip" title="Start Date">
                         <i class="far fa-calendar-alt"></i>
                         <?= $startAt ? date('M d, Y', strtotime($startAt)) : '—' ?>
                       </span>
                       <span class="muted">→</span>
-                      <span class="datetime-item" data-toggle="tooltip" title="End Date">
+                      <span class="datetime-item" data-bs-toggle="tooltip" title="End Date">
                         <i class="far fa-calendar-alt"></i>
                         <?= $endAt ? date('M d, Y', strtotime($endAt)) : '—' ?>
                       </span>
                     <?php else: ?>
-                      <span class="datetime-item" data-toggle="tooltip" title="Always open">
+                      <span class="datetime-item" data-bs-toggle="tooltip" title="Always open">
                         <i class="fas fa-infinity"></i>
                         Always Open
                       </span>
@@ -753,11 +753,11 @@
                   </div>
 
                   <div class="stats-row">
-                    <span class="stat-item" data-toggle="tooltip" title="Students in this class">
+                    <span class="stat-item" data-bs-toggle="tooltip" title="Students in this class">
                       <i class="fas fa-user-graduate"></i>
                       <strong><?= (int)$classStudents ?></strong> Students
                     </span>
-                    <span class="stat-item" data-toggle="tooltip" title="Max attempts allowed per student">
+                    <span class="stat-item" data-bs-toggle="tooltip" title="Max attempts allowed per student">
                       <i class="fas fa-redo"></i>
                       <strong><?= (int)$attemptsAllowed ?></strong> Max Attempts
                     </span>
@@ -768,7 +768,7 @@
                     <div class="qsection-title">Question Summary</div>
                     <div class="qtype-summary">
                       <?php foreach ($qtypeItems as $item): ?>
-                        <span class="qtype-item" data-toggle="tooltip" title="<?= esc($item['label']) ?> questions">
+                        <span class="qtype-item" data-bs-toggle="tooltip" title="<?= esc($item['label']) ?> questions">
                           <i class="<?= $item['icon'] ?>"></i>
                           <span class="qtype-count"><?= $item['count'] ?></span>
                           <span class="muted"><?= esc($item['label']) ?></span>
@@ -791,7 +791,7 @@
                             <span class="attempt-label">Attempt <?= $i ?></span>
                             <span class="attempt-count"><?= $attemptCounts[$i] ?>/<?= $classStudents ?></span>
                           </div>
-                          <div class="attempt-bar" data-toggle="tooltip" title="<?= $attemptPct ?>% of students completed attempt <?= $i ?>">
+                          <div class="attempt-bar" data-bs-toggle="tooltip" title="<?= $attemptPct ?>% of students completed attempt <?= $i ?>">
                             <div class="attempt-fill" style="width: <?= $attemptPct ?>%"></div>
                           </div>
                         </div>
@@ -800,7 +800,7 @@
                   <?php endif; ?>
 
                   <!-- Term Session Name -->
-                  <div class="text-muted small mt-2" data-toggle="tooltip" title="Term session">
+                  <div class="text-muted small mt-2" data-bs-toggle="tooltip" title="Term session">
                     <i class="fas fa-calendar-alt"></i> <?= esc($tsName) ?>
                   </div>
 
@@ -810,7 +810,7 @@
                       <div class="qsection-title">Topics</div>
                       <div class="qtype-summary">
                         <?php foreach ($topics as $topic): ?>
-                          <span class="qtype-item" data-toggle="tooltip" title="Topic: <?= esc($topic) ?>">
+                          <span class="qtype-item" data-bs-toggle="tooltip" title="Topic: <?= esc($topic) ?>">
                             <i class="fas fa-tag"></i>
                             <?= esc($topic) ?>
                           </span>
@@ -824,14 +824,14 @@
                 <div class="card-foot">
                   <a class="btn btn-outline-secondary btn-sm btn-results"
                      href="<?= site_url('admin/quizzes/'.$qid.'/results') ?>"
-                     data-toggle="tooltip" title="View results (R)">
+                     data-bs-toggle="tooltip" title="View results (R)">
                     Results
                   </a>
 
                   <a class="btn btn-outline-info btn-sm btn-print"
                      href="<?= site_url('admin/quizzes/print/'.$qid) ?>"
                      target="_blank"
-                     data-toggle="tooltip" title="Print single version (P)">
+                     data-bs-toggle="tooltip" title="Print single version (P)">
                     Print (Single)
                   </a>
 
@@ -844,13 +844,13 @@
                   <a class="btn btn-outline-info btn-sm btn-print-all"
                      href="<?= site_url('admin/quizzes/print-versions/'.$qid) ?>"
                      target="_blank"
-                     data-toggle="tooltip" title="Print all versions">
+                     data-bs-toggle="tooltip" title="Print all versions">
                     Print All Versions
                   </a>
 
                   <a class="btn btn-outline-primary btn-sm btn-edit"
                      href="<?= site_url('admin/quizzes/edit/'.$qid) ?>"
-                     data-toggle="tooltip" title="Edit quiz (Enter)">
+                     data-bs-toggle="tooltip" title="Edit quiz (Enter)">
                     Edit
                   </a>
                 </div>
@@ -867,7 +867,7 @@
         <h5 class="mb-2">No quizzes found</h5>
         <p class="text-muted">Create your first quiz to get started</p>
         <a href="<?= base_url('admin/quizzes/create') ?>" class="btn btn-primary mt-2">
-          <i class="fas fa-plus mr-1"></i> Create Quiz
+          <i class="fas fa-plus me-1"></i> Create Quiz
         </a>
       </div>
     <?php endif; ?>
@@ -879,7 +879,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Keyboard & Icons</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body small">
           <div class="mb-2">
@@ -913,7 +913,7 @@
 
   <!-- Floating help button -->
   <button class="btn btn-primary help-btn"
-          data-toggle="tooltip"
+          data-bs-toggle="tooltip"
           title="Help & shortcuts (?)"
           type="button"
           onclick="$('#iconLegendModal').modal('show')">
@@ -1106,7 +1106,7 @@
 
 <script>
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip({
+  $('[data-bs-toggle="tooltip"]').tooltip({
     container: 'body',
     boundary: 'window',
     delay: { show: 300, hide: 100 }

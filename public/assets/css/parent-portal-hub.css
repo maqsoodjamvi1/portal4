@@ -1,0 +1,232 @@
+/* Parent dashboard hub — scroll, compact chrome, 5-icon bottom bar */
+html.parent-portal-html,
+body.parent-portal-client,
+body.parent-portal-client .wrapper {
+  overflow-x: hidden;
+}
+
+@media (max-width: 767.98px) {
+  body.parent-portal-client.parent-hub-mobile .wrapper {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .content-wrapper {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+.parent-portal-bottomnav {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .parent-portal-client .parent-portal-bottomnav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 0 env(safe-area-inset-bottom, 0px);
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    align-items: stretch;
+    justify-content: space-around;
+    z-index: 1038;
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  }
+}
+
+/* 5-icon bottom bar */
+.parent-portal-bottomnav.parent-bottomnav--five a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none !important;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 2px;
+  position: relative;
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.parent-portal-bottomnav.parent-bottomnav--five a i {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.parent-portal-bottomnav.parent-bottomnav--five a span {
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-portal-bottomnav.parent-bottomnav--five a.active {
+  color: #4f46e5;
+}
+
+.parent-portal-bottomnav.parent-bottomnav--five a.parent-bottomnav-badge-wrap {
+  position: relative;
+}
+
+.parent-bottomnav-badge {
+  position: absolute;
+  top: 2px;
+  right: calc(50% - 18px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Compact mobile top navbar (parent hub) */
+@media (max-width: 767.98px) {
+  body.parent-portal-client.parent-hub-mobile .main-sidebar {
+    display: none !important;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .content-wrapper,
+  body.parent-portal-client.parent-hub-mobile .main-footer {
+    margin-left: 0 !important;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .portal-navbar.portal-navbar--compact {
+    min-height: 48px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .portal-navbar--compact .navbar-nav .nav-link {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .portal-navbar--compact .portal-nav-hide-mobile {
+    display: none !important;
+  }
+
+  body.parent-portal-client.parent-hub-mobile .portal-navbar--compact .portal-nav-school-short {
+    font-size: 14px;
+    font-weight: 700;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Action center — mobile chips */
+.parent-action-center__chips {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .parent-action-center__cards {
+    display: none !important;
+  }
+
+  .parent-action-center__chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding: 2px 2px 6px;
+    margin: 0 -2px;
+  }
+
+  .parent-action-chip {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    text-decoration: none !important;
+    color: #1e293b;
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 85vw;
+  }
+
+  .parent-action-chip__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .parent-action-chip__text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .parent-action-chip__badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .parent-action-center {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .parent-action-center .h6 {
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem !important;
+  }
+}
+
+/* Dashboard scroll clearance for bottom nav */
+@media (max-width: 767.98px) {
+  .parent-hub-grid {
+    scroll-margin-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 8px;
+  }
+
+  .parent-hub-tile {
+    min-height: 72px !important;
+  }
+
+  .parent-dash-welcome-compact {
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .parent-dash-welcome-compact .card-body {
+    padding: 0 !important;
+  }
+}

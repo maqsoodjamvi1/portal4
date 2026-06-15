@@ -720,7 +720,7 @@ if (!empty($topicList)) {
                     <div class="col-md-6">
                       <?php foreach ($leftItems as $left): ?>
                         <div class="match-row d-flex align-items-center" data-left="<?= esc($left) ?>">
-                          <div class="match-left-label pr-2">
+                          <div class="match-left-label pe-2">
                             <strong><?= esc($left) ?></strong>
                           </div>
                           <div class="match-dropzone flex-fill">
@@ -799,7 +799,7 @@ if (!empty($topicList)) {
             <img id="zoomImg" src="" alt="Zoom" style="width:100%;height:auto;display:block">
           </div>
           <div class="modal-footer py-2">
-            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>

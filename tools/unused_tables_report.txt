@@ -1,0 +1,11 @@
+Database: admin_timessportal_live
+Total tables: 209
+Referenced in app code: 209
+Unused (no code reference): 0
+Unused backup/temp/dated: 0
+
+=== BACKUP/TEMP/DATED — UNUSED (safest to drop) ===
+
+=== OTHER UNUSED (review before drop) ===
+
+=== BACKUP/TEMP/DATED BUT STILL REFERENCED IN CODE (keep or refactor first) ===

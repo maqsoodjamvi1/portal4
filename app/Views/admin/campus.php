@@ -1,30 +1,22 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Campus
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Campus</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
+
+<?= view('components/page_header', [
+    'title' => 'Campus',
+    'icon' => 'fas fa-school',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
         <div class="col-lg-12">
-          <div class="card card-primary card-outline card-tabs">
+          <div class="card sms-card card-primary card-outline card-tabs">
             <div class="card-header p-0 pt-1 border-bottom-0">	
 			<ul class="nav nav-tabs">
 				<li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/campus') ?>">Campus</a></li>
@@ -89,7 +81,7 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-					html += '<a href="<?php echo '#/campus_bill?id=';?>' + row.bill_id + '" title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Print Bill</a>';
+					html += '<a href="<?php echo '#/campus_bill?id=';?>' + row.bill_id + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Print Bill</a>';
   					html += '</div>';
 					return html;
 				}

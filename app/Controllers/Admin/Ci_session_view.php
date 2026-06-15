@@ -30,82 +30,190 @@ class Ci_session_view extends MY_Controller {
 	function data(){
 		$response = new stdClass;
 		$response->draw = $this->input->post('draw');
-		$schoolinfo = getSchoolInfo();
 
-		$keyword = '';
-		$this->db->select('count(A.id) as ccount', FALSE);
-		$this->db->from('ci_sessions A');
-		
-		$q = $this->db->get()->row();
-		$response->recordsTotal = $q->ccount;
-		// $offset = $response->draw * $perpage;
-
-		$this->db->select('A.*');
-		$this->db->from('ci_sessions A');
-		$this->db->order_by('A.id', 'desc');
-		$this->db->limit($this->input->post('length'), $this->input->post('start'));
-		$results = $this->db->get()->result();
-
+		$rows = $this->loadCiSessionRows();
+		$response->recordsTotal    = count($rows);
 		$response->recordsFiltered = $response->recordsTotal;
 
-		$response->data = array();
-		foreach($results as $row){
-			// you retrieve your dat in ci_sesion_ table of the database y a request 
-// .....
+		$start  = (int) $this->input->post('start');
+		$length = (int) $this->input->post('length');
+		$slice  = $length > 0 ? array_slice($rows, $start, $length) : $rows;
 
-$session_data = $row->data;  // your BLOB data who are a String
-
-
-   $return_data = array();  // array where you put your "BLOB" resolved data
-             
-   $offset = 0;
-   while ($offset < strlen($session_data)) 
-    {
-       if (!strstr(substr($session_data, $offset), "|")) 
-        {
-          throw new Exception("invalid data, remaining: " . substr($session_data, $offset));
-        }
-          $pos = strpos($session_data, "|", $offset);
-          $num = $pos - $offset;
-          $varname = substr($session_data, $offset, $num);
-          $offset += $num + 1;
-          $data = unserialize(substr($session_data, $offset));
-          $return_data[$varname] = $data;  
-          $offset += strlen(serialize($data)); 
-      }
-	$campusid = '';
-	$userid = '';
-	if(isset($return_data['member_campusid'])){
-		$campusid = $return_data['member_campusid'];
-	}
-	if(isset($return_data['member_userid'])){
-		$userid = $return_data['member_userid'];
-	}
-	$campus = '';
-	$user = '';
-	$this->db->where('campus_id', $campusid);
-	$campusinfo = $this->db->get('campus')->row();
-	if($campusinfo){
-		$campus = $campusinfo->campus_name;
-	}
-
-	$this->db->where('id', $userid);
-	$userinfo = $this->db->get('users')->row();
-	if($userinfo){
-		$user = $userinfo->first_name." ".$userinfo->last_name;
-	}
-
-			$ip_address = $row->ip_address;
-			$data = array();
-			$data['id'] = $row->id;
-			$data['ip_address'] = $ip_address;
-			$data['timestamp'] = date('d-m-Y h:i:sa',$row->timestamp);
-			$data['campusid'] = $campus;
-			$data['userid'] = $user;
-			$response->data[] = $data;
+		$response->data = [];
+		foreach ($slice as $row) {
+			$response->data[] = $this->formatCiSessionRow($row);
 		}
 
 		$this->output->set_output(json_encode($response));
+	}
+
+	/**
+	 * @return list<array{id:string|int,ip_address:string,timestamp:int,data:string}>
+	 */
+	private function loadCiSessionRows(): array
+	{
+		if ($this->ciSessionsTableExists()) {
+			return $this->loadCiSessionsFromDatabase();
+		}
+
+		return $this->loadCiSessionsFromFiles();
+	}
+
+	private function ciSessionsTableExists(): bool
+	{
+		try {
+			return \Config\Database::connect()->tableExists('ci_sessions');
+		} catch (\Throwable $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * @return list<array{id:string|int,ip_address:string,timestamp:int,data:string}>
+	 */
+	private function loadCiSessionsFromDatabase(): array
+	{
+		$this->db->select('A.*');
+		$this->db->from('ci_sessions A');
+		$this->db->order_by('A.id', 'desc');
+		$results = $this->db->get()->result();
+
+		$rows = [];
+		foreach ($results as $row) {
+			$rows[] = [
+				'id'         => $row->id,
+				'ip_address' => (string) ($row->ip_address ?? ''),
+				'timestamp'  => (int) ($row->timestamp ?? 0),
+				'data'       => (string) ($row->data ?? ''),
+			];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * CI4 default: sessions stored as files under writable/session.
+	 *
+	 * @return list<array{id:string|int,ip_address:string,timestamp:int,data:string}>
+	 */
+	private function loadCiSessionsFromFiles(): array
+	{
+		$sessionConfig = config('Session');
+		$path          = rtrim((string) ($sessionConfig->savePath ?? ''), '/\\');
+		if ($path === '') {
+			$path = rtrim(WRITEPATH, '/\\') . DIRECTORY_SEPARATOR . 'session';
+		}
+
+		if (! is_dir($path)) {
+			return [];
+		}
+
+		$rows = [];
+		foreach (glob($path . DIRECTORY_SEPARATOR . 'ci_session*') ?: [] as $file) {
+			if (! is_file($file)) {
+				continue;
+			}
+
+			$content = @file_get_contents($file);
+			if ($content === false) {
+				continue;
+			}
+
+			$rows[] = [
+				'id'         => substr(basename($file), strlen('ci_session')),
+				'ip_address' => '',
+				'timestamp'  => (int) filemtime($file),
+				'data'       => $content,
+			];
+		}
+
+		usort($rows, static fn (array $a, array $b): int => $b['timestamp'] <=> $a['timestamp']);
+
+		return $rows;
+	}
+
+	/**
+	 * @param array{id:string|int,ip_address:string,timestamp:int,data:string} $row
+	 * @return array{id:string|int,ip_address:string,timestamp:string,campusid:string,userid:string}
+	 */
+	private function formatCiSessionRow(array $row): array
+	{
+		$return_data = $this->parseCiSessionPayload($row['data']);
+
+		$campusid = $return_data['member_campusid'] ?? '';
+		$userid   = $return_data['member_userid'] ?? '';
+
+		$campus = '';
+		if ($campusid !== '' && $campusid !== null) {
+			$this->db->where('campus_id', $campusid);
+			$campusinfo = $this->db->get('campus')->row();
+			if ($campusinfo) {
+				$campus = $campusinfo->campus_name;
+			}
+		}
+
+		$user = '';
+		if ($userid !== '' && $userid !== null) {
+			$this->db->where('id', $userid);
+			$userinfo = $this->db->get('users')->row();
+			if ($userinfo) {
+				$user = trim(($userinfo->first_name ?? '') . ' ' . ($userinfo->last_name ?? ''));
+			}
+		}
+
+		$timestamp = '';
+		if (! empty($row['timestamp'])) {
+			$timestamp = date('d-m-Y h:i:sa', (int) $row['timestamp']);
+		}
+
+		return [
+			'id'         => $row['id'],
+			'ip_address' => $row['ip_address'],
+			'timestamp'  => $timestamp,
+			'campusid'   => $campus,
+			'userid'     => $user,
+		];
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function parseCiSessionPayload(string $sessionData): array
+	{
+		if ($sessionData === '') {
+			return [];
+		}
+
+		if (str_contains($sessionData, '|')) {
+			$return_data = [];
+			$offset      = 0;
+			$length      = strlen($sessionData);
+
+			while ($offset < $length) {
+				$pipePos = strpos($sessionData, '|', $offset);
+				if ($pipePos === false) {
+					break;
+				}
+
+				$varname    = substr($sessionData, $offset, $pipePos - $offset);
+				$offset     = $pipePos + 1;
+				$serialized = substr($sessionData, $offset);
+				$data       = @unserialize($serialized);
+
+				if ($data === false && $serialized !== serialize(false)) {
+					break;
+				}
+
+				$return_data[$varname] = $data;
+				$offset += strlen(serialize($data));
+			}
+
+			return $return_data;
+		}
+
+		$json = json_decode($sessionData, true);
+
+		return is_array($json) ? $json : [];
 	}
 
 	function add(){

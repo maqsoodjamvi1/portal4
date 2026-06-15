@@ -11,7 +11,7 @@ class BaseController extends Controller
     /** @var \CodeIgniter\HTTP\IncomingRequest */
     protected $request;
 
-    protected $helpers      = ['campus',  'url', 'form', 'session', 'server', 'file', 'date', 'auth'];
+    protected $helpers      = ['campus',  'url', 'form', 'session', 'server', 'file', 'date', 'auth', 'language'];
 
       
     protected $db;
@@ -107,7 +107,7 @@ protected function getCampusExpiryInfo($campusId)
             'days_left' => $daysLeft,
             'status' => 'expired',
             'message' => 'EXPIRED!',
-            'css_class' => 'text-danger font-weight-bold',
+            'css_class' => 'text-danger fw-bold',
             'icon' => 'fa-exclamation-triangle',
             'badge_class' => 'bg-danger',
             'details' => 'Subscription expired ' . abs($daysLeft) . ' days ago'
@@ -118,7 +118,7 @@ protected function getCampusExpiryInfo($campusId)
             'days_left' => $daysLeft,
             'status' => 'critical',
             'message' => 'Expires in ' . $daysLeft . ' days!',
-            'css_class' => 'text-danger font-weight-bold animated pulse',
+            'css_class' => 'text-danger fw-bold animated pulse',
             'icon' => 'fa-exclamation-circle',
             'badge_class' => 'bg-danger',
             'details' => 'Subscription expires in ' . $daysLeft . ' days. Please renew soon!'
@@ -129,7 +129,7 @@ protected function getCampusExpiryInfo($campusId)
             'days_left' => $daysLeft,
             'status' => 'warning',
             'message' => 'Expires in ' . $daysLeft . ' days',
-            'css_class' => 'text-warning font-weight-bold',
+            'css_class' => 'text-warning fw-bold',
             'icon' => 'fa-clock',
             'badge_class' => 'bg-warning',
             'details' => 'Subscription expires in ' . $daysLeft . ' days'

@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Sports Leaderboard</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports</a></li>
-          <li class="breadcrumb-item active">Leaderboard</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Sports Leaderboard',
+    'icon' => 'fas fa-trophy',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Leaderboard', 'active' => true],
+    ],
+]) ?>
 
 <style>
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -51,7 +46,7 @@
       <div class="filter-bar">
         <label class="mb-0">Event</label>
         <select id="event_id" class="form-control" style="max-width:260px">
-          <option value="0">— All Events —</option>
+          <option value="0">ï¿½ All Events ï¿½</option>
           <?php foreach (($events ?? []) as $e): ?>
             <option value="<?= (int)$e['event_id'] ?>">
               <?= esc(($e['event_name'] ?? 'Event').' '.($e['event_date'] ?? '')) ?>
@@ -61,7 +56,7 @@
 
         <label class="mb-0">House</label>
         <select id="house_id" class="form-control" style="max-width:220px">
-          <option value="0">— All Houses —</option>
+          <option value="0">ï¿½ All Houses ï¿½</option>
           <?php foreach (($houses ?? []) as $h): ?>
             <option value="<?= (int)$h['house_id'] ?>"><?= esc($h['house_name'] ?? '') ?></option>
           <?php endforeach; ?>
@@ -118,7 +113,7 @@ function renderHouse(rows){
         <div class="house-card">
           <div class="house-left" style="background:${esc(color)}">${esc((r.house_name||'')[0]||'H')}</div>
           <div class="house-right">
-            <div class="house-name">${esc(r.house_name||'—')}</div>
+            <div class="house-name">${esc(r.house_name||'ï¿½')}</div>
             <div class="house-stats">
               <span>Total Points: <span class="num">${esc(r.total_points||0)}</span></span>
               <span>1st: <span class="num">${esc(r.firsts||0)}</span></span>
@@ -140,7 +135,7 @@ function renderStudents(rows){
 
   const html = rows.map((r,idx)=>{
     const full = esc(((r.first_name||'')+' '+(r.last_name||'')).trim()) || ('ID '+r.student_id);
-    const meta = [r.class_short||'', ageYears(r.date_of_birth||'')].filter(Boolean).join(' • ');
+    const meta = [r.class_short||'', ageYears(r.date_of_birth||'')].filter(Boolean).join(' ï¿½ ');
     const houseChip = `<span class="house-chip"><span class="house-dot" style="background:${esc(r.color_code||'#999')}"></span>${esc(r.house_name||'')}</span>`;
     const pills = `
       <span class="pill"><b>${esc(r.total_points||0)}</b> pts</span>
@@ -167,7 +162,7 @@ function renderStudents(rows){
 
 function reload(){
   document.getElementById('hint').style.display='none';
-  document.getElementById('cards').innerHTML = '<div class="hint">Loading…</div>';
+  document.getElementById('cards').innerHTML = '<div class="hint">Loadingï¿½</div>';
 
   const event_id = Number(document.getElementById('event_id').value||0);
   const house_id = Number(document.getElementById('house_id').value||0);

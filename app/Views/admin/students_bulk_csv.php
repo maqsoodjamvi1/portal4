@@ -189,23 +189,14 @@ function checkfathercnic() {
 	color: #fff !important;
 }
 </style>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Entries through Excel
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Entries through Excel</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Entries through Excel',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Entries through Excel', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content"> 
   <div class="row">
@@ -225,18 +216,18 @@ function checkfathercnic() {
 
   <!-- Top utility bar: sample, totals, quick search -->
   <div class="d-flex flex-wrap align-items-center mb-3">
-    <a class="btn btn-primary mr-3 mb-2" href="/uploads/addStudentSample_latest.csv">
+    <a class="btn btn-primary me-3 mb-2" href="/uploads/addStudentSample_latest.csv">
       Download Sample CSV for Bulk Records
     </a>
 
-    <div class="badge badge-success mr-2 mb-2" style="font-size:14px;">
+    <div class="badge text-bg-success me-2 mb-2" style="font-size:14px;">
       Active students (this session): <strong id="totalActive"><?= (int)$totalActive ?></strong>
     </div>
-    <div class="badge badge-secondary mr-3 mb-2" style="font-size:14px;">
+    <div class="badge text-bg-secondary me-3 mb-2" style="font-size:14px;">
       Total students (this session): <strong id="totalAll"><?= (int)$totalAll ?></strong>
     </div>
 
-    <div class="ml-auto mb-2">
+    <div class="ms-auto mb-2">
       <input type="text" id="csSearch" class="form-control form-control-sm" placeholder="Search class/section/code…">
     </div>
   </div>
@@ -283,7 +274,7 @@ function checkfathercnic() {
       <div class="card shadow-sm">
         <div class="card-header bg-light d-flex align-items-center">
           <strong>Class-Section Codes (Campus <?= (int)$campus_id ?>)</strong>
-          <span class="ml-auto small text-muted">Use these codes in CSV <code>section_code</code></span>
+          <span class="ms-auto small text-muted">Use these codes in CSV <code>section_code</code></span>
         </div>
         <div class="card-body p-0">
           <div class="p-3 border-bottom">
@@ -303,18 +294,18 @@ function checkfathercnic() {
               <?php endforeach; ?>
             </select>
             <small class="text-muted d-block mt-1" id="csCopyHint" style="display:none;">
-              Copied <span class="font-weight-bold" id="copiedCode"></span> to clipboard.
+              Copied <span class="fw-bold" id="copiedCode"></span> to clipboard.
             </small>
           </div>
 
           <div class="table-responsive" style="max-height: 420px;">
             <table class="table table-sm table-hover mb-0" id="csLegendTable">
-              <thead class="thead-light">
+              <thead class="table-light">
                 <tr>
                   <th style="width:35%;">Class</th>
                   <th style="width:35%;">Section</th>
                   <th style="width:15%;">Code</th>
-                  <th style="width:15%;" class="text-right">Active</th>
+                  <th style="width:15%;" class="text-end">Active</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,8 +321,8 @@ function checkfathercnic() {
                   <td>
                     <code class="copy-code" data-code="<?= $code ?>" style="cursor:pointer;"><?= $code ?></code>
                   </td>
-                  <td class="text-right">
-                    <span class="badge badge-pill <?= $cnt > 0 ? 'badge-success' : 'badge-secondary' ?>">
+                  <td class="text-end">
+                    <span class="badge rounded-pill <?= $cnt > 0 ? 'text-bg-success' : 'text-bg-secondary' ?>">
                       <?= $cnt ?>
                     </span>
                   </td>
@@ -341,7 +332,7 @@ function checkfathercnic() {
             </table>
           </div>
 
-          <div class="p-2 border-top text-right small text-muted">
+          <div class="p-2 border-top text-end small text-muted">
             Rows: <?= count($secRows) ?>
           </div>
         </div>

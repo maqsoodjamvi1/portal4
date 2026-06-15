@@ -2,29 +2,19 @@
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Balance
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Balance</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Fee Chalan by Month',
+    'icon' => 'fas fa-calendar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan by Month', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-    <div class="card card-primary card-outline card-tabs">
+    <div class="card sms-card card-primary card-outline card-tabs">
     <div class="card-header p-0 pt-1 border-bottom-0">
         <div class="card-body">
         <div class="tab-content">

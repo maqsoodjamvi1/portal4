@@ -427,7 +427,7 @@ class StudentsAttendance extends BaseController
                 </div>
                 </td><td><div class="funkyradio">
                 <div class="funkyradio-default">
-                <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+                <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
                 <input type="text" class="form-control ' . $studentsinfo->student_id . '_checkin_date" name="' . $studentsinfo->student_id . '_checkin_date" value="';
                 
                 if ($attendance_info) {
@@ -439,7 +439,7 @@ class StudentsAttendance extends BaseController
                 }
                 
                 $studentsList .= '">
-                <span class="input-group-addon btn btn-default">
+                <span class="input-group-text btn btn-secondary">
                     <span class="far fa-clock"></span>
                 </span>
                 </div>
@@ -447,7 +447,7 @@ class StudentsAttendance extends BaseController
                 </div> 
             </td><td><div class="funkyradio">
             <div class="funkyradio-default">
-            <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+            <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
             <input type="text" class="form-control"   name="' . $studentsinfo->student_id . '_checkout_date" value="';
             
             if ($attendance_info) {
@@ -459,7 +459,7 @@ class StudentsAttendance extends BaseController
             }
             
             $studentsList .= '">
-            <span class="input-group-addon btn btn-default">
+            <span class="input-group-text btn btn-secondary">
                 <span class="far fa-clock"></span>
             </span>
         </div>

@@ -1,29 +1,23 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Top Level Planning</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Top Level Planning</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Top Level Planning',
+    'icon' => 'fas fa-project-diagram',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'url' => base_url('admin/top_level_planning')],
+        ['label' => 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
         <div class="col-md-12">
-            <div class="card card-primary card-outline">
+            <div class="card sms-card card-primary card-outline">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-layer-group mr-2"></i>
+                        <i class="fas fa-layer-group me-2"></i>
                         Enter Top Level Planning
                     </h3>
                     <div class="card-tools">
@@ -38,7 +32,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="alert alert-info">
-                                <i class="fas fa-info-circle mr-2"></i>
+                                <i class="fas fa-info-circle me-2"></i>
                                 Choose how you want to enter planning:
                                 <ul class="mt-2 mb-0">
                                     <li><strong>Class Wise</strong> - Enter planning for all subjects of a specific class</li>
@@ -107,8 +101,8 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="button" id="load_planning_btn" class="btn btn-primary btn-block">
-                                    <i class="fas fa-search mr-1"></i> Load Planning
+                                <button type="button" id="load_planning_btn" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> Load Planning
                                 </button>
                             </div>
                         </div>
@@ -127,7 +121,7 @@
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-save"></i> Save All Changes
                                 </button>
-                                <button type="reset" class="btn btn-default btn-lg">Reset</button>
+                                <button type="reset" class="btn btn-secondary btn-lg">Reset</button>
                             </div>
                         </div>
                     </div>

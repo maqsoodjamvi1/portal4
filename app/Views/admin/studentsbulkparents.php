@@ -5,7 +5,7 @@
     /* Responsive Design */
     .parent-card {
         transition: all 0.3s ease;
-        border-left: 4px solid #007bff;
+        border-start: 4px solid #007bff;
         margin-bottom: 20px;
     }
     .parent-card:hover {
@@ -52,7 +52,7 @@
         color: white;
     }
     @media (max-width: 768px) {
-        .parent-card .form-row > [class*="col-"] {
+        .parent-card .row > [class*="col-"] {
             margin-bottom: 10px;
         }
         .btn-responsive {
@@ -155,11 +155,9 @@
                             <label>Search Student</label>
                             <div class="input-group">
                                 <input type="text" id="student_search_input" class="form-control" placeholder="Type name to search...">
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">
                                         <i class="fas fa-times"></i>
                                     </button>
-                                </div>
                             </div>
                             <div id="searchResults" class="search-results-dropdown"></div>
                         </div>
@@ -183,7 +181,7 @@
                         <div class="form-group mb-0">
                             <label>&nbsp;</label>
                             <div>
-                                <button type="button" id="applyFilters" class="btn btn-primary btn-block">
+                                <button type="button" id="applyFilters" class="btn btn-primary w-100">
                                     <i class="fas fa-filter"></i> Apply Filters
                                 </button>
                             </div>
@@ -194,7 +192,7 @@
                         <div class="form-group mb-0">
                             <label>&nbsp;</label>
                             <div>
-                                <button type="button" id="bulkSave" class="btn btn-success btn-block">
+                                <button type="button" id="bulkSave" class="btn btn-success w-100">
                                     <i class="fas fa-save"></i> Save All
                                 </button>
                             </div>
@@ -217,7 +215,7 @@
                 <div id="studentsListContainer">
                     <div id="loader-1" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                         <p class="mt-2">Loading students...</p>
                     </div>
@@ -236,24 +234,24 @@
                 <h5 class="modal-title">
                     <i class="fas fa-exchange-alt"></i> Relink Student
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
+                <button type="button" class="close text-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <ul class="nav nav-tabs mb-3" id="parentSearchTabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="search-student-tab" data-toggle="tab" href="#searchStudent" role="tab">
+                        <a class="nav-link active" id="search-student-tab" data-bs-toggle="tab" href="#searchStudent" role="tab">
                             <i class="fas fa-user-graduate"></i> Search by Student
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="search-parent-tab" data-toggle="tab" href="#searchParent" role="tab">
+                        <a class="nav-link" id="search-parent-tab" data-bs-toggle="tab" href="#searchParent" role="tab">
                             <i class="fas fa-user-friends"></i> Search by Parent Name
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="search-cnic-tab" data-toggle="tab" href="#searchCNIC" role="tab">
+                        <a class="nav-link" id="search-cnic-tab" data-bs-toggle="tab" href="#searchCNIC" role="tab">
                             <i class="fas fa-id-card"></i> Search by CNIC
                         </a>
                     </li>
@@ -297,13 +295,13 @@
                 
                 <div id="searchLoader" style="display:none;" class="text-center py-3">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="sr-only">Loading...</span>
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                     <p>Searching...</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -487,12 +485,12 @@ function lookupParentByCNIC($input) {
                 $card.find('.father-name').val(response.f_name);
                 $hint.html('<i class="fas fa-check-circle text-success"></i> Linked to: ' + response.f_name);
                 $card.attr('data-linked', 'true').attr('data-new', 'false');
-                $card.find('.relink-status').html('<span class="badge badge-success">Linked</span>');
+                $card.find('.relink-status').html('<span class="badge text-bg-success">Linked</span>');
             } else {
                 $card.find('.parent-id').val('');
                 $hint.html('<i class="fas fa-info-circle text-warning"></i> New parent will be created on save');
                 $card.attr('data-linked', 'false').attr('data-new', 'true');
-                $card.find('.relink-status').html('<span class="badge badge-warning">New Parent</span>');
+                $card.find('.relink-status').html('<span class="badge text-bg-warning">New Parent</span>');
             }
             updateStats();
         },
@@ -853,7 +851,7 @@ $(document).ready(function() {
                                         <p><strong>Address:</strong> ${escapeHtml(response.parent.address_line1 || 'N/A')}</p>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-success btn-block relink-to-parent" 
+                                <button type="button" class="btn btn-success w-100 relink-to-parent" 
                                         data-parent-id="${response.parent.parent_id}"
                                         data-parent-name="${escapeHtml(response.parent.f_name)}">
                                     <i class="fas fa-link"></i> Relink to this Parent
@@ -915,7 +913,7 @@ $(document).ready(function() {
                                         </div>`
                                     ).join('') : '<div class="text-muted">No siblings found</div>'}
                                 </div>
-                                <button type="button" class="btn btn-success btn-block relink-to-parent" 
+                                <button type="button" class="btn btn-success w-100 relink-to-parent" 
                                         data-parent-id="${response.parent.parent_id}"
                                         data-parent-name="${escapeHtml(response.parent.f_name)}">
                                     <i class="fas fa-link"></i> Relink to this Parent
@@ -966,7 +964,7 @@ $(document).ready(function() {
                                         <p><strong>Father CNIC:</strong> ${escapeHtml(response.father_cnic || 'N/A')}</p>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-success btn-block relink-to-parent" 
+                                <button type="button" class="btn btn-success w-100 relink-to-parent" 
                                         data-parent-id="${response.parent_id}"
                                         data-parent-name="${escapeHtml(response.f_name)}">
                                     <i class="fas fa-link"></i> Relink to this Parent

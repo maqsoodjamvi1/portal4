@@ -3,6 +3,8 @@
 namespace App\Controllers\Parent;
 
 use App\Controllers\BaseController;
+use DateInterval;
+use DateTimeImmutable;
 
 class Attendance extends BaseController
 {
@@ -13,7 +15,7 @@ class Attendance extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form', 'url']);
+        helper(['form', 'url', 'school']);
     }
 
    // In your controller method that loads this view
@@ -278,7 +280,8 @@ public function index()
             'attendance_rate' => $attendanceRate
         ],
         'children' => $childrenArray,
-        'session_id' => $session_id
+        'session_id' => $session_id,
+        'share_token' => $token,
     ]);
 }
 
@@ -346,26 +349,8 @@ public function d_debugTimings($student_id = null)
         exit;
     }
     
-    // Get active timing type
-    $activeType = $this->db->table('school_timing_types')
-        ->select('type_id, type_name')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->get()
-        ->getRow();
-    
-    echo "Active Timing Type: " . ($activeType ? $activeType->type_name . " (ID: {$activeType->type_id})" : 'None found') . "\n\n";
-    
-    // Get timings for this section
-    $timings = $this->db->table('school_timings')
-        ->select('dayname, checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $cls_sec_id);
-    
-    if ($activeType) {
-        $timings->where('type_id', $activeType->type_id);
-    }
-    
-    $timingsResult = $timings->get()->getResult();
+    // Get timings for this section (campus-scoped)
+    $timingsResult = getSchoolTimingsForSections([(int) $cls_sec_id], (int) $campus_id);
     
     echo "School Timings for cls_sec_id = $cls_sec_id:\n";
     echo "----------------------------------------\n";
@@ -378,14 +363,14 @@ public function d_debugTimings($student_id = null)
         $workingDays = [];
         
         foreach ($timingsResult as $timing) {
-            $isOff = ($timing->checkin_timing === $timing->checkout_timing);
+            $isOff = ! isSchoolTimingWorkingDay($timing['checkin_timing'] ?? null, $timing['checkout_timing'] ?? null);
             $status = $isOff ? 'OFF (Same time)' : 'WORKING';
-            echo "{$timing->dayname}: {$timing->checkin_timing} - {$timing->checkout_timing} [$status]\n";
+            echo ($timing['dayname'] ?? '') . ': ' . ($timing['checkin_timing'] ?? '') . ' - ' . ($timing['checkout_timing'] ?? '') . " [$status]\n";
             
             if ($isOff) {
-                $offDays[] = $timing->dayname;
+                $offDays[] = $timing['dayname'] ?? '';
             } else {
-                $workingDays[] = $timing->dayname;
+                $workingDays[] = $timing['dayname'] ?? '';
             }
         }
         
@@ -467,296 +452,840 @@ public function d_debugOffDays($student_id)
     
     // Get timings
     $campus_id = (int) session('member_campusid');
-    $activeType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeType ? $activeType->type_id : null;
-    
-    $timings = $this->db->table('school_timings')
-        ->select('dayname, checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $cls_sec_id);
-    
-    if ($activeTypeId) {
-        $timings->where('type_id', $activeTypeId);
-    }
-    
-    $timingsResult = $timings->get()->getResult();
-    
+    $timingsResult = getSchoolTimingsForSections([(int) $cls_sec_id], (int) $campus_id);
+
     $offDays = [];
     $workingDays = [];
-    
+
     foreach ($timingsResult as $timing) {
-        if ($timing->checkin_timing === $timing->checkout_timing) {
-            $offDays[] = $timing->dayname;
+        if (isSchoolTimingWorkingDay($timing['checkin_timing'] ?? null, $timing['checkout_timing'] ?? null)) {
+            $workingDays[] = $timing['dayname'] ?? '';
         } else {
-            $workingDays[] = $timing->dayname;
+            $offDays[] = $timing['dayname'] ?? '';
         }
     }
-    
+
     echo "<pre>";
     echo "Student ID: $student_id\n";
     echo "Session ID: $session_id\n";
     echo "cls_sec_id: $cls_sec_id\n";
-    echo "Active Type ID: " . ($activeTypeId ?? 'null') . "\n";
+    echo "Campus ID: $campus_id\n";
     echo "Timings found: " . count($timingsResult) . "\n";
     echo "Working Days (checkin != checkout): " . implode(', ', $workingDays) . "\n";
     echo "Off Days (checkin = checkout): " . implode(', ', $offDays) . "\n";
     echo "</pre>";
     exit;
 }
-public function getChildAttendance()
-{
-    $request = $this->request;
-    $student_id = $request->getPost('student_id');
-    $session_id = $request->getPost('session_id');
-    
-    $current_date = date('Y-m-d');
-    
-    // Get session dates
-    $session = $this->db->table('academic_session')
-        ->where('session_id', $session_id)
-        ->get()
-        ->getRow();
-    
-    if ($session) {
-        $start_date = $session->start_date;
-        $end_date = $session->end_date;
-        if (strtotime($end_date) > strtotime($current_date)) {
-            $end_date = $current_date;
+
+    private function parentAssertShareTokenAllowsStudent(string $token, int $studentId): bool
+    {
+        $token = trim($token);
+        if ($token === '' || $studentId <= 0) {
+            return false;
         }
-    } else {
-        $end_date = $current_date;
-        $start_date = date('Y-m-d', strtotime('-30 days'));
+
+        $tokenRecord = $this->db->table('attendance_share_tokens')
+            ->where('token', $token)
+            ->get()
+            ->getRow();
+
+        if (! $tokenRecord) {
+            return false;
+        }
+
+        if (! empty($tokenRecord->expires_at) && strtotime((string) $tokenRecord->expires_at) < time()) {
+            return false;
+        }
+
+        $holder = $this->db->table('students')
+            ->select('parent_id')
+            ->where('student_id', (int) $tokenRecord->student_id)
+            ->get()
+            ->getRow();
+
+        $target = $this->db->table('students')
+            ->select('parent_id')
+            ->where('student_id', $studentId)
+            ->get()
+            ->getRow();
+
+        if (! $holder || ! $target) {
+            return false;
+        }
+
+        return (int) $holder->parent_id > 0 && (int) $holder->parent_id === (int) $target->parent_id;
     }
-    
-    // Get student's cls_sec_id
-    $studentClass = $this->db->table('student_class')
-        ->select('cls_sec_id')
-        ->where('student_id', $student_id)
-        ->where('session_id', $session_id)
-        ->where('status', 1)
-        ->get()
-        ->getRow();
-    
-    $cls_sec_id = $studentClass->cls_sec_id ?? 0;
-    
-    // Get student info with class and profile photo
-    $student = $this->db->table('students s')
-        ->select('s.student_id, s.first_name, s.last_name, s.profile_photo, c.class_short_name, sec.section_name')
-        ->join('student_class sc', 'sc.student_id = s.student_id AND sc.session_id = ' . (int)$session_id . ' AND sc.status = 1', 'left')
-        ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
-        ->join('classes c', 'c.class_id = cs.class_id', 'left')
-        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
-        ->where('s.student_id', $student_id)
-        ->get()
-        ->getRow();
-    
-    // Get attendance records
-    $attendance = $this->db->table('attendance')
-        ->select('date, status')
-        ->where('student_id', $student_id)
-        ->where('date >=', $start_date)
-        ->where('date <=', $end_date)
-        ->orderBy('date', 'ASC')
-        ->get()
-        ->getResult();
-    
-    // Calculate counts
-    $totalWorkingDays = count($attendance);
-    $presentCount = 0;
-    $absentCount = 0;
-    $lateCount = 0;
-    $earlyLeaveCount = 0;
-    $lateComingCount = 0;
-    
-    $attendanceData = [];
-    
-    foreach ($attendance as $record) {
-        $date = $record->date;
-        $dayOfWeek = date('l', strtotime($date));
-        $shortDayName = substr($dayOfWeek, 0, 3);
-        $attStatus = strtolower(trim($record->status));
-        
-        if ($attStatus === 'present' || $attStatus === 'p') {
-            $status = 'P';
-            $presentCount++;
-        } else if ($attStatus === 'absent' || $attStatus === 'a') {
-            $status = 'A';
-            $absentCount++;
-        } else if ($attStatus === 'late' || $attStatus === 'l') {
-            $status = 'L';
-            $lateCount++;
-        } else if ($attStatus === 'el' || $attStatus === 'early leave') {
-            $status = 'EL';
-            $earlyLeaveCount++;
-        } else if ($attStatus === 'lc' || $attStatus === 'late coming') {
-            $status = 'LC';
-            $lateComingCount++;
-        } else {
-            $status = strtoupper(substr($attStatus, 0, 2));
+
+    private function parentGetSystemIdForStudent(int $studentId): int
+    {
+        $student = $this->db->table('students')->select('campus_id')->where('student_id', $studentId)->get()->getRowArray();
+        if (! $student || empty($student['campus_id'])) {
+            return 0;
         }
-        
-        $attendanceData[] = [
-            'date' => $date,
-            'date_formatted' => date('d M Y', strtotime($date)),
-            'day_name' => $shortDayName,
-            'full_day_name' => $dayOfWeek,
-            'status' => $status
+        $campus = $this->db->table('campus')->select('system_id')->where('campus_id', (int) $student['campus_id'])->get()->getRowArray();
+        if (! $campus || empty($campus['system_id'])) {
+            return 0;
+        }
+
+        return (int) $campus['system_id'];
+    }
+
+    /**
+     * @return array{session_id: int, session_name: string, start_date: string, end_date: string}|null
+     */
+    private function parentGetCurrentAcademicSessionForStudent(int $studentId): ?array
+    {
+        $student = $this->db->table('students')
+            ->select('campus_id')
+            ->where('student_id', $studentId)
+            ->get()
+            ->getRowArray();
+
+        if (! $student || empty($student['campus_id'])) {
+            return null;
+        }
+
+        $campus = $this->db->table('campus')
+            ->select('system_id')
+            ->where('campus_id', (int) $student['campus_id'])
+            ->get()
+            ->getRowArray();
+
+        if (! $campus || empty($campus['system_id'])) {
+            return null;
+        }
+
+        $systemId = (int) $campus['system_id'];
+
+        $session = $this->db->table('academic_session')
+            ->select('session_id, session_name, start_date, end_date')
+            ->where('system_id', $systemId)
+            ->where('CURDATE() BETWEEN start_date AND end_date', null, false)
+            ->orderBy('start_date', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if (! $session) {
+            $session = $this->db->table('academic_session')
+                ->select('session_id, session_name, start_date, end_date')
+                ->where('system_id', $systemId)
+                ->orderBy('start_date', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+        }
+
+        if (! $session) {
+            return null;
+        }
+
+        return [
+            'session_id'   => (int) $session['session_id'],
+            'session_name' => (string) ($session['session_name'] ?? ''),
+            'start_date'   => (string) ($session['start_date'] ?? ''),
+            'end_date'     => (string) ($session['end_date'] ?? ''),
         ];
     }
-    
-    // Get valid school days for display
-    $validSchoolDays = $this->getValidSchoolDays($cls_sec_id);
-    
-    $attendanceRate = $totalWorkingDays > 0 ? round(($presentCount / $totalWorkingDays) * 100, 1) : 0;
-    
-    return $this->response->setJSON([
-        'success' => true,
-        'data' => [
-            'student' => $student,
-            'attendance' => $attendanceData,
-            'working_days' => $validSchoolDays,
-            'summary' => [
-                'start_date' => date('d M Y', strtotime($start_date)),
-                'end_date' => date('d M Y', strtotime($end_date)),
-                'total_days' => $totalWorkingDays,
-                'present_count' => $presentCount,
-                'absent_count' => $absentCount,
-                'late_count' => $lateCount,
-                'early_leave_count' => $earlyLeaveCount,
-                'late_coming_count' => $lateComingCount,
-                'attendance_rate' => $attendanceRate
-            ]
-        ]
-    ]);
-}
+
+    private function parentParseYmd(?string $s): ?DateTimeImmutable
+    {
+        $k = $this->parentNormalizeYmd((string) $s);
+        if ($k === null) {
+            return null;
+        }
+
+        return DateTimeImmutable::createFromFormat('Y-m-d', $k) ?: null;
+    }
+
+    private function parentNormalizeYmd(string $raw): ?string
+    {
+        $raw = trim($raw);
+        if ($raw === '' || strpos($raw, '0000-00-00') === 0) {
+            return null;
+        }
+        $t = strtotime($raw);
+
+        return $t ? date('Y-m-d', $t) : null;
+    }
+
+    /**
+     * @param list<array{term_session_id: int, term_name: string, start_date: string, end_date: string}> $terms
+     */
+    private function parentPickCurrentTermSessionId(array $terms): int
+    {
+        if ($terms === []) {
+            return 0;
+        }
+
+        $today = date('Y-m-d');
+        foreach ($terms as $t) {
+            $s = $this->parentNormalizeYmd((string) ($t['start_date'] ?? ''));
+            $e = $this->parentNormalizeYmd((string) ($t['end_date'] ?? ''));
+            if ($s === null || $e === null) {
+                continue;
+            }
+            if ($today >= $s && $today <= $e) {
+                return (int) ($t['term_session_id'] ?? 0);
+            }
+        }
+
+        $picked = 0;
+        $pickedStart = '';
+        foreach ($terms as $t) {
+            $s = $this->parentNormalizeYmd((string) ($t['start_date'] ?? ''));
+            if ($s === null) {
+                continue;
+            }
+            if ($s <= $today && ($pickedStart === '' || $s >= $pickedStart)) {
+                $pickedStart = $s;
+                $picked      = (int) ($t['term_session_id'] ?? 0);
+            }
+        }
+
+        if ($picked > 0) {
+            return $picked;
+        }
+
+        $last = $terms[count($terms) - 1];
+
+        return (int) ($last['term_session_id'] ?? 0);
+    }
+
+    /**
+     * Mon–Fri stats for a term; end date capped to today for ongoing terms.
+     *
+     * @param array<string, string> $byDate
+     *
+     * @return array{working_days: int, present: int, absent: int, leave: int, late: int, early_leave: int, no_record: int, present_pct: float|null, attendance_rate_pct: float|null}
+     */
+    private function parentSummarizeTermWeekdays(string $startYmd, string $endYmd, array $byDate): array
+    {
+        $out = [
+            'working_days'        => 0,
+            'present'             => 0,
+            'absent'              => 0,
+            'leave'               => 0,
+            'late'                => 0,
+            'early_leave'         => 0,
+            'no_record'           => 0,
+            'present_pct'         => null,
+            'attendance_rate_pct' => null,
+        ];
+
+        $start = $this->parentParseYmd(substr(trim($startYmd), 0, 10));
+        $end   = $this->parentParseYmd(substr(trim($endYmd), 0, 10));
+        if ($start === null || $end === null || $start > $end) {
+            return $out;
+        }
+
+        $today = new DateTimeImmutable('today');
+        if ($end > $today) {
+            $end = $today;
+        }
+        if ($start > $end) {
+            return $out;
+        }
+
+        $cursor = $start;
+        while ($cursor <= $end) {
+            $n = (int) $cursor->format('N');
+            if ($n >= 6) {
+                $cursor = $cursor->add(new DateInterval('P1D'));
+                continue;
+            }
+
+            $ymd  = $cursor->format('Y-m-d');
+            $code = $byDate[$ymd] ?? null;
+            $code = $code !== null ? strtoupper(trim((string) $code)) : '';
+
+            $out['working_days']++;
+
+            if ($code === '' || $code === '?') {
+                $out['no_record']++;
+            } elseif ($code === 'P') {
+                $out['present']++;
+            } elseif ($code === 'A') {
+                $out['absent']++;
+            } elseif ($code === 'L') {
+                $out['leave']++;
+            } elseif ($code === 'LC') {
+                $out['late']++;
+            } elseif ($code === 'EL') {
+                $out['early_leave']++;
+            } else {
+                $out['no_record']++;
+            }
+
+            $cursor = $cursor->add(new DateInterval('P1D'));
+        }
+
+        $wd = $out['working_days'];
+        if ($wd > 0) {
+            $attended                   = $out['present'] + $out['late'] + $out['early_leave'];
+            $out['present_pct']         = round(100.0 * $out['present'] / $wd, 1);
+            $out['attendance_rate_pct'] = round(100.0 * $attended / $wd, 1);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function parentRowToDisplayCode(array $row, bool $hasLc, bool $hasEl): string
+    {
+        $lc = $hasLc ? (float) ($row['lc_duration'] ?? 0) : 0.0;
+        $el = $hasEl ? (float) ($row['el_duration'] ?? 0) : 0.0;
+
+        if ($el > 0) {
+            return 'EL';
+        }
+        if ($lc > 0) {
+            return 'LC';
+        }
+
+        $st = strtoupper(trim((string) ($row['status'] ?? '')));
+        $st = str_replace([' ', '-', '_'], '', $st);
+
+        if (in_array($st, ['P', 'PRESENT', 'PR'], true)) {
+            return 'P';
+        }
+        if (in_array($st, ['A', 'ABSENT', 'AB'], true)) {
+            return 'A';
+        }
+        if (in_array($st, ['L', 'LEAVE', 'LV'], true)) {
+            return 'L';
+        }
+        if (in_array($st, ['LC', 'LATECOMING'], true)) {
+            return 'LC';
+        }
+        if (in_array($st, ['EL', 'EARLYLEAVE'], true)) {
+            return 'EL';
+        }
+        if (strlen($st) === 1) {
+            return $st;
+        }
+        if (strlen($st) === 2) {
+            return $st;
+        }
+
+        return '?';
+    }
+
+    /**
+     * @return array<string, string> Y-m-d => code
+     */
+    private function parentFetchAttendanceByDateRange(int $studentId, string $startDate, string $endDate): array
+    {
+        $start = $this->parentNormalizeYmd($startDate) ?? '';
+        $end   = $this->parentNormalizeYmd($endDate) ?? '';
+        if ($start === '' || $end === '' || $studentId <= 0) {
+            return [];
+        }
+
+        try {
+            $fields = $this->db->getFieldNames('attendance');
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $has = static function (string $name) use ($fields): bool {
+            return in_array($name, $fields, true);
+        };
+
+        $colDate = $has('attendance_date') ? 'attendance_date' : ($has('att_date') ? 'att_date' : ($has('date') ? 'date' : null));
+        if ($colDate === null) {
+            return [];
+        }
+
+        $hasLc = $has('lc_duration');
+        $hasEl = $has('el_duration');
+
+        $select = ['student_id', "{$colDate} AS attendance_date", 'status'];
+        if ($hasLc) {
+            $select[] = 'lc_duration';
+        }
+        if ($hasEl) {
+            $select[] = 'el_duration';
+        }
+
+        $rows = $this->db->table('attendance')
+            ->select(implode(', ', $select))
+            ->where('student_id', $studentId)
+            ->where($colDate . ' >=', $start)
+            ->where($colDate . ' <=', $end)
+            ->orderBy($colDate, 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $byDate = [];
+        foreach ($rows as $r) {
+            $d = $this->parentNormalizeYmd((string) ($r['attendance_date'] ?? ''));
+            if ($d === null) {
+                continue;
+            }
+            if (! isset($byDate[$d])) {
+                $byDate[$d] = $this->parentRowToDisplayCode($r, $hasLc, $hasEl);
+            }
+        }
+
+        return $byDate;
+    }
+
+    /**
+     * @param array{working_days: int, present: int, absent: int, leave: int, late: int, early_leave: int, no_record: int, present_pct: float|null, attendance_rate_pct: float|null} $sum
+     *
+     * @return array{start_date: string, end_date: string, total_days: int, present_count: int, absent_count: int, late_count: int, early_leave_count: int, late_coming_count: int, attendance_rate: float|int}
+     */
+    private function parentSummaryToLegacyJson(array $sum, string $startYmd, string $endYmd): array
+    {
+        $today  = date('Y-m-d');
+        $endCap = $this->parentNormalizeYmd($endYmd) ?? $today;
+        if ($endCap > $today) {
+            $endCap = $today;
+        }
+        $startOk = $this->parentNormalizeYmd($startYmd) ?? $endCap;
+        if ($startOk > $endCap) {
+            $startOk = $endCap;
+        }
+
+        $rate = $sum['attendance_rate_pct'];
+
+        return [
+            'start_date'          => date('d M Y', strtotime($startOk)),
+            'end_date'            => date('d M Y', strtotime($endCap)),
+            'total_days'          => (int) ($sum['working_days'] ?? 0),
+            'present_count'       => (int) ($sum['present'] ?? 0),
+            'absent_count'        => (int) ($sum['absent'] ?? 0),
+            'late_count'          => (int) ($sum['leave'] ?? 0),
+            'early_leave_count'   => (int) ($sum['early_leave'] ?? 0),
+            'late_coming_count'   => (int) ($sum['late'] ?? 0),
+            'attendance_rate'     => $rate !== null ? (float) $rate : 0.0,
+        ];
+    }
+
+    public function getChildAttendance()
+    {
+        $request    = $this->request;
+        $student_id = (int) $request->getPost('student_id');
+        $shareToken = trim((string) $request->getPost('share_token'));
+
+        if ($student_id <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid student']);
+        }
+
+        if ($shareToken !== '') {
+            if (! $this->parentAssertShareTokenAllowsStudent($shareToken, $student_id)) {
+                return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'Access denied']);
+            }
+        }
+
+        $student = $this->db->table('students s')
+            ->select('s.student_id, s.first_name, s.last_name, s.profile_photo')
+            ->where('s.student_id', $student_id)
+            ->get()
+            ->getRow();
+
+        if (! $student) {
+            return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Student not found']);
+        }
+
+        $systemId = $this->parentGetSystemIdForStudent($student_id);
+
+        $history = $this->db->table('student_class sc')
+            ->select('sc.session_id, sc.cls_sec_id, as.session_name, as.start_date, as.end_date, c.class_short_name, sec.section_name')
+            ->join('academic_session as', 'as.session_id = sc.session_id', 'left')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('sc.student_id', $student_id)
+            ->where('sc.session_id IS NOT NULL', null, false)
+            ->where('sc.status', 1)
+            ->orderBy('sc.session_id', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $sessions = [];
+        foreach ($history as $row) {
+            $sessId = (int) ($row['session_id'] ?? 0);
+            if ($sessId <= 0 || isset($sessions[$sessId])) {
+                continue;
+            }
+            $sessions[$sessId] = [
+                'session_id'   => $sessId,
+                'session_name' => (string) ($row['session_name'] ?? ('Session ' . $sessId)),
+                'cls_sec_id'   => (int) ($row['cls_sec_id'] ?? 0),
+                'class_short'  => (string) ($row['class_short_name'] ?? ''),
+                'section_name' => (string) ($row['section_name'] ?? ''),
+            ];
+        }
+
+        if ($sessions === []) {
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => [
+                    'student'      => $student,
+                    'attendance'   => [],
+                    'working_days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                    'summary'      => [
+                        'start_date'          => date('d M Y'),
+                        'end_date'            => date('d M Y'),
+                        'total_days'          => 0,
+                        'present_count'       => 0,
+                        'absent_count'        => 0,
+                        'late_count'          => 0,
+                        'early_leave_count'   => 0,
+                        'late_coming_count'   => 0,
+                        'attendance_rate'     => 0,
+                    ],
+                    'current_term' => null,
+                    'other_terms'  => [],
+                ],
+            ]);
+        }
+
+        $sessionIds = array_keys($sessions);
+        rsort($sessionIds, SORT_NUMERIC);
+        $anchorSessionId = (int) $sessionIds[0];
+
+        $calendarSession   = $this->parentGetCurrentAcademicSessionForStudent($student_id);
+        $calendarSessionId = (int) ($calendarSession['session_id'] ?? 0);
+        $enrolledInCalendar = $calendarSessionId > 0 && isset($sessions[$calendarSessionId]);
+        $detailSessionId    = $enrolledInCalendar ? $calendarSessionId : $anchorSessionId;
+
+        $termsBySession = [];
+        if ($systemId > 0 && $sessionIds !== []) {
+            $termRows = $this->db->table('terms_session ts')
+                ->select('ts.term_session_id, ts.session_id, ts.start_date, ts.end_date, t.name AS term_name')
+                ->join('terms t', 't.term_id = ts.term_id', 'inner')
+                ->where('ts.system_id', $systemId)
+                ->whereIn('ts.session_id', $sessionIds)
+                ->orderBy('ts.start_date', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            foreach ($termRows as $tr) {
+                $sid = (int) ($tr['session_id'] ?? 0);
+                if (! isset($sessions[$sid])) {
+                    continue;
+                }
+                $termsBySession[$sid][] = [
+                    'term_session_id' => (int) ($tr['term_session_id'] ?? 0),
+                    'term_name'       => (string) ($tr['term_name'] ?? 'Term'),
+                    'start_date'      => (string) ($tr['start_date'] ?? ''),
+                    'end_date'        => (string) ($tr['end_date'] ?? ''),
+                ];
+            }
+        }
+
+        $minD = null;
+        $maxD = null;
+        foreach ($termsBySession as $terms) {
+            foreach ($terms as $t) {
+                $ds = $this->parentNormalizeYmd((string) ($t['start_date'] ?? ''));
+                $de = $this->parentNormalizeYmd((string) ($t['end_date'] ?? ''));
+                if ($ds === null || $de === null) {
+                    continue;
+                }
+                if ($minD === null || $ds < $minD) {
+                    $minD = $ds;
+                }
+                if ($maxD === null || $de > $maxD) {
+                    $maxD = $de;
+                }
+            }
+        }
+
+        if (($minD === null || $maxD === null) && $anchorSessionId > 0) {
+            $asR = $this->db->table('academic_session')
+                ->select('start_date, end_date')
+                ->where('session_id', $anchorSessionId)
+                ->get()
+                ->getRow();
+            if ($asR) {
+                $minD = $this->parentNormalizeYmd((string) $asR->start_date);
+                $maxD = $this->parentNormalizeYmd((string) $asR->end_date);
+                $today = date('Y-m-d');
+                if ($maxD !== null && $maxD > $today) {
+                    $maxD = $today;
+                }
+            }
+        }
+
+        $byDate = [];
+        if ($minD !== null && $maxD !== null) {
+            $byDate = $this->parentFetchAttendanceByDateRange($student_id, $minD, $maxD);
+        }
+
+        $detailTerms         = $termsBySession[$detailSessionId] ?? [];
+        $detailTermSessionId = $this->parentPickCurrentTermSessionId($detailTerms);
+        $detailTermMeta      = null;
+        foreach ($detailTerms as $t) {
+            if ((int) ($t['term_session_id'] ?? 0) === $detailTermSessionId) {
+                $detailTermMeta = $t;
+                break;
+            }
+        }
+
+        $clsDetail = (int) ($sessions[$detailSessionId]['cls_sec_id'] ?? 0);
+        if ($clsDetail <= 0) {
+            $clsDetail = (int) ($sessions[$anchorSessionId]['cls_sec_id'] ?? 0);
+        }
+
+        $studentDisplay = $this->db->table('students s')
+            ->select('s.student_id, s.first_name, s.last_name, s.profile_photo, c.class_short_name, sec.section_name')
+            ->join('student_class sc', 'sc.student_id = s.student_id AND sc.session_id = ' . (int) $detailSessionId . ' AND sc.status = 1', 'left')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('s.student_id', $student_id)
+            ->get()
+            ->getRow();
+
+        if (! $studentDisplay) {
+            $studentDisplay = $student;
+        }
+
+        $offDays     = $this->getOffDays($clsDetail, $student_id);
+        $workingCols = $this->getValidSchoolDays($clsDetail, $student_id);
+
+        $attendanceData = [];
+        $summaryForJson = [
+            'start_date'          => date('d M Y'),
+            'end_date'            => date('d M Y'),
+            'total_days'          => 0,
+            'present_count'       => 0,
+            'absent_count'        => 0,
+            'late_count'          => 0,
+            'early_leave_count'   => 0,
+            'late_coming_count'   => 0,
+            'attendance_rate'     => 0,
+        ];
+        $currentTermPayload = null;
+
+        if ($detailTermSessionId > 0 && $detailTermMeta !== null) {
+            $tStart = $this->parentNormalizeYmd((string) $detailTermMeta['start_date']) ?? date('Y-m-d');
+            $tEnd   = $this->parentNormalizeYmd((string) $detailTermMeta['end_date']) ?? $tStart;
+            $today  = date('Y-m-d');
+            if ($tEnd > $today) {
+                $tEnd = $today;
+            }
+            if ($tStart <= $tEnd) {
+                $sumArr         = $this->parentSummarizeTermWeekdays($tStart, $tEnd, $byDate);
+                $summaryForJson = $this->parentSummaryToLegacyJson($sumArr, $tStart, $tEnd);
+
+                foreach ($this->getDatesInRange($tStart, $tEnd) as $date) {
+                    $dow = date('l', strtotime($date));
+                    if (in_array($dow, $offDays, true)) {
+                        continue;
+                    }
+                    $code = strtoupper(trim((string) ($byDate[$date] ?? '')));
+                    if ($code === '' || $code === '?') {
+                        continue;
+                    }
+                    $attendanceData[] = [
+                        'date'           => $date,
+                        'date_formatted' => date('d M Y', strtotime($date)),
+                        'day_name'       => substr($dow, 0, 3),
+                        'full_day_name'  => $dow,
+                        'status'         => $code,
+                    ];
+                }
+            }
+
+            $currentTermPayload = [
+                'term_session_id' => $detailTermSessionId,
+                'term_name'       => (string) ($detailTermMeta['term_name'] ?? ''),
+                'session_id'      => $detailSessionId,
+                'session_name'    => (string) ($sessions[$detailSessionId]['session_name'] ?? ''),
+                'start_date'      => (string) ($detailTermMeta['start_date'] ?? ''),
+                'end_date'        => (string) ($detailTermMeta['end_date'] ?? ''),
+            ];
+        } elseif ($anchorSessionId > 0) {
+            $asRow = $this->db->table('academic_session')
+                ->select('start_date, end_date, session_name')
+                ->where('session_id', $anchorSessionId)
+                ->get()
+                ->getRow();
+            if ($asRow) {
+                $tStart = $this->parentNormalizeYmd((string) $asRow->start_date) ?? date('Y-m-d');
+                $tEnd   = $this->parentNormalizeYmd((string) $asRow->end_date) ?? $tStart;
+                $today  = date('Y-m-d');
+                if ($tEnd > $today) {
+                    $tEnd = $today;
+                }
+                if ($tStart <= $tEnd) {
+                    $sumArr         = $this->parentSummarizeTermWeekdays($tStart, $tEnd, $byDate);
+                    $summaryForJson = $this->parentSummaryToLegacyJson($sumArr, $tStart, $tEnd);
+                    $attendanceData = [];
+                    foreach ($this->getDatesInRange($tStart, $tEnd) as $date) {
+                        $dow = date('l', strtotime($date));
+                        if (in_array($dow, $offDays, true)) {
+                            continue;
+                        }
+                        $code = strtoupper(trim((string) ($byDate[$date] ?? '')));
+                        if ($code === '' || $code === '?') {
+                            continue;
+                        }
+                        $attendanceData[] = [
+                            'date'           => $date,
+                            'date_formatted' => date('d M Y', strtotime($date)),
+                            'day_name'       => substr($dow, 0, 3),
+                            'full_day_name'  => $dow,
+                            'status'         => $code,
+                        ];
+                    }
+                    $currentTermPayload = [
+                        'term_session_id' => 0,
+                        'term_name'       => 'Academic session',
+                        'session_id'      => $anchorSessionId,
+                        'session_name'    => (string) ($asRow->session_name ?? ''),
+                        'start_date'      => (string) $asRow->start_date,
+                        'end_date'        => (string) $asRow->end_date,
+                    ];
+                }
+            }
+        }
+
+        $otherTerms = [];
+        foreach ($sessionIds as $sid) {
+            $sid = (int) $sid;
+            $sessName = (string) ($sessions[$sid]['session_name'] ?? '');
+            foreach ($termsBySession[$sid] ?? [] as $t) {
+                $tid = (int) ($t['term_session_id'] ?? 0);
+                if ($tid === $detailTermSessionId && $sid === $detailSessionId) {
+                    continue;
+                }
+                $ds = $this->parentNormalizeYmd((string) ($t['start_date'] ?? ''));
+                $de = $this->parentNormalizeYmd((string) ($t['end_date'] ?? ''));
+                if ($ds === null || $de === null) {
+                    continue;
+                }
+                $sumArr   = $this->parentSummarizeTermWeekdays($ds, $de, $byDate);
+                $legacy   = $this->parentSummaryToLegacyJson($sumArr, $ds, $de);
+                $otherTerms[] = [
+                    'session_id'      => $sid,
+                    'session_name'    => $sessName,
+                    'term_session_id' => $tid,
+                    'term_name'       => (string) ($t['term_name'] ?? ''),
+                    'start_date'      => $ds,
+                    'end_date'        => $de,
+                    'summary'         => $legacy,
+                ];
+            }
+        }
+
+        usort($otherTerms, static function (array $a, array $b): int {
+            if ($a['session_id'] !== $b['session_id']) {
+                return $b['session_id'] <=> $a['session_id'];
+            }
+
+            return strcmp($b['start_date'], $a['start_date']);
+        });
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data'    => [
+                'student'      => $studentDisplay,
+                'attendance'   => $attendanceData,
+                'working_days' => $workingCols,
+                'summary'      => $summaryForJson,
+                'current_term' => $currentTermPayload,
+                'other_terms'  => $otherTerms,
+            ],
+        ]);
+    }
 /**
  * Get valid school days (days with different checkin/checkout times)
  * Used only for display columns, NOT for counting working days
  */
-private function getValidSchoolDays($cls_sec_id)
+private function getValidSchoolDays($cls_sec_id, $student_id = null)
 {
-    if (!$cls_sec_id) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    }
-    
-    // Get active timing type for this campus
-    $campus_id = (int) session('member_campusid');
-    $activeTimingType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
-    // Get school timings for this section
-    $timings = $this->db->table('school_timings st')
-        ->select('st.dayname, st.checkin_timing, st.checkout_timing')
-        ->where('st.cls_sec_id', $cls_sec_id);
-    
-    if ($activeTypeId) {
-        $timings->where('st.type_id', $activeTypeId);
-    }
-    
-    $timings = $timings->get()->getResult();
-    
-    $validDays = [];
-    foreach ($timings as $timing) {
-        // Only include days where checkin and checkout are different
-        if ($timing->checkin_timing && $timing->checkout_timing) {
-            $checkin = (string)$timing->checkin_timing;
-            $checkout = (string)$timing->checkout_timing;
-            
-            if ($checkin !== $checkout) {
-                $validDays[] = $timing->dayname;
-            }
-        }
-    }
-    
-    // If no valid days found, return default Monday-Friday
-    if (empty($validDays)) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    }
-    
-    return $validDays;
+    return $this->resolveWorkingDayNames((int) $cls_sec_id, $student_id);
 }
-/**
- * Get working days for a class section (days where checkin != checkout)
- */
-/**
- * Get working days for a class section (days where checkin != checkout)
- */
+
 private function getWorkingDays($cls_sec_id, $student_id = null)
 {
-    if (!$cls_sec_id) {
-        // Default: Monday to Friday are working days
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    return $this->resolveWorkingDayNames((int) $cls_sec_id, $student_id);
+}
+
+private function getOffDays($cls_sec_id, $student_id = null)
+{
+    $campusId = $this->resolveCampusIdForTiming((int) $cls_sec_id, $student_id);
+    if ($campusId <= 0 || $cls_sec_id <= 0) {
+        return [];
     }
-    
-    // Get campus_id from the student
-    $campus_id = null;
-    
-    if ($student_id) {
+
+    $offDays = [];
+    foreach (getSchoolTimingsForSections([(int) $cls_sec_id], $campusId) as $row) {
+        if (isSchoolTimingOffDay($row)) {
+            $offDays[] = $row['dayname'];
+        }
+    }
+
+    return $offDays;
+}
+
+private function resolveCampusIdForTiming(int $clsSecId, $studentId = null): int
+{
+    if ($studentId) {
         $student = $this->db->table('students')
             ->select('campus_id')
-            ->where('student_id', $student_id)
+            ->where('student_id', (int) $studentId)
             ->get()
             ->getRow();
-        
-        if ($student) {
-            $campus_id = $student->campus_id;
+        if ($student && ! empty($student->campus_id)) {
+            return (int) $student->campus_id;
         }
     }
-    
-    if (!$campus_id) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    $campusId = (int) session('member_campusid');
+    if ($campusId > 0) {
+        return $campusId;
     }
-    
-    // Get active timing type
-    $activeType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeType ? $activeType->type_id : null;
-    
-    if (!$activeTypeId) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    }
-    
-    // Get timings for this section
-    $timings = $this->db->table('school_timings')
-        ->select('dayname, checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $cls_sec_id)
-        ->where('type_id', $activeTypeId)
-        ->get()
-        ->getResult();
-    
-    $workingDays = [];
-    foreach ($timings as $timing) {
-        // If checkin != checkout, it's a working day
-        if ($timing->checkin_timing !== $timing->checkout_timing) {
-            $workingDays[] = $timing->dayname;
+
+    if ($clsSecId > 0) {
+        $section = $this->db->table('class_section')
+            ->select('campus_id')
+            ->where('cls_sec_id', $clsSecId)
+            ->get()
+            ->getRow();
+        if ($section && ! empty($section->campus_id)) {
+            return (int) $section->campus_id;
         }
     }
-    
-    // If no working days found from timings, use default
-    if (empty($workingDays)) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    }
-    
-    return $workingDays;
+
+    return 0;
 }
+
+private function resolveWorkingDayNames(int $clsSecId, $studentId = null): array
+{
+    if ($clsSecId <= 0) {
+        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    }
+
+    $campusId = $this->resolveCampusIdForTiming($clsSecId, $studentId);
+    if ($campusId <= 0) {
+        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    }
+
+    $dayMap = array_flip(schoolTimingWeekdayMap());
+    $nums   = getWorkingWeekdayNumbersForSection($clsSecId, $campusId);
+    if ($nums === []) {
+        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    }
+
+    $names = [];
+    foreach ($nums as $num) {
+        if (isset($dayMap[$num])) {
+            $names[] = $dayMap[$num];
+        }
+    }
+
+    return $names !== [] ? $names : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+}
+
     private function getDatesInRange($start_date, $end_date)
     {
         $dates = [];
@@ -783,78 +1312,5 @@ private function getWorkingDays($cls_sec_id, $student_id = null)
     }
     
     return 0;
-}
-/**
- * Get off days for a class section based on active timing type
- * Returns days where checkin_time equals checkout_time (permanently off)
- */
-
-/**
- * Get off days for a class section based on active timing type
- * Returns days where checkin_time equals checkout_time (permanently off)
- */
-/**
- * Get off days for a class section based on active timing type
- */
-/**
- * Get off days for a class section based on active timing type
- * Returns days where checkin_time equals checkout_time (permanently off)
- */
-private function getOffDays($cls_sec_id, $student_id = null)
-{
-    if (!$cls_sec_id) {
-        return [];
-    }
-    
-    // Get campus_id from the student
-    $campus_id = null;
-    
-    if ($student_id) {
-        $student = $this->db->table('students')
-            ->select('campus_id')
-            ->where('student_id', $student_id)
-            ->get()
-            ->getRow();
-        
-        if ($student) {
-            $campus_id = $student->campus_id;
-        }
-    }
-    
-    if (!$campus_id) {
-        return [];
-    }
-    
-    // Get active timing type
-    $activeType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeType ? $activeType->type_id : null;
-    
-    if (!$activeTypeId) {
-        return [];
-    }
-    
-    // Get timings for this section
-    $timings = $this->db->table('school_timings')
-        ->select('dayname, checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $cls_sec_id)
-        ->where('type_id', $activeTypeId)
-        ->get()
-        ->getResult();
-    
-    $offDays = [];
-    foreach ($timings as $timing) {
-        if ($timing->checkin_timing === $timing->checkout_timing) {
-            $offDays[] = $timing->dayname;
-        }
-    }
-    
-    return $offDays;
 }
 }

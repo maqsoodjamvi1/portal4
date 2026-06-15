@@ -4,37 +4,30 @@
 <style>
 .nutrition-card {
     transition: all 0.3s ease;
-    border-left: 4px solid;
+    border-start: 4px solid;
     margin-bottom: 20px;
 }
 .nutrition-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-.nutrition-underweight { border-left-color: #3498db; }
-.nutrition-normal { border-left-color: #2ecc71; }
-.nutrition-overweight { border-left-color: #f39c12; }
-.nutrition-obese { border-left-color: #e74c3c; }
+.nutrition-underweight { border-start-color: #3498db; }
+.nutrition-normal { border-start-color: #2ecc71; }
+.nutrition-overweight { border-start-color: #f39c12; }
+.nutrition-obese { border-start-color: #e74c3c; }
 .food-good { color: #27ae60; }
 .food-bad { color: #e74c3c; }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-apple-alt mr-2"></i>Nutrition Suggestions</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/health/bmi-dashboard') ?>">BMI</a></li>
-                    <li class="breadcrumb-item active">Nutrition Suggestions</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Nutrition Suggestions',
+    'icon' => 'fas fa-apple-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'url' => base_url('admin/health/bmi-dashboard')],
+        ['label' => 'Nutrition', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -109,7 +102,7 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary btn-block">Add Suggestion</button>
+                        <button type="submit" class="btn btn-primary w-100">Add Suggestion</button>
                     </div>
                 </form>
             </div>
@@ -148,7 +141,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title">Edit Nutrition Suggestion</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
             </div>
             <form id="editSuggestionForm">
                 <?= csrf_field() ?>
@@ -228,7 +221,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Suggestion</button>
                 </div>
             </form>
@@ -271,11 +264,11 @@ $(document).ready(function() {
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h5 class="card-title">${item.title}</h5>
-                                        <span class="badge badge-${item.bmi_category === 'underweight' ? 'info' : (item.bmi_category === 'normal' ? 'success' : (item.bmi_category === 'overweight' ? 'warning' : 'danger'))} ml-2">
+                                        <span class="badge text-bg-${item.bmi_category === 'underweight' ? 'info' : (item.bmi_category === 'normal' ? 'success' : (item.bmi_category === 'overweight' ? 'warning' : 'danger'))} ms-2">
                                             ${item.bmi_category.toUpperCase()}
                                         </span>
-                                        ${item.age_group ? `<span class="badge badge-secondary ml-1">Age: ${item.age_group}</span>` : ''}
-                                        ${item.gender !== 'both' ? `<span class="badge badge-secondary ml-1">${item.gender}</span>` : ''}
+                                        ${item.age_group ? `<span class="badge text-bg-secondary ms-1">Age: ${item.age_group}</span>` : ''}
+                                        ${item.gender !== 'both' ? `<span class="badge text-bg-secondary ms-1">${item.gender}</span>` : ''}
                                     </div>
                                     <div>
                                         <button class="btn btn-sm btn-warning edit-suggestion" data-id="${item.suggestion_id}">

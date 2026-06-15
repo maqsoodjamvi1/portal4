@@ -128,14 +128,14 @@ class FeeChalanMonth extends BaseController
 
         $strFeeReport = '';
         $strFeeReport .= '<table class="table">';
-        $strFeeReport .= '<thead class="thead-light"><tr><th>Fee Month</th><th>Fee Type</th><th>Paid</th></tr></thead>';
+        $strFeeReport .= '<thead class="table-light"><tr><th>Fee Month</th><th>Fee Type</th><th>Paid</th></tr></thead>';
         foreach ($feemonth_balance as $value) {
             if ($value->Total_1 != '') {
                 $feeTypeInfo = $this->db->table('fee_type')->where('fee_type_id', $value->fee_type_id)->get()->getRow();
                 $strFeeReport .= '<tr><td>' . $value->fee_month . '</td><td>' . $feeTypeInfo->fee_type_name . '</td><td>' . $value->Total_1 . '</td></tr>';
             }
         }
-        $strFeeReport .= '<tfoot class="thead-light"><tr><th></th><th>Total</th><th>' . ($feemonth_balance_total->total ?? 0) . '</th></tr></tfoot>';
+        $strFeeReport .= '<tfoot class="table-light"><tr><th></th><th>Total</th><th>' . ($feemonth_balance_total->total ?? 0) . '</th></tr></tfoot>';
         $strFeeReport .= '</table>';
 
         return $this->response->setBody($strFeeReport);

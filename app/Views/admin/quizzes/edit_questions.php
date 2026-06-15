@@ -5,17 +5,19 @@
 <link href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet">
 <script src="https://unpkg.com/cropperjs"></script>
 
-<section class="content-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>
-            <i class="fas fa-edit"></i> Edit Questions for:
-            <small><?= esc($quiz->title ?? 'Untitled Quiz') ?></small>
-        </h1>
-        <a href="<?= site_url('admin/quizzes') ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Quizzes
-        </a>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Edit Quiz Questions',
+    'icon' => 'fas fa-edit',
+    'subtitle' => $quiz->title ?? 'Untitled Quiz',
+    'actionsHtml' => '<div class="text-sm-right">'
+        . '<a href="' . esc(site_url('admin/quizzes'), 'attr') . '" class="btn btn-secondary btn-sm">'
+        . '<i class="fas fa-arrow-left"></i> Back to Quizzes</a></div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quizzes', 'url' => base_url('admin/quizzes')],
+        ['label' => 'Edit Questions', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <?php if (session()->getFlashdata('msg')): ?>
@@ -92,10 +94,10 @@
                 <!-- Action Buttons -->
                 <div class="col-md-3 d-flex align-items-end">
                     <div class="form-group w-100">
-                        <button type="button" id="btnApplyFilter" class="btn btn-primary btn-block">
+                        <button type="button" id="btnApplyFilter" class="btn btn-primary w-100">
                             <i class="fas fa-filter"></i> Apply Filter
                         </button>
-                        <button type="button" id="btnResetFilter" class="btn btn-secondary btn-block mt-2">
+                        <button type="button" id="btnResetFilter" class="btn btn-secondary w-100 mt-2">
                             <i class="fas fa-redo"></i> Reset Filter
                         </button>
                     </div>
@@ -147,7 +149,7 @@
                                     <!-- Question Number -->
                                     <div class="col-md-1">
                                         <h5 class="mb-0">
-                                            <span class="badge badge-primary">Q<?= $index + 1 ?></span>
+                                            <span class="badge text-bg-primary">Q<?= $index + 1 ?></span>
                                         </h5>
                                     </div>
                                     
@@ -177,7 +179,7 @@
                                     <!-- Question Mode Toggle -->
                                     <div class="col-md-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="btn-group btn-group-sm mr-2" role="group">
+                                            <div class="btn-group btn-group-sm me-2" role="group">
                                                 <input type="radio" 
                                                        class="btn-check q-media-toggle" 
                                                        name="questions[<?= $index ?>][question_media]" 
@@ -218,7 +220,7 @@
                                     </div>
                                     
                                     <!-- Move Buttons -->
-                                    <div class="col-md-2 text-right">
+                                    <div class="col-md-2 text-end">
                                         <button type="button" class="btn btn-light btn-sm btn-move-up" title="Move Up">
                                             <i class="fas fa-arrow-up"></i>
                                         </button>
@@ -228,7 +230,7 @@
                                     </div>
                                     
                                     <!-- Save Button -->
-                                    <div class="col-md-2 text-right">
+                                    <div class="col-md-2 text-end">
                                         <button type="button" 
                                                 class="btn btn-success btn-sm btn-save-question" 
                                                 data-question-id="<?= $q['id'] ?>"
@@ -250,7 +252,7 @@
                                 <div class="question-content-area mb-3">
                                     <!-- Text Mode Content -->
                                     <div class="q-text-wrap" style="<?= $isImageMode ? 'display:none;' : '' ?>">
-                                        <label class="font-weight-bold">Question Text</label>
+                                        <label class="fw-bold">Question Text</label>
                                         <textarea name="questions[<?= $index ?>][question]" 
                                                   class="form-control q-text" 
                                                   rows="3" 
@@ -307,7 +309,7 @@
                                                             <div class="modal-content">
                                                                 <div class="modal-header">
                                                                     <h5 class="modal-title">Crop Image</h5>
-                                                                    <button type="button" class="close" data-dismiss="modal">
+                                                                    <button type="button" class="close" data-bs-dismiss="modal">
                                                                         <span>&times;</span>
                                                                     </button>
                                                                 </div>
@@ -317,7 +319,7 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                                                     <button type="button" class="btn btn-primary btn-crop-apply">Apply Crop</button>
                                                                 </div>
                                                             </div>
@@ -359,7 +361,7 @@
                                 <!-- MCQ Single/Multiple Options - IMPROVED LAYOUT -->
                                 <div class="q-block q-mcq q-mcq_multi" style="<?= !in_array($q['question_type'], ['mcq', 'mcq_multi']) ? 'display:none;' : '' ?>">
                                     <div class="mb-3">
-                                        <label class="font-weight-bold d-block mb-2">Options</label>
+                                        <label class="fw-bold d-block mb-2">Options</label>
                                         
                                         <!-- Option Inputs Row - COMPACT LAYOUT -->
                                         <div class="row">
@@ -374,32 +376,30 @@
                                             <?php foreach ($optionFields as $opt => $value): ?>
                                                 <div class="col-md-6 mb-2">
                                                     <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <div class="input-group-text p-0" style="border: none; background: none;">
+                                                        <div class="input-group-text p-0" style="border: none; background: none;">
                                                                 <?php if ($q['question_type'] === 'mcq'): ?>
-                                                                    <div class="custom-control custom-radio mr-2">
+                                                                    <div class="form-check form-check me-2">
                                                                         <input type="radio" 
                                                                                id="q<?= $index ?>_correct_<?= strtolower($opt) ?>" 
                                                                                name="questions[<?= $index ?>][correct_option]" 
                                                                                value="<?= $opt ?>" 
-                                                                               class="custom-control-input"
+                                                                               class="form-check-input"
                                                                                <?= ($q['correct_option'] ?? '') === $opt ? 'checked' : '' ?>>
-                                                                        <label class="custom-control-label" for="q<?= $index ?>_correct_<?= strtolower($opt) ?>"></label>
+                                                                        <label class="form-check-label" for="q<?= $index ?>_correct_<?= strtolower($opt) ?>"></label>
                                                                     </div>
                                                                 <?php else: ?>
-                                                                    <div class="custom-control custom-checkbox mr-2">
+                                                                    <div class="form-check form-check me-2">
                                                                         <input type="checkbox" 
                                                                                id="q<?= $index ?>_multi_<?= strtolower($opt) ?>" 
                                                                                name="questions[<?= $index ?>][correct_multi][]" 
                                                                                value="<?= $opt ?>" 
-                                                                               class="custom-control-input"
+                                                                               class="form-check-input"
                                                                                <?= in_array($opt, $correctMulti) ? 'checked' : '' ?>>
-                                                                        <label class="custom-control-label" for="q<?= $index ?>_multi_<?= strtolower($opt) ?>"></label>
+                                                                        <label class="form-check-label" for="q<?= $index ?>_multi_<?= strtolower($opt) ?>"></label>
                                                                     </div>
                                                                 <?php endif; ?>
-                                                                <span class="badge badge-secondary align-self-center ml-1"><?= $opt ?></span>
+                                                                <span class="badge text-bg-secondary align-self-center ms-1"><?= $opt ?></span>
                                                             </div>
-                                                        </div>
                                                         <input type="text" 
                                                                class="form-control form-control-sm" 
                                                                name="questions[<?= $index ?>][option_<?= strtolower($opt) ?>]" 
@@ -414,8 +414,8 @@
                                 
                                 <!-- True/False Options -->
                                 <div class="q-block q-tf" style="<?= $q['question_type'] !== 'tf' ? 'display:none;' : '' ?>">
-                                    <label class="font-weight-bold d-block mb-2">Select Correct Answer</label>
-                                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                    <label class="fw-bold d-block mb-2">Select Correct Answer</label>
+                                    <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
                                         <label class="btn btn-outline-success <?= ($q['answer_text'] ?? '') === 'True' ? 'active' : '' ?>">
                                             <input type="radio" 
                                                    name="questions[<?= $index ?>][answer_text]" 
@@ -438,7 +438,7 @@
                                 <!-- Fill/Short Answer -->
                                 <div class="q-block q-fill q-short" style="<?= !in_array($q['question_type'], ['fill', 'short']) ? 'display:none;' : '' ?>">
                                     <div class="form-group">
-                                        <label class="font-weight-bold">Expected Answer</label>
+                                        <label class="fw-bold">Expected Answer</label>
                                         <input type="text" 
                                                name="questions[<?= $index ?>][answer_text]" 
                                                class="form-control" 
@@ -450,7 +450,7 @@
                                 <!-- Matching Pairs -->
                                 <div class="q-block q-match" style="<?= $q['question_type'] !== 'match' ? 'display:none;' : '' ?>">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="font-weight-bold">Matching Pairs</label>
+                                        <label class="fw-bold">Matching Pairs</label>
                                         <div class="form-check">
                                             <input type="checkbox" 
                                                    class="form-check-input" 
@@ -467,7 +467,7 @@
                                     <div class="match-pairs">
                                         <?php if (!empty($matchPairs)): ?>
                                             <?php foreach ($matchPairs as $pairIdx => $pair): ?>
-                                                <div class="form-row mb-2 align-items-center">
+                                                <div class="row mb-2 align-items-center">
                                                     <div class="col-5">
                                                         <input type="text" 
                                                                class="form-control" 
@@ -493,7 +493,7 @@
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <div class="form-row mb-2 align-items-center">
+                                            <div class="row mb-2 align-items-center">
                                                 <div class="col-5">
                                                     <input type="text" 
                                                            class="form-control" 
@@ -598,11 +598,11 @@
     min-width: 250px;
 }
 /* Compact MCQ layout */
-.input-group-prepend .input-group-text {
+.input-group-text .input-group-text {
     background-color: #f8f9fa;
-    border-right: 0;
+    border-end: 0;
 }
-.custom-control {
+.form-check {
     min-height: auto;
 }
 
@@ -622,7 +622,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Delete Question</h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -634,7 +634,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
                     <i class="fas fa-trash"></i> Delete
                 </button>
@@ -660,7 +660,7 @@ $(document).ready(function() {
                         <!-- Question Number -->
                         <div class="col-md-1">
                             <h5 class="mb-0">
-                                <span class="badge badge-primary">Q${index + 1}</span>
+                                <span class="badge text-bg-primary">Q${index + 1}</span>
                             </h5>
                         </div>
                         
@@ -688,7 +688,7 @@ $(document).ready(function() {
                         <!-- Question Mode Toggle -->
                         <div class="col-md-3">
                             <div class="d-flex align-items-center">
-                                <div class="btn-group btn-group-sm mr-2" role="group">
+                                <div class="btn-group btn-group-sm me-2" role="group">
                                     <input type="radio" 
                                            class="btn-check q-media-toggle" 
                                            name="questions[${index}][question_media]" 
@@ -728,7 +728,7 @@ $(document).ready(function() {
                         </div>
                         
                         <!-- Move Buttons -->
-                        <div class="col-md-2 text-right">
+                        <div class="col-md-2 text-end">
                             <button type="button" class="btn btn-light btn-sm btn-move-up" title="Move Up">
                                 <i class="fas fa-arrow-up"></i>
                             </button>
@@ -738,7 +738,7 @@ $(document).ready(function() {
                         </div>
                         
                         <!-- Save Button -->
-                        <div class="col-md-2 text-right">
+                        <div class="col-md-2 text-end">
                             <button type="button" 
                                     class="btn btn-success btn-sm btn-save-question" 
                                     data-question-id="0"
@@ -759,7 +759,7 @@ $(document).ready(function() {
                     <div class="question-content-area mb-3">
                         <!-- Text Mode Content -->
                         <div class="q-text-wrap">
-                            <label class="font-weight-bold">Question Text</label>
+                            <label class="fw-bold">Question Text</label>
                             <textarea name="questions[${index}][question]" 
                                       class="form-control q-text" 
                                       rows="3" 
@@ -808,7 +808,7 @@ $(document).ready(function() {
                                                 <div class="modal-content">
                                                     <div class="modal-header">
                                                         <h5 class="modal-title">Crop Image</h5>
-                                                        <button type="button" class="close" data-dismiss="modal">
+                                                        <button type="button" class="close" data-bs-dismiss="modal">
                                                             <span>&times;</span>
                                                         </button>
                                                     </div>
@@ -818,7 +818,7 @@ $(document).ready(function() {
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                                         <button type="button" class="btn btn-primary btn-crop-apply">Apply Crop</button>
                                                     </div>
                                                 </div>
@@ -858,31 +858,29 @@ $(document).ready(function() {
                     <!-- MCQ Options -->
                     <div class="q-block q-mcq q-mcq_multi d-none">
                         <div class="mb-3">
-                            <label class="font-weight-bold d-block mb-2">Options</label>
+                            <label class="fw-bold d-block mb-2">Options</label>
                             <div class="row">
                                 <div class="col-md-6 mb-2">
                                     <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <div class="input-group-text p-0" style="border: none; background: none;">
-                                                <div class="custom-control custom-radio mr-2 mcq-single">
+                                        <div class="input-group-text p-0" style="border: none; background: none;">
+                                                <div class="form-check form-check me-2 mcq-single">
                                                     <input type="radio" 
                                                            id="q${index}_correct_a" 
                                                            name="questions[${index}][correct_option]" 
                                                            value="A" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_correct_a"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_correct_a"></label>
                                                 </div>
-                                                <div class="custom-control custom-checkbox mr-2 mcq-multi d-none">
+                                                <div class="form-check form-check me-2 mcq-multi d-none">
                                                     <input type="checkbox" 
                                                            id="q${index}_multi_a" 
                                                            name="questions[${index}][correct_multi][]" 
                                                            value="A" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_multi_a"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_multi_a"></label>
                                                 </div>
-                                                <span class="badge badge-secondary align-self-center ml-1">A</span>
+                                                <span class="badge text-bg-secondary align-self-center ms-1">A</span>
                                             </div>
-                                        </div>
                                         <input type="text" 
                                                class="form-control form-control-sm" 
                                                name="questions[${index}][option_a]" 
@@ -891,27 +889,25 @@ $(document).ready(function() {
                                 </div>
                                 <div class="col-md-6 mb-2">
                                     <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <div class="input-group-text p-0" style="border: none; background: none;">
-                                                <div class="custom-control custom-radio mr-2 mcq-single">
+                                        <div class="input-group-text p-0" style="border: none; background: none;">
+                                                <div class="form-check form-check me-2 mcq-single">
                                                     <input type="radio" 
                                                            id="q${index}_correct_b" 
                                                            name="questions[${index}][correct_option]" 
                                                            value="B" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_correct_b"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_correct_b"></label>
                                                 </div>
-                                                <div class="custom-control custom-checkbox mr-2 mcq-multi d-none">
+                                                <div class="form-check form-check me-2 mcq-multi d-none">
                                                     <input type="checkbox" 
                                                            id="q${index}_multi_b" 
                                                            name="questions[${index}][correct_multi][]" 
                                                            value="B" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_multi_b"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_multi_b"></label>
                                                 </div>
-                                                <span class="badge badge-secondary align-self-center ml-1">B</span>
+                                                <span class="badge text-bg-secondary align-self-center ms-1">B</span>
                                             </div>
-                                        </div>
                                         <input type="text" 
                                                class="form-control form-control-sm" 
                                                name="questions[${index}][option_b]" 
@@ -920,27 +916,25 @@ $(document).ready(function() {
                                 </div>
                                 <div class="col-md-6 mb-2">
                                     <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <div class="input-group-text p-0" style="border: none; background: none;">
-                                                <div class="custom-control custom-radio mr-2 mcq-single">
+                                        <div class="input-group-text p-0" style="border: none; background: none;">
+                                                <div class="form-check form-check me-2 mcq-single">
                                                     <input type="radio" 
                                                            id="q${index}_correct_c" 
                                                            name="questions[${index}][correct_option]" 
                                                            value="C" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_correct_c"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_correct_c"></label>
                                                 </div>
-                                                <div class="custom-control custom-checkbox mr-2 mcq-multi d-none">
+                                                <div class="form-check form-check me-2 mcq-multi d-none">
                                                     <input type="checkbox" 
                                                            id="q${index}_multi_c" 
                                                            name="questions[${index}][correct_multi][]" 
                                                            value="C" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_multi_c"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_multi_c"></label>
                                                 </div>
-                                                <span class="badge badge-secondary align-self-center ml-1">C</span>
+                                                <span class="badge text-bg-secondary align-self-center ms-1">C</span>
                                             </div>
-                                        </div>
                                         <input type="text" 
                                                class="form-control form-control-sm" 
                                                name="questions[${index}][option_c]" 
@@ -949,27 +943,25 @@ $(document).ready(function() {
                                 </div>
                                 <div class="col-md-6 mb-2">
                                     <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <div class="input-group-text p-0" style="border: none; background: none;">
-                                                <div class="custom-control custom-radio mr-2 mcq-single">
+                                        <div class="input-group-text p-0" style="border: none; background: none;">
+                                                <div class="form-check form-check me-2 mcq-single">
                                                     <input type="radio" 
                                                            id="q${index}_correct_d" 
                                                            name="questions[${index}][correct_option]" 
                                                            value="D" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_correct_d"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_correct_d"></label>
                                                 </div>
-                                                <div class="custom-control custom-checkbox mr-2 mcq-multi d-none">
+                                                <div class="form-check form-check me-2 mcq-multi d-none">
                                                     <input type="checkbox" 
                                                            id="q${index}_multi_d" 
                                                            name="questions[${index}][correct_multi][]" 
                                                            value="D" 
-                                                           class="custom-control-input">
-                                                    <label class="custom-control-label" for="q${index}_multi_d"></label>
+                                                           class="form-check-input">
+                                                    <label class="form-check-label" for="q${index}_multi_d"></label>
                                                 </div>
-                                                <span class="badge badge-secondary align-self-center ml-1">D</span>
+                                                <span class="badge text-bg-secondary align-self-center ms-1">D</span>
                                             </div>
-                                        </div>
                                         <input type="text" 
                                                class="form-control form-control-sm" 
                                                name="questions[${index}][option_d]" 
@@ -982,8 +974,8 @@ $(document).ready(function() {
                     
                     <!-- True/False -->
                     <div class="q-block q-tf d-none">
-                        <label class="font-weight-bold d-block mb-2">Select Correct Answer</label>
-                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="fw-bold d-block mb-2">Select Correct Answer</label>
+                        <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
                             <label class="btn btn-outline-success active">
                                 <input type="radio" 
                                        name="questions[${index}][answer_text]" 
@@ -1005,7 +997,7 @@ $(document).ready(function() {
                     <!-- Fill/Short -->
                     <div class="q-block q-fill q-short d-none">
                         <div class="form-group">
-                            <label class="font-weight-bold">Expected Answer</label>
+                            <label class="fw-bold">Expected Answer</label>
                             <input type="text" 
                                    name="questions[${index}][answer_text]" 
                                    class="form-control" 
@@ -1016,7 +1008,7 @@ $(document).ready(function() {
                     <!-- Match -->
                     <div class="q-block q-match d-none">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="font-weight-bold">Matching Pairs</label>
+                            <label class="fw-bold">Matching Pairs</label>
                             <div class="form-check">
                                 <input type="checkbox" 
                                        class="form-check-input" 
@@ -1030,7 +1022,7 @@ $(document).ready(function() {
                         </div>
                         
                         <div class="match-pairs">
-                            <div class="form-row mb-2 align-items-center">
+                            <div class="row mb-2 align-items-center">
                                 <div class="col-5">
                                     <input type="text" 
                                            class="form-control" 
@@ -1284,7 +1276,7 @@ $(document).ready(function() {
             card.find('.q-fill, .q-short').removeClass('d-none');
         } else if (type === 'match') {
             card.find('.q-match').removeClass('d-none');
-            if (card.find('.match-pairs .form-row').length === 0) {
+            if (card.find('.match-pairs .row').length === 0) {
                 addMatchPair(card, index);
             }
         }
@@ -1300,8 +1292,8 @@ $(document).ready(function() {
     // Remove match pair
     $(document).on('click', '.btn-remove-pair', function() {
         const pairsContainer = $(this).closest('.match-pairs');
-        if (pairsContainer.find('.form-row').length > 1) {
-            $(this).closest('.form-row').remove();
+        if (pairsContainer.find('.row').length > 1) {
+            $(this).closest('.row').remove();
         }
     });
     
@@ -1463,7 +1455,7 @@ $('#deleteQuestionModal').on('hidden.bs.modal', function() {
         let visibleCount = 0;
         $('.question-card:visible').each(function(index) {
             visibleCount++;
-            $(this).find('.badge-primary').text('Q' + visibleCount);
+            $(this).find('.text-bg-primary').text('Q' + visibleCount);
         });
     }
     
@@ -1562,8 +1554,8 @@ $('#deleteQuestionModal').on('hidden.bs.modal', function() {
         const toast = $(`
             <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="3000">
                 <div class="toast-header">
-                    <strong class="mr-auto">Notification</strong>
-                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">
+                    <strong class="me-auto">Notification</strong>
+                    <button type="button" class="ms-2 mb-1 close" data-bs-dismiss="toast">
                         <span>&times;</span>
                     </button>
                 </div>
@@ -1614,9 +1606,9 @@ $('#deleteQuestionModal').on('hidden.bs.modal', function() {
     
     // Helper function to add match pair
     function addMatchPair(card, index) {
-        const pairCount = card.find('.match-pairs .form-row').length;
+        const pairCount = card.find('.match-pairs .row').length;
         const html = `
-            <div class="form-row mb-2 align-items-center">
+            <div class="row mb-2 align-items-center">
                 <div class="col-5">
                     <input type="text" 
                            class="form-control" 
@@ -1646,7 +1638,7 @@ $('#deleteQuestionModal').on('hidden.bs.modal', function() {
     function renumberQuestions() {
         $('#questionList .question-card').each(function(index) {
             $(this).data('qidx', index);
-            $(this).find('.badge-primary').text('Q' + (index + 1));
+            $(this).find('.text-bg-primary').text('Q' + (index + 1));
             
             $(this).find('[id], [name], [data-qidx]').each(function() {
                 if ($(this).attr('id')) {

@@ -1,0 +1,105 @@
+/**
+ * School Management System — unified design tokens.
+ * Import after AdminLTE; feature CSS should use var(--sms-*) where possible.
+ */
+:root {
+  /* Brand (maps legacy AdminLTE #3c8dbc) */
+  --sms-primary: #3c8dbc;
+  --sms-primary-dark: #367fa9;
+  --sms-primary-light: #4dabf7;
+  --sms-accent: #06b6d4;
+
+  /* Semantic */
+  --sms-success: #10b981;
+  --sms-warning: #f59e0b;
+  --sms-danger: #ef4444;
+  --sms-info: #0ea5e9;
+
+  /* Surfaces */
+  --sms-bg: #f1f5f9;
+  --sms-surface: #ffffff;
+  --sms-surface-muted: #f7f9fc;
+  --sms-border: #e2e8f0;
+  --sms-border-strong: #dfe5ee;
+
+  /* Text */
+  --sms-text: #0f172a;
+  --sms-text-muted: #64748b;
+  --sms-label: #51606f;
+
+  /* Layout (admin shell) */
+  --admin-banner-h: 0px;
+  --admin-appbar-h: 3.5rem;
+  --admin-sidebar-w: 250px;
+  --admin-sidebar-collapsed-w: 4.6rem;
+  --admin-header-stack-h: var(--admin-appbar-h);
+  --admin-top-offset: calc(var(--admin-banner-h) + var(--admin-header-stack-h));
+
+  /* Radius & elevation */
+  --sms-radius-sm: 6px;
+  --sms-radius: 10px;
+  --sms-radius-lg: 14px;
+  --sms-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  --sms-shadow-hover: 0 12px 32px rgba(15, 23, 42, 0.1);
+
+  /* Spacing scale */
+  --sms-space-1: 0.25rem;
+  --sms-space-2: 0.5rem;
+  --sms-space-3: 0.75rem;
+  --sms-space-4: 1rem;
+  --sms-space-5: 1.25rem;
+  --sms-space-6: 1.5rem;
+
+  /* Typography */
+  --sms-font-sans: "Source Sans Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sms-font-size-base: 14px;
+  --sms-line-height: 1.5;
+
+  /* Aliases for dashboard-ui (backward compatible) */
+  --dash-primary: var(--sms-primary);
+  --dash-primary-dark: var(--sms-primary-dark);
+  --dash-accent: var(--sms-accent);
+  --dash-success: var(--sms-success);
+  --dash-warning: var(--sms-warning);
+  --dash-danger: var(--sms-danger);
+  --dash-surface: var(--sms-surface);
+  --dash-bg: var(--sms-bg);
+  --dash-border: var(--sms-border);
+  --dash-text: var(--sms-text);
+  --dash-muted: var(--sms-text-muted);
+  --dash-radius: var(--sms-radius-lg);
+  --dash-shadow: var(--sms-shadow);
+  --dash-shadow-hover: var(--sms-shadow-hover);
+}
+
+body.admin-shell-active.has-app-banner {
+  --admin-banner-h: 28px;
+}
+
+/* AdminLTE theme bridge */
+.sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active,
+.bg-primary,
+.btn-primary {
+  background-color: var(--sms-primary) !important;
+  border-color: var(--sms-primary-dark) !important;
+}
+
+a,
+.text-primary {
+  color: var(--sms-primary);
+}
+
+.admin-shell-headers {
+  background: var(--sms-primary) !important;
+}
+
+.content-wrapper .content {
+  background: var(--sms-bg);
+}
+
+body {
+  font-family: var(--sms-font-sans);
+  font-size: var(--sms-font-size-base);
+  line-height: var(--sms-line-height);
+  color: var(--sms-text);
+}

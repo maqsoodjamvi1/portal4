@@ -33,40 +33,24 @@ function index(){
 	$this->template_data['info'] = $info;
 	
 	$bill_plans_info = $this->db->get('bill_plans')->result();
-	//print_r($bill_plans_info);
+	$defaultBillTypeId = ensureDefaultBillTypeId();
+	$bill_plans_data = [];
 
-	$bill_type_info = $this->db->get('bill_type')->result();
-	foreach($bill_plans_info as $key => $bill_plans){
-		$bill_plans_data[] = array(
-			'plan_id' => $bill_plans->plan_id,
-			'plan_name' => $bill_plans->plan_name
-		);
-	}
-
-	foreach ($bill_type_info as $key => $value) {
-		
-		$this->db->where('bill_type_id', $value->bill_type_id);
+	foreach ($bill_plans_info as $bill_plans) {
+		$this->db->where('bill_type_id', $defaultBillTypeId);
 		$this->db->where('campus_id', $campus_id);
 		$this->db->where('plan_id', $bill_plans->plan_id);
 		$billamountinfo = $this->db->get('bill_amount')->row();
 
-		if($billamountinfo){
-			$amount = $billamountinfo->amount;
-		}else{
-			$amount = 0;
-		}
-
-		$feedata[] = array(
-			'bill_type_id' => $value->bill_type_id,
-			'bill_type_name' => $value->bill_type_name,
-			'amount' => $amount,
-		);
-	//}
-
+		$bill_plans_data[] = [
+			'plan_id'   => $bill_plans->plan_id,
+			'plan_name' => $bill_plans->plan_name,
+			'amount'    => $billamountinfo ? $billamountinfo->amount : 0,
+		];
 	}
-	
+
 	$this->template_data['bill_plans_data'] = $bill_plans_data;
-	$this->template_data['bill_type_info'] = $feedata;
+	$this->template_data['default_bill_type_id'] = $defaultBillTypeId;
 	$this->load->view('add_campus_chalan', $this->template_data);
 
 }
@@ -79,9 +63,8 @@ function save(){
 		$date = date('Y-m-d');
 		$campus_id = $this->input->post('campus_id');
 		$plan_id = $this->input->post('plan_id');
-		$bill_type = $this->input->post('bill_type_name_'.$plan_id);
-
-		$bill_amount = $this->input->post('bill_amount_'.$plan_id);
+		$bill_type_id = ensureDefaultBillTypeId();
+		$bill_type_amount = $this->input->post('bill_amount_' . $plan_id);
 
 		$issue_date = DateTime::createFromFormat('d/m/Y',$this->input->post('issue_date'));
 		$issuedate = $issue_date->format('Y-m-d');
@@ -97,32 +80,25 @@ function save(){
 		check_permission('admin-add-campus-chalan');
 		$this->db->trans_begin();
 		
-	foreach($bill_type as $key => $bill_type_id){
-	
-		$bill_type_amount = $bill_amount[$bill_type_id];
-
 		$this->db->where('bill_type_id', $bill_type_id);
 		$this->db->where('campus_id', $campus_id);
+		$this->db->where('plan_id', $plan_id);
 		$billChalaninfo = $this->db->get('campus_chalan')->row();
-			
-		if(empty($billChalaninfo)){	
-			$data = array(
-				'plan_id' => $plan_id,
+
+		if (empty($billChalaninfo)) {
+			$data = [
+				'plan_id'      => $plan_id,
 				'bill_type_id' => $bill_type_id,
-				'campus_id' => $campus_id,
-				'issue_date' => $issuedate,
-				'due_date' => $duedate,
-				'bill_amount' => $bill_type_amount,
-				'bill_status' => 'unpaid',
+				'campus_id'    => $campus_id,
+				'issue_date'   => $issuedate,
+				'due_date'     => $duedate,
+				'bill_amount'  => $bill_type_amount,
+				'bill_status'  => 'unpaid',
 				'created_date' => $date,
-				'user_id' => $user_id
-				);
+				'user_id'      => $user_id,
+			];
 
 			$this->db->insert('campus_chalan', $data);
-			print_r($this->db->error());
-			$new_chalan_id = $this->db->insert_id();
-		}
-
 		}
 
 		$this->db->trans_complete();

@@ -65,7 +65,7 @@ if (empty($sectionsclassinfo)) {
 <div class="card card-primary">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fas fa-filter mr-2"></i>Filters
+            <i class="fas fa-filter me-2"></i>Filters
         </h3>
         <div class="card-tools">
             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -80,11 +80,9 @@ if (empty($sectionsclassinfo)) {
                     <label><i class="fas fa-user"></i> Student Name</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="search_name" placeholder="Type 3+ characters...">
-                        <div class="input-group-append">
-                            <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
+                        <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
                                 <i class="fas fa-times"></i>
                             </span>
-                        </div>
                     </div>
                     <small class="text-muted">Type at least 3 characters for suggestions</small>
                 </div>
@@ -94,11 +92,9 @@ if (empty($sectionsclassinfo)) {
                     <label><i class="fas fa-male"></i> Father Name</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="search_father" placeholder="Type 3+ characters...">
-                        <div class="input-group-append">
-                            <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
+                        <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
                                 <i class="fas fa-times"></i>
                             </span>
-                        </div>
                     </div>
                     <small class="text-muted">Type at least 3 characters for suggestions</small>
                 </div>
@@ -132,23 +128,23 @@ if (empty($sectionsclassinfo)) {
             <div class="col-md-4">
                 <div class="form-group">
                     <label><i class="fas fa-users"></i> Student Status</label>
-                    <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                    <div class="btn-group btn-group-toggle w-100" data-bs-toggle="buttons">
                         <label class="btn btn-outline-primary active" id="btnCurrentOnly">
                             <input type="radio" name="status_filter" value="current" checked autocomplete="off">
-                            <i class="fas fa-user-check mr-1"></i> Current Only
+                            <i class="fas fa-user-check me-1"></i> Current Only
                         </label>
                         <label class="btn btn-outline-secondary" id="btnAllStudents">
                             <input type="radio" name="status_filter" value="all" autocomplete="off">
-                            <i class="fas fa-users mr-1"></i> All Students
+                            <i class="fas fa-users me-1"></i> All Students
                         </label>
                     </div>
                     <small class="text-muted">Show only active students or all students</small>
                 </div>
             </div>
             <div class="col-md-8">
-                <div class="form-group text-right">
-                    <button type="button" id="resetFilters" class="btn btn-default">
-                        <i class="fas fa-undo mr-1"></i> Reset All Filters
+                <div class="form-group text-end">
+                    <button type="button" id="resetFilters" class="btn btn-secondary">
+                        <i class="fas fa-undo me-1"></i> Reset All Filters
                     </button>
                 </div>
             </div>
@@ -157,9 +153,9 @@ if (empty($sectionsclassinfo)) {
         <div class="row mt-2">
             <div class="col-12">
                 <div class="alert alert-info alert-dismissible fade show mb-0" role="alert" style="padding: 8px 15px;">
-                    <i class="fas fa-search mr-2"></i>
+                    <i class="fas fa-search me-2"></i>
                     <span id="filterStatus">No active filters</span>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="padding: 8px 15px;">
+                    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" style="padding: 8px 15px;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -185,12 +181,12 @@ if (empty($sectionsclassinfo)) {
             </button>
         </div>
     </div>
-    <div class="col-md-6 text-right">
+    <div class="col-md-6 text-end">
         <small class="text-muted">
             <i class="fas fa-info-circle"></i> 
-            <span class="badge badge-info">←→</span> Scroll horizontally | 
-            <span class="badge badge-info">⬆⬇</span> Scroll vertically | 
-            <span class="badge badge-info">📌</span> Sticky columns
+            <span class="badge text-bg-info">←→</span> Scroll horizontally | 
+            <span class="badge text-bg-info">⬆⬇</span> Scroll vertically | 
+            <span class="badge text-bg-info">📌</span> Sticky columns
         </small>
     </div>
 </div>
@@ -214,17 +210,17 @@ if (empty($sectionsclassinfo)) {
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-list mr-2"></i>Student List
+                    <i class="fas fa-list me-2"></i>Student List
                 </h3>
                 <div class="card-tools">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-default btn-sm" id="exportExcel">
+                        <button type="button" class="btn btn-secondary btn-sm" id="exportExcel">
                             <i class="fas fa-file-excel"></i> Excel
                         </button>
-                        <button type="button" class="btn btn-default btn-sm" id="exportPDF">
+                        <button type="button" class="btn btn-secondary btn-sm" id="exportPDF">
                             <i class="fas fa-file-pdf"></i> PDF
                         </button>
-                        <button type="button" class="btn btn-default btn-sm" id="toggleColumns">
+                        <button type="button" class="btn btn-secondary btn-sm" id="toggleColumns">
                             <i class="fas fa-columns"></i> Columns
                         </button>
                     </div>
@@ -288,36 +284,36 @@ if (empty($sectionsclassinfo)) {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-user-graduate mr-2"></i>
+                    <i class="fas fa-user-graduate me-2"></i>
                     Student Actions
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
+                <button type="button" class="close text-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body p-0">
                 <div class="list-group list-group-flush">
                     <a href="#" id="modalProfileLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user mr-3 text-primary"></i> View Profile
+                        <i class="fas fa-user me-3 text-primary"></i> View Profile
                     </a>
                     <a href="#" id="modalChallansLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-file-invoice mr-3 text-success"></i> Show Challans
+                        <i class="fas fa-file-invoice me-3 text-success"></i> Show Challans
                     </a>
                     <a href="#" id="modalCreateChallanLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-plus mr-3 text-info"></i> Create Challan
+                        <i class="fas fa-plus me-3 text-info"></i> Create Challan
                     </a>
                     <div class="dropdown-divider m-0"></div>
                     <a href="#" id="modalSlcLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-certificate mr-3 text-warning"></i> <span id="slcLinkText">Generate SLC</span>
+                        <i class="fas fa-certificate me-3 text-warning"></i> <span id="slcLinkText">Generate SLC</span>
                     </a>
                     <div class="dropdown-divider m-0"></div>
                     <a href="#" id="modalEditLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-edit mr-3 text-secondary"></i> Edit Profile
+                        <i class="fas fa-edit me-3 text-secondary"></i> Edit Profile
                     </a>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -344,9 +340,9 @@ $(document).ready(function() {
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title">
-                    <i class="fas fa-undo-alt mr-2"></i> Student Readmission
+                    <i class="fas fa-undo-alt me-2"></i> Student Readmission
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -397,7 +393,7 @@ $(document).ready(function() {
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-history mr-2"></i> Academic & Fee History
+                    <i class="fas fa-history me-2"></i> Academic & Fee History
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -421,7 +417,7 @@ $(document).ready(function() {
                             <div class="card card-success">
                                 <div class="card-header">
                                     <h3 class="card-title">
-                                        <i class="fas fa-chalkboard mr-2"></i> New Enrollment Details
+                                        <i class="fas fa-chalkboard me-2"></i> New Enrollment Details
                                     </h3>
                                 </div>
                                 <div class="card-body">
@@ -456,7 +452,7 @@ $(document).ready(function() {
     <div class="card card-info">
         <div class="card-header">
             <h3 class="card-title">
-                <i class="fas fa-money-bill-wave mr-2"></i> Fee Details
+                <i class="fas fa-money-bill-wave me-2"></i> Fee Details
             </h3>
         </div>
         <div class="card-body">
@@ -487,8 +483,8 @@ $(document).ready(function() {
                             </tr>
                         </tbody>
                         <tfoot>
-                            <tr class="bg-light font-weight-bold">
-                                <th colspan="2" class="text-right">Total Payable:</th>
+                            <tr class="bg-light fw-bold">
+                                <th colspan="2" class="text-end">Total Payable:</th>
                                 <th id="totalPayable" class="text-success">0.00</th>
                                 <th id="totalDiscount" class="text-danger">0.00</th>
                             </tr>
@@ -502,11 +498,11 @@ $(document).ready(function() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-1"></i> Cancel
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-warning" id="btnProcessReadmission">
-                    <i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice
+                    <i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice
                 </button>
             </div>
         </div>
@@ -683,7 +679,7 @@ $(document).ready(function() {
 
 #academicHistoryTable tbody tr.selected-history {
     background-color: #fff3cd;
-    border-left: 3px solid #ffc107;
+    border-start: 3px solid #ffc107;
 }
 
 .fee-row {
@@ -757,15 +753,15 @@ $(document).ready(function() {
 
 </style>
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2-bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
@@ -920,7 +916,7 @@ tr:last-child .dt-actions .dropdown-menu {
     font-size: 12px;
 }
 
-.academic-history-container .badge-info {
+.academic-history-container .text-bg-info {
     background-color: #17a2b8;
 }
 
@@ -1509,7 +1505,7 @@ function openEditModal(studentId) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit SLC Information</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body" id="slcEditModalBody">
                     <div class="text-center p-5">
@@ -1683,7 +1679,7 @@ function loadAcademicHistory(studentId) {
                     
                     html += `
                         <div class="card card-secondary mb-2">
-                            <div class="card-header p-2" style="cursor: pointer;" data-toggle="collapse" data-target="#${sessionId}">
+                            <div class="card-header p-2" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#${sessionId}">
                                 <div class="row">
                                     <div class="col-md-3">
                                         <strong>${escapeHtml(history.session_name || 'N/A')}</strong>
@@ -1692,9 +1688,9 @@ function loadAcademicHistory(studentId) {
                                         Class: ${escapeHtml(history.class_section || 'N/A')}
                                     </div>
                                     <div class="col-md-3">
-                                        Total: <span class="badge badge-info">PKR ${sessionTotal.toLocaleString()}</span>
+                                        Total: <span class="badge text-bg-info">PKR ${sessionTotal.toLocaleString()}</span>
                                     </div>
-                                    <div class="col-md-3 text-right">
+                                    <div class="col-md-3 text-end">
                                         <i class="fas fa-chevron-down"></i>
                                     </div>
                                 </div>
@@ -1817,13 +1813,13 @@ $(document).on('change', '#readmitClsSecId', function() {
                     html += `<tr class="fee-row" data-fee-type-id="${fee.fee_type_id}" data-is-monthly="${isMonthly}">
                         <td>
                             ${fee.fee_type_title}
-                            ${isMonthly ? '<span class="badge badge-info ml-1">Monthly</span>' : ''}
+                            ${isMonthly ? '<span class="badge text-bg-info ms-1">Monthly</span>' : ''}
                             <input type="hidden" class="fee-type-id" value="${fee.fee_type_id}">
                             <input type="hidden" class="is-monthly" value="${isMonthly ? '1' : '0'}">
                             <input type="hidden" class="standard-amount" value="${standardAmount}">
                         </td>
                         <td class="standard-amount-cell">
-                            <span class="badge badge-secondary">PKR ${standardAmount.toLocaleString()}</span>
+                            <span class="badge text-bg-secondary">PKR ${standardAmount.toLocaleString()}</span>
                         </td>
                         <td>
                             <input type="number" class="form-control form-control-sm net-payable-input" 
@@ -1946,7 +1942,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
     
     // Disable button and show loading
     const $btn = $(this);
-    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing...');
     
     $.ajax({
         url: ADMIN_URL + '/students/process_readmission',
@@ -1964,7 +1960,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
         },
         dataType: 'json',
         success: function(response) {
-            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice');
+            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice');
             
             if (response.success) {
                 Swal.fire({
@@ -1990,7 +1986,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
             }
         },
         error: function(xhr) {
-            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice');
+            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice');
             let errorMsg = 'An error occurred while processing readmission';
             try {
                 const response = JSON.parse(xhr.responseText);

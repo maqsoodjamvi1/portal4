@@ -7,22 +7,16 @@
   $id     = $isEdit ? (string)($info->id ?? '') : '';
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1 class="mb-0">Scheme of Studies</h1>
-        <small class="text-muted d-block"><?= esc($header) ?></small>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Scheme of Studies</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Scheme of Studies',
+    'icon' => 'fas fa-sitemap',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'url' => base_url('admin/top_level_planning')],
+        ['label' => 'Scheme of Studies', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -104,9 +98,9 @@
           <div class="col-lg-1 col-md-6">
             <div class="form-group">
               <label class="mb-1 d-block">Sync</label>
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="synch" name="synch" value="1">
-                <label class="custom-control-label" for="synch">All campuses</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="synch" name="synch" value="1">
+                <label class="form-check-label" for="synch">All campuses</label>
               </div>
             </div>
           </div>
@@ -127,7 +121,7 @@
 
         <div class="mt-3 d-flex gap-2">
           <button type="submit" id="submitBtn" class="btn btn-primary">
-            <i class="fas fa-save mr-1"></i> Save
+            <i class="fas fa-save me-1"></i> Save
           </button>
           <button type="reset" class="btn btn-outline-secondary">Reset</button>
           <a href="javascript:history.back();" class="btn btn-outline-dark">Cancel</a>
@@ -142,7 +136,7 @@
 
 <!-- Select2 (use working paths) -->
 <link rel="stylesheet" href="<?= base_url('plugins/select2/css/select2.min.css') ?>">
-<link rel="stylesheet" href="<?= base_url('plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') ?>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 <script src="<?= base_url('plugins/select2/js/select2.full.min.js') ?>"></script>
 
 <script>
@@ -161,7 +155,7 @@
 
   function initSelect2(){
     if ($.fn.select2) {
-      $('.select2').select2({ width:'100%', theme:'bootstrap4', allowClear:true });
+      $('.select2').select2({ width:'100%', theme: 'bootstrap-5', allowClear:true });
     }
   }
 
@@ -170,7 +164,7 @@
     $container.find('tr, .form-group, .row').filter(function(){
       return $(this).text().toLowerCase().includes('video url');
     }).remove();
-    $container.find('iframe, .video-thumb, .video-embed, .video, [data-video], .thumb, .embed-responsive').remove();
+    $container.find('iframe, .video-thumb, .video-embed, .video, [data-video], .thumb, .ratio').remove();
 
     // Clean up empty cells/rows
     $container.find('td, th').filter(function(){ return $(this).is(':empty'); }).remove();
@@ -254,7 +248,7 @@
     // AJAX submit: push Summernote HTML back to textareas
     $('#user-edit-form').ajaxForm({
       beforeSubmit: function(){
-        $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving');
+        $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving');
         if ($.fn.summernote) {
           $('.editor').each(function(){
             if ($(this).next('.note-editor').length){
@@ -264,7 +258,7 @@
         }
       },
       success: function(resp){
-        $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
+        $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save');
         let json = resp;
         if (typeof resp !== 'object'){
           try { json = JSON.parse(resp); } catch(e){ json = {success:false, msg:'Unexpected response.'}; }
@@ -276,7 +270,7 @@
         }
       },
       error: function(){
-        $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
+        $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save');
         toastr.error('Request failed.');
       }
     });

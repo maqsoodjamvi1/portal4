@@ -1,9 +1,14 @@
 <?= $this->extend('frontend/layouts/master_portal') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1 class="mb-3">Pending Quizzes</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Pending Quizzes',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('student/dashboard')],
+        ['label' => 'Pending Quizzes', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
 
@@ -15,7 +20,7 @@
   <div class="card mb-3">
     <div class="card-body">
       <form method="get" class="mb-0">
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-4">
             <label for="term_filter">Term / Session</label>
             <select name="term_session_id" id="term_filter" class="form-control">
@@ -47,7 +52,7 @@
           </div>
 
           <div class="form-group col-md-4 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary mr-2">
+            <button type="submit" class="btn btn-primary me-2">
               <i class="fa fa-filter"></i> Apply
             </button>
             <a href="<?= current_url() ?>" class="btn btn-outline-secondary">
@@ -82,7 +87,7 @@
                 <h5 class="card-title mb-0" style="font-size:1.05rem;">
                   <?= esc($q->title) ?>
                 </h5>
-                <span class="badge badge-info ml-2">
+                <span class="badge text-bg-info ms-2">
                   <?= esc($subjectLabel) ?>
                 </span>
               </div>
@@ -115,7 +120,7 @@
                 <div>
                   <strong>Attempts:</strong>
                   <?= $attemptsUsed ?> / <?= $maxAttempts ?>
-                  <span class="badge badge-<?= $remaining > 0 ? 'success' : 'secondary' ?> ml-1">
+                  <span class="badge text-bg-<?=  $remaining > 0 ? 'success' : 'secondary' ?> ms-1">
                     <?= $remaining ?> left
                   </span>
                 </div>
@@ -148,7 +153,7 @@
 
               <!-- Action -->
               <div class="mt-auto">
-                <a class="btn btn-primary btn-block"
+                <a class="btn btn-primary w-100"
                    href="<?= site_url('student/quizzes/start/' . $q->quiz_id) ?>">
                   Start Quiz
                 </a>

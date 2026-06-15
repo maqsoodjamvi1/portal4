@@ -238,9 +238,12 @@ public function data()
             ]);
         }
         
-        // Check if the class section exists
-        $classSection = $this->db->table('class_section')
-            ->where('cls_sec_id', $cls_sec_id)
+        // Resolve class + section labels (class_section has IDs only, not names)
+        $classSection = $this->db->table('class_section cs')
+            ->select('cs.cls_sec_id, c.class_name, sec.section_name')
+            ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'inner')
+            ->where('cs.cls_sec_id', $cls_sec_id)
             ->get()
             ->getRow();
         
@@ -255,7 +258,7 @@ public function data()
         
         // Get students with their BMI data
         $students = $this->db->table('students s')
-            ->select('s.student_id, s.first_name, s.last_name, s.reg_no, s.date_of_birth, s.db_status, s.date_of_birth_age, s.height, s.weight, s.bmi, s.bmi_category')
+            ->select('s.student_id, s.first_name, s.last_name, s.reg_no, s.profile_photo, s.date_of_birth, s.db_status, s.date_of_birth_age, s.height, s.weight, s.bmi, s.bmi_category')
             ->join('student_class sc', 'sc.student_id = s.student_id AND sc.status = 1')
             ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
             ->join('classes c', 'c.class_id = cs.class_id')
@@ -285,6 +288,7 @@ public function data()
                 'first_name' => $student->first_name ?? '',
                 'last_name' => $student->last_name ?? '',
                 'reg_no' => $student->reg_no ?? '',
+                'profile_photo' => $student->profile_photo ?? '',
                 'date_of_birth' => $student->date_of_birth ?? '',
                 'db_status' => (int) ($student->db_status ?? 0),
                 'date_of_birth_age' => $student->date_of_birth_age ?? '',
@@ -328,20 +332,85 @@ private function getBMICategoryDisplay($category)
     
     return $categories[$category] ?? ['text' => 'Unknown', 'class' => 'bmi-unknown'];
 }
+
+    /**
+     * Optional profile photo on bulk DOB save (JPG/PNG/WebP, max 4 MB).
+     *
+     * @return array{ok:bool, filename?:string|null, msg?:string}
+     */
+    private function saveStudentProfilePhotoFile(int $studentId, $file): array
+    {
+        if ($file === null || $file->getError() === UPLOAD_ERR_NO_FILE) {
+            return ['ok' => true, 'filename' => null];
+        }
+        if (! $file->isValid()) {
+            return ['ok' => false, 'msg' => 'Invalid photo upload: ' . $file->getErrorString()];
+        }
+        if ($file->getSize() > 4 * 1024 * 1024) {
+            return ['ok' => false, 'msg' => 'Photo must be 4 MB or smaller.'];
+        }
+        $mime = (string) $file->getMimeType();
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (! in_array($mime, $allowedMimes, true)) {
+            return ['ok' => false, 'msg' => 'Only JPG, PNG, or WebP images are allowed.'];
+        }
+        $ext = strtolower((string) ($file->getClientExtension() ?: $file->guessExtension() ?: 'jpg'));
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            $ext = 'jpg';
+        }
+        $dest = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'uploads';
+        if (! is_dir($dest)) {
+            if (! @mkdir($dest, 0755, true) && ! is_dir($dest)) {
+                return ['ok' => false, 'msg' => 'Upload folder is not available.'];
+            }
+        }
+        if (! is_writable($dest)) {
+            @chmod($dest, 0755);
+            if (! is_writable($dest)) {
+                return ['ok' => false, 'msg' => 'Upload folder is not writable.'];
+            }
+        }
+        $newName = uniqid('stu_', true) . '.' . $ext;
+        try {
+            $file->move($dest, $newName);
+        } catch (\Throwable $e) {
+            log_message('error', 'DOB bulk photo move failed: ' . $e->getMessage());
+
+            return ['ok' => false, 'msg' => 'Could not save the photo file.'];
+        }
+
+        $row = $this->db->table('students')
+            ->select('profile_photo')
+            ->where('student_id', $studentId)
+            ->get()
+            ->getRow();
+        if ($row && ! empty($row->profile_photo)) {
+            $old = basename((string) $row->profile_photo);
+            if ($old !== '' && $old !== $newName) {
+                $oldPath = $dest . DIRECTORY_SEPARATOR . $old;
+                if (is_file($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+        }
+
+        return ['ok' => true, 'filename' => $newName];
+    }
+
     // -------------------------------------------------------------------------
     // Save ONLY DOB-related fields for ONE student (AJAX)
     // -------------------------------------------------------------------------
  public function saveStudentInfo()
 {
     try {
-        $student_id = $this->request->getPost('student_id');
+        $student_id = (int) $this->request->getPost('student_id');
         $date_of_birth = $this->request->getPost('date_of_birth');
         $height = $this->request->getPost('height');
         $weight = $this->request->getPost('weight');
         $db_status = $this->request->getPost('db_status');
         $date_of_birth_age = $this->request->getPost('date_of_birth_age');
         
-        if (!$student_id) {
+        if (! $student_id) {
             return $this->response->setJSON([
                 'success' => false,
                 'msg' => 'Student ID is required'
@@ -369,17 +438,38 @@ private function getBMICategoryDisplay($category)
             'updated_date' => date('Y-m-d H:i:s'),
             'user_id' => session('member_userid')
         ];
+
+        $file = $this->request->getFile('profile_photo');
+        if ($file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE) {
+            $photoResult = $this->saveStudentProfilePhotoFile($student_id, $file);
+            if (! $photoResult['ok']) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => $photoResult['msg'] ?? 'Photo upload failed.',
+                ]);
+            }
+            if (! empty($photoResult['filename'])) {
+                $updateData['profile_photo'] = $photoResult['filename'];
+            }
+        }
         
         $this->db->table('students')
             ->where('student_id', $student_id)
             ->update($updateData);
+
+        $photoOut = $this->db->table('students')
+            ->select('profile_photo')
+            ->where('student_id', $student_id)
+            ->get()
+            ->getRow();
         
         return $this->response->setJSON([
             'success' => true,
             'msg' => 'Student information saved successfully',
             'data' => [
                 'bmi' => $bmi,
-                'bmi_category' => $bmi_category
+                'bmi_category' => $bmi_category,
+                'profile_photo' => $photoOut->profile_photo ?? '',
             ]
         ]);
         

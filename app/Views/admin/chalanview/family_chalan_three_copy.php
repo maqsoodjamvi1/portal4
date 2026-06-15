@@ -16,7 +16,7 @@ $show_payment_history = $show_payment_history ?? false;
     <meta charset="UTF-8">
     <title>Family Fee Challan - 3 Copies</title>
     <meta name="<?= esc(csrf_token()) ?>" content="<?= esc(csrf_hash()) ?>" id="csrf-meta-print-chalan">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     <?php include 'chalan_print_styles.php'; ?>
     <style>
         .slip-row { position: relative; }
@@ -35,7 +35,7 @@ $show_payment_history = $show_payment_history ?? false;
             display: block;
             line-height: 1.4;
             padding-left: 10px;
-            border-left: 2px solid #ddd;
+            border-start: 2px solid #ddd;
             margin-top: 3px;
             white-space: normal;
             word-wrap: break-word;
@@ -177,6 +177,7 @@ $show_payment_history = $show_payment_history ?? false;
                 <?php foreach (['Bank Copy', 'School Copy', 'Student Copy'] as $copyType): ?>
                     <div class="slip-col">
                         <?php
+                        helper('school');
                         $system_name = $family['system_name'] ?? '';
                         if (empty($system_name)) {
                             $system_name = $family['campus_name'] ?? 'School Name';
@@ -214,7 +215,10 @@ $show_payment_history = $show_payment_history ?? false;
                         
                         $formattedHeadStudent = '';
                         if ($headStudent) {
-                            $headName = $headStudent['student_name'] ?? '';
+                            $headName = fee_chalan_student_display_name(
+                                $headStudent['student_name'] ?? '',
+                                $headStudent['reg_no'] ?? null
+                            );
                             $shortClass = $getShortClass($headStudent);
                             $shortSection = $headStudent['section_short_name'] ?? '';
                             
@@ -225,13 +229,16 @@ $show_payment_history = $show_payment_history ?? false;
                             
                             $formattedHeadStudent = $headName;
                             if (!empty($classPart)) {
-                                $formattedHeadStudent .= ' <span class="class-badge">(' . $classPart . ')</span>';
+                                $formattedHeadStudent .= ' <span class="class-badge">(' . esc($classPart) . ')</span>';
                             }
                         }
                         
                         $formattedOtherStudents = [];
                         foreach ($otherStudents as $student) {
-                            $studentName = $student['student_name'] ?? '';
+                            $studentName = fee_chalan_student_display_name(
+                                $student['student_name'] ?? '',
+                                $student['reg_no'] ?? null
+                            );
                             $shortClass = $getShortClass($student);
                             $shortSection = $student['section_short_name'] ?? '';
                             
@@ -242,7 +249,7 @@ $show_payment_history = $show_payment_history ?? false;
                             
                             $formattedStudent = $studentName;
                             if (!empty($classPart)) {
-                                $formattedStudent .= ' (' . $classPart . ')';
+                                $formattedStudent .= ' (' . esc($classPart) . ')';
                             }
                             $formattedOtherStudents[] = $formattedStudent;
                         }

@@ -3,14 +3,13 @@
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
-<!-- Content Header (Page header) -->
 <style>
 	.list-group-item{
 	  	width: 33% !important;
 	    float: left !important;
 	    padding: 1px 10px !important;
-	    border-right: 0 none;
-	    border-left: 0 none;
+	    border-end: 0 none;
+	    border-start: 0 none;
 	}
 	table{
 	background-color: transparent;
@@ -47,23 +46,14 @@
       }
   	}
 </style>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Students Results
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Students Results</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students Results',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students Results', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content"> 
 <div class="row">
@@ -130,7 +120,7 @@
 					</div>	
 			</div>
 			
-		<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary pull-right" value="View Result Card " name="View" id="ViewResutlt"></div>
+		<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary float-end" value="View Result Card " name="View" id="ViewResutlt"></div>
 	</div>
 		<div id="loader-1" class="overlay col-md-12 text-center" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 	<div id="resultContainer"></div>

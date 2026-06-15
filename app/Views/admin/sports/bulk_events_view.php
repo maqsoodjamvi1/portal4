@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Bulk Sports Events</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Home</a></li>
-          <li class="breadcrumb-item active">Sports</li>
-          <li class="breadcrumb-item active">Bulk Events</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Bulk Sports Events',
+    'icon' => 'fas fa-layer-group',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Bulk Events', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -47,7 +42,7 @@
               <input type="date" class="form-control" name="event_date" id="event_date" required>
             </div>
             <div class="col-md-3 d-flex align-items-end gap-2">
-              <button type="button" id="btnLoad" class="btn btn-secondary mr-2"><i class="fa fa-download"></i> Load Existing</button>
+              <button type="button" id="btnLoad" class="btn btn-secondary me-2"><i class="fa fa-download"></i> Load Existing</button>
               <button type="button" id="btnAddRow" class="btn btn-info"><i class="fa fa-plus"></i> Add Row</button>
             </div>
           </div>
@@ -56,7 +51,7 @@
 
           <div class="table-responsive">
             <table class="table table-sm table-bordered" id="eventsTable">
-              <thead class="thead-light">
+              <thead class="table-light">
                 <tr id="theadRow">
                   <th style="width:30%">Event Name</th>
                   <th style="width:12%">Per House</th>
@@ -109,7 +104,7 @@
     wrap.innerHTML = `
       <div class="alert alert-${type === 'danger' ? 'danger' : type} alert-dismissible fade show" role="alert">
         ${text}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>`;
     setTimeout(() => {
       const a = wrap.querySelector('.alert');

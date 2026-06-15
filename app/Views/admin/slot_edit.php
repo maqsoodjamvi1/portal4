@@ -11,24 +11,14 @@
 	$slot_type = '';
 }
 ?>
-<!-- Content Header (Page header) -->   
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-          Slots
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Slots</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Slots',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Slots', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -72,15 +62,15 @@
             	<input type="hidden" name="rowscount[]" value="1" />	
             	<input type="hidden" name="id<?php echo $i; ?>" value="<?php echo $value->slot_id; ?>">
             	<input type="text" name="slot_name<?php echo $i; ?>"  value="<?php echo $value->slot_name; ?>" placeholder="Slot Name" class="form-control name_list" required="" /></td>  
-                 <td> <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+                 <td> <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
     			<input type="text" class="form-control" name="start_time<?php echo $i; ?>" placeholder="Start Time" value="<?php echo $value->start_time; ?>">
-			    <span class="input-group-addon btn btn-default">
+			    <span class="input-group-text btn btn-secondary">
 			        <span class="far fa-clock"></span>
 			    </span>
 				</div></td>
-				 <td> <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+				 <td> <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
     			<input type="text" class="form-control" name="end_time<?php echo $i; ?>" placeholder="End Time" value="<?php echo $value->end_time; ?>">
-			    <span class="input-group-addon btn btn-default">
+			    <span class="input-group-text btn btn-secondary">
 			        <span class="far fa-clock"></span>
 			    </span>
 				</div></td>
@@ -105,8 +95,8 @@
  <div class="col-lg-12">
     <div class="form-group">
         <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-		<button type="reset" class="btn btn-default">Reset</button>
-		<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+		<button type="reset" class="btn btn-secondary">Reset</button>
+		<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
     </div>
 </div>
 </div>
@@ -124,7 +114,7 @@ $(document).ready(function(){
    
       $('#add').click(function(){  
         
-           $('#dynamic_field').append('<tr id="row'+i+'" class="dynamic-added"><td><input type="hidden" name="id'+i+'" value="0"><input type="hidden" name="rowscount[]" value="1" /><input type="text" name="slot_name'+i+'" placeholder="Slot Name" class="form-control name_list" required /></td><td> <div class="input-group clockpicker2" data-placement="left" data-align="top" data-autoclose="true"><input type="text" class="form-control" name="start_time'+i+'" placeholder="Start Time" value=""><span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span></div></td> <td> <div class="input-group clockpicker2" data-placement="left" data-align="top" data-autoclose="true"><input type="text" class="form-control" name="end_time'+i+'" placeholder="End Time" value=""><span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span></div></td><td><select class="form-control"  name="slot_type'+i+'"><option value="FullDay">FullDay</option><option  value="HalfDay">HalfDay</option></select></td><td><button type="button" name="remove" id="'+i+'" class="btn btn-danger btn_remove btn-sm">X</button></td></tr>'); 
+           $('#dynamic_field').append('<tr id="row'+i+'" class="dynamic-added"><td><input type="hidden" name="id'+i+'" value="0"><input type="hidden" name="rowscount[]" value="1" /><input type="text" name="slot_name'+i+'" placeholder="Slot Name" class="form-control name_list" required /></td><td> <div class="input-group clockpicker2" data-bs-placement="left" data-align="top" data-autoclose="true"><input type="text" class="form-control" name="start_time'+i+'" placeholder="Start Time" value=""><span class="input-group-text"><span class="far fa-clock"></span></span></div></td> <td> <div class="input-group clockpicker2" data-bs-placement="left" data-align="top" data-autoclose="true"><input type="text" class="form-control" name="end_time'+i+'" placeholder="End Time" value=""><span class="input-group-text"><span class="far fa-clock"></span></span></div></td><td><select class="form-control"  name="slot_type'+i+'"><option value="FullDay">FullDay</option><option  value="HalfDay">HalfDay</option></select></td><td><button type="button" name="remove" id="'+i+'" class="btn btn-danger btn_remove btn-sm">X</button></td></tr>'); 
               i++;   
               $(".clockpicker2").clockpicker(); 
       });

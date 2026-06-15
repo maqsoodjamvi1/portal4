@@ -72,7 +72,7 @@ public function index()
         'campusQR'       => $campusQR,
         'qr_image_base64' => $qr_image_base64,
         'campus_name'    => $info->campus_name ?? '',
-        'id'             => $campus_id
+        'id'             => $campus_id,
     ]);
 }
 
@@ -177,12 +177,15 @@ public function generate_qr()
             'user_id'          => $user_id,
         ];
 
-        foreach (['s_flag', 't_flag', 'a_flag', 'h_flag'] as $flag) {
-            $data[$flag] = $request->getPost($flag) ? 1 : 0;
+        foreach ([
+            's_flag'   => 'school',
+            'hfz_flag' => 'hifz',
+        ] as $flag => $inputName) {
+            $data[$flag] = $request->getPost($inputName) ? 1 : 0;
         }
-
         $this->db->transStart();
         $this->db->table('campus')->where('campus_id', $id)->update($data);
+
         $this->db->transComplete();
 
         if ($this->db->transStatus() === false) {

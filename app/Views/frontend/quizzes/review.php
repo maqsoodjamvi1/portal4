@@ -1,7 +1,17 @@
-<?= $this->extend('frontend/layouts/master_portal') ?>
-<?= $this->section('content') ?>
+<?php
+$boardPrepReview = ! empty($boardPrepReview);
+if ($boardPrepReview) {
+    $navActive = 'dashboard';
+}
+?>
+<?= $this->extend($boardPrepReview ? 'board_prep/app_layout' : 'frontend/layouts/master_portal') ?>
+<?= $this->section($boardPrepReview ? 'main' : 'content') ?>
 
 <?php
+$reviewHomeUrl = $boardPrepReview
+    ? board_prep_url('dashboard')
+    : base_url('student/dashboard');
+
 // Normalize answers array
 $answers = $answersByQ ?? $answers ?? [];
 
@@ -36,21 +46,9 @@ $typeLabelMap = [
 ];
 
 
-$studentPhotoRaw = $studentPhotoUrl ?? ($studentPhoto ?? '');
-$studentPhotoSrc = '';
-
-if ($studentPhotoRaw) {
-    // If it already looks like a full URL, keep it
-    if (preg_match('~^https?://~i', $studentPhotoRaw)) {
-        $studentPhotoSrc = $studentPhotoRaw;
-    } else {
-        // Treat as file under /uploads/
-        $studentPhotoSrc = base_url('uploads/' . ltrim($studentPhotoRaw, '/'));
-    }
-} else {
-    // Fallback avatar
-    $studentPhotoSrc = base_url('resource/img/avatar-student.png');
-}
+$studentPhotoSrc = ! empty($studentPhotoUrl)
+    ? getStudentPhotoUrl($studentPhotoUrl)
+    : getStudentPhotoUrl($studentPhoto ?? '');
 
 
 // ====== PER-TYPE SUMMARY (for summary grid under header) ======
@@ -550,12 +548,13 @@ $typeOrder = ['mcq_single','mcq_multi','tf','fill','short','match'];
         <div class="d-flex justify-content-between align-items-start flex-wrap">
 
           <!-- LEFT: Student info + photo -->
-          <div class="col-md-4 col-sm-12 pl-0 pr-md-2 mb-2 mb-md-0">
+          <div class="col-md-4 col-sm-12 ps-0 pe-md-2 mb-2 mb-md-0">
             <div class="student-photo-wrap">
              <?php if (!empty($studentPhotoSrc)): ?>
   <img src="<?= esc($studentPhotoSrc) ?>"
        alt="Student Photo"
-       class="student-photo">
+       class="student-photo"
+       onerror="this.onerror=null;this.src='<?= base_url('resource/img/avatar-student.png') ?>';">
 <?php else: ?>
   <img src="<?= base_url('resource/img/avatar-student.png') ?>"
        alt="Student Photo"
@@ -583,7 +582,7 @@ $typeOrder = ['mcq_single','mcq_multi','tf','fill','short','match'];
                   <div class="mb-1 mt-1">
                     <strong>Topics:</strong><br>
                     <?php foreach ($topics as $t): ?>
-                      <span class="badge badge-info mr-1 mt-1"><?= esc($t) ?></span>
+                      <span class="badge text-bg-info me-1 mt-1"><?= esc($t) ?></span>
                     <?php endforeach; ?>
                   </div>
                 <?php endif; ?>
@@ -627,7 +626,7 @@ $typeOrder = ['mcq_single','mcq_multi','tf','fill','short','match'];
           </div>
 
           <!-- RIGHT: Score + counts + print button -->
-          <div class="col-md-4 col-sm-12 pr-0 pl-md-2 text-md-right text-left">
+          <div class="col-md-4 col-sm-12 pe-0 ps-md-2 text-md-end text-start">
 
             <!-- Score + percentage in same line -->
             <div class="mb-1">
@@ -650,29 +649,29 @@ $typeOrder = ['mcq_single','mcq_multi','tf','fill','short','match'];
             <div class="review-meta-small mb-3">
               <div class="d-flex flex-wrap justify-content-md-end mb-1" style="gap:.35rem;">
                 <span class="stat-pill main">
-                  <i class="fas fa-list-ol mr-1"></i>
+                  <i class="fas fa-list-ol me-1"></i>
                   <?= $totalQs ?> Total
                 </span>
                 <span class="stat-pill">
-                  <i class="fas fa-pencil-alt mr-1"></i>
+                  <i class="fas fa-pencil-alt me-1"></i>
                   <?= $attempted ?> Attempted
                 </span>
               </div>
 
               <div class="d-flex flex-wrap justify-content-md-end" style="gap:.35rem;">
                 <span class="stat-pill text-success">
-                  <i class="fas fa-check-circle mr-1"></i>
+                  <i class="fas fa-check-circle me-1"></i>
                   <?= $correct ?> Correct
                 </span>
                 <span class="stat-pill text-danger">
-                  <i class="fas fa-times-circle mr-1"></i>
+                  <i class="fas fa-times-circle me-1"></i>
                   <?= $wrong ?> Wrong
                 </span>
               </div>
             </div>
 
-             <a href="<?= base_url('student/dashboard') ?>"
-         class="btn btn-sm btn-outline-primary mb-1 mr-1">
+             <a href="<?= esc($reviewHomeUrl) ?>"
+         class="btn btn-sm btn-outline-primary mb-1 me-1">
         <i class="fas fa-home"></i> Home
       </a>
 

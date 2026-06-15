@@ -99,7 +99,7 @@ $content = '';
 
           <td style="border-bottom:1px solid #000;width:50%;padding-left:10px;"> Name: '.$value['name'].'</td>
 
-          <td style="border-left:1px solid #000;border-bottom:1px solid #000;width:50%;padding-left:10px;"> Reg #: '.$value['reg_no'].'</td>
+          <td style="border-start:1px solid #000;border-bottom:1px solid #000;width:50%;padding-left:10px;"> Reg #: '.$value['reg_no'].'</td>
 
         </tr>
 
@@ -107,7 +107,7 @@ $content = '';
 
           <td style="border-bottom:1px solid #000;width:50%;padding-left:10px;"> Father Name:'.$value['f_name'].'</td>
 
-          <td style="border-left:1px solid #000;border-bottom:1px solid #000;width:50%;padding-left:10px;"> Grade: '.$value['class'].'</td>
+          <td style="border-start:1px solid #000;border-bottom:1px solid #000;width:50%;padding-left:10px;"> Grade: '.$value['class'].'</td>
 
         </tr>
 
@@ -115,7 +115,7 @@ $content = '';
 
           <td style="width:50%;padding-left:10px;"> Contact # 1: '.$value['father_contact'].'</td>
 
-          <td style="border-left:1px solid #000;width:50%;padding-left:10px;"> Contact # 2: '. $value['mother_contact'].'</td>
+          <td style="border-start:1px solid #000;width:50%;padding-left:10px;"> Contact # 2: '. $value['mother_contact'].'</td>
 
         </tr>
 

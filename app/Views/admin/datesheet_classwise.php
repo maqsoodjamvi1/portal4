@@ -11,20 +11,20 @@
 th{text-align: center;}
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Datesheet</h1>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Class-wise Datesheet',
+    'icon' => 'fas fa-calendar-week',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Datesheet', 'url' => base_url('admin/datesheet')],
+        ['label' => 'Class-wise', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
         <div class="col-lg-12">
-            <div class="card">
+            <div class="card sms-card">
                 <div class="card-body">
                     <form action="<?= base_url('admin/datesheet_classwise') ?>" method="get">
                         <div class="row">

@@ -86,17 +86,17 @@ $date_value = $sessionData['date'];
             <div class="card-header p-0 pt-1 border-bottom-0">
                 <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="class-section-tab" data-toggle="pill" href="#class-section-view" role="tab">
+                        <a class="nav-link active" id="class-section-tab" data-bs-toggle="pill" href="#class-section-view" role="tab">
                             <i class="fas fa-chalkboard"></i> By Class/Section
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="search-tab" data-toggle="pill" href="#search-view" role="tab">
+                        <a class="nav-link" id="search-tab" data-bs-toggle="pill" href="#search-view" role="tab">
                             <i class="fas fa-search"></i> Search by Name
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="face-tab" data-toggle="pill" href="#face-view" role="tab">
+                        <a class="nav-link" id="face-tab" data-bs-toggle="pill" href="#face-view" role="tab">
                             <i class="fas fa-camera"></i> Face Recognition
                         </a>
                     </li>

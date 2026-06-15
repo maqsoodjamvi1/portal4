@@ -174,11 +174,9 @@ if (isset($campusInfo)) {
                     <div class="input-group date" id="datepicker2" data-target-input="nearest">
                       <input type="text" name="issue_date" autocomplete="off"
                              class="form-control datetimepicker-input"
-                             data-toggle="datetimepicker" data-target="#datepicker2"
+                             data-bs-toggle="datetimepicker" data-bs-target="#datepicker2"
                              value="<?= esc($issue_date_val) ?>"/>
-                      <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                      </div>
+                      <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                     </div>
                   </div>
                 </div>
@@ -190,11 +188,9 @@ if (isset($campusInfo)) {
                     <div class="input-group date" id="datepicker" data-target-input="nearest">
                       <input type="text" name="due_date" autocomplete="off"
                              class="form-control datetimepicker-input"
-                             data-toggle="datetimepicker" data-target="#datepicker"
+                             data-bs-toggle="datetimepicker" data-bs-target="#datepicker"
                              value="<?= esc($due_date_val) ?>"/>
-                      <div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                      </div>
+                      <span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                     </div>
                   </div>
                 </div>
@@ -225,11 +221,9 @@ if (isset($campusInfo)) {
                     <div class="input-group mb-3">
                       <input type="text" class="form-control" id="chalan_h_msg" name="chalan_h_msg"
                              value="<?= esc($campusInfo->chalan_h_msg ?? '') ?>">
-                      <div class="input-group-append">
-                        <button class="btn btn-primary" id="btn_h_msg" style="height:35px; line-height:17px; margin-left:5px; width:146px;" type="button">
+                      <button class="btn btn-primary" id="btn_h_msg" style="height:35px; line-height:17px; margin-left:5px; width:146px;" type="button">
                           Save Message
                         </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -241,11 +235,9 @@ if (isset($campusInfo)) {
                     <div class="input-group mb-3">
                       <input type="text" class="form-control" id="chalan_f_msg" name="chalan_f_msg"
                              value="<?= esc($campusInfo->chalan_f_msg ?? '') ?>">
-                      <div class="input-group-append">
-                        <button class="btn btn-primary" id="btn_f_msg" style="height:35px; line-height:17px; margin-left:5px; width:146px;" type="button">
+                      <button class="btn btn-primary" id="btn_f_msg" style="height:35px; line-height:17px; margin-left:5px; width:146px;" type="button">
                           Save Message
                         </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -270,11 +262,9 @@ if (isset($campusInfo)) {
                     <div class="input-group mb-3">
                       <input type="text" class="form-control" id="late_fee_fine" name="late_fee_fine"
                              value="<?= esc($campusInfo->late_fee_fine ?? '') ?>">
-                      <div class="input-group-append">
-                        <button class="btn btn-primary" id="btn_late_fee" style="height:35px; line-height:17px; margin-left:5px; width:200px;" type="button">
+                      <button class="btn btn-primary" id="btn_late_fee" style="height:35px; line-height:17px; margin-left:5px; width:200px;" type="button">
                           Save Fine
                         </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -283,10 +273,10 @@ if (isset($campusInfo)) {
               <!-- Actions -->
               <div class="col-sm-12">
                 <div class="form-group">
-                  <button type="submit" id="submitBtn" class="btn btn-primary mr-2">
+                  <button type="submit" id="submitBtn" class="btn btn-primary me-2">
                     <?= $isEdit ? 'Update Fee Chalan' : 'Generate Fee Chalan' ?>
                   </button>
-                  <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+                  <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
                 </div>
               </div>
 
@@ -304,13 +294,13 @@ if (isset($campusInfo)) {
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content border-0 shadow-lg">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title font-weight-bold" id="progressModalLabel">
-            <i class="fas fa-spinner fa-pulse mr-2"></i>Generating Fee Chalans
+          <h5 class="modal-title fw-bold" id="progressModalLabel">
+            <i class="fas fa-spinner fa-pulse me-2"></i>Generating Fee Chalans
           </h5>
         </div>
         <div class="modal-body">
           <div class="progress mb-3 rounded" style="height:25px;">
-            <div id="progressBar" class="progress-bar bg-primary progress-bar-striped progress-bar-animated text-center font-weight-bold"
+            <div id="progressBar" class="progress-bar bg-primary progress-bar-striped progress-bar-animated text-center fw-bold"
                  role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
               <span class="progress-text">0%</span>
             </div>
@@ -318,40 +308,40 @@ if (isset($campusInfo)) {
 
           <div id="progressDetails">
             <div class="d-flex align-items-center justify-content-center mb-3">
-              <div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>
-              <span class="font-weight-bold text-primary">Preparing chalan generation...</span>
+              <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+              <span class="fw-bold text-primary">Preparing chalan generation...</span>
             </div>
             <div class="progress-stats row text-center mb-3">
               <div class="col-4">
-                <span class="badge badge-light border border-secondary">
-                  <i class="fas fa-users mr-1"></i> Total: <span id="totalStudents">0</span>
+                <span class="badge text-bg-light border border-secondary">
+                  <i class="fas fa-users me-1"></i> Total: <span id="totalStudents">0</span>
                 </span>
               </div>
               <div class="col-4">
-                <span class="badge badge-success">
-                  <i class="fas fa-check-circle mr-1"></i> Success: <span id="successCount">0</span>
+                <span class="badge text-bg-success">
+                  <i class="fas fa-check-circle me-1"></i> Success: <span id="successCount">0</span>
                 </span>
               </div>
               <div class="col-4">
-                <span class="badge badge-warning">
-                  <i class="fas fa-exclamation-circle mr-1"></i> Skipped: <span id="skippedCount">0</span>
+                <span class="badge text-bg-warning">
+                  <i class="fas fa-exclamation-circle me-1"></i> Skipped: <span id="skippedCount">0</span>
                 </span>
               </div>
             </div>
             <div id="currentProcessing" class="text-center small text-muted">
-              <i class="fas fa-user-graduate mr-1"></i> Currently processing: <span>Initializing...</span>
+              <i class="fas fa-user-graduate me-1"></i> Currently processing: <span>Initializing...</span>
             </div>
           </div>
 
           <div id="completeIndicator" class="text-center py-2" style="display:none;">
             <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
-            <p class="font-weight-bold text-success mb-0">Operation Completed Successfully!</p>
+            <p class="fw-bold text-success mb-0">Operation Completed Successfully!</p>
           </div>
         </div>
         <div class="modal-footer justify-content-between">
           <small class="text-muted"><i class="fas fa-info-circle"></i> Do not close this window</small>
           <button id="cancelBtn" type="button" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-times mr-1"></i> Cancel
+            <i class="fas fa-times me-1"></i> Cancel
           </button>
         </div>
       </div>
@@ -422,14 +412,14 @@ $(document).ready(function () {
                         .removeClass('bg-danger bg-success').addClass('progress-bar-animated');
         $('#progressDetails').html(`
           <div class="d-flex align-items-center">
-            <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
             <span>Preparing chalan generation...</span>
           </div>
           <div class="progress-stats mt-2">
             <div class="row">
-              <div class="col-4"><span class="badge badge-primary">Total: <span id="totalStudents">0</span></span></div>
-              <div class="col-4"><span class="badge badge-success">Success: <span id="successCount">0</span></span></div>
-              <div class="col-4"><span class="badge badge-warning">Skipped: <span id="skippedCount">0</span></span></div>
+              <div class="col-4"><span class="badge text-bg-primary">Total: <span id="totalStudents">0</span></span></div>
+              <div class="col-4"><span class="badge text-bg-success">Success: <span id="successCount">0</span></span></div>
+              <div class="col-4"><span class="badge text-bg-warning">Skipped: <span id="skippedCount">0</span></span></div>
             </div>
           </div>
           <div id="currentProcessing" class="mt-2 small text-muted"></div>

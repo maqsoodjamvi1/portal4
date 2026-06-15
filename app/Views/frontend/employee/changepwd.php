@@ -18,7 +18,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-lock"></i>
                         </span>
                         <input type="password" name="change_pwd_password" class="form-control" id="change-pwd-password" placeholder="Password">
@@ -28,7 +28,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-lock"></i>
                         </span>
                         <input type="password" name="change_pwd_confirm_password" class="form-control" id="change-pwd-confirm-password" placeholder="Confirm Password">
@@ -38,7 +38,7 @@
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <div class="form-group pull-right">
+                <div class="form-group float-end">
                     <button type="submit" id="chnage-pwd" class="btn btn-warning">Save</button>
                 </div>
             </div>

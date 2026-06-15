@@ -114,10 +114,8 @@
                   <div class="input-group date" id="datepicker2" data-target-input="nearest">
                     <input type="text" name="issue_date" autocomplete="off" 
                            class="form-control datetimepicker-input" 
-                           data-toggle="datetimepicker" data-target="#datepicker2">
-                    <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
+                           data-bs-toggle="datetimepicker" data-bs-target="#datepicker2">
+                    <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                   </div>
                 </div>
               </div>
@@ -128,10 +126,8 @@
                   <div class="input-group date" id="datepicker" data-target-input="nearest">
                     <input type="text" name="due_date" autocomplete="off" 
                            class="form-control datetimepicker-input" 
-                           data-toggle="datetimepicker" data-target="#datepicker">
-                    <div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
+                           data-bs-toggle="datetimepicker" data-bs-target="#datepicker">
+                    <span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                   </div>
                 </div>
               </div>
@@ -162,11 +158,9 @@
                     <input type="text" class="form-control" id="chalan_h_msg" 
                            name="chalan_h_msg" 
                            value="<?= htmlspecialchars($campusInfo->chalan_h_msg ?? '') ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_h_msg" type="button">
+                    <button class="btn btn-primary" id="btn_h_msg" type="button">
                         Save Message
                       </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -178,11 +172,9 @@
                     <input type="text" class="form-control" id="chalan_f_msg" 
                            name="chalan_f_msg" 
                            value="<?= htmlspecialchars($campusInfo->chalan_f_msg ?? '') ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_f_msg" type="button">
+                    <button class="btn btn-primary" id="btn_f_msg" type="button">
                         Save Message
                       </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -207,11 +199,9 @@
                     <input type="number" class="form-control" id="late_fee_fine" 
                            name="late_fee_fine" 
                            value="<?= htmlspecialchars($campusInfo->late_fee_fine ?? 0) ?>">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" id="btn_late_fee" type="button">
+                    <button class="btn btn-primary" id="btn_late_fee" type="button">
                         Save Fine
                       </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -220,10 +210,10 @@
             <!-- Form Actions -->
             <div class="col-sm-12">
               <div class="form-group">
-                <button type="submit" id="submitBtn" class="btn btn-primary mr-2">
+                <button type="submit" id="submitBtn" class="btn btn-primary me-2">
                   Generate Fee Chalan
                 </button>
-                <button type="button" class="btn btn-default" onclick="history.go(-1);">
+                <button type="button" class="btn btn-secondary" onclick="history.go(-1);">
                   Cancel
                 </button>
               </div>

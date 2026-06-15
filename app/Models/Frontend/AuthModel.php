@@ -16,8 +16,31 @@ class AuthModel extends Model
 
     public function verify(string $plain, string $hash): bool
     {
-        // Adjust if you used md5/sha1 previously
-        return password_verify($plain, $hash);
+        return $this->verifyPortalPassword($plain, $hash);
+    }
+
+    /**
+     * Verify portal password (bcrypt preferred; supports legacy md5/plain for migration).
+     */
+    public function verifyPortalPassword(string $plain, ?string $storedHash): bool
+    {
+        if ($storedHash === null || $storedHash === '') {
+            return false;
+        }
+
+        if (password_verify($plain, $storedHash)) {
+            return true;
+        }
+
+        if (strlen($storedHash) === 32 && ctype_xdigit($storedHash) && hash_equals($storedHash, md5($plain))) {
+            return true;
+        }
+
+        if (! str_starts_with($storedHash, '$2y$') && ! str_starts_with($storedHash, '$2a$') && hash_equals($storedHash, $plain)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function findParentByLogin(string $login): ?array

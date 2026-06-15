@@ -166,13 +166,13 @@ class Students_results_card extends MY_Controller {
 			$strResultCard .= '<div style="width:28%;float:left;">Obtained </div>';
 		//}
 		//if(in_array('marks', $academic_result)){
-			$strResultCard .= '<div style="border-left:1px solid #000;width:22%;float:left;">Total </div>';
+			$strResultCard .= '<div style="border-start:1px solid #000;width:22%;float:left;">Total </div>';
 		//}
 		//if(in_array('percentage', $academic_result)){
-			$strResultCard .= '<div style="width:25%;float:left;border-left:1px solid #000;">Per</div>';
+			$strResultCard .= '<div style="width:25%;float:left;border-start:1px solid #000;">Per</div>';
 		//}
 		//if(in_array('grade', $academic_result)){
-			$strResultCard .= '<div style="width:25%;float:left;border-left:1px solid #000;">Grade</div>';
+			$strResultCard .= '<div style="width:25%;float:left;border-start:1px solid #000;">Grade</div>';
 		//}
 		$strResultCard .= '</div>';
 		$strResultCard .= '</th>';
@@ -207,7 +207,7 @@ class Students_results_card extends MY_Controller {
 
 	if($emptycol > 0){
 		for($i=1; $i<=$emptycol; $i++){
-			$strResultCard .= '<td style="padding: 0px;line-height: 30px;text-align: center;"><div style="width: 28%;float: left;text-align:center;">-</div><div style="width: 22%;float: left;text-align:center;border-left:1px solid #000;">-</div><div style="width: 25%;float: left;text-align:center;border-left:1px solid #000;">-</div><div style="width: 25%;float: left;text-align:center;border-left:1px solid #000;">-</div></td>';
+			$strResultCard .= '<td style="padding: 0px;line-height: 30px;text-align: center;"><div style="width: 28%;float: left;text-align:center;">-</div><div style="width: 22%;float: left;text-align:center;border-start:1px solid #000;">-</div><div style="width: 25%;float: left;text-align:center;border-start:1px solid #000;">-</div><div style="width: 25%;float: left;text-align:center;border-start:1px solid #000;">-</div></td>';
 	}
 	}
 	foreach($stdresults as $numbers){
@@ -228,18 +228,18 @@ class Students_results_card extends MY_Controller {
 		
 		//if(in_array('marks', $academic_result)){
 			if($datesheetinfo->total_marks > 0){
-				$strResultCard .= "<div style='width: 28%;float: left;'>".$numbers->obtained_marks."</div><div style='border-left:1px solid #000;width: 22%;float: left;'>".$datesheetinfo->total_marks." </div>";
+				$strResultCard .= "<div style='width: 28%;float: left;'>".$numbers->obtained_marks."</div><div style='border-start:1px solid #000;width: 22%;float: left;'>".$datesheetinfo->total_marks." </div>";
 	  		}else{
 	  			$strResultCard .= "<div style='width: 28%;float: left;'>-</div>";
-	  			$strResultCard .= "<div style='border-left:1px solid #000;width: 22%;float: left;'>-</div>";
+	  			$strResultCard .= "<div style='border-start:1px solid #000;width: 22%;float: left;'>-</div>";
 	  		}
 		//}
 		
 		//if(in_array('percentage', $academic_result)){
 			if($datesheetinfo->total_marks > 0){
-				$strResultCard .= '<div style="border-left:1px solid #000;width: 25%;float: left;">'.$subjectPercentage.'% </div>';
+				$strResultCard .= '<div style="border-start:1px solid #000;width: 25%;float: left;">'.$subjectPercentage.'% </div>';
 			}else{
-				$strResultCard .= "<div style='border-left:1px solid #000;width: 25%;float: left;'>-</div>";
+				$strResultCard .= "<div style='border-start:1px solid #000;width: 25%;float: left;'>-</div>";
 			}
 		//}
 
@@ -248,9 +248,9 @@ class Students_results_card extends MY_Controller {
 				$this->db->where('gid', $subjectgrade->gid);
 				$gradeinfo = $this->db->get('grades')->row();
 				if($datesheetinfo->total_marks > 0){
-					$strResultCard .= '<div style="border-left:1px solid #000;width: 25%;float: left;">'.$gradeinfo->name.'</div>';
+					$strResultCard .= '<div style="border-start:1px solid #000;width: 25%;float: left;">'.$gradeinfo->name.'</div>';
   			}else{
-  				$strResultCard .= "<div style='border-left:1px solid #000;width: 25%;float: left;'>-</div>";
+  				$strResultCard .= "<div style='border-start:1px solid #000;width: 25%;float: left;'>-</div>";
   			}
 			}
 		//}
@@ -294,19 +294,19 @@ $emptycol1 = '';//(count($exams)-count($value['resulttotalpercentage']));
 	$strResultCard .= '<td class="heading3" style="font-size: 16px;text-align: center;padding: 0px;line-height: 35px;font-weight:bold;">';
 	//if(in_array('marks', $academic_result)){
 		$strResultCard .= '<div  style="width: 28%;
-    float: left;">'.$result->obtain_total_mark."</div><div  style='border-left:1px solid #000;width: 22%;
+    float: left;">'.$result->obtain_total_mark."</div><div  style='border-start:1px solid #000;width: 22%;
     float: left;'>"; 
 		$strResultCard .= $result->exam_total_mark." </div>"; 
 	//}
 	//if(in_array('percentage', $academic_result)){
-		$strResultCard .= '<div  style="border-left:1px solid #000;width: 25%;
+		$strResultCard .= '<div  style="border-start:1px solid #000;width: 25%;
     float: left;">&nbsp;&nbsp;'.round($exampercentage).'% </div>';
 	//}
 	//if(in_array('grade', $academic_result)){
 		if($examgrade){
 			$this->db->where('gid', $examgrade->gid);
 			$examgradeinfo = $this->db->get('grades')->row();
-			$strResultCard .= '<div  style="border-left:1px solid #000;width: 25%;
+			$strResultCard .= '<div  style="border-start:1px solid #000;width: 25%;
     float: left;">'.$examgradeinfo->name.'</div>';
 		}
 	//}

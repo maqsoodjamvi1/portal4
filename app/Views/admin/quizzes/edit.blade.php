@@ -7,7 +7,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Edit Quiz: {{ $quiz->title }}</h3>
-                    <a href="{{ route('quizzes.manage') }}" class="btn btn-secondary float-right">
+                    <a href="{{ route('quizzes.manage') }}" class="btn btn-secondary float-end">
                         <i class="fas fa-arrow-left"></i> Back to Manage
                     </a>
                 </div>

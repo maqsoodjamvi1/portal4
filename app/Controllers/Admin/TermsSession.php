@@ -163,7 +163,7 @@ public function data2()
                       data-end="'   . htmlspecialchars($term_end_ymd ?? '', ENT_QUOTES, 'UTF-8') . '">
                     <td>
                       <strong class="term-name">' . htmlspecialchars($term->name, ENT_QUOTES, 'UTF-8') . '</strong>
-                      <span class="badge badge-info ml-1 term-code">' . (int) $term->term_id . '</span>
+                      <span class="badge text-bg-info ms-1 term-code">' . (int) $term->term_id . '</span>
                       <input type="hidden" name="rowscount[]" value="1" />
                       <input type="hidden" name="term_id[]" value="' . (int) $term->term_id . '">
                       <input type="hidden" name="term_session_id[]" value="' . (int) $term_session_id . '">
@@ -172,15 +172,13 @@ public function data2()
                     <td>
                       <div class="form-group mb-0">
                         <div class="input-group input-group-sm date">
-                          <div class="input-group-prepend"><div class="input-group-text"><i class="fa fa-calendar"></i></div></div>
+                          <span class="input-group-text"><i class="fa fa-calendar"></i></span>
                           <input type="text" class="form-control term-start datepicker" readonly
                                  id="startdatepicker' . $i . '" data-idx="' . $i . '"
                                  name="start_date[]" value="' . htmlspecialchars($term_start_dmy, ENT_QUOTES, 'UTF-8') . '">
-                          <div class="input-group-append">
-                            <span class="input-group-text bg-white">
-                              <span id="startDay' . $i . '" class="badge badge-light border">' . ($term_start_ymd ? $dayName($term_start_ymd) : '—') . '</span>
+                          <span class="input-group-text bg-white">
+                              <span id="startDay' . $i . '" class="badge text-bg-light border">' . ($term_start_ymd ? $dayName($term_start_ymd) : '—') . '</span>
                             </span>
-                          </div>
                         </div>
                       </div>
                     </td>
@@ -188,22 +186,20 @@ public function data2()
                     <td>
                       <div class="form-group mb-0">
                         <div class="input-group input-group-sm date">
-                          <div class="input-group-prepend"><div class="input-group-text"><i class="fa fa-calendar"></i></div></div>
+                          <span class="input-group-text"><i class="fa fa-calendar"></i></span>
                           <input type="text" class="form-control term-end datepicker" ' .
                             ((($termCount === $i) && ($term_end_dmy !== '' || !empty($sessEndYmd))) ? 'readonly ' : '') . '
                             id="enddatepicker' . $i . '" data-idx="' . $i . '"
                             name="end_date[]" value="' . htmlspecialchars($term_end_dmy, ENT_QUOTES, 'UTF-8') . '">
-                          <div class="input-group-append">
-                            <span class="input-group-text bg-white">
-                              <span id="endDay' . $i . '" class="badge badge-light border">' . ($term_end_ymd ? $dayName($term_end_ymd) : '—') . '</span>
+                          <span class="input-group-text bg-white">
+                              <span id="endDay' . $i . '" class="badge text-bg-light border">' . ($term_end_ymd ? $dayName($term_end_ymd) : '—') . '</span>
                             </span>
-                          </div>
                         </div>
                       </div>
                     </td>
 
                     <td>
-                      <span id="weeks' . $i . '" class="badge badge-secondary">' . (int) $initWeeks . '</span>
+                      <span id="weeks' . $i . '" class="badge text-bg-secondary">' . (int) $initWeeks . '</span>
                     </td>
                   </tr>';
 

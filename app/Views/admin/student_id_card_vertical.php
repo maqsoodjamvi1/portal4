@@ -205,7 +205,7 @@
                 </select>
               </div>
             </div>
-            <button class="btn btn-primary float-right" id="ViewResutlt">
+            <button class="btn btn-primary float-end" id="ViewResutlt">
               <i class="fas fa-id-card"></i> Generate ID Cards
             </button>
             <div class="clearfix"></div>

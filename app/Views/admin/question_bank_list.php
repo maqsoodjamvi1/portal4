@@ -1,15 +1,24 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <h1>Question Bank</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Question Bank',
+    'icon' => 'fas fa-book',
+    'actionsHtml' => '<div class="text-sm-right d-flex flex-wrap justify-content-sm-end" style="gap:.5rem;">'
+        . '<a href="' . esc(site_url('admin/question-bank/form'), 'attr') . '" class="btn btn-primary btn-sm">+ Add Question</a>'
+        . '<a href="' . esc(site_url('admin/question-bank/overview'), 'attr') . '" class="btn btn-outline-secondary btn-sm">Overview</a>'
+        . '</div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Question Bank', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title">All Questions</h3>
-            <a href="<?= site_url('admin/question-bank') ?>" class="btn btn-primary btn-sm">+ Add Question</a>
+    <div class="card sms-card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">All Questions</h3>
         </div>
         <div class="card-body p-0">
             <table class="table table-striped table-bordered mb-0">
@@ -34,7 +43,7 @@
                                 <small><?= esc($q->topic_name ?? $q->topic_id) ?></small>
                             </td>
                             <td><?= esc($q->question) ?></td>
-                            <td><span class="badge badge-info"><?= strtoupper($q->question_type) ?></span></td>
+                            <td><span class="badge text-bg-info"><?= strtoupper($q->question_type) ?></span></td>
                             <td>
                                 <?php if ($q->question_type === 'mcq'): ?>
                                     A) <?= esc($q->option_a) ?><br>

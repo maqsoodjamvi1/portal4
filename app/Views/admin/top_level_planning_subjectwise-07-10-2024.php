@@ -17,7 +17,7 @@
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 					<li><a href="<?= base_url('admin/top_level_planning') ?>">Scheme of Studies</a></li>
@@ -25,7 +25,7 @@
 					<li><a href="<?= base_url('admin/top_level_planning_gradewise') ?>">Grade Wise View</a></li>
 				</ul>
 				   
-<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+<div class="tab-content table-responsive no-padding"><div class="col-12">
 	<?php	
 	echo "Under Construction";
 	exit;			

@@ -9,24 +9,14 @@
 		$fee_type_detail = '';
 	}
 ?>
-    <!-- Content Header (Page header) -->
-   <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-              Transport Fee Type
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Transport Fee Type</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+   <?= view('components/page_header', [
+    'title' => 'Transport Fee Type',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Transport Fee Type', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -90,9 +80,9 @@
 		</div>
 		<div class="col-lg-12">	
         <div class="form-group">
-			<button type="submit" id="submitBtn" class="btn btn-primary mr-2">Save</button>
-			<!-- <button type="reset" class="btn btn-default mr-2">Reset</button> -->
-			<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+			<button type="submit" id="submitBtn" class="btn btn-primary me-2">Save</button>
+			<!-- <button type="reset" class="btn btn-secondary me-2">Reset</button> -->
+			<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 		</div>
 		</div>
 		<?php echo form_close();?>

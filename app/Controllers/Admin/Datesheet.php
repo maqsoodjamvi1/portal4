@@ -274,9 +274,64 @@ return redirect()->to($redirectUrl);
     // =========================
     // DATA TO VIEW
     // =========================
+    $rawHm = $this->request->getGet('hide_marks');
+    if (is_array($rawHm)) {
+        $rawHm = (string) end($rawHm);
+    } else {
+        $rawHm = (string) ($rawHm ?? '');
+    }
+    $filterHideMarks = ($rawHm === '1' || strtolower($rawHm) === 'on') ? '1' : '';
+
+    $rawFs = $this->request->getGet('full_subject');
+    if (is_array($rawFs)) {
+        $rawFs = (string) end($rawFs);
+    } else {
+        $rawFs = (string) ($rawFs ?? '');
+    }
+    $filterFullSubject = ($rawFs === '1' || strtolower($rawFs) === 'on') ? '1' : '';
+
+    $filterFontSize = (string) ($this->request->getGet('font_size') ?? 'medium');
+    if (! in_array($filterFontSize, ['small', 'medium', 'large'], true)) {
+        $filterFontSize = 'medium';
+    }
+
+    $rawLh = $this->request->getGet('line_height');
+    $filterLineHeight = ($rawLh === null || $rawLh === '') ? 2.0 : (float) (string) $rawLh;
+    if ($filterLineHeight < 1.0) {
+        $filterLineHeight = 1.0;
+    }
+    if ($filterLineHeight > 3.0) {
+        $filterLineHeight = 3.0;
+    }
+
+    $mode = $this->request->getGet('mode');
+    $studentId = (int) ($this->request->getGet('student_id') ?? 0);
+    $selectedStudentLabel = '';
+    if ($studentId > 0) {
+        $stuRow = $this->db->table('students')
+            ->select('first_name, last_name, reg_no')
+            ->where('student_id', $studentId)
+            ->where('campus_id', $campus_id)
+            ->where('status', 1)
+            ->get()
+            ->getRow();
+        if ($stuRow) {
+            $selectedStudentLabel = trim(($stuRow->first_name ?? '') . ' ' . ($stuRow->last_name ?? ''));
+            if (! empty($stuRow->reg_no)) {
+                $selectedStudentLabel .= ' (' . $stuRow->reg_no . ')';
+            }
+        } else {
+            $studentId = 0;
+        }
+    }
+
+    $admitCardData = $mode === 'sample'
+        ? $this->sampleAdmitCards($sectionsclassinfo, $filterHideMarks)
+        : $this->data(null, 0, $filterHideMarks, $studentId);
+
     $data = [
         'sectionsclassinfo' => $sectionsclassinfo,
-        'data'              => $this->data(),
+        'data'              => $admitCardData,
         'schoolinfo'        => $schoolinfo,
         'finalLogo'         => $finalLogo,
         'examInstructions'  => $examInstructions,
@@ -288,6 +343,14 @@ return redirect()->to($redirectUrl);
         ],
         'save_success'      => $session->getFlashdata('save_success'),
         'save_success_type' => $session->getFlashdata('save_success_type') ?? 'success',
+        'admitFilters'      => [
+            'hide_marks'    => $filterHideMarks,
+            'full_subject'  => $filterFullSubject,
+            'font_size'     => $filterFontSize,
+            'line_height'   => $filterLineHeight,
+        ],
+        'selectedStudentId'    => $studentId,
+        'selectedStudentLabel' => $selectedStudentLabel,
     ];
     
     log_message('debug', 'Data prepared for view');
@@ -296,7 +359,6 @@ return redirect()->to($redirectUrl);
     // =========================
     // VIEW SELECTION
     // =========================
-    $mode = $this->request->getGet('mode');
     log_message('debug', 'View mode: ' . ($mode ?: 'default'));
     log_message('debug', '=== DATESHEET INDEX END ===');
 
@@ -564,26 +626,45 @@ private function getDynamicSchoolInfo($campus_id)
     ];
 }
     
-public function data(): array
+public function data(?int $selectedClsSecId = null, int $studentLimit = 0, ?string $hideMarksArg = null, int $studentIdArg = 0): array
 {
-    $hide_marks  = (string) ($this->request->getGet('hide_marks') ?? '');
-    $cls_sec_id  = (int) ($this->request->getGet('cls_sec_id') ?? 0);
+if ($hideMarksArg !== null) {
+        $hide_marks = (string) $hideMarksArg;
+    } else {
+        $rawHm = $this->request->getGet('hide_marks');
+        if (is_array($rawHm)) {
+            $rawHm = (string) end($rawHm);
+        } else {
+            $rawHm = (string) ($rawHm ?? '');
+        }
+        $hide_marks = ($rawHm === '1' || strtolower($rawHm) === 'on') ? '1' : '';
+    }
+    $student_id = $studentIdArg > 0
+        ? $studentIdArg
+        : (int) ($this->request->getGet('student_id') ?? 0);
+    $cls_sec_id  = $selectedClsSecId ?? (int) ($this->request->getGet('cls_sec_id') ?? 0);
 
     // DON'T use global getSchoolInfo() - it returns wrong system_id
     $campus_id     = (int) ($this->session->get('member_campusid') ?? 0);
     $sessionid     = (int) ($this->session->get('member_sessionid') ?? 0);
     
     $out = [];
-    if ($cls_sec_id === 0) return $out;
 
-    // --- helper: table exists
-    $tableExists = function (string $table): bool {
-        try {
-            return (bool) $this->db->query("SHOW TABLES LIKE ?", [$table])->getRowArray();
-        } catch (\Throwable $e) {
-            return false;
+    if ($student_id > 0 && $sessionid > 0) {
+        $scRow = $this->db->table('student_class')
+            ->select('cls_sec_id')
+            ->where('student_id', $student_id)
+            ->where('session_id', $sessionid)
+            ->where('status', 1)
+            ->get()
+            ->getRow();
+        if (! $scRow) {
+            return $out;
         }
-    };
+        $cls_sec_id = (int) $scRow->cls_sec_id;
+    }
+
+    if ($cls_sec_id === 0) return $out;
 
     // ----- Active exam for campus+session
     $examinfo = $this->db->table('exam')
@@ -624,15 +705,21 @@ public function data(): array
     $hasWindow = $date_from && $date_to;
 
     // ----- Students of this class-section
-    $students = $this->db->table('student_class t1')
+    $studentsBuilder = $this->db->table('student_class t1')
         ->select('t1.cls_sec_id, t2.student_id, t2.campus_id, t2.reg_no, t2.first_name, t2.last_name, t2.parent_id, t2.profile_photo')
         ->join('students t2', 't1.student_id = t2.student_id')
         ->where('t1.status', 1)
         ->where('t1.session_id', $sessionid)
         ->where('t2.campus_id', $campus_id)
         ->where('t1.cls_sec_id', $cls_sec_id)
-        ->orderBy('t2.first_name', 'ASC')
-        ->get()->getResult();
+        ->orderBy('t2.first_name', 'ASC');
+    if ($student_id > 0) {
+        $studentsBuilder->where('t1.student_id', $student_id);
+    }
+    if ($studentLimit > 0) {
+        $studentsBuilder->limit($studentLimit);
+    }
+    $students = $studentsBuilder->get()->getResult();
 
     $campus_info = $this->db->table('campus')->where('campus_id', $campus_id)->get()->getRow();
     $campus_phone =
@@ -676,34 +763,20 @@ public function data(): array
                 $subject .= ' (' . (int)$ds->total_marks . ')';
             }
 
-            $subjectdatesheet[] = [$dateDay, $subject, (string)$ds->syllabus];
-        }
-    }
+            $shortName = trim((string)($acadSub->subject_short_name ?? ''));
+            if ($shortName === '') {
+                $shortName = (string)$acadSub->subject_name;
+            }
 
-    // ===== Working days BY CLASS-SECTION =====
-    $working_days = null;
-    if ($hasWindow) {
-        if ($tableExists('mark_attendance')) {
-            $wdRow = $this->db->table('mark_attendance')
-                ->select('COUNT(DISTINCT `date`) AS working_days', false)
-                ->where('cls_sec_id', $cls_sec_id)
-                ->where('date >=', $date_from)
-                ->where('date <=', $date_to)
-                ->get()->getRow();
-            $working_days = (int) ($wdRow->working_days ?? 0);
-        } else {
-            $wdRow = $this->db->query(
-                "SELECT COUNT(DISTINCT a.`date`) AS working_days
-                 FROM attendance a
-                 JOIN student_class sc ON sc.student_id = a.student_id
-                 JOIN students s      ON s.student_id  = sc.student_id
-                 WHERE sc.cls_sec_id = ?
-                   AND sc.session_id = ?
-                   AND s.campus_id   = ?
-                   AND a.`date` BETWEEN ? AND ?",
-                [$cls_sec_id, $sessionid, $campus_id, $date_from, $date_to]
-            )->getRow();
-            $working_days = (int) ($wdRow->working_days ?? 0);
+            $subjectdatesheet[] = [
+                'date_day'      => $dateDay,
+                'exam_date'     => (string)$ds->exam_date,
+                'subject_line'  => $subject,
+                'subject_short' => $shortName,
+                'subject_full'  => (string) $acadSub->subject_name,
+                'marks'         => (int)$ds->total_marks,
+                'syllabus'      => (string)$ds->syllabus,
+            ];
         }
     }
 
@@ -732,9 +805,43 @@ public function data(): array
 
         $classSectioninfo = getClassSection($cls_sec_id);
 
-        // Per-student attendance counts within the term window (unchanged)
+        // Age: prefer stored age column if present, else from date_of_birth
+        $ageYears = null;
+        foreach (['student_age', 'age', 'current_age'] as $ageCol) {
+            if (isset($student_info->{$ageCol}) && $student_info->{$ageCol} !== '' && $student_info->{$ageCol} !== null) {
+                $ageYears = (int) $student_info->{$ageCol};
+                break;
+            }
+        }
+        if ($ageYears === null && ! empty($student_info->date_of_birth)) {
+            try {
+                $dob = new \DateTime((string) $student_info->date_of_birth);
+                $ageYears = $dob->diff(new \DateTime('today'))->y;
+            } catch (\Throwable $e) {
+                $ageYears = null;
+            }
+        }
+
+        $heightCm = isset($student_info->height) && $student_info->height !== '' && $student_info->height !== null
+            ? (float) $student_info->height : null;
+        $weightKg = isset($student_info->weight) && $student_info->weight !== '' && $student_info->weight !== null
+            ? (float) $student_info->weight : null;
+        $bmiVal = isset($student_info->bmi) && $student_info->bmi !== '' && $student_info->bmi !== null
+            ? (float) $student_info->bmi : null;
+        $bmiCategory = isset($student_info->bmi_category) ? trim((string) $student_info->bmi_category) : '';
+
+        // Working days = count of attendance rows for this student in the term date range
+        $working_days = null;
         $count_A = $count_L = $count_LC = $count_EL = 0;
         if ($hasWindow) {
+            $wdRow = $this->db->table('attendance')
+                ->select('COUNT(*) AS working_days', false)
+                ->where('student_id', $student_id)
+                ->where('date >=', $date_from)
+                ->where('date <=', $date_to)
+                ->get()->getRow();
+            $working_days = (int) ($wdRow->working_days ?? 0);
+
             $att = $this->db->table('attendance')
                 ->select([
                     'COUNT(DISTINCT CASE WHEN status = "A"  THEN `date` END) AS cnt_A',
@@ -765,6 +872,16 @@ public function data(): array
             'mother_contact'      => $parent_info->mother_contact ?? '',
             'reg_no'              => $student_info->reg_no ?? '',
 
+            'student_age_years'   => $ageYears,
+            'height_cm'           => $heightCm,
+            'weight_kg'           => $weightKg,
+            'bmi_value'           => $bmiVal,
+            'bmi_category'        => $bmiCategory,
+            'date_of_birth'       => $student_info->date_of_birth ?? null,
+            'height'              => $heightCm,
+            'weight'              => $weightKg,
+            'bmi'                 => $bmiVal,
+
             'terms'               => $exam_name,
             'eid'                 => $eid,
             'term_session_id'     => ['session_id' => $exam_sessid, 'term_id' => $exam_termid],
@@ -773,10 +890,8 @@ public function data(): array
 
             'remaining_dues'      => $studentsFeeTotal,
 
-            // === NEW: class-section working days ===
+            // Attendance in exam term window (status A=absent, L=late, LC=leave, EL=early left)
             'working_days'        => $working_days,
-
-            // Per-student status counts
             'att_A'               => $count_A,
             'att_L'               => $count_L,
             'att_LC'              => $count_LC,
@@ -787,10 +902,71 @@ public function data(): array
     return $out;
 }
 
+private function sampleAdmitCards(array $sectionsclassinfo, string $hideMarks = ''): array
+{
+    $samples = [];
+    $seenSections = [];
+
+    foreach ($sectionsclassinfo as $section) {
+        $clsSecId = (int) (is_array($section)
+            ? ($section['cls_sec_id'] ?? $section['section_id'] ?? 0)
+            : ($section->cls_sec_id ?? $section->section_id ?? 0));
+
+        if ($clsSecId <= 0 || isset($seenSections[$clsSecId])) {
+            continue;
+        }
+
+        $seenSections[$clsSecId] = true;
+        $cards = $this->data($clsSecId, 1, $hideMarks);
+        if (!empty($cards)) {
+            $samples[] = $cards[0];
+        }
+    }
+
+    return $samples;
+}
+
+/**
+ * AJAX: search students by name for individual admit card (jQuery UI autocomplete).
+ */
+public function searchStudentsByName()
+{
+    $term = trim((string) ($this->request->getGet('term') ?? $this->request->getGet('q') ?? ''));
+    $campus_id  = (int) ($this->session->get('member_campusid') ?? 0);
+    $session_id = (int) ($this->session->get('member_sessionid') ?? 0);
+    $limit      = max(1, min((int) ($this->request->getGet('limit') ?: 15), 30));
+
+    if (strlen($term) < 2) {
+        return $this->response->setJSON([]);
+    }
+
+    $builder = $this->db->table('students s')
+        ->select('s.student_id, s.first_name, s.last_name, s.reg_no, sc.cls_sec_id, c.class_name, sec.section_name', false)
+        ->join('student_class sc', 'sc.student_id = s.student_id AND sc.session_id = ' . $session_id . ' AND sc.status = 1', 'inner')
+        ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+        ->join('classes c', 'c.class_id = cs.class_id', 'left')
+        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+        ->where('s.campus_id', $campus_id)
+        ->where('s.status', 1)
+        ->groupStart()
+            ->like('s.first_name', $term, 'after')
+            ->orLike('s.last_name', $term, 'after')
+            ->orLike('CONCAT(s.first_name, " ", s.last_name)', $term, 'after')
+            ->orLike('s.reg_no', $term, 'after')
+        ->groupEnd()
+        ->orderBy('s.first_name', 'ASC')
+        ->limit($limit);
+
+    $rows = $builder->get()->getResultArray();
+
+    return $this->response->setJSON($rows);
+}
+
 
  public function addSyllabus()
     {
         $campus_id = (int) $this->session->get('member_campusid');
+        $session_id = (int) ($this->session->get('member_sessionid') ?? 0);
 
         // resolve system_id for this campus (so we can find current session)
         $campusRow = $this->db->table('campus')
@@ -798,25 +974,30 @@ public function data(): array
             ->where('campus_id', $campus_id)
             ->get()->getRow();
 
-        $system_id = $campusRow->system_id ?? null;
+        $system_id = (int) ($campusRow->system_id ?? 0);
 
         // current session (status = 1)
-        $currentSession = $this->db->table('academic_session')
-            ->select('session_id, session_name, start_date, end_date, status')
-            ->where('system_id', $system_id)
-            ->where('status', 1)
-            ->orderBy('start_date', 'DESC')
-            ->get()->getRow();
+        $currentSession = null;
+        if ($session_id > 0) {
+            $currentSession = $this->db->table('academic_session')
+                ->select('session_id, session_name, start_date, end_date, status')
+                ->where('session_id', $session_id)
+                ->where('status', 1)
+                ->get()->getRow();
+        }
+        if (!$currentSession && $system_id > 0) {
+            $currentSession = $this->db->table('academic_session')
+                ->select('session_id, session_name, start_date, end_date, status')
+                ->where('system_id', $system_id)
+                ->where('status', 1)
+                ->orderBy('start_date', 'DESC')
+                ->get()->getRow();
+        }
 
-        // active exam for this campus & session (status = 0)
-        $exam = $this->db->table('exam')
-            ->where('campus_id', $campus_id)
-            ->where('session_id', $currentSession->session_id ?? null)
-            ->where('status', 0)
-            ->orderBy('exam_start_date', 'DESC')
-            ->get()->getRow();
+        $examSessionId = $session_id > 0 ? $session_id : (int) ($currentSession->session_id ?? 0);
+        $exam = $this->resolveExamForSyllabus($campus_id, $examSessionId);
 
-        // class section list for this campus
+        // Single combined class–section list for one dropdown
         $sections = $this->db->table('class_section cs')
             ->select("cs.cls_sec_id, CONCAT(c.class_name, ' - ', s.section_name) AS label")
             ->join('classes c', 'c.class_id = cs.class_id', 'left')
@@ -825,112 +1006,148 @@ public function data(): array
             ->where('cs.status', 1)
             ->orderBy('c.class_name', 'ASC')
             ->orderBy('s.section_name', 'ASC')
-            ->get()->getResultArray();
+            ->get()
+            ->getResultArray();
 
         return view('admin/datesheet_syllabus', [
-            'sections'       => $sections,
-            'exam'           => $exam,           // hidden in the UI
-            'currentSession' => $currentSession, // hidden in the UI
+            'sections'         => $sections,
+            'exam'             => $exam,
+            'currentSession'   => $currentSession,
         ]);
     }
 
 public function fetchSyllabusGrid()
 {
-    // Allow only POST (your JS should call this via $.post)
-    if ($this->request->getMethod(true) !== 'POST') {
+    if (strtolower($this->request->getMethod()) !== 'post') {
         return $this->response->setStatusCode(405)->setBody('Method Not Allowed');
     }
 
-    $campus_id  = (int) (session('member_campusid') ?? 0);
-    $cls_sec_id = (int) $this->request->getPost('cls_sec_id');
-    $session_id = (int) (session('member_sessionid') ?? 0); // prefer app session if set
+    try {
+        $campus_id  = (int) (session('member_campusid') ?? 0);
+        $cls_sec_id = (int) $this->request->getPost('cls_sec_id');
+        $session_id = (int) (session('member_sessionid') ?? 0);
 
-    if ($campus_id <= 0) {
-        return $this->response->setBody('<div class="alert alert-danger mb-0">Campus not found in session.</div>');
-    }
-    if ($cls_sec_id <= 0) {
-        return $this->response->setBody('<div class="alert alert-warning mb-0">Please select a class section.</div>');
-    }
-
-    // Resolve current academic session if not already in PHP session
-    if ($session_id <= 0) {
-        $system_id = (int) ($this->db->table('campus')
-            ->select('system_id')
-            ->where('campus_id', $campus_id)
-            ->get()->getRow()->system_id ?? 0);
-
-        if ($system_id > 0) {
-            $row = $this->db->table('academic_session')
-                ->select('session_id')
-                ->where('system_id', $system_id)
-                ->where('status', 1) // current session
-                ->orderBy('start_date', 'DESC')
-                ->get()->getRow();
-            $session_id = (int) ($row->session_id ?? 0);
+        if ($campus_id <= 0) {
+            return $this->response->setBody('<div class="alert alert-danger mb-0">Campus not found in session.</div>');
         }
+        if ($cls_sec_id <= 0) {
+            return $this->response->setBody('<div class="alert alert-warning mb-0">Please select a class section.</div>');
+        }
+
+        if ($session_id <= 0) {
+            $campusRow = $this->db->table('campus')
+                ->select('system_id')
+                ->where('campus_id', $campus_id)
+                ->get()->getRow();
+            $system_id = (int) ($campusRow->system_id ?? 0);
+
+            if ($system_id > 0) {
+                $row = $this->db->table('academic_session')
+                    ->select('session_id')
+                    ->where('system_id', $system_id)
+                    ->where('status', 1)
+                    ->orderBy('start_date', 'DESC')
+                    ->limit(1)
+                    ->get()->getRow();
+                $session_id = (int) ($row->session_id ?? 0);
+            }
+        }
+
+        $exam = $this->resolveExamForSyllabus($campus_id, $session_id);
+
+        if (!$exam) {
+            return $this->response->setBody('<div class="alert alert-danger mb-0">No active (unannounced) exam found for the current session. Create an exam under Admin → Exams, then add datesheet rows.</div>');
+        }
+
+        $eidInt = (int) $exam->eid;
+
+        $subjects = $this->db->table('section_subjects ss')
+            ->select('ss.sec_sub_id, ss.subject_id, a.subject_name, a.subject_short_name')
+            ->join('allsubject a', 'a.sid = ss.subject_id')
+            ->where('ss.cls_sec_id', $cls_sec_id)
+            ->where('ss.status', 1)
+            ->orderBy('a.subject_name', 'ASC')
+            ->get()
+            ->getResult();
+
+        $dsRows = $this->db->table('datesheet')
+            ->select('sec_sub_id, exam_date, total_marks')
+            ->where('eid', $eidInt)
+            ->where('cls_sec_id', $cls_sec_id)
+            ->orderBy('exam_date', 'ASC')
+            ->get()->getResult();
+
+        $dsMap = [];
+        foreach ($dsRows as $r) {
+            $dsMap[(int) $r->sec_sub_id] = [
+                'exam_date'   => (string) ($r->exam_date ?? ''),
+                'total_marks' => (int) ($r->total_marks ?? 0),
+            ];
+        }
+
+        usort($subjects, static function ($a, $b) use ($dsMap) {
+            $dateA = $dsMap[(int) ($a->sec_sub_id ?? 0)]['exam_date'] ?? '';
+            $dateB = $dsMap[(int) ($b->sec_sub_id ?? 0)]['exam_date'] ?? '';
+            $validA = $dateA !== '' && $dateA !== '0000-00-00';
+            $validB = $dateB !== '' && $dateB !== '0000-00-00';
+
+            if ($validA && $validB && $dateA !== $dateB) {
+                return strcmp($dateA, $dateB);
+            }
+            if ($validA !== $validB) {
+                return $validA ? -1 : 1;
+            }
+
+            return strcasecmp((string) ($a->subject_name ?? ''), (string) ($b->subject_name ?? ''));
+        });
+
+        $existingRows = $this->db->table('datesheet')
+            ->select('sec_sub_id, syllabus')
+            ->where('eid', $eidInt)
+            ->where('cls_sec_id', $cls_sec_id)
+            ->get()->getResult();
+
+        $existingMap = [];
+        foreach ($existingRows as $r) {
+            $existingMap[(int) $r->sec_sub_id] = (string) ($r->syllabus ?? '');
+        }
+
+        return view('admin/partials/syllabus_grid', compact('exam', 'cls_sec_id', 'subjects', 'existingMap', 'dsMap'));
+    } catch (\Throwable $e) {
+        log_message('error', 'fetchSyllabusGrid: ' . $e->getMessage());
+
+        return $this->response->setBody('<div class="alert alert-danger mb-0">Failed to load syllabus grid. Please try again or contact support.</div>');
+    }
+}
+
+/**
+ * Unannounced exam (status = 0) for campus + session; campus-wide fallback.
+ */
+private function resolveExamForSyllabus(int $campusId, int $sessionId): ?object
+{
+    if ($campusId <= 0) {
+        return null;
     }
 
-    // Find active exam for campus (and session, when available). Note: exam.status is varchar.
-    $examBuilder = $this->db->table('exam')
-        ->where('campus_id', $campus_id)
-        ->where('status', '0'); // active
+    $builder = $this->db->table('exam')
+        ->where('campus_id', $campusId)
+        ->where('status', '0');
 
-    if ($session_id > 0) {
-        $examBuilder->where('session_id', $session_id);
+    if ($sessionId > 0) {
+        $builder->where('session_id', $sessionId);
     }
 
-    $exam = $examBuilder->orderBy('exam_start_date', 'DESC')->get()->getRow();
+    $exam = $builder->orderBy('exam_start_date', 'DESC')->get()->getRow();
 
-    // Fallback: any active exam in campus if session filter yielded none
     if (!$exam) {
         $exam = $this->db->table('exam')
-            ->where('campus_id', $campus_id)
+            ->where('campus_id', $campusId)
             ->where('status', '0')
             ->orderBy('exam_start_date', 'DESC')
             ->get()->getRow();
     }
 
-    if (!$exam) {
-        return $this->response->setBody('<div class="alert alert-danger mb-0">No active exam found for the current session.</div>');
-    }
-
-    // Subjects (with teacher if mapped) for this class section
-  $subjects = $this->db->table('section_subjects ss')
-    ->select('ss.sec_sub_id, ss.subject_id, a.subject_name')
-    ->join('allsubject a', 'a.sid = ss.subject_id')
-    ->where('ss.cls_sec_id', $cls_sec_id)
-    ->where('ss.status', 1)
-    ->orderBy('a.subject_name', 'ASC')
-    ->get()
-    ->getResult();
-
-    // Existing syllabus for this exam + class section (keyed by sec_sub_id)
-    $existingRows = $this->db->table('datesheet')
-        ->select('sec_sub_id, syllabus')
-        ->where('eid', (int) $exam->eid)
-        ->where('cls_sec_id', $cls_sec_id)
-        ->get()->getResult();
-
-    $existingMap = [];
-    foreach ($existingRows as $r) {
-        $existingMap[(int) $r->sec_sub_id] = (string) ($r->syllabus ?? '');
-    }
-
-
-$dsRows = $this->db->table('datesheet')
-  ->select('sec_sub_id, exam_date, total_marks')
-  ->where('eid', (int)$exam->eid)
-  ->where('cls_sec_id', $cls_sec_id)
-  ->get()->getResult();
-$dsMap = [];
-foreach ($dsRows as $r) {
-  $dsMap[(int)$r->sec_sub_id] = [
-    'exam_date'   => (string)($r->exam_date ?? ''),
-    'total_marks' => (int)($r->total_marks ?? 0),
-  ];
-}
-
-return view('admin/partials/syllabus_grid', compact('exam','cls_sec_id','subjects','existingMap','dsMap'));
+    return $exam ?: null;
 }
 
 
@@ -1266,10 +1483,8 @@ function d_selectSubjects(){
                     
             $subjectList .= "<tr><td><input type='hidden' name='did[]'  value='".$did."'><input type='hidden' name='sec_sub_id[]'  value='".$subject->sec_sub_id."'>".$subject_name."</td><td><input type='text' name='total_marks[]' value='".$totalmarks."' class='form-control'></td><td>
                 <div class='input-group date' id='datepicker".$subject->sec_sub_id."' data-target-input='nearest'>
-                        <input type='text' name='exam_date[]'  value='".$subjectexamdate."'  class='form-control datetimepicker-input' data-target='#datepicker".$subject->sec_sub_id."'/>
-                        <div class='input-group-append' data-target='#datepicker".$subject->sec_sub_id."' data-toggle='datetimepicker'>
-                            <div class='input-group-text'><i class='fa fa-calendar'></i></div>
-                        </div>
+                        <input type='text' name='exam_date[]'  value='".$subjectexamdate."'  class='form-control datetimepicker-input' data-bs-target='#datepicker".$subject->sec_sub_id."'/>
+                        <span class='input-group-text' data-bs-target='#datepicker".$subject->sec_sub_id."' data-bs-toggle='datetimepicker'><i class='fa fa-calendar'></i></span>
                   </td><td><textarea name='syllabus[]' class='form-control editor222'>".$papersyllabus."</textarea></td></tr>
             <script>
                 $(function(){
@@ -1313,8 +1528,9 @@ function d_selectSubjects(){
 
         $exam = $this->db->table('exam')
             ->where('campus_id', $campus_id)
+            ->where('session_id', $session_id)
             ->where('status', 0)
-            ->orderBy('exam_start_date', 'DESC')
+            ->orderBy('eid', 'DESC')
             ->get()->getRow();
 
         if (!$exam || !$cls_sec_id) {
@@ -1393,8 +1609,9 @@ function d_selectSubjects(){
 
         $exam = $this->db->table('exam')
             ->where('campus_id', $campus_id)
+            ->where('session_id', $this->session->get('member_sessionid'))
             ->where('status', 0)
-            ->orderBy('exam_start_date', 'DESC')
+            ->orderBy('eid', 'DESC')
             ->get()->getRow();
 
         if (!$exam || !$cls_sec_id || empty($exam_dates)) {
@@ -1449,13 +1666,43 @@ function d_selectSubjects(){
 
 
 // Admin/Datesheet.php (or your controller)
+public function fetchsummary()
+{
+    return $this->dfetchsummary();
+}
+
 public function dfetchsummary()
 {
     $exam_id   = (int) $this->request->getPost('exam_id');
     $campus_id = (int) $this->session->get('member_campusid');
+    $session_id = (int) $this->session->get('member_sessionid');
 
     if ($exam_id <= 0) {
-        return '<div class="alert alert-warning mb-0">No exam selected.</div>';
+        // Prefer latest unannounced exam in current session/campus for insertion flow
+        $active = $this->db->table('exam')
+            ->select('eid')
+            ->where('campus_id', $campus_id)
+            ->where('session_id', $session_id)
+            ->where('status', '0')
+            ->orderBy('eid', 'DESC')
+            ->get()->getRow();
+
+        if ($active) {
+            $exam_id = (int) ($active->eid ?? 0);
+        } else {
+            // Fallback: latest exam in current session/campus
+            $latest = $this->db->table('exam')
+                ->select('eid')
+                ->where('campus_id', $campus_id)
+                ->where('session_id', $session_id)
+                ->orderBy('eid', 'DESC')
+                ->get()->getRow();
+            $exam_id = (int) ($latest->eid ?? 0);
+        }
+    }
+
+    if ($exam_id <= 0) {
+        return '<div class="alert alert-warning mb-0">No existing exam found for current session.</div>';
     }
 
     // 1) Enabled exam days for this exam
@@ -1476,27 +1723,25 @@ public function dfetchsummary()
         $dateRange[] = ['date' => $d];
     }
 
-    // 2) All accessible class-sections (row set)
-    $sectionsList = in_array(5, currentUserRoles()) ? teacherSubjectSections() : userClassSections();
+    // 2) Resolve exam info for top heading
+    $examInfo = $this->db->table('exam')
+        ->select('eid, exam_name, status')
+        ->where('eid', $exam_id)
+        ->get()->getRowArray();
 
-    // normalize to: [cls_sec_id => "Class — Section"]
-    $sectionLabels = [];
-    $sectionIds    = [];
+    // 3) All accessible class-sections (id list)
+    $sectionsList = in_array(5, currentUserRoles()) ? teacherSubjectSections() : userClassSections();
+    $sectionIds = [];
     foreach ($sectionsList as $row) {
-        $id    = is_array($row) ? ($row['cls_sec_id'] ?? $row['section_id'] ?? null) : ($row->cls_sec_id ?? $row->section_id ?? null);
-        if (!$id) continue;
-        $label = is_array($row)
-            ? ($row['sectionclassname'] ?? (($row['class_name'] ?? '').' — '.($row['section_name'] ?? '')))
-            : ($row->sectionclassname ?? (($row->class_name ?? '').' — '.($row->section_name ?? '')));
-        $label = trim($label) ?: ('Sec#'.$id);
-        $sectionLabels[(int)$id] = $label;
-        $sectionIds[] = (int)$id;
+        $id = is_array($row) ? ($row['cls_sec_id'] ?? $row['section_id'] ?? null) : ($row->cls_sec_id ?? $row->section_id ?? null);
+        if ($id) $sectionIds[] = (int)$id;
     }
+    $sectionIds = array_values(array_unique($sectionIds));
     if (empty($sectionIds)) {
         return '<div class="alert alert-info mb-0">No class sections available for summary.</div>';
     }
 
-    // 3) Pull all scheduled entries for this exam across sections (subject names)
+    // 4) Pull all scheduled entries for this exam across sections (subject names)
     $rows = $this->db->table('datesheet ds')
         ->select('ds.cls_sec_id, ds.exam_date, a.subject_name')
         ->join('section_subjects ss', 'ss.sec_sub_id = ds.sec_sub_id')
@@ -1505,9 +1750,20 @@ public function dfetchsummary()
         ->whereIn('ds.cls_sec_id', $sectionIds)
         ->get()->getResult();
 
-    // 4) Build matrix: [cls_sec_id][Y-m-d] => [subject_name, ...]
+    if (empty($rows)) {
+        return '<div class="alert alert-info mb-0">No datesheet entries exist yet for this exam.</div>';
+    }
+
+    // Only show classes that already have at least one datesheet row
+    $activeSectionIds = [];
+    foreach ($rows as $r) {
+        $activeSectionIds[(int) $r->cls_sec_id] = true;
+    }
+    $activeSectionIds = array_keys($activeSectionIds);
+
+    // 5) Build matrix: [cls_sec_id][Y-m-d] => [subject_name, ...]
     $matrix = [];
-    foreach ($sectionIds as $sid) {
+    foreach ($activeSectionIds as $sid) {
         foreach ($dateRange as $d) {
             $matrix[$sid][$d['date']] = [];
         }
@@ -1520,10 +1776,32 @@ public function dfetchsummary()
         $matrix[(int)$r->cls_sec_id][$day][] = $r->subject_name;
     }
 
-    return view('admin/datesheet_summary', [
+    // Use DB short names for class-section labels
+    $visibleLabels = [];
+    $labelRows = $this->db->table('class_section cs')
+        ->select('cs.cls_sec_id, c.class_name, c.class_short_name, sec.section_name, sec.short_name AS section_short_name')
+        ->join('classes c', 'c.class_id = cs.class_id', 'left')
+        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+        ->whereIn('cs.cls_sec_id', $activeSectionIds)
+        ->get()->getResultArray();
+    foreach ($labelRows as $lr) {
+        $sid = (int)($lr['cls_sec_id'] ?? 0);
+        if ($sid <= 0) continue;
+        $cls = trim((string)($lr['class_short_name'] ?? '')) !== '' ? (string)$lr['class_short_name'] : (string)($lr['class_name'] ?? '');
+        $sec = trim((string)($lr['section_short_name'] ?? '')) !== '' ? (string)$lr['section_short_name'] : (string)($lr['section_name'] ?? '');
+        $visibleLabels[$sid] = trim($cls . ' - ' . $sec, ' -');
+    }
+    foreach ($activeSectionIds as $sid) {
+        if (!isset($visibleLabels[$sid])) {
+            $visibleLabels[$sid] = 'Sec#' . $sid;
+        }
+    }
+
+    return view('admin/d_datesheet_summary', [
         'dateRange'     => $dateRange,
-        'sectionLabels' => $sectionLabels,
+        'sectionLabels' => $visibleLabels,
         'matrix'        => $matrix,
+        'examInfo'      => $examInfo,
     ]);
 }
 
@@ -1536,17 +1814,19 @@ public function dfetchsummary()
     $cls_sec_id = (int) $this->request->getPost('cls_sec_id');
     $exam_id    = (int) $this->request->getPost('exam_id'); // ✅ specific exam
     $campus_id  = (int) $this->session->get('member_campusid');
+    $session_id = (int) $this->session->get('member_sessionid');
 
-    // Pick the requested exam, or fall back to latest active for the campus
+    // Pick the requested exam, or fall back to latest unannounced exam for current session/campus
     $examQB = $this->db->table('exam')
         ->where('campus_id', $campus_id)
+        ->where('session_id', $session_id)
         ->where('status', 0);
 
     if ($exam_id > 0) {
         $examQB->where('eid', $exam_id);
     }
 
-    $exam = $examQB->orderBy('exam_start_date', 'DESC')->get()->getRow();
+    $exam = $examQB->orderBy('eid', 'DESC')->get()->getRow();
 
     if (!$exam || $cls_sec_id <= 0) {
         return '<div class="alert alert-danger mb-0">No active exam or class section selected.</div>';
@@ -1578,7 +1858,7 @@ public function dfetchsummary()
 
     // Subjects in this class-section
     $subjects = $this->db->table('section_subjects ss')
-        ->select('ss.sec_sub_id, ss.subject_id, a.subject_name')
+        ->select('ss.sec_sub_id, ss.subject_id, a.subject_name, a.subject_short_name')
         ->join('allsubject a', 'a.sid = ss.subject_id')
         ->where('ss.cls_sec_id', $cls_sec_id)
         ->where('ss.status', 1)
@@ -1627,18 +1907,25 @@ public function dfetchsummary()
     {
         $cls_sec_id = $this->request->getPost('cls_sec_id');
         $sec_sub_id = $this->request->getPost('sec_sub_id');
+        $exam_id = (int) $this->request->getPost('exam_id');
         $exam_date = $this->request->getPost('exam_date');
         $total_marks = $this->request->getPost('total_marks');
 
         $user_id = $this->session->get('member_userid');
         $campus_id = $this->session->get('member_campusid');
+        $session_id = $this->session->get('member_sessionid');
         $created_at = date('Y-m-d H:i:s');
 
-        $exam = $this->db->table('exam')
+        $examQB = $this->db->table('exam')
             ->where('campus_id', $campus_id)
-            ->where('status', 0)
-            ->get()
-            ->getRow();
+            ->where('session_id', $session_id)
+            ->where('status', 0);
+
+        if ($exam_id > 0) {
+            $examQB->where('eid', $exam_id);
+        }
+
+        $exam = $examQB->orderBy('eid', 'DESC')->get()->getRow();
 
         if (!$exam) {
             return $this->response->setJSON(['success' => false, 'message' => 'No active exam found.']);

@@ -138,7 +138,10 @@ class ResultMessage extends BaseController
 
             $resultList .= "Total Marks: {$examResult->obtain_total_mark}/{$examResult->exam_total_mark}, ";
 
-            $parent = $this->db->query("SELECT * FROM parents WHERE parent_id IN (SELECT parent_id FROM students WHERE student_id = $studentId)")->getRow();
+            $studentRow = $this->db->table('students')->select('parent_id')->where('student_id', (int) $studentId)->get()->getRow();
+            $parent = $studentRow
+                ? $this->db->table('parents')->where('parent_id', (int) $studentRow->parent_id)->get()->getRow()
+                : null;
             $studentInfo = $this->db->table('students')->where('student_id', $studentId)->get()->getRow();
 
             $sc = $this->db->table('student_class')->where('student_id', $studentId)->get()->getRow();

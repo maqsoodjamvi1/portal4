@@ -23,7 +23,6 @@ if(isset($info) ){
 	$session_id = $sessionData['sessionid'];
 }
 ?>
-<!-- Content Header (Page header) -->
 <style type="text/css">
 	.funkyradio div {
   clear: both;
@@ -135,23 +134,15 @@ if(isset($info) ){
 }
 th{ text-align: center; }
 </style>
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-              Students Attdendance
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Students Attdendance</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-user-check',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Attendance', 'url' => base_url('admin/students_attendance')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -167,8 +158,8 @@ th{ text-align: center; }
 		 <div class="row">
 		 	<div id="loader-1" class="overlay col-md-12 text-center" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 		   <input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
-		    <div class="form-inline col-lg-6 col-lg-offset-3">
-	            <div class="form-group pull-left">
+		    <div class="d-flex flex-wrap align-items-center col-lg-6 col-lg-offset-3">
+	            <div class="form-group float-start">
 	              <select class="form-control select2"  style="height: 25px;padding: 0 5px;" name="section_id" id="section_id">
 	              	 <option value="0">Select Section</option>
 	                <?php if(isset($sectionsclassinfo)){
@@ -178,10 +169,10 @@ th{ text-align: center; }
 	                <?php } ?>
 	              </select>
 	            </div>
-	            <div class="form-group  pull-left" style="margin-left: 15px;">
+	            <div class="form-group  float-start" style="margin-left: 15px;">
 	             <input type="date" name="date" id="date" required value="<?php echo date('Y-m-d'); ?>" class="form-control" style="height: 24px;line-height: 15px;padding: 0 10px;">
 	           </div>
-	            <div class="form-group  pull-left"  style="margin-left: 15px;">
+	            <div class="form-group  float-start"  style="margin-left: 15px;">
 	            <button type="button" onclick="getstudents();" class="btn btn-sm btn-primary" style="height: 24px;line-height: 10px;">View</button>
 	           </div>
 	          </div> 
@@ -195,8 +186,8 @@ th{ text-align: center; }
 		  	
           <div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-            <button type="reset" class="btn btn-default">Reset</button>
-            <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+            <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
            
 		  </div>
@@ -244,11 +235,11 @@ $(function(){
 				<?php
 				if($id == ''){
 					?>
-					location.href = '/admin/students_attendance/add';
+					location.href = '/admin/students_absentees/add';
 					<?php
 				}else{
 					?>
-					location.href = '/admin/students_attendance/add';
+					location.href = '/admin/students_absentees/add';
 					<?php
 				}
 				?>

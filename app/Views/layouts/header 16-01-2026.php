@@ -14,9 +14,11 @@ $current_language = session('language') ?? 'en';
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
     <!-- Ionicons -->
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <!-- Tempusdominus Bootstrap 4 -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') ?>">
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+
+    <!-- Tempusdominus Bootstrap adapter -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <!-- iCheck -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css') ?>">
@@ -27,13 +29,14 @@ $current_language = session('language') ?? 'en';
     <!-- Daterange picker -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.css') ?>">
     <!-- summernote -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.css') ?>">
     <!-- DataTables -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
     <!-- Select2 -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
     <!-- Toastr -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.css') ?>">
 
@@ -65,8 +68,9 @@ $current_language = session('language') ?? 'en';
     <script>
       $.widget.bridge('uibutton', $.ui.button)
     </script>
-    <!-- Bootstrap 4 -->
-    <script src="<?= base_url('resource/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+    <!-- Bootstrap 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
     <!-- ChartJS -->
     <script src="<?= base_url('resource/adminlte/plugins/chart.js/Chart.min.js') ?>"></script>
     <!-- Sparkline -->
@@ -82,10 +86,11 @@ $current_language = session('language') ?? 'en';
     <!-- daterangepicker -->
     <script src="<?= base_url('resource/adminlte/plugins/moment/moment.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.js') ?>"></script>
-    <!-- Tempusdominus Bootstrap 4 -->
-    <script src="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') ?>"></script>
+    <!-- Tempusdominus Bootstrap adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="<?= base_url('assets/js/datetimepicker-compat.js?v=20260614') ?>"></script>
     <!-- Summernote -->
-    <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.js') ?>"></script>
+    <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.js') ?>"></script>
     <!-- overlayScrollbars -->
     <script src="<?= base_url('resource/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') ?>"></script>
     <!-- AdminLTE App -->
@@ -113,13 +118,13 @@ $current_language = session('language') ?? 'en';
     <script type="text/javascript" src="<?= base_url('resource/js/server.js') ?>"></script>
 
     <!-- DataTables  & Plugins -->
-    <script src="<?= base_url('resource/adminlte/plugins/datatables/jquery.dataTables.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') ?>"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="<?= base_url('assets/js/jquery.slugit.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/dataTables.buttons.min.js') ?>"></script>
-    <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') ?>"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
     <script src="<?= base_url('resource/adminlte/plugins/jszip/jszip.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/pdfmake/pdfmake.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/pdfmake/vfs_fonts.js') ?>"></script>
@@ -240,7 +245,7 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
 
           const $switcher = $('.language-switcher .nav-link');
           const originalHtml = $switcher.html();
-          $switcher.html('<i class="fas fa-spinner fa-spin mr-1"></i> <?= lang("app.loading") ?>');
+          $switcher.html('<i class="fas fa-spinner fa-spin me-1"></i> <?= lang("app.loading") ?>');
 
           $.ajax({
               url: LANG_URLS[lang],
@@ -311,8 +316,8 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title pull-left" id="exampleModalLabel"><?= $school_name; ?></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            <h5 class="modal-title float-start" id="exampleModalLabel"><?= $school_name; ?></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
           </div>
           <div class="modal-body">
             <input type="hidden" name="systemID" id="systemID" value="<?php if (isset($schoolinfo) && is_object($schoolinfo)): ?><?= $schoolinfo->system_id ?><?php endif; ?>">
@@ -395,7 +400,7 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
                 $currs = currency()->listActive();
                 $cur   = session('currency_code') ?? config('Currency')->defaultDisplay;
               ?>
-              <form action="<?= base_url('settings/set-currency') ?>" method="post" class="ml-2">
+              <form action="<?= base_url('settings/set-currency') ?>" method="post" class="ms-2">
                 <?= csrf_field() ?>
                 <select name="currency_code" onchange="this.form.submit()" class="form-control form-control-sm">
                   <?php foreach ($currs as $c): ?>
@@ -408,15 +413,15 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
             </li>
           </ul>
 
-          <ul class="navbar-nav ml-auto">
+          <ul class="navbar-nav ms-auto">
             <?php if($_SERVER['HTTP_HOST'] == 'demo.timesoftsol.com'){ ?>
               <li style="margin-right:60px;">
-                <a style="padding: 6px 11px;" href="https://timesoftsol.com/signup/" class="btn btn-lg btn-flat btn-danger btn-block">Create Your Own School</a>
+                <a style="padding: 6px 11px;" href="https://timesoftsol.com/signup/" class="btn btn-lg btn-flat btn-danger w-100">Create Your Own School</a>
               </li>
             <?php } ?>
 
-            <li class="dropdown user user-menu pull-right">
-              <a class="nav-link" style="margin-top:5px;" href="javascript:;" data-toggle="dropdown">
+            <li class="dropdown user user-menu float-end">
+              <a class="nav-link" style="margin-top:5px;" href="javascript:;" data-bs-toggle="dropdown">
                 <?php if (!empty($user) && !empty($user->photo)): ?>
                   <img class="user-image" src="<?= base_url('admin/employees-img/' . $user->photo) ?>" />
                 <?php else: ?>
@@ -438,13 +443,13 @@ $metrics['unpaid_fee_chalans'] = $safeCount(
                   <p><?= !empty($user->username) ? $user->username : '' ?></p>
                 </li>
                 <li class="user-footer">
-                  <div class="pull-left d-none d-sm-block" style="float: left;">
-                    <a href="<?= base_url('admin/profile') ?>" class="btn btn-default btn-flat">
+                  <div class="float-start d-none d-sm-block" style="float: left;">
+                    <a href="<?= base_url('admin/profile') ?>" class="btn btn-secondary btn-flat">
                       <i class="fa fa-gear"></i> Profile
                     </a>
                   </div>
-                  <div class="pull-right" style="float: right;">
-                    <a href="<?= base_url('admin/logout') ?>" class="btn btn-default btn-flat">
+                  <div class="float-end" style="float: right;">
+                    <a href="<?= base_url('admin/logout') ?>" class="btn btn-secondary btn-flat">
                       <i class="fa fa-sign-out"></i> Logout
                     </a>
                   </div>
@@ -703,7 +708,7 @@ $quizzesItems = [
 $attendanceItems = [
     ['key'=>'attendance.employees-attendance','label'=>'Employees Attendance','icon'=>'fa fa-cubes','url'=>$link('admin/employees_attendance/add'),'match'=>'admin/employees_attendance','perms'=>['admin-add-student-attendance']],
     ['key'=>'attendance.emp-leaves-add','label'=>'Create Employee Leaves','icon'=>'fa fa-cubes','url'=>$link('admin/employee_leaves/add'),'match'=>'admin/employee_leaves/add','perms'=>['admin-add-student-attendance']],
-    ['key'=>'attendance.emp-leaves','label'=>'Employee Leaves Applications','icon'=>'fa fa-cubes','url'=>$link('admin/employee_leaves'),'match'=>'admin/employee_leaves','perms'=>['admin-add-student-attendance'],'badge'=>['key'=>'pending_emp_leaves','class'=>'badge-danger']],
+    ['key'=>'attendance.emp-leaves','label'=>'Employee Leaves Applications','icon'=>'fa fa-cubes','url'=>$link('admin/employee_leaves'),'match'=>'admin/employee_leaves','perms'=>['admin-add-student-attendance'],'badge'=>['key'=>'pending_emp_leaves','class'=>'text-bg-danger']],
     ['key'=>'attendance.emp-attendance-report','label'=>'Employees Attendance Report','icon'=>'fa fa-cubes','url'=>$link('admin/emp_attendance_monthlyreport'),'match'=>'admin/emp_attendance_monthlyreport','perms'=>['admin-emp-attendance-monthly-report']],
     
     // Student Reports Section - ADDED NEW ITEMS
@@ -712,7 +717,7 @@ $attendanceItems = [
     
     ['key'=>'attendance.absentees','label'=>'Absentees','icon'=>'far fa-clock','url'=>$link('admin/students_absentees/add'),'match'=>'admin/students_absentees','perms'=>['admin-add-student-absentees']],
     ['key'=>'attendance.std-leaves-add','label'=>'Create Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves/add'),'match'=>'admin/students_leaves/add','perms'=>['admin-add-student-leaves']],
-    ['key'=>'attendance.std-leaves','label'=>'Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves'),'match'=>'admin/students_leaves','perms'=>['admin-student-leaves'],'badge'=>['key'=>'pending_std_leaves','class'=>'badge-danger']],
+    ['key'=>'attendance.std-leaves','label'=>'Leaves Applications','icon'=>'far fa-clock','url'=>$link('admin/students_leaves'),'match'=>'admin/students_leaves','perms'=>['admin-student-leaves'],'badge'=>['key'=>'pending_std_leaves','class'=>'text-bg-danger']],
 ];
   $sections[] = [
     'key'=>'attendance',
@@ -769,7 +774,7 @@ $attendanceItems = [
   // Communication
   $commItems = [
     ['key'=>'communication.templates','label'=>'Message Templates','icon'=>'fas fa-comment-dots','url'=>$link('admin/message-templates'),'match'=>'admin/message-templates','perms'=>['admin-update-message-templates']],
-    ['key'=>'communication.messages','label'=>'Messages','icon'=>'fas fa-comments','url'=>$link('admin/messages'),'match'=>'admin/messages','perms'=>['admin-messages'],'badge'=>['key'=>'unread_messages','class'=>'badge-warning']],
+    ['key'=>'communication.messages','label'=>'Messages','icon'=>'fas fa-comments','url'=>$link('admin/messages'),'match'=>'admin/messages','perms'=>['admin-messages'],'badge'=>['key'=>'unread_messages','class'=>'text-bg-warning']],
     ['key'=>'communication.bulk-excel-sms','label'=>'Bulk Excel SMS','icon'=>'fas fa-file-upload','url'=>$link('admin/bulksms'),'match'=>'admin/bulksms','perms'=>['admin-bulk-messages']],
     ['key'=>'communication.defaulter-sms','label'=>'Defaulter SMS','icon'=>'fas fa-exclamation-circle','url'=>$link('admin/defaulter-message'),'match'=>'admin/defaulter-message','perms'=>['admin-defaulter-message']],
     ['key'=>'communication.result-sms','label'=>'Result SMS','icon'=>'fas fa-poll','url'=>$link('admin/result-message'),'match'=>'admin/result-message','perms'=>['admin-result-message']],
@@ -797,8 +802,8 @@ $attendanceItems = [
     ['key'=>'finance.fee.generate-chalan','label'=>'Generate Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan/add'),'match'=>'admin/fee-chalan/add','perms'=>['admin-fee-chalan']],
     ['key'=>'finance.fee.print-chalan','label'=>'Print Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan'),'match'=>'admin/fee-chalan$','perms'=>['admin-fee-chalan']],
     ['key'=>'finance.fee.print-chalan-new','label'=>'Print Fee Chalan new','icon'=>'fas fa-file-invoice','url'=>$link('admin/print-fee-chalan'),'match'=>'admin/print-fee-chalan$','perms'=>['admin-fee-chalan']],
-    ['key'=>'finance.fee.pay-chalan','label'=>'Pay Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay'),'match'=>'admin/fee-chalan-pay','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'badge-info']],
-    ['key'=>'finance.fee.pay-chalan1','label'=>'Pay Fee Chalan1','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay1'),'match'=>'admin/fee-chalan-pay1','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'badge-info']],
+    ['key'=>'finance.fee.pay-chalan','label'=>'Pay Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay'),'match'=>'admin/fee-chalan-pay','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'text-bg-info']],
+    ['key'=>'finance.fee.pay-chalan1','label'=>'Pay Fee Chalan1','icon'=>'fas fa-file-invoice','url'=>$link('admin/fee-chalan-pay1'),'match'=>'admin/fee-chalan-pay1','perms'=>['admin-fee-chalan'],'badge'=>['key'=>'unpaid_fee_chalans','class'=>'text-bg-info']],
     ['key'=>'finance.fee.delete-chalan','label'=>'Delete Fee Chalan','icon'=>'fas fa-file-invoice','url'=>$link('admin/delete-fee-chalan'),'match'=>'admin/delete-fee-chalan','perms'=>['admin-del-fee-chalan']],
     ['key'=>'finance.fee.monthly-balance','label'=>'Monthly Balance','icon'=>'far fa-money-bill-alt','url'=>$link('admin/fee-chalan-balance'),'match'=>'admin/fee-chalan-balance','perms'=>['admin-fee-chalan-balance']],
   ];
@@ -1163,7 +1168,7 @@ $sections[] = [
       $icon    = !empty($item['icon']) ? '<i class="nav-icon '.$item['icon'].'"></i>' : '<i class="nav-icon far fa-circle"></i>';
 
       $badgeHtml  = '';
-      $badgeClass = 'badge-danger';
+      $badgeClass = 'text-bg-danger';
       if (!empty($item['badge']) && is_array($item['badge']) && !empty($item['badge']['class'])) {
           $badgeClass = $item['badge']['class'];
       }
@@ -1185,7 +1190,7 @@ $sections[] = [
             <ul class="nav nav-treeview">';
           foreach ($item['children'] as $ch) {
               if (!empty($ch['header'])) {
-                  $html .= '<li class="nav-header text-xs text-muted pl-3">'.esc($ch['label']).'</li>';
+                  $html .= '<li class="nav-header text-xs text-muted ps-3">'.esc($ch['label']).'</li>';
                   continue;
               }
               if (isset($ch['perms']) && !empty($ch['perms'])) {
@@ -1198,7 +1203,7 @@ $sections[] = [
               if (!empty($ch['badge'])) {
                   $ckey = is_array($ch['badge']) ? ($ch['badge']['key'] ?? null) : $ch['badge'];
                   $cnum = $ckey && isset($metrics[$ckey]) ? (int)$metrics[$ckey] : 0;
-                  $cclass = 'badge-info';
+                  $cclass = 'text-bg-info';
                   if (is_array($ch['badge']) && !empty($ch['badge']['class'])) $cclass = $ch['badge']['class'];
                   if ($cnum > 0) $childBadge = '<span class="right badge '.$cclass.'">'.$cnum.'</span>';
               }
@@ -1237,7 +1242,7 @@ $sections[] = [
 
 <aside class="main-sidebar sidebar-dark-orange elevation-4 sidebar-slim" <?php if($_SERVER['HTTP_HOST'] == 'trial.timesoftsol.com'){ ?>style="top:24px"<?php } ?>>
   <a style="padding:7px;background-color:#3c8dbc" href="<?= base_url() ?>" class="brand-link">
-    <span class="brand-text font-weight-light"><?= esc($school_name ?? 'School Name') ?></span>
+    <span class="brand-text fw-light"><?= esc($school_name ?? 'School Name') ?></span>
   </a>
 
   <div class="sidebar" <?php if(empty($curr_session_id)){ ?>style="pointer-events:none;opacity:.3"<?php } ?>>
@@ -1247,16 +1252,14 @@ $sections[] = [
       <?php endif; ?>
     </div>
 
-    <button type="button" class="btn btn-tool text-white no-print" data-toggle="modal" data-target="#menuPrefsModal">
+    <button type="button" class="btn btn-tool text-white no-print" data-bs-toggle="modal" data-bs-target="#menuPrefsModal">
       <i class="fas fa-sliders-h"></i> Customize menu
     </button>
 
-    <div class="form-inline px-2 mb-2">
+    <div class="d-flex flex-wrap align-items-center px-2 mb-2">
       <div class="input-group w-100">
         <input id="menuSearch" class="form-control form-control-sidebar" type="search" placeholder="Search menu..." aria-label="Search">
-        <div class="input-group-append">
-          <button class="btn btn-sidebar"><i class="fas fa-search fa-sm"></i></button>
-        </div>
+        <button class="btn btn-sidebar"><i class="fas fa-search fa-sm"></i></button>
       </div>
     </div>
 
@@ -1317,7 +1320,7 @@ $sections[] = [
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="menuPrefsLabel">Customize Menu</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
       </div>
       <div class="modal-body">
         <div class="mb-2 d-flex justify-content-between">

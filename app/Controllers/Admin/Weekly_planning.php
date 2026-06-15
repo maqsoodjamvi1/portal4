@@ -397,7 +397,7 @@ public function getSubjectsBySection()
             $html .= '<div class="weekly-card-body">';
             $html .= '<input type="hidden" name="plan[' . $week->term_weeks_id . '][term_week_id]" value="' . $week->term_weeks_id . '">';
             $html .= '<div class="form-group">';
-            $html .= '<label><i class="fas fa-bullseye text-primary mr-1"></i> Objectives / Learning Outcomes</label>';
+            $html .= '<label><i class="fas fa-bullseye text-primary me-1"></i> Objectives / Learning Outcomes</label>';
             $html .= '<textarea class="form-control weekly-editor" name="plan[' . $week->term_weeks_id . '][objectives]" rows="8">' . $objectives . '</textarea>';
             $html .= '</div>';
             $html .= '</div>';

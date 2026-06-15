@@ -6,6 +6,7 @@ $header = 'Students Attendance';
 $campus_id = $sessionData['campusid'];
 $session_id = $sessionData['sessionid'];
 $date_value = $sessionData['date'];
+$session_label = $academic_session[0]->session_name ?? ('Session ' . $session_id);
 ?>
 
 <style>
@@ -40,29 +41,46 @@ $date_value = $sessionData['date'];
         border-radius: 0.375rem !important;
     }
     
-    .search-input-group .input-group-append {
+    .search-input-group .input-group-text {
         width: 100%;
     }
     
-    .search-input-group .input-group-append button {
+    .search-input-group .input-group-text button {
         width: 100%;
         border-radius: 0.375rem !important;
     }
     
-    /* Filter row */
-    .filter-row {
-        flex-direction: column;
-        gap: 0.75rem;
+    /* Compact attendance filters — keep class+section on one row */
+    .att-filter-compact .att-filter-row1,
+    .att-filter-compact .att-filter-row2 {
+        flex-wrap: nowrap;
+        margin-left: -4px;
+        margin-right: -4px;
     }
-    
-    .filter-row .form-group {
-        width: 100%;
-        margin-bottom: 0;
+    .att-filter-compact .att-filter-row1 > [class*="col-"],
+    .att-filter-compact .att-filter-row2 > [class*="col-"] {
+        padding-left: 4px;
+        padding-right: 4px;
     }
-    
-    .filter-row select,
-    .filter-row input {
+    .att-filter-compact .select2-container {
         width: 100% !important;
+    }
+    .att-filter-compact .select2-selection--single {
+        height: 36px !important;
+        min-height: 36px;
+    }
+    .att-filter-compact .select2-selection__rendered {
+        line-height: 34px !important;
+        font-size: 0.85rem;
+        padding-left: 8px !important;
+    }
+    .att-filter-compact .form-control {
+        height: 36px;
+        font-size: 0.85rem;
+    }
+    #btnLoadAttendance {
+        height: 36px;
+        padding: 0;
     }
     
     /* Student list - mobile optimized */
@@ -147,7 +165,7 @@ $date_value = $sessionData['date'];
         gap: 0.75rem;
     }
     
-    .sibling-info .ml-3 {
+    .sibling-info .ms-3 {
         margin-left: 0 !important;
     }
     
@@ -253,10 +271,10 @@ $date_value = $sessionData['date'];
     border-radius: 20px;
 }
 
-.status-badge.badge-success { background-color: #28a745; color: white; }
-.status-badge.badge-danger { background-color: #dc3545; color: white; }
-.status-badge.badge-warning { background-color: #ffc107; color: #212529; }
-.status-badge.badge-info { background-color: #17a2b8; color: white; }
+.status-badge.text-bg-success { background-color: #28a745; color: white; }
+.status-badge.text-bg-danger { background-color: #dc3545; color: white; }
+.status-badge.text-bg-warning { background-color: #ffc107; color: #212529; }
+.status-badge.text-bg-info { background-color: #17a2b8; color: white; }
 
 /* Loading spinner */
 .loading-spinner {
@@ -314,8 +332,106 @@ $date_value = $sessionData['date'];
 
 /* Day status info */
 .day-status-info {
-    background-color: #e7f3ff;
-    border-left: 4px solid #17a2b8;
+    background-color: #f0f7ff;
+    border: 1px solid #b8daff;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.day-status-info .att-day-status-text {
+    font-weight: 600;
+    color: #1a3a5c;
+}
+.att-school-hours {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: #0d47a1;
+    border: 1px solid #90caf9;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.att-school-hours i {
+    color: #1976d2;
+}
+.day-status-info.is-off-day {
+    background: #fff8e6;
+    border-color: #ffc107;
+}
+.day-status-info.is-off-day .att-day-status-text {
+    color: #856404;
+}
+
+/* Attendance stats bar (AJAX-loaded) */
+.att-stats-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.att-stat {
+    flex: 1;
+    text-align: center;
+    border-radius: 8px;
+    padding: 6px 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.att-stat b {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+.att-stat-p { background: #d4edda; color: #155724; }
+.att-stat-a { background: #f8d7da; color: #721c24; }
+.att-stat-l { background: #fff3cd; color: #856404; }
+.att-stat-lc { background: #d1ecf1; color: #0c5460; }
+
+/* Mobile student attendance rows */
+@media (max-width: 768px) {
+    #attWrap #attTable thead { display: none; }
+    #attWrap #attTable tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        border-bottom: 1px solid #dee2e6;
+        padding: 8px 10px;
+        gap: 8px;
+    }
+    #attWrap #attTable tbody td {
+        border: none;
+        padding: 0;
+    }
+    #attWrap #attTable .col-sno,
+    #attWrap #attTable .col-photo { display: none !important; }
+    #attWrap #attTable td:nth-child(3) {
+        flex: 1 1 40%;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    #attWrap #attTable td:nth-child(4) {
+        flex: 1 1 55%;
+        text-align: right;
+    }
+    #attWrap .att-selected { display: none; }
+    #attWrap .att-choice.att-lg {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        justify-content: flex-end;
+    }
+    #attWrap .att-choice.att-lg .btn {
+        flex: 1;
+        min-width: 0;
+        padding: 0.35rem 0.25rem !important;
+        font-size: 0.75rem !important;
+    }
 }
 
 /* Responsive table for class view */
@@ -445,7 +561,7 @@ $date_value = $sessionData['date'];
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 4px solid #2c7da0;
+    border-start: 4px solid #2c7da0;
 }
 
 .expand-icon {
@@ -669,7 +785,7 @@ $date_value = $sessionData['date'];
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 4px solid #2c7da0;
+    border-start: 4px solid #2c7da0;
 }
 
 .expand-icon {
@@ -779,21 +895,15 @@ $date_value = $sessionData['date'];
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-6 col-sm-6">
-                <h1 class="h4">Students Attendance</h1>
-            </div>
-            <div class="col-6 col-sm-6">
-                <ol class="breadcrumb float-sm-right bg-transparent p-0 mb-0">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Attendance</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students Attendance',
+    'icon' => 'fas fa-user-check',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Absentees', 'url' => base_url('admin/students-absentees')],
+        ['label' => 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -803,12 +913,12 @@ $date_value = $sessionData['date'];
                 <div class="card-header p-0 pt-1 border-bottom-0">
                     <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="class-section-tab" data-toggle="pill" href="#class-section-view" role="tab">
+                            <a class="nav-link active" id="class-section-tab" data-bs-toggle="pill" href="#class-section-view" role="tab">
                                 <i class="fas fa-chalkboard"></i> <span class="d-none d-sm-inline">By Class/Section</span><span class="d-inline d-sm-none">Class</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="search-tab" data-toggle="pill" href="#search-view" role="tab">
+                            <a class="nav-link" id="search-tab" data-bs-toggle="pill" href="#search-view" role="tab">
                                 <i class="fas fa-search"></i> <span class="d-none d-sm-inline">Search by Name</span><span class="d-inline d-sm-none">Search</span>
                             </a>
                         </li>
@@ -832,56 +942,53 @@ $date_value = $sessionData['date'];
                                 </div>
                             </div>
                             
-                            <!-- Responsive Filter Row -->
-                            <div class="row mb-3 filter-row">
-                                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                    <select class="form-control select2 w-100" name="class_id" id="class_id">
-                                        <option value="0">-- Select Class --</option>
-                                        <?php if (isset($classesinfo)): ?>
-                                            <?php foreach ($classesinfo as $classvalue): ?>
-                                                <option value="<?= $classvalue->class_id ?>"><?= esc($classvalue->class_name) ?></option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                </div>
-                                
-                                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                    <div class="d-flex align-items-center justify-content-between d-md-none mb-1">
-                                        <span class="text-muted small">- OR -</span>
+                            <!-- Compact filter: row1 class+section, row2 date+load -->
+                            <div class="att-filter-compact mb-2">
+                                <input type="hidden" name="cls_sec_id" id="cls_sec_id" value="0">
+                                <div class="row att-filter-row1 mb-1">
+                                    <div class="col-6">
+                                        <select class="form-control select2 w-100" name="class_id" id="class_id" title="Class">
+                                            <option value="0">Class</option>
+                                            <?php if (isset($classesinfo)): ?>
+                                                <?php foreach ($classesinfo as $classvalue): ?>
+                                                    <option value="<?= $classvalue->class_id ?>"><?= esc($classvalue->class_name) ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
                                     </div>
-                                    <input type="hidden" name="cls_sec_id" id="cls_sec_id" value="0">
-                                    <select class="form-control select2 w-100" name="section_id" id="section_id">
-                                        <option value="0">-- Select Section --</option>
-                                        <?php foreach (($sectionsclassinfo ?? []) as $row): ?>
-                                            <option value="<?= esc($row['cls_sec_id']) ?>" 
-                                                    data-is-off="<?= $row['is_off'] ? '1' : '0' ?>"
-                                                    data-checkin="<?= esc($row['checkin']) ?>"
-                                                    data-checkout="<?= esc($row['checkout']) ?>"
-                                                    data-has-attendance="<?= $row['has_attendance'] ? '1' : '0' ?>">
-                                                <?= esc($row['sectionclassname']) ?>
-                                                <?php if ($row['is_off']): ?>[OFF]<?php else: ?>[ON]<?php endif; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <div class="col-6">
+                                        <select class="form-control select2 w-100" name="section_id" id="section_id" title="Section">
+                                            <option value="0">Section</option>
+                                            <?php foreach (($sectionsclassinfo ?? []) as $row): ?>
+                                                <option value="<?= esc($row['cls_sec_id']) ?>"
+                                                        data-is-off="<?= $row['is_off'] ? '1' : '0' ?>"
+                                                        data-checkin="<?= esc($row['checkin']) ?>"
+                                                        data-checkout="<?= esc($row['checkout']) ?>"
+                                                        data-has-attendance="<?= $row['has_attendance'] ? '1' : '0' ?>">
+                                                    <?= esc($row['sectionclassname']) ?>
+                                                    <?php if ($row['is_off']): ?>[OFF]<?php else: ?>[ON]<?php endif; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 </div>
-                                
-                                <div class="col-12 col-md-3 mb-2 mb-md-0">
-                                    <input type="date" name="date" id="date" required value="<?= $date_value ?>" class="form-control w-100 datepicker-input">
-                                </div>
-                                
-                                <div class="col-12 col-md-1">
-                                    <button type="button" class="btn btn-primary w-100" id="btnLoadAttendance" onclick="loadAttendanceByClass()">
-                                        <i class="fas fa-sync-alt"></i> <span class="d-none d-sm-inline">Load</span>
-                                    </button>
+                                <div class="row att-filter-row2">
+                                    <div class="col-10">
+                                        <input type="date" name="date" id="date" required value="<?= $date_value ?>" class="form-control w-100 datepicker-input">
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-primary w-100" id="btnLoadAttendance" onclick="loadAttendanceByClass()" title="Load attendance">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Day Status Info -->
-                            <div id="dayStatusInfo" class="mt-2" style="display: none;">
-                                <div class="alert alert-info alert-sm p-2 mb-3 day-status-info">
-                                    <i class="fas fa-info-circle"></i> 
-                                    <span id="dayStatusText"></span>
-                                    <span id="timingInfo" class="timing-info text-muted"></span>
+                            <div id="dayStatusInfo" class="mb-2" style="display: none;">
+                                <div class="alert alert-sm p-2 mb-0 day-status-info" id="dayStatusAlert">
+                                    <span id="dayStatusText" class="att-day-status-text"></span>
+                                    <span id="timingInfo" class="att-school-hours" style="display:none;"></span>
                                 </div>
                             </div>
                             
@@ -1055,7 +1162,7 @@ function refreshSectionOptionsForDate(done) {
             var $sel = $('#section_id');
             suppressSectionAttendanceLoad = true;
             $sel.empty();
-            $sel.append($('<option></option>').val('0').text('-- Select Section --'));
+            $sel.append($('<option></option>').val('0').text('Section'));
             resp.sections.forEach(function (row) {
                 var isOff = !!row.is_off;
                 var hasAtt = !!row.has_attendance;
@@ -1097,23 +1204,17 @@ $(document).ready(function() {
         width: '100%'
     });
     
-    // Mirror section selection
     $('#section_id').on('change', function () {
         $('#cls_sec_id').val(this.value || 0);
-        if (parseInt(this.value, 10) > 0) {
-            $('#class_id').val('0').trigger('change.select2');
-            updateDayStatusInfo();
-            if (!suppressSectionAttendanceLoad) {
-                loadAttendanceByClass();
-            }
+        updateDayStatusInfo();
+        if (!suppressSectionAttendanceLoad && parseInt(this.value, 10) > 0) {
+            loadAttendanceByClass();
         }
     });
-    
+
     $('#class_id').on('change', function () {
-        if (parseInt(this.value, 10) > 0) {
-            $('#section_id').val('0').trigger('change.select2');
-            $('#cls_sec_id').val(0);
-            updateDayStatusInfo();
+        updateDayStatusInfo();
+        if (parseInt($('#section_id').val(), 10) <= 0 && parseInt(this.value, 10) > 0) {
             loadAttendanceByClass();
         }
     });
@@ -1128,6 +1229,21 @@ $(document).ready(function() {
             }
         });
     });
+
+    var preselectClsSecId = <?= (int) ($preselect_cls_sec_id ?? 0) ?>;
+    if (preselectClsSecId > 0) {
+        refreshSectionOptionsForDate(function () {
+            var $sel = $('#section_id');
+            if ($sel.find('option[value="' + preselectClsSecId + '"]').length) {
+                suppressSectionAttendanceLoad = true;
+                $sel.val(String(preselectClsSecId)).trigger('change.select2');
+                $('#cls_sec_id').val(preselectClsSecId);
+                suppressSectionAttendanceLoad = false;
+                updateDayStatusInfo();
+                loadAttendanceByClass();
+            }
+        });
+    }
     
     // Reset search button
     $('#btnResetSearch').on('click', function() {
@@ -1143,61 +1259,77 @@ $(document).ready(function() {
     });
 });
 
+function formatAttTime(t) {
+    if (!t) return '';
+    return String(t).replace(/:\d{2}$/, '').substring(0, 5);
+}
+
 function updateDayStatusInfo() {
     var sectionId = $('#section_id').val();
     var date = $('#date').val();
     var $dayStatusInfo = $('#dayStatusInfo');
-    
+    var $alert = $('#dayStatusAlert');
+    var $timing = $('#timingInfo');
+
     if (!date || !sectionId || sectionId == '0') {
         $dayStatusInfo.hide();
         return;
     }
-    
+
     var $selected = $('#section_id option:selected');
-    var isOff = $selected.data('is-off');
-    var hasAttendance = $selected.data('has-attendance');
-    var checkin = $selected.data('checkin');
-    var checkout = $selected.data('checkout');
-    
+    var isOff = String($selected.attr('data-is-off') || $selected.data('isOff') || '0') === '1';
+    var hasAttendance = String($selected.attr('data-has-attendance') || $selected.data('hasAttendance') || '0') === '1';
+    var checkin = $selected.attr('data-checkin') || $selected.data('checkin') || '';
+    var checkout = $selected.attr('data-checkout') || $selected.data('checkout') || '';
+
+    $dayStatusInfo.show();
+    $alert.toggleClass('is-off-day', isOff);
+
     if (isOff) {
-        $dayStatusInfo.show();
-        $('#dayStatusText').html('<strong>⚠️ Day is OFF</strong> - No attendance can be marked.');
-        $('#timingInfo').html('');
+        $('#dayStatusText').html('Day is OFF — no attendance can be marked.');
+        $timing.hide().html('');
     } else {
-        $dayStatusInfo.show();
-        var statusHtml = hasAttendance ? '<strong>📋 Existing records</strong>' : '<strong>✅ Ready for marking</strong>';
-        $('#dayStatusText').html(statusHtml);
-        $('#timingInfo').html(checkin && checkout ? ` (School hours: ${checkin} - ${checkout})` : '');
+        $('#dayStatusText').html(hasAttendance ? 'Existing records' : 'Ready for marking');
+        if (checkin && checkout) {
+            $timing.show().html('<i class="far fa-clock"></i> ' + formatAttTime(checkin) + ' – ' + formatAttTime(checkout));
+        } else {
+            $timing.hide().html('');
+        }
     }
 }
 
 function loadAttendanceByClass() {
     var campus_id = $('#campus_id').val();
-    var section_id = $('#section_id').val();
-    var class_id = $('#class_id').val();
+    var section_id = parseInt($('#section_id').val(), 10) || 0;
+    var class_id = parseInt($('#class_id').val(), 10) || 0;
     var date = $('#date').val();
 
     $("#students_list_container").html('');
     $("#loader-class").show();
 
-    if (!date || (!class_id && (!section_id || section_id == '0'))) {
+    if (!date || (section_id <= 0 && class_id <= 0)) {
         $("#loader-class").hide();
-        $("#students_list_container").html('<div class="alert alert-warning">Please select a class or section and date.</div>');
+        $("#students_list_container").html('<div class="alert alert-warning py-2 mb-0">Select a class or section and date.</div>');
         return;
     }
-    
+
     updateDayStatusInfo();
+
+    // Section wins when both are selected
+    var postClassId = section_id > 0 ? 0 : class_id;
+    var postSectionId = section_id > 0 ? section_id : 0;
 
     $.ajax({
         url: '<?= base_url('admin/students_absentees/check_and_load_attendance') ?>',
         type: "POST",
         dataType: 'json',
-        data: {
-            section_id: section_id,
-            class_id: class_id,
+        data: (window.adminCsrfPayload || function (d) { return d; })({
+            section_id: postSectionId,
+            class_id: postClassId,
             campus_id: campus_id,
+            session_id: $('#session_id').val(),
             date: date
-        },
+        }),
         success: function(response) {
             if (response.is_off) {
                 $("#students_list_container").html(response.html);
@@ -1212,7 +1344,10 @@ function loadAttendanceByClass() {
             }
             $("#loader-class").hide();
         },
-        error: function() {
+        error: function(xhr, status) {
+            if (status !== 'abort' && window.refreshAdminCsrf) {
+                refreshAdminCsrf(xhr);
+            }
             $("#students_list_container").html('<div class="alert alert-danger">Error loading attendance data. Please try again.</div>');
             $("#loader-class").hide();
         }
@@ -1233,6 +1368,7 @@ function loadAttendanceData() {
             section_id: section_id,
             class_id: class_id,
             campus_id: campus_id,
+            session_id: $('#session_id').val(),
             date: date
         },
         success: function(response) {
@@ -1270,7 +1406,7 @@ function attachClassViewEventHandlers(date) {
         let statusText = getStatusText(newStatus);
         let statusClass = getStatusClass(newStatus);
         $row.find('.status-badge')
-            .removeClass('badge-success badge-danger badge-warning badge-info')
+            .removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info')
             .addClass(`badge-${statusClass}`)
             .text(statusText);
         
@@ -1428,7 +1564,7 @@ function renderSearchResults(families, date) {
                         <div class="family-header-left">
                             <i class="fas fa-users text-primary"></i>
                             <strong>${escapeHtml(family.family_name)}</strong>
-                            <span class="badge badge-secondary ms-2">${family.sibling_count} child${family.sibling_count !== 1 ? 'ren' : ''}</span>
+                            <span class="badge text-bg-secondary ms-2">${family.sibling_count} child${family.sibling_count !== 1 ? 'ren' : ''}</span>
                         </div>
                         <div class="family-header-right">
                             <button class="btn btn-sm btn-outline-warning bulk-family-mark" data-parent-id="${family.parent_id}" data-status="L">
@@ -1454,14 +1590,14 @@ function renderSearchResults(families, date) {
                     <div class="d-flex flex-wrap align-items-center sibling-info gap-3">
                         ${photoHtml}
                         <div class="student-details">
-                            <div class="font-weight-bold">${escapeHtml(student.name)}</div>
+                            <div class="fw-bold">${escapeHtml(student.name)}</div>
                             <div class="small text-muted">
                                 Reg: ${escapeHtml(student.reg_no || 'N/A')} | Class: ${escapeHtml(student.class_name)}
                             </div>
                         </div>
                     </div>
                     <div class="sibling-status mt-2 mt-sm-0">
-                        <div class="status-buttons-group btn-group-toggle" data-toggle="buttons">
+                        <div class="status-buttons-group btn-group-toggle" data-bs-toggle="buttons">
                             <label class="btn btn-sm btn-outline-warning ${student.status === 'L' ? 'active' : ''}" data-status="L">
                                 <input type="radio" name="status_${student.student_id}" value="L" ${student.status === 'L' ? 'checked' : ''}> Leave
                             </label>
@@ -1499,7 +1635,7 @@ function attachSearchEventHandlers(date) {
         let statusText = getStatusText(newStatus);
         let statusClass = getStatusClass(newStatus);
         $row.find('.status-badge')
-            .removeClass('badge-success badge-danger badge-warning badge-info')
+            .removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info')
             .addClass(`badge-${statusClass}`)
             .text(statusText);
         
@@ -1550,7 +1686,7 @@ function attachSearchEventHandlers(date) {
             let statusText = getStatusText(newStatus);
             let statusClass = getStatusClass(newStatus);
             $row.find('.status-badge')
-                .removeClass('badge-success badge-danger badge-warning badge-info')
+                .removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info')
                 .addClass(`badge-${statusClass}`)
                 .text(statusText);
             

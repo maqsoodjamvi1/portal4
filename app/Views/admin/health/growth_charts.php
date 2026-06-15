@@ -1,3 +1,4 @@
+<?php $uiNeedsChart = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -119,22 +120,15 @@
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-chart-line mr-2"></i>Growth Charts</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/health/bmi-dashboard') ?>">BMI</a></li>
-                    <li class="breadcrumb-item active">Growth Charts</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Growth Charts',
+    'icon' => 'fas fa-chart-line',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'url' => base_url('admin/health/bmi-dashboard')],
+        ['label' => 'Growth Charts', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="card">
@@ -180,8 +174,8 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>&nbsp;</label>
-                        <button id="loadChartBtn" class="btn btn-primary btn-block">
-                            <i class="fas fa-chart-line mr-1"></i> Load Growth Chart
+                        <button id="loadChartBtn" class="btn btn-primary w-100">
+                            <i class="fas fa-chart-line me-1"></i> Load Growth Chart
                         </button>
                     </div>
                 </div>
@@ -240,17 +234,17 @@
                         <h3 class="card-title" id="studentNameDisplay"></h3>
                         <div class="card-tools">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-default" id="toggleHeight">
+                                <button type="button" class="btn btn-sm btn-secondary" id="toggleHeight">
                                     <i class="fas fa-ruler-vertical"></i> Height
                                 </button>
-                                <button type="button" class="btn btn-sm btn-default" id="toggleWeight">
+                                <button type="button" class="btn btn-sm btn-secondary" id="toggleWeight">
                                     <i class="fas fa-weight"></i> Weight
                                 </button>
-                                <button type="button" class="btn btn-sm btn-default" id="toggleBmi">
+                                <button type="button" class="btn btn-sm btn-secondary" id="toggleBmi">
                                     <i class="fas fa-heartbeat"></i> BMI
                                 </button>
                             </div>
-                            <button type="button" class="btn btn-sm btn-default ml-2" id="resetZoom">
+                            <button type="button" class="btn btn-sm btn-secondary ms-2" id="resetZoom">
                                 <i class="fas fa-search-minus"></i> Reset View
                             </button>
                         </div>
@@ -271,7 +265,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-table mr-2"></i>Growth Data & Trend Analysis
+                            <i class="fas fa-table me-2"></i>Growth Data & Trend Analysis
                         </h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-sm btn-success" id="exportData">
@@ -361,19 +355,19 @@ $(document).ready(function() {
     // Toggle metrics
     $('#toggleHeight').click(function() {
         visibleMetrics.height = !visibleMetrics.height;
-        $(this).toggleClass('btn-primary btn-default');
+        $(this).toggleClass('btn-primary btn-secondary');
         if (growthChart) updateChartVisibility();
     });
     
     $('#toggleWeight').click(function() {
         visibleMetrics.weight = !visibleMetrics.weight;
-        $(this).toggleClass('btn-primary btn-default');
+        $(this).toggleClass('btn-primary btn-secondary');
         if (growthChart) updateChartVisibility();
     });
     
     $('#toggleBmi').click(function() {
         visibleMetrics.bmi = !visibleMetrics.bmi;
-        $(this).toggleClass('btn-primary btn-default');
+        $(this).toggleClass('btn-primary btn-secondary');
         if (growthChart) updateChartVisibility();
     });
     
@@ -458,10 +452,10 @@ $(document).ready(function() {
         $('#currentBmi').text(latest.bmi || '-');
         
         let categoryClass = '';
-        if (latest.bmi_category === 'underweight') categoryClass = 'badge-info';
-        else if (latest.bmi_category === 'normal') categoryClass = 'badge-success';
-        else if (latest.bmi_category === 'overweight') categoryClass = 'badge-warning';
-        else if (latest.bmi_category === 'obese') categoryClass = 'badge-danger';
+        if (latest.bmi_category === 'underweight') categoryClass = 'text-bg-info';
+        else if (latest.bmi_category === 'normal') categoryClass = 'text-bg-success';
+        else if (latest.bmi_category === 'overweight') categoryClass = 'text-bg-warning';
+        else if (latest.bmi_category === 'obese') categoryClass = 'text-bg-danger';
         
         $('#bmiCategory').html('<span class="badge ' + categoryClass + '">' + (latest.bmi_category || 'N/A') + '</span>');
         
@@ -489,10 +483,10 @@ $(document).ready(function() {
             const bmiChange = prev ? calculateChange(item.bmi, prev.bmi) : null;
             
             let categoryClass = '';
-            if (item.bmi_category === 'underweight') categoryClass = 'badge-info';
-            else if (item.bmi_category === 'normal') categoryClass = 'badge-success';
-            else if (item.bmi_category === 'overweight') categoryClass = 'badge-warning';
-            else if (item.bmi_category === 'obese') categoryClass = 'badge-danger';
+            if (item.bmi_category === 'underweight') categoryClass = 'text-bg-info';
+            else if (item.bmi_category === 'normal') categoryClass = 'text-bg-success';
+            else if (item.bmi_category === 'overweight') categoryClass = 'text-bg-warning';
+            else if (item.bmi_category === 'obese') categoryClass = 'text-bg-danger';
             
             html += `
                 <tr>

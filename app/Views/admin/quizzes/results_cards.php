@@ -306,33 +306,37 @@
   border-radius: 6px;
 }
 
-.quiz-context-info .badge-info {
+.quiz-context-info .text-bg-info {
   background: #dbeafe;
   color: #1e40af;
   border: 1px solid #93c5fd;
 }
 
-.quiz-context-info .badge-success {
+.quiz-context-info .text-bg-success {
   background: #d1fae5;
   color: #065f46;
   border: 1px solid #6ee7b7;
 }
 
-.quiz-context-info .badge-warning {
+.quiz-context-info .text-bg-warning {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fcd34d;
 }
 </style>
 
+<?= view('components/page_header', [
+    'title' => 'Quiz Results - Student Report',
+    'actionsHtml' => '<a href="' . esc(base_url('admin/quizzes'), 'attr') . '" class="btn btn-secondary btn-sm">Back</a> '
+        . '<button type="button" onclick="window.print()" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Print Report</button>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quizzes', 'url' => base_url('admin/quizzes')],
+        ['label' => 'Results', 'active' => true],
+    ],
+]) ?>
+
 <section class="content">
-  <div class="content-header d-flex align-items-center justify-content-between">
-    <h1 class="mb-3">Quiz Results - Student Report</h1>
-    <div>
-      <a href="<?= base_url('admin/quizzes') ?>" class="btn btn-secondary btn-sm">Back</a>
-      <button onclick="window.print()" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Print Report</button>
-    </div>
-  </div>
 
   <!-- Report Header -->
   <div class="report-wrap">
@@ -390,14 +394,14 @@
   <!-- Quiz Context Information -->
   <div class="quiz-context-info text-center mb-3">
     <div class="d-inline-flex flex-wrap justify-content-center align-items-center gap-3">
-      <span class="badge badge-info px-3 py-2">
-        <i class="fas fa-school mr-1"></i> Class: <?= esc($clsName) ?>
+      <span class="badge text-bg-info px-3 py-2">
+        <i class="fas fa-school me-1"></i> Class: <?= esc($clsName) ?>
       </span>
-      <span class="badge badge-success px-3 py-2">
-        <i class="fas fa-book mr-1"></i> Subject: <?= esc($subName) ?>
+      <span class="badge text-bg-success px-3 py-2">
+        <i class="fas fa-book me-1"></i> Subject: <?= esc($subName) ?>
       </span>
-      <span class="badge badge-warning px-3 py-2">
-        <i class="fas fa-calendar-alt mr-1"></i> Term: <?= esc($term) ?>
+      <span class="badge text-bg-warning px-3 py-2">
+        <i class="fas fa-calendar-alt me-1"></i> Term: <?= esc($term) ?>
       </span>
     </div>
   </div>

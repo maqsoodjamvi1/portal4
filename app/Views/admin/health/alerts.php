@@ -1,22 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-bell mr-2"></i>Health Alerts</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/health/bmi-dashboard') ?>">BMI</a></li>
-                    <li class="breadcrumb-item active">Health Alerts</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Health Alerts',
+    'icon' => 'fas fa-bell',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'url' => base_url('admin/health/bmi-dashboard')],
+        ['label' => 'Health Alerts', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="card">
@@ -27,7 +20,7 @@
                     <button class="btn btn-sm btn-outline-primary" id="showUnread">Unread</button>
                     <button class="btn btn-sm btn-outline-secondary" id="showAll">All</button>
                 </div>
-                <button class="btn btn-sm btn-success ml-2" id="markAllRead">
+                <button class="btn btn-sm btn-success ms-2" id="markAllRead">
                     <i class="fas fa-check-double"></i> Mark All Read
                 </button>
             </div>
@@ -73,9 +66,9 @@ $(document).ready(function() {
                         <div class="alert-item alert-${alertClass}" data-id="${alert.alert_id}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <i class="fas ${icon} mr-2"></i>
+                                    <i class="fas ${icon} me-2"></i>
                                     <strong>${alert.first_name} ${alert.last_name}</strong>
-                                    <span class="badge badge-${alertClass == 'underweight' ? 'info' : (alertClass == 'overweight' ? 'warning' : 'danger')} ml-2">
+                                    <span class="badge text-bg-${alertClass == 'underweight' ? 'info' : (alertClass == 'overweight' ? 'warning' : 'danger')} ms-2">
                                         ${alert.alert_type.toUpperCase()}
                                     </span>
                                     <div class="small text-muted mt-1">
@@ -85,7 +78,7 @@ $(document).ready(function() {
                                     </div>
                                 </div>
                                 <div>
-                                    ${alert.is_read == 0 ? '<button class="btn btn-sm btn-success mark-read" data-id="' + alert.alert_id + '"><i class="fas fa-check"></i> Mark Read</button>' : '<span class="badge badge-secondary">Read</span>'}
+                                    ${alert.is_read == 0 ? '<button class="btn btn-sm btn-success mark-read" data-id="' + alert.alert_id + '"><i class="fas fa-check"></i> Mark Read</button>' : '<span class="badge text-bg-secondary">Read</span>'}
                                 </div>
                             </div>
                             <div class="mt-2">${alert.message}</div>
@@ -161,7 +154,7 @@ $(document).ready(function() {
 <style>
 .alert-item {
     padding: 15px;
-    border-left: 4px solid;
+    border-start: 4px solid;
     margin-bottom: 15px;
     background: #f8f9fa;
     border-radius: 5px;
@@ -170,9 +163,9 @@ $(document).ready(function() {
 .alert-item:hover {
     background: #e9ecef;
 }
-.alert-underweight { border-left-color: #3498db; }
-.alert-overweight { border-left-color: #f39c12; }
-.alert-obese { border-left-color: #e74c3c; }
+.alert-underweight { border-start-color: #3498db; }
+.alert-overweight { border-start-color: #f39c12; }
+.alert-obese { border-start-color: #e74c3c; }
 </style>
 
 <?= $this->endSection() ?>

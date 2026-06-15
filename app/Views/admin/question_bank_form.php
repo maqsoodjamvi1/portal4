@@ -1,9 +1,20 @@
+  <?php $uiNeedsDataTables = false; ?>
   <?= $this->extend('layouts/admin_template') ?>
   <?= $this->section('content') ?>
 
-  <section class="content-header">
-    <h1>Question Bank (JSON MCQ Import)</h1>
-  </section>
+  <?= view('components/page_header', [
+      'title' => 'Question bank — add / edit',
+      'icon' => 'fas fa-edit',
+      'subtitle' => 'Select class, subject, and topic. Use JSON import or build questions below.',
+      'actionsHtml' => '<div class="text-sm-right">'
+          . '<a href="' . esc(site_url('admin/question-bank/overview'), 'attr') . '" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sitemap"></i> Overview</a>'
+          . '</div>',
+      'breadcrumbs' => [
+          ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+          ['label' => 'Question bank', 'url' => site_url('admin/question-bank/overview')],
+          ['label' => 'Add / edit', 'active' => true],
+      ],
+  ]) ?>
 
   <section class="content">
 
@@ -13,460 +24,8 @@
   <?php if (session()->getFlashdata('error')): ?>
     <div class="alert alert-danger"><?= esc(session()->getFlashdata('error')) ?></div>
   <?php endif; ?>
-<!-- ====== ALL SUMMARY TREE (shown on page load) ====== -->
-<div class="card mb-3">
-  <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
-    <div class="d-flex align-items-center" style="gap:.5rem;">
-      <i class="fas fa-sitemap text-muted"></i>
-      <strong>Question Bank Summary</strong>
-      <span class="text-muted small">(Class â†’ Subject â†’ Topic)</span>
-    </div>
 
-    <div class="d-flex align-items-center" style="gap:.5rem;">
-      <button type="button" id="qbExpandAll" class="btn btn-light btn-sm" data-toggle="tooltip" title="Expand all classes & subjects">
-        <i class="fas fa-plus-square"></i>
-      </button>
-      <button type="button" id="qbCollapseAll" class="btn btn-light btn-sm" data-toggle="tooltip" title="Collapse all classes & subjects">
-        <i class="fas fa-minus-square"></i>
-      </button>
-      <button type="button" id="qbReloadSummary" class="btn btn-light btn-sm" data-toggle="tooltip" title="Reload summary">
-        <i class="fas fa-sync"></i>
-      </button>
-    </div>
-  </div>
-
-  <div class="card-body">
-    <div id="qbSummaryLoader" class="text-center py-4">
-      <i class="fas fa-spinner fa-spin"></i>
-      <div class="text-muted small mt-2">Loading summary...</div>
-    </div>
-
-    <div id="qbSummaryTree" class="qb-tree hidden"></div>
-
-    <div id="qbSummaryEmpty" class="alert alert-light text-center hidden mb-0">
-      <i class="far fa-folder-open"></i> No question bank data found yet.
-    </div>
-  </div>
-</div>
-
-<style>
-  .hidden{ display:none !important; }
-
-  .qb-tree{
-    display:grid;
-    gap:1rem;
-  }
-
-  /* Level 1: Class card */
-  .qb-class{
-    border:1px solid #e9ecef;
-    border-radius:.9rem;
-    background:#fff;
-    box-shadow:0 2px 10px rgba(0,0,0,.04);
-    overflow:hidden;
-  }
-  .qb-class-h{
-    padding:.75rem 1rem;
-    background:linear-gradient(180deg,#fafbfc,#fff);
-    border-bottom:1px solid #eef1f4;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:.75rem;
-    cursor:pointer;
-    user-select:none;
-  }
-  .qb-class-title{
-    margin:0;
-    font-weight:800;
-    font-size:1rem;
-    display:flex;
-    align-items:center;
-    gap:.5rem;
-  }
-  .qb-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:.35rem;
-    padding:.2rem .6rem;
-    border-radius:999px;
-    background:#f6f7f9;
-    border:1px solid #eef1f4;
-    font-size:.78rem;
-    white-space:nowrap;
-  }
-
-  /* Level 2: Subject cards inside class */
-  .qb-subject-wrap{
-    padding:1rem;
-    display:grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap:1rem;
-  }
-  @media (max-width: 992px){ .qb-subject-wrap{ grid-template-columns: 1fr; } }
-
-  .qb-subject{
-    border:1px solid #e9ecef;
-    border-radius:.85rem;
-    overflow:hidden;
-    background:#fff;
-    box-shadow:0 2px 8px rgba(0,0,0,.04);
-  }
-  .qb-subject-h{
-    padding:.6rem .85rem;
-    background:#fbfcfe;
-    border-bottom:1px solid #eef1f4;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:.5rem;
-    cursor:pointer;
-    user-select:none;
-  }
-  .qb-subject-title{
-    margin:0;
-    font-weight:800;
-    font-size:.95rem;
-    display:flex;
-    align-items:center;
-    gap:.45rem;
-  }
-
-  /* Level 3: Topic cards inside subject */
-  .qb-topic-wrap{
-    padding:.85rem;
-    display:grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap:.75rem;
-  }
-  @media (max-width: 576px){ .qb-topic-wrap{ grid-template-columns: 1fr; } }
-
-  .qb-topic{
-    border:1px solid #eef1f4;
-    border-radius:.75rem;
-    padding:.65rem .75rem;
-    background:#fff;
-  }
-  .qb-topic-title{
-    font-weight:800;
-    font-size:.88rem;
-    margin:0 0 .35rem 0;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:.5rem;
-  }
-
-  .qb-counts{
-    display:grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap:.25rem .75rem;
-    margin-top:.35rem;
-    font-size:.8rem;
-  }
-  .qb-count{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px dashed #eef1f4;
-    padding:.15rem 0;
-    gap:.5rem;
-  }
-  .qb-count:last-child{ border-bottom:0; }
-  .qb-count .l{
-    color:#6c757d;
-    display:flex;
-    align-items:center;
-    gap:.35rem;
-  }
-  .qb-count .r{ font-weight:900; }
-
-  .qb-toggle-icon{ opacity:.7; }
-</style>
-
-<script>
-(function(){
-  const urlAllSummary = "<?= site_url('admin/question-bank/summary-all') ?>";
-
-  const $loader = document.getElementById('qbSummaryLoader');
-  const $tree   = document.getElementById('qbSummaryTree');
-  const $empty  = document.getElementById('qbSummaryEmpty');
-
-  const $btnExpand = document.getElementById('qbExpandAll');
-  const $btnCollapse = document.getElementById('qbCollapseAll');
-  const $btnReload = document.getElementById('qbReloadSummary');
-
-  function showLoader(){
-    $loader.classList.remove('hidden');
-    $tree.classList.add('hidden');
-    $empty.classList.add('hidden');
-  }
-  function showTree(){
-    $loader.classList.add('hidden');
-    $tree.classList.remove('hidden');
-    $empty.classList.add('hidden');
-  }
-  function showEmpty(){
-    $loader.classList.add('hidden');
-    $tree.classList.add('hidden');
-    $empty.classList.remove('hidden');
-  }
-
-  function sumTopicCounts(topics){
-    const sum = { total:0, mcq:0, multi:0, tf:0, fill:0, short:0, match:0 };
-    topics.forEach(t=>{
-      sum.total += (t.total_questions||0);
-      sum.mcq   += (t.mcq_single_count||0);
-      sum.multi += (t.mcq_multi_count||0);
-      sum.tf    += (t.tf_count||0);
-      sum.fill  += (t.fill_count||0);
-      sum.short += (t.short_count||0);
-      sum.match += (t.match_count||0);
-    });
-    return sum;
-  }
-
-  function escapeHtml(str){
-    return (str||'').toString()
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-  }
-
-  function buildTree(data){
-    let html = '';
-
-    data.forEach((cls, ci) => {
-      const classId = cls.class_id;
-      const className = escapeHtml(cls.class_name);
-
-      // compute class totals
-      let classTotals = { total:0, mcq:0, multi:0, tf:0, fill:0, short:0, match:0 };
-      cls.subjects.forEach(s=>{
-        const st = sumTopicCounts(s.topics||[]);
-        classTotals.total += st.total;
-        classTotals.mcq   += st.mcq;
-        classTotals.multi += st.multi;
-        classTotals.tf    += st.tf;
-        classTotals.fill  += st.fill;
-        classTotals.short += st.short;
-        classTotals.match += st.match;
-      });
-
-      html += `
-        <div class="qb-class" data-collapsed="1">
-          <div class="qb-class-h" data-action="toggle-class" data-toggle="tooltip" title="Click to collapse/expand class">
-            <div class="qb-class-title">
-              <i class="fas fa-layer-group text-muted"></i>
-              ${className}
-            </div>
-            <div class="d-flex align-items-center" style="gap:.35rem; flex-wrap:wrap; justify-content:flex-end;">
-              <span class="qb-pill" data-toggle="tooltip" title="Total questions in this class">
-                <i class="fas fa-list-ol"></i> <b>${classTotals.total}</b>
-              </span>
-              <span class="qb-pill" data-toggle="tooltip" title="MCQ single">
-                <i class="far fa-check-square"></i> <b>${classTotals.mcq}</b>
-              </span>
-              <span class="qb-pill" data-toggle="tooltip" title="MCQ multi">
-                <i class="fas fa-tasks"></i> <b>${classTotals.multi}</b>
-              </span>
-              <span class="qb-pill" data-toggle="tooltip" title="True/False">
-                <i class="fas fa-toggle-on"></i> <b>${classTotals.tf}</b>
-              </span>
-              <span class="qb-pill qb-toggle-icon" data-toggle="tooltip" title="Collapse/Expand">
-                <i class="fas fa-chevron-down"></i>
-              </span>
-            </div>
-          </div>
-
-          
-          <div class="qb-subject-wrap hidden">
-      `;
-
-      cls.subjects.forEach((sub, si) => {
-        const subjectId = sub.subject_id;
-        const subjectName = escapeHtml(sub.subject_name);
-
-        const subTotals = sumTopicCounts(sub.topics||[]);
-
-        html += `
-          <div class="qb-subject" data-collapsed="1">
-            <div class="qb-subject-h" data-action="toggle-subject" data-toggle="tooltip" title="Click to collapse/expand subject">
-              <div class="qb-subject-title">
-                <i class="fas fa-book text-muted"></i>
-                ${subjectName}
-              </div>
-              <div class="d-flex align-items-center" style="gap:.35rem; flex-wrap:wrap; justify-content:flex-end;">
-                <span class="qb-pill" data-toggle="tooltip" title="Total questions in this subject">
-                  <i class="fas fa-list-ol"></i> <b>${subTotals.total}</b>
-                </span>
-                <span class="qb-pill qb-toggle-icon" data-toggle="tooltip" title="Collapse/Expand">
-                  <i class="fas fa-chevron-down"></i>
-                </span>
-              </div>
-            </div>
-
-            
-            <div class="qb-topic-wrap hidden">
-        `;
-
-        (sub.topics||[]).forEach(topic => {
-          const topicName = escapeHtml(topic.topic_name);
-
-          const total = topic.total_questions || 0;
-          const mcq   = topic.mcq_single_count || 0;
-          const multi = topic.mcq_multi_count || 0;
-          const tf    = topic.tf_count || 0;
-          const fill  = topic.fill_count || 0;
-          const sh    = topic.short_count || 0;
-          const match = topic.match_count || 0;
-
-          html += `
-            <div class="qb-topic">
-              <div class="qb-topic-title">
-                <span class="d-flex align-items-center" style="gap:.4rem;">
-                  <i class="fas fa-tag text-muted"></i>
-                  ${topicName}
-                </span>
-                <span class="qb-pill" data-toggle="tooltip" title="Total questions in this topic">
-                  <i class="fas fa-list-ol"></i> <b>${total}</b>
-                </span>
-              </div>
-
-              <div class="qb-counts">
-                <div class="qb-count" data-toggle="tooltip" title="Single correct MCQs">
-                  <span class="l"><i class="far fa-check-square"></i> MCQ</span>
-                  <span class="r">${mcq}</span>
-                </div>
-                <div class="qb-count" data-toggle="tooltip" title="Multiple correct MCQs">
-                  <span class="l"><i class="fas fa-tasks"></i> MCQ Multi</span>
-                  <span class="r">${multi}</span>
-                </div>
-                <div class="qb-count" data-toggle="tooltip" title="True / False">
-                  <span class="l"><i class="fas fa-toggle-on"></i> T/F</span>
-                  <span class="r">${tf}</span>
-                </div>
-                <div class="qb-count" data-toggle="tooltip" title="Fill in the blanks">
-                  <span class="l"><i class="fas fa-pen"></i> Fill</span>
-                  <span class="r">${fill}</span>
-                </div>
-                <div class="qb-count" data-toggle="tooltip" title="Short questions">
-                  <span class="l"><i class="fas fa-align-left"></i> Short</span>
-                  <span class="r">${sh}</span>
-                </div>
-                <div class="qb-count" data-toggle="tooltip" title="Match the columns">
-                  <span class="l"><i class="fas fa-random"></i> Match</span>
-                  <span class="r">${match}</span>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-
-        html += `
-            </div>
-          </div>
-        `;
-      });
-
-      html += `
-          </div>
-        </div>
-      `;
-    });
-
-    $tree.innerHTML = html;
-  }
-
-  function bindToggles(){
-    $tree.addEventListener('click', function(e){
-      const head = e.target.closest('[data-action]');
-      if (!head) return;
-
-      const action = head.getAttribute('data-action');
-
-      if (action === 'toggle-class'){
-        const card = head.closest('.qb-class');
-        const body = card.querySelector('.qb-subject-wrap');
-        const icon = head.querySelector('.qb-toggle-icon i');
-        const collapsed = card.getAttribute('data-collapsed') === '1';
-
-        card.setAttribute('data-collapsed', collapsed ? '0' : '1');
-        body.classList.toggle('hidden', !collapsed);
-        if (icon) icon.className = collapsed ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
-      }
-
-      if (action === 'toggle-subject'){
-        const card = head.closest('.qb-subject');
-        const body = card.querySelector('.qb-topic-wrap');
-        const icon = head.querySelector('.qb-toggle-icon i');
-        const collapsed = card.getAttribute('data-collapsed') === '1';
-
-        card.setAttribute('data-collapsed', collapsed ? '0' : '1');
-        body.classList.toggle('hidden', !collapsed);
-        if (icon) icon.className = collapsed ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
-      }
-    });
-
-    $btnExpand && $btnExpand.addEventListener('click', function(){
-      document.querySelectorAll('.qb-class').forEach(c=>{
-        c.setAttribute('data-collapsed','0');
-        c.querySelector('.qb-subject-wrap')?.classList.remove('hidden');
-        c.querySelector('.qb-class-h .qb-toggle-icon i') && (c.querySelector('.qb-class-h .qb-toggle-icon i').className='fas fa-chevron-up');
-      });
-      document.querySelectorAll('.qb-subject').forEach(s=>{
-        s.setAttribute('data-collapsed','0');
-        s.querySelector('.qb-topic-wrap')?.classList.remove('hidden');
-        s.querySelector('.qb-subject-h .qb-toggle-icon i') && (s.querySelector('.qb-subject-h .qb-toggle-icon i').className='fas fa-chevron-up');
-      });
-    });
-
-    $btnCollapse && $btnCollapse.addEventListener('click', function(){
-      document.querySelectorAll('.qb-subject').forEach(s=>{
-        s.setAttribute('data-collapsed','1');
-        s.querySelector('.qb-topic-wrap')?.classList.add('hidden');
-        s.querySelector('.qb-subject-h .qb-toggle-icon i') && (s.querySelector('.qb-subject-h .qb-toggle-icon i').className='fas fa-chevron-down');
-      });
-      document.querySelectorAll('.qb-class').forEach(c=>{
-        c.setAttribute('data-collapsed','1');
-        c.querySelector('.qb-subject-wrap')?.classList.add('hidden');
-        c.querySelector('.qb-class-h .qb-toggle-icon i') && (c.querySelector('.qb-class-h .qb-toggle-icon i').className='fas fa-chevron-down');
-      });
-    });
-
-    $btnReload && $btnReload.addEventListener('click', loadAllSummary);
-  }
-
-  function initTooltips(){
-    $('[data-toggle="tooltip"]').tooltip({ container:'body', boundary:'window' });
-  }
-
-  async function loadAllSummary(){
-    showLoader();
-    try{
-      const res = await fetch(urlAllSummary, { headers: {'X-Requested-With':'XMLHttpRequest'} });
-      const json = await res.json();
-
-      if (!json || !json.status || !json.data || !json.data.length){
-        showEmpty();
-        return;
-      }
-
-      buildTree(json.data);
-      showTree();
-      initTooltips();
-    }catch(err){
-      console.error(err);
-      showEmpty();
-    }
-  }
-
-  // Run on load
-  bindToggles();
-  loadAllSummary();
-})();
-</script>
-
-  <div class="card">
+  <div class="card sms-card">
     <div class="card-header"><h3 class="card-title">Create Questions</h3></div>
 
     <form action="<?= base_url('admin/question-bank/save') ?>" method="post" enctype="multipart/form-data">
@@ -475,7 +34,7 @@
 
         <!-- ================= Class / Subject / Topic ================= -->
   <!-- ================= Class / Subject / Topic ================= -->
-<div class="form-row">
+<div class="row">
 
   <!-- Class -->
   <div class="form-group col-md-4">
@@ -503,14 +62,12 @@
       <select name="topic_id" id="topic_id" class="form-control" required>
         <option value="">-- Select Topic --</option>
       </select>
-      <div class="input-group-append">
-        <button type="button"
+      <button type="button"
                 class="btn btn-secondary"
-                data-toggle="modal"
-                data-target="#topicModal">
+                data-bs-toggle="modal"
+                data-bs-target="#topicModal">
           +
         </button>
-      </div>
     </div>
   </div>
 
@@ -651,7 +208,7 @@
             <button type="button" id="btnAddBlank" class="btn btn-secondary btn-sm">+ Add Blank</button>
             <button type="button" id="btnClearAll" class="btn btn-outline-danger btn-sm">Clear All</button>
             <button type="button" id="btnBulkImages" class="btn btn-primary btn-sm">
-  ðŸ“· Bulk Image Upload
+  ?? Bulk Image Upload
 </button>
 
 <input type="file"
@@ -664,7 +221,7 @@
         <div id="questionList"></div>
 
       </div>
-      <div class="card-footer text-right">
+      <div class="card-footer text-end">
         <button type="submit" class="btn btn-success">Save All Questions</button>
       </div>
     </form>
@@ -680,7 +237,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Add Topic</h5>
-          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
         </div>
         <div class="modal-body">
 
@@ -696,7 +253,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary">Save Topic</button>
         </div>
       </div>
@@ -787,12 +344,12 @@
 }
 
 /* colored left borders like your screenshot */
-.qb-summary-border-total  { border-left: 4px solid #28a745; }
-.qb-summary-border-mcq    { border-left: 4px solid #17a2b8; }
-.qb-summary-border-fill   { border-left: 4px solid #20c997; }
-.qb-summary-border-short  { border-left: 4px solid #ffc107; }
-.qb-summary-border-drag   { border-left: 4px solid #6f42c1; }
-.qb-summary-border-normal { border-left: 4px solid #dc3545; }
+.qb-summary-border-total  { border-start: 4px solid #28a745; }
+.qb-summary-border-mcq    { border-start: 4px solid #17a2b8; }
+.qb-summary-border-fill   { border-start: 4px solid #20c997; }
+.qb-summary-border-short  { border-start: 4px solid #ffc107; }
+.qb-summary-border-drag   { border-start: 4px solid #6f42c1; }
+.qb-summary-border-normal { border-start: 4px solid #dc3545; }
 
 /* nicer header bar */
 #qbSummaryBox .card-header {
@@ -802,7 +359,7 @@
   margin-right: 6px;
 }
 
-/* better widths on large screens â€“ 6 cards in one row */
+/* better widths on large screens – 6 cards in one row */
 @media (min-width: 992px) {
   .qb-summary-col {
     flex: 0 0 16.6667%;
@@ -832,9 +389,9 @@
           <option value="match">Match</option>
         </select>
 
-        <button type="button" class="btn btn-light btn-sm ml-2 btn-move-up">â†‘</button>
-        <button type="button" class="btn btn-light btn-sm btn-move-down">â†“</button>
-        <button type="button" class="btn btn-danger btn-sm ml-2 btn-remove">Ã—</button>
+        <button type="button" class="btn btn-light btn-sm ms-2 btn-move-up">?</button>
+        <button type="button" class="btn btn-light btn-sm btn-move-down">?</button>
+        <button type="button" class="btn btn-danger btn-sm ms-2 btn-remove">×</button>
       </div>
     </div>
 
@@ -843,9 +400,10 @@
       <input type="hidden" name="questions[{{i}}][class_id]" value="{{class_id}}">
       <input type="hidden" name="questions[{{i}}][subject_id]" value="{{subject_id}}">
       <input type="hidden" name="questions[{{i}}][topic_id]" value="{{topic_id}}">
+      <input type="hidden" name="questions[{{i}}][difficulty]" class="qb-difficulty" value="normal">
 
       <!-- ================= Question (Text / Image) ================= -->
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-3">
           <label>Question Mode</label>
           <select name="questions[{{i}}][question_media]" class="form-control form-control-sm q-media">
@@ -872,7 +430,7 @@
                name="questions[{{i}}][question_image]"
                accept="image/*">
 
-        <small class="text-muted">JPG / PNG / WEBP â€“ Max 2MB</small>
+        <small class="text-muted">JPG / PNG / WEBP – Max 2MB</small>
 
         <img class="img-thumbnail mt-2 q-image-preview d-none" style="max-height:140px;">
 
@@ -885,7 +443,7 @@
 
       <!-- ================= MCQ / MCQ_MULTI ================= -->
       <div class="q-block q-mcq q-mcq_multi">
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-6">
             <label>A</label>
             <input type="text"
@@ -957,7 +515,7 @@
       <!-- ================= MATCH THE PAIRS ================= -->
       <div class="q-block q-match d-none">
         <!-- Draggable toggle will be inserted by JS -->
-        <label>Match Pairs (Left â†’ Right)</label>
+        <label>Match Pairs (Left ? Right)</label>
         <div class="match-pairs">
           <!-- rows added by JS -->
         </div>
@@ -1034,7 +592,7 @@ $('#topicModal').on('show.bs.modal', function () {
 
   const idx = card.dataset.qidx;
 
-  // ðŸ‘‰ For MCQ / MCQ_MULTI / MATCH: just show the right block, no name changes
+  // ?? For MCQ / MCQ_MULTI / MATCH: just show the right block, no name changes
   if (type === 'mcq' || type === 'mcq_multi' || type === 'match') {
     const target = card.querySelector('.q-' + type);
     if (target) {
@@ -1043,7 +601,7 @@ $('#topicModal').on('show.bs.modal', function () {
     return;
   }
 
-  // ðŸ‘‰ For TF / FILL / SHORT: we manage answer_text name
+  // ?? For TF / FILL / SHORT: we manage answer_text name
   const selector = `select[name="questions[${idx}][answer_text]"], input[name="questions[${idx}][answer_text]"]`;
   card.querySelectorAll(selector).forEach(el => {
     el.removeAttribute('name');
@@ -1093,7 +651,7 @@ $('#topicModal').on('show.bs.modal', function () {
     const s = new Set();
     for (const x of k){
       let v = (i[x] || '').trim();
-      if (!v || s.has(v.toLowerCase())) v = 'â€”';
+      if (!v || s.has(v.toLowerCase())) v = '—';
       s.add(v.toLowerCase());
       i[x] = v;
     }
@@ -1106,7 +664,7 @@ $('#topicModal').on('show.bs.modal', function () {
   /* === Block builder === */
   function addMatchRow(container, i, rowIdx, leftVal = '', rightVal = '') {
     const row = document.createElement('div');
-    row.className = 'form-row mb-1';
+    row.className = 'row mb-1';
     row.innerHTML = `
       <div class="col">
         <input type="text"
@@ -1147,12 +705,15 @@ function updateMcqMode(card, type){
 
 function addBlock(p = {}) {
   const i = qIndex++;
+  const cls = (p.class_id !== undefined && p.class_id !== null && String(p.class_id) !== '') ? String(p.class_id) : classSelect.value;
+  const sub = (p.subject_id !== undefined && p.subject_id !== null && String(p.subject_id) !== '') ? String(p.subject_id) : subjectSelect.value;
+  const top = (p.topic_id !== undefined && p.topic_id !== null && String(p.topic_id) !== '') ? String(p.topic_id) : topicSelect.value;
   const map = {
     i: i,
     n: qList.children.length + 1,
-    class_id: classSelect.value,
-    subject_id: subjectSelect.value,
-    topic_id: topicSelect.value
+    class_id: cls,
+    subject_id: sub,
+    topic_id: top
   };
 
   const wrapper = document.createElement('div');
@@ -1211,7 +772,7 @@ if (fileInp && imgPrev) {
   console.log("=== CARD HTML DUMP FOR INDEX:", i, " ===");
   console.log(card.innerHTML);
 
-  // ðŸ”¹ If this question is coming from the bank, keep its ID in a hidden field
+  // ?? If this question is coming from the bank, keep its ID in a hidden field
   if (p.id || p.question_id) {
     const qid = p.id || p.question_id;
 
@@ -1241,13 +802,13 @@ if (initialType === 'match') {
   const infoDiv = card.querySelector('.card-header');
   if (infoDiv) {
     dragToggle = document.createElement('div');
-    dragToggle.className = 'is-drag-toggle d-inline-block ml-2';
+    dragToggle.className = 'is-drag-toggle d-inline-block ms-2';
     dragToggle.innerHTML = `
       <label class="switch">
         <input type="checkbox" name="questions[${i}][is_drag]" value="1" checked>
         <span class="slider round"></span>
       </label>
-      <small class="ml-1">Draggable</small>
+      <small class="ms-1">Draggable</small>
     `;
     infoDiv.appendChild(dragToggle);
   }
@@ -1274,13 +835,13 @@ t.onchange = () => {
     if (!dragToggle) {
       const infoDiv = card.querySelector('.card-header');
       dragToggle = document.createElement('div');
-      dragToggle.className = 'is-drag-toggle d-inline-block ml-2';
+      dragToggle.className = 'is-drag-toggle d-inline-block ms-2';
       dragToggle.innerHTML = `
         <label class="switch">
           <input type="checkbox" name="questions[${i}][is_drag]" value="1">
           <span class="slider round"></span>
         </label>
-        <small class="ml-1">Draggable</small>
+        <small class="ms-1">Draggable</small>
       `;
       infoDiv.appendChild(dragToggle);
     }
@@ -1303,19 +864,23 @@ t.onchange = () => {
   }
 
   // --------------------------
-  // Hidden IDs
+  // Hidden IDs + difficulty
   // --------------------------
-  card.querySelector(`[name="questions[${i}][class_id]"]`).value = classSelect.value;
-  card.querySelector(`[name="questions[${i}][subject_id]"]`).value = subjectSelect.value;
-  card.querySelector(`[name="questions[${i}][topic_id]"]`).value = topicSelect.value;
+  card.querySelector(`[name="questions[${i}][class_id]"]`).value = cls;
+  card.querySelector(`[name="questions[${i}][subject_id]"]`).value = sub;
+  card.querySelector(`[name="questions[${i}][topic_id]"]`).value = top;
+  const diffInp = card.querySelector('.qb-difficulty');
+  if (diffInp && p.difficulty) {
+    diffInp.value = p.difficulty;
+  }
 
   // --------------------------
-  // MCQ options (Aâ€“D)
+  // MCQ options (A–D)
   // --------------------------
 
 
 
- // NEW â€“ use classes so we don't depend on name matching/index details
+ // NEW – use classes so we don't depend on name matching/index details
 const optMap = {
   option_a: '.js-opt-a',
   option_b: '.js-opt-b',
@@ -1386,60 +951,24 @@ Object.keys(optMap).forEach(k => {
     }
   }
 
-topicForm.addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const name = t_topic_name.value.trim();
-  if (!name) {
-    alert('Please enter topic name.');
-    return;
-  }
-
-  const fd = new FormData(topicForm); // already has class_id, subject_id, topic_name + CSRF
-
-  fetch(topicSaveUrl, {
-    method: 'POST',
-    body: fd,
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
+  if ((p.question_media || 'text') === 'image') {
+    if (mediaSel) {
+      mediaSel.value = 'image';
+      applyMediaMode('image');
     }
-  })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status !== 'ok') {
-        alert(res.msg || 'Failed to save topic.');
-        return;
-      }
-
-      // Append new topic to dropdown and select it
-      const opt = new Option(res.topic_name, res.id, true, true);
-      topicSelect.add(opt);
-      topicSelect.value = res.id;
-
-      // sync hidden ids inside all question blocks
-      syncIds();
-
-      // (optional) reload summary for new topic
-      if (typeof loadSummary === 'function') {
-        loadSummary();
-      }
-
-      // close modal
-      $('#topicModal').modal('hide');
-    })
-    .catch(err => {
-      console.error('Topic save error:', err);
-      alert('Error while saving topic.');
-    });
-});
-
+    const pub = p.question_image_public_url || '';
+    if (pub && imgPrev) {
+      imgPrev.src = pub;
+      imgPrev.classList.remove('d-none');
+    }
+  }
 
   // "+ Add Pair" button
   const addPairBtn = card.querySelector('.q-match .btn-add-pair');
   if (addPairBtn) {
     addPairBtn.addEventListener('click', () => {
       const mpContainer = card.querySelector('.q-match .match-pairs');
-      const rowIdx = mpContainer.querySelectorAll('.form-row').length;
+      const rowIdx = mpContainer.querySelectorAll('.row').length;
       addMatchRow(mpContainer, i, rowIdx, '', '');
     });
   }
@@ -1525,7 +1054,7 @@ subjectSelect.onchange = () => {
         topicSelect.appendChild(o);
       });
 
-      // user will choose topic â†’ then we load summary
+      // user will choose topic ? then we load summary
       topicSelect.value = '';
       syncIds();
     })
@@ -1543,6 +1072,52 @@ topicSelect.onchange = () => {
   /* === Toolbar === */
   btnAddBlank.onclick = () => addBlock({ question_type: 'mcq' });
   btnClearAll.onclick = () => { qList.innerHTML = ''; };
+
+  if (topicForm && !topicForm.dataset.qbBound) {
+    topicForm.dataset.qbBound = '1';
+    topicForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = t_topic_name.value.trim();
+      if (!name) {
+        alert('Please enter topic name.');
+        return;
+      }
+
+      const fd = new FormData(topicForm);
+
+      fetch(topicSaveUrl, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status !== 'ok') {
+            alert(res.msg || 'Failed to save topic.');
+            return;
+          }
+
+          const opt = new Option(res.topic_name, res.id, true, true);
+          topicSelect.add(opt);
+          topicSelect.value = res.id;
+
+          syncIds();
+
+          if (typeof loadSummary === 'function') {
+            loadSummary();
+          }
+
+          $('#topicModal').modal('hide');
+        })
+        .catch(err => {
+          console.error('Topic save error:', err);
+          alert('Error while saving topic.');
+        });
+    });
+  }
 
 
   /* === JSON Parsing & Cards Rendering === */
@@ -1608,7 +1183,7 @@ topicSelect.onchange = () => {
       // Normalise MCQ-style options if present
       const opts = item.options || item.choices || {};
 
-      // Raw "correct" value â€“ can be string or array for mcq_multi
+      // Raw "correct" value – can be string or array for mcq_multi
       const rawCorrect =
         item.correct_options ??
         item.correctAnswers ??
@@ -1715,15 +1290,15 @@ topicSelect.onchange = () => {
     const bar = document.createElement('div');
     bar.className = 'w-100 mb-2';
     bar.innerHTML = `
-      <button type="button" id="btnSelAll" class="btn btn-sm btn-outline-primary mr-2">Select All</button>
-      <button type="button" id="btnUnselAll" class="btn btn-sm btn-outline-secondary mr-2">Unselect</button>
+      <button type="button" id="btnSelAll" class="btn btn-sm btn-outline-primary me-2">Select All</button>
+      <button type="button" id="btnUnselAll" class="btn btn-sm btn-outline-secondary me-2">Unselect</button>
       <button type="button" id="btnLoadSel" class="btn btn-sm btn-success">Load Selected to Form</button>
     `;
     aiCards.appendChild(bar);
 
     parsedQuestions.forEach((q, idx) => {
       const card = document.createElement('div');
-      card.className = 'border rounded p-2 mr-2 mb-2 position-relative';
+      card.className = 'border rounded p-2 me-2 mb-2 position-relative';
       card.style.width = '280px';
 
       const chk = document.createElement('input');
@@ -1773,7 +1348,7 @@ topicSelect.onchange = () => {
         if (q.match_pairs && q.match_pairs.length) {
           html += '<small>';
           q.match_pairs.forEach(p => {
-            html += `${p.left || ''} â†’ ${p.right || ''}<br>`;
+            html += `${p.left || ''} ? ${p.right || ''}<br>`;
           });
           html += '</small>';
         } else {
@@ -1829,16 +1404,32 @@ topicSelect.onchange = () => {
   
 
   document.querySelector('form[action$="question-bank/save"]').onsubmit = e => {
-  syncIds();
-  if (!classSelect.value || !subjectSelect.value || !topicSelect.value) {
-    e.preventDefault();
-    alert('Select class, subject and topic first');
-    return false;
+  let hasPersistedId = false;
+  qList.querySelectorAll('input[type="hidden"]').forEach(function (el) {
+    const n = el.getAttribute('name') || '';
+    if (/^questions\[\d+\]\[id\]$/.test(n) && String(el.value || '').trim() !== '') {
+      hasPersistedId = true;
+    }
+  });
+  if (!hasPersistedId) {
+    syncIds();
   }
   if (!qList.children.length) {
     e.preventDefault();
     alert('Add at least one question');
     return false;
+  }
+  for (const card of qList.children) {
+    const idx = card.dataset.qidx;
+    const cls = card.querySelector(`[name="questions[${idx}][class_id]"]`);
+    const sub = card.querySelector(`[name="questions[${idx}][subject_id]"]`);
+    const top = card.querySelector(`[name="questions[${idx}][topic_id]"]`);
+    const cv = (el) => (el && el.value) ? String(el.value).trim() : '';
+    if (!cv(cls) || !cv(sub) || !cv(top)) {
+      e.preventDefault();
+      alert('Each question must have class, subject and topic. If you used “Edit all”, wait for cards to finish loading.');
+      return false;
+    }
   }
 };
 
@@ -1847,7 +1438,7 @@ function loadSummary() {
   const sid = subjectSelect.value;
   const tid = topicSelect.value;
 
-  // No topic selected â†’ hide summary & stop
+  // No topic selected ? hide summary & stop
   if (!cid || !sid || !tid) {
     resetSummary();
     return;
@@ -1892,6 +1483,104 @@ function loadSummary() {
       resetSummary();
     });
 }
+
+
+  window.__qbApplyBulkRows = function (json) {
+    const list = (json && json.questions) ? json.questions : [];
+    qList.innerHTML = '';
+    qIndex = 0;
+    list.forEach(function (row) {
+      const p = {
+        id: row.id,
+        class_id: row.class_id,
+        subject_id: row.subject_id,
+        topic_id: row.topic_id,
+        question_type: row.question_type || 'mcq',
+        difficulty: row.difficulty || 'normal',
+        question_media: row.question_media || 'text',
+        question: row.question || '',
+        question_image_alt: row.question_image_alt || '',
+        question_image_public_url: row.question_image_public_url || '',
+        option_a: row.option_a,
+        option_b: row.option_b,
+        option_c: row.option_c,
+        option_d: row.option_d,
+        correct_option: row.correct_option,
+        answer_text: row.answer_text
+      };
+      if ((row.question_type || '') === 'mcq_multi' && row.correct_options) {
+        p.correct_options = row.correct_options;
+      }
+      if ((row.question_type || '') === 'match') {
+        p.match_pairs = row.match_pairs || [];
+      }
+      addBlock(p);
+    });
+    renumber();
+  };
+
+  (async function qbBootstrapFromOverview(){
+    const params = new URLSearchParams(window.location.search || '');
+    const cid = parseInt(params.get('class_id') || '0', 10);
+    const sid = parseInt(params.get('subject_id') || '0', 10);
+    const tid = parseInt(params.get('topic_id') || '0', 10);
+    const doLoad = params.get('load') === '1';
+    if (cid <= 0) return;
+
+    try {
+      classSelect.value = String(cid);
+      const subRes = await fetch('<?= base_url('admin/question-bank/subjects') ?>?class_id=' + encodeURIComponent(cid), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const subJson = await subRes.json();
+      const subjects = Array.isArray(subJson) ? subJson : (subJson.subjects || []);
+      subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+      subjects.forEach(function (s) {
+        const o = document.createElement('option');
+        o.value = s.subject_id;
+        o.textContent = s.subject_name || s.subject_short_name || ('Subject ' + s.subject_id);
+        subjectSelect.appendChild(o);
+      });
+      if (sid > 0) subjectSelect.value = String(sid);
+
+      topicSelect.innerHTML = '<option value="">-- Select Topic --</option>';
+      if (sid > 0) {
+        const topRes = await fetch(
+          '<?= base_url('admin/question-bank/topics') ?>'
+            + '?class_id=' + encodeURIComponent(cid)
+            + '&subject_id=' + encodeURIComponent(sid),
+          { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+        );
+        const topJson = await topRes.json();
+        const topics = Array.isArray(topJson) ? topJson : (topJson.topics || []);
+        topics.forEach(function (t) {
+          const o = document.createElement('option');
+          o.value = t.id;
+          o.textContent = t.topic_name || ('Topic ' + t.id);
+          topicSelect.appendChild(o);
+        });
+        if (tid > 0) topicSelect.value = String(tid);
+      }
+
+      syncIds();
+      if (classSelect.value && subjectSelect.value && topicSelect.value) {
+        loadSummary();
+      }
+
+      if (doLoad && cid > 0) {
+        const qUrl = '<?= site_url('admin/question-bank/questions-json') ?>'
+          + '?class_id=' + encodeURIComponent(cid)
+          + '&subject_id=' + encodeURIComponent(sid)
+          + '&topic_id=' + encodeURIComponent(tid)
+          + '&limit=200';
+        const qRes = await fetch(qUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const qJson = await qRes.json();
+        if (qJson && qJson.status && qJson.questions && qJson.questions.length) {
+          window.__qbApplyBulkRows(qJson);
+        }
+      }
+    } catch (e) {
+      console.error('qbBootstrapFromOverview', e);
+    }
+  })();
 
 
   </script>
@@ -1955,7 +1644,7 @@ function bindImageToQuestion(qIndex, file) {
 
   // OPTIONAL: mark visually as uploaded
   $q.find('.card-header strong').append(
-    ' <span class="badge badge-success ml-1">Image Added</span>'
+    ' <span class="badge text-bg-success ms-1">Image Added</span>'
   );
 }
 
@@ -1992,7 +1681,7 @@ function attachImage(qIndex, file) {
   if (title && !title.querySelector('.badge')) {
     title.insertAdjacentHTML(
       'beforeend',
-      ' <span class="badge badge-success ml-1">Image</span>'
+      ' <span class="badge text-bg-success ms-1">Image</span>'
     );
   }
 }

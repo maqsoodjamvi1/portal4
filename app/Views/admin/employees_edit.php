@@ -62,21 +62,21 @@
 			?>
 
     <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <h1>
-        Employees
-        <small></small>
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li class="active">Employees</li>
-      </ol>
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Employees',
+    'icon' => 'fas fa-id-badge',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Employees', 'url' => base_url('admin/employees')],
+        ['label' => empty($tid) ? 'Add' : 'Edit', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
 		  <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 				<li><a href="<?= base_url('admin/employees') ?>">Employees</a></li>
@@ -191,7 +191,7 @@
 </div>
 <div class="row">
 	<p style="padding-left: 15px;" class="page-header">User Account Info</p>
-		<div class="col-xs-6">
+		<div class="col-6">
 				<div class="form-group">
 					<label>User Roles(Select Multi)</label>
 					<select multiple="multiple" name="roles[]" class="form-control select2" style="width:100%;">
@@ -207,7 +207,7 @@
 					
 				</div>
 	</div>
-	<div class="col-xs-6">
+	<div class="col-6">
 				<div class="form-group">
 					<label>Password</label>
 				<input type="password" class="form-control" name="password">	
@@ -218,8 +218,8 @@
 	<div class="col-lg-4">
 		<div class="form-group ">
             <button type="submit" class="btn btn-primary">Save</button>
-			<button type="reset" class="btn btn-default">Reset</button>
-			<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+			<button type="reset" class="btn btn-secondary">Reset</button>
+			<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
         </div>
         <?php echo form_close();?>
 	</div>

@@ -68,29 +68,20 @@
 		$fee_due_date = '';
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-          Campus
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Campus</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Campus',
+    'icon' => 'fas fa-school',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus', 'url' => base_url('admin/campus')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
 <div class="row">
 <div class="col-lg-12">
-  <div class="card card-primary card-outline card-tabs">
+  <div class="card sms-card card-primary card-outline card-tabs">
   <div class="card-header p-0 pt-1 border-bottom-0">
 	<ul class="nav nav-tabs">
 		<li class="nav-item"><a class="nav-link" href="<?= base_url('admin/campus') ?>">Campus</a></li>
@@ -103,7 +94,7 @@
 <div class="card-body">	
 <div class="tab-content">
 	<?php
-		echo form_open('c=campus&m=save', 'role="form" id="campus-edit-form"');
+		echo form_open(base_url('admin/campus/save'), 'role="form" id="campus-edit-form"');
 		echo form_hidden('id', $id);
 		echo form_hidden('system_id', $schoolinfo->system_id);
 	?>
@@ -143,8 +134,23 @@
         <input type="text" class="form-control" name="email" id="email" value="<?php echo $email;?>">
 		</div>
 		<div class="form-group col-lg-3">
+        <label for="username">User Name</label>
+        <input type="text" class="form-control" name="username" id="username" value="<?php echo $username;?>" placeholder="e.g. campus.director01">
+        <small id="usernameHelp" class="form-text text-muted">Use letters, numbers, dot, underscore, hyphen.</small>
+		</div>
+		<div class="form-group col-lg-3">
         <label for="location">Password</label>
-        <input type="text" class="form-control" name="password" id="password" value="<?php echo $password;?>">
+        <div class="input-group">
+          <input type="password" class="form-control" name="password" id="password" value="" autocomplete="new-password">
+          <button type="button" class="btn btn-outline-secondary toggle-password" data-bs-target="#password">Show</button>
+        </div>
+		</div>
+		<div class="form-group col-lg-3">
+        <label for="repassword">Re-Password</label>
+        <div class="input-group">
+          <input type="password" class="form-control" name="repassword" id="repassword" value="" autocomplete="new-password">
+          <button type="button" class="btn btn-outline-secondary toggle-password" data-bs-target="#repassword">Show</button>
+        </div>
 		</div>
 		<?php if(isset($info)){ ?>
 		<p class="col-lg-12" style="font-weight: bold;margin-top: 15px;text-decoration: underline;">Student Fee Chalan Info</p>
@@ -192,6 +198,20 @@
         <input type="date" class="form-control" name="fee_due_date" id="fee_due_date" value="<?php echo $fee_due_date;?>">
 		</div>
 		<?php } ?>
+		<?php if ($id == '' && !empty($default_plan)) { ?>
+		<p class="col-lg-12" style="font-weight: bold;margin-top: 15px;text-decoration: underline;">Campus plan (default)</p>
+		<div class="form-group col-lg-12">
+			<div class="alert alert-info mb-0">
+				New campuses use <strong><?= esc($default_plan->plan_name ?? 'Plan') ?></strong> (plan ID <?= (int) ($default_plan->plan_id ?? 3) ?>)
+				with a <strong>yearly</strong> subscription (bill period <?= isset($yearly_install->month_count) ? (int) $yearly_install->month_count : 12 ?> months).
+				Limits and amount come from <code>system_plans</code> for that package.
+			</div>
+		</div>
+		<?php } elseif ($id == '') { ?>
+		<div class="form-group col-lg-12">
+			<div class="alert alert-warning mb-0">Default plan (ID 3) was not found in the database. Save may fail until system_plans is configured.</div>
+		</div>
+		<?php } else { ?>
 		<p class="col-lg-12" style="font-weight: bold;margin-top: 15px;text-decoration: underline;">Campus Plan</p>
 		<div class="form-group col-lg-4">
           <label for="location">Max Number Of Students</label>
@@ -215,10 +235,11 @@
         	<div id="packagePrice"></div>
         </div>   
 		</div>
+		<?php } ?>
 		<div class="form-group col-lg-12">
       <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-		  <button type="reset" class="btn btn-default">Reset</button>
-		  <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+		  <button type="reset" class="btn btn-secondary">Reset</button>
+		  <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
       </div>
     </div>
     <?php echo form_close();?>
@@ -232,50 +253,126 @@
 <!-- /.content -->
 <script type="text/javascript">
 $(function(){
+	<?php if ($id != '') { ?>
 	$('#max_students').select2();
-	$('#max_fee').select2();	
+	$('#max_fee').select2();
+	<?php } ?>
 	$('#campus-edit-form').validate({
 		rules:{
 			campus_name:{
 				required:true,
 			}
+			<?php if ($id == '') { ?>
+			,first_name:{ required:true },
+			last_name:{ required:true },
+			email:{ required:true, email:true },
+			username:{ required:true, minlength:3, maxlength:100, pattern:/^[A-Za-z0-9_.-]+$/ },
+			password:{ required:true, minlength:6 },
+			repassword:{ required:true, equalTo:'#password' }
+			<?php } ?>
 		},
 		messages:{
 			campus_name:{
-				required:'campus is Required',
+				required:'Campus name is required',
 			}
+			<?php if ($id == '') { ?>
+			,first_name:{ required:'First name is required' },
+			last_name:{ required:'Last name is required' },
+			email:{ required:'Email is required', email:'Enter a valid email' },
+			username:{ required:'User name is required', minlength:'At least 3 characters', maxlength:'Maximum 100 characters', pattern:'Use letters, numbers, dot, underscore or hyphen only' },
+			password:{ required:'Password is required', minlength:'At least 6 characters' },
+			repassword:{ required:'Re-password is required', equalTo:'Password and re-password must match' }
+			<?php } ?>
 		}
 	});
+	$(document).on('click', '.toggle-password', function(){
+		var target = $($(this).attr('data-target'));
+		var isPassword = target.attr('type') === 'password';
+		target.attr('type', isPassword ? 'text' : 'password');
+		$(this).text(isPassword ? 'Hide' : 'Show');
+	});
+	<?php if ($id == '') { ?>
+	var usernameCheckXhr = null;
+	function setUsernameHelp(message, cls){
+		$('#usernameHelp').removeClass('text-muted text-success text-danger').addClass(cls).text(message);
+	}
+	function checkUsernameAvailability(){
+		var username = $.trim($('#username').val());
+		if(username.length < 3){
+			setUsernameHelp('Enter at least 3 characters.', 'text-danger');
+			return;
+		}
+		if(usernameCheckXhr){
+			usernameCheckXhr.abort();
+		}
+		setUsernameHelp('Checking availability...', 'text-muted');
+		usernameCheckXhr = $.post('<?= base_url('admin/campus/check-username') ?>', {username: username})
+			.done(function(response){
+				var json = typeof response === 'string' ? $.parseJSON(response) : response;
+				if(json.available){
+					setUsernameHelp(json.msg || 'Username is available.', 'text-success');
+				}else{
+					setUsernameHelp(json.msg || 'Username is not available.', 'text-danger');
+				}
+			})
+			.fail(function(){
+				setUsernameHelp('Could not check username right now.', 'text-danger');
+			});
+	}
+	var usernameDebounce = null;
+	$('#username').on('keyup blur', function(){
+		clearTimeout(usernameDebounce);
+		usernameDebounce = setTimeout(checkUsernameAvailability, 300);
+	});
+	<?php } ?>
 	$('#campus-edit-form').ajaxForm({
 		beforeSubmit:function(formData, jqForm, options){
-			return $('#campus-edit-form').valid();
-			$('#submitBtn').html("Saving");
+			if(!$('#campus-edit-form').valid()){
+				return false;
+			}
+			$('#submitBtn').html("Saving...");
       		$('#submitBtn').prop('disabled', true);
+			return true;
 		},
 		success:function(responseText, statusText, xhr, form){
 			$('#submitBtn').html("Save");
       		$('#submitBtn').prop('disabled', false);
-			var json = $.parseJSON(responseText);
+			var json = (typeof responseText === 'string') ? $.parseJSON(responseText) : responseText;
 			if(json.success){
-				toastr.success(json.msg);
+				toastr.success(json.msg || 'Campus created successfully.');
 				<?php
 				if($id == ''){
 					?>
-					location.href = '#/campus';
+					setTimeout(function(){
+						location.href = '<?= base_url('admin/dashboard') ?>';
+					}, 700);
 					<?php
 				}else{
 					?>
-					location.href = '#/campus?m=edit&id=<?php echo $id;?>&after=edit';
+					location.href = '<?= base_url('admin/campus/edit?id=' . (int) $id . '&after=edit') ?>';
 					<?php
 				}
 				?>
 			}else{
-				toastr.error(json.msg);
+				toastr.error(json.msg || json.message || 'Save failed');
 			}
 			return false;
+		},
+		error:function(xhr){
+			$('#submitBtn').html("Save");
+      		$('#submitBtn').prop('disabled', false);
+			var msg = 'Save failed. Please try again.';
+			try{
+				var json = xhr.responseJSON || $.parseJSON(xhr.responseText);
+				if(json && (json.msg || json.message)){
+					msg = json.msg || json.message;
+				}
+			}catch(e){}
+			toastr.error(msg);
 		}
 	});
 });
+<?php if ($id != '') { ?>
 $("#calculatePackage").click(function(){
         var max_fee = $('#max_fee').val();
         var max_students = $('#max_students').val();
@@ -288,6 +385,7 @@ $("#calculatePackage").click(function(){
 			 			}
          });
     });
+<?php } ?>
 </script>
 
 <?= $this->endSection() ?>

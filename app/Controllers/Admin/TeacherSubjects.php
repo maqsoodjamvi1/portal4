@@ -23,7 +23,7 @@ public function add()
     $campus_id = $this->session->get('member_campusid');
     $schoolinfo = getSchoolInfo();
 
-    $teachers = $this->db->query("SELECT * FROM users WHERE campus_id = {$campus_id} AND id IN (SELECT userID FROM user_roles WHERE roleID = 5)")->getResult();
+    $teachers = $this->getTeachersByRoleNameId((int) $campus_id);
 
     $class_sections = $this->db->table('class_section')->where(['campus_id' => $campus_id, 'status' => 1])->get()->getResult();
     $sections = [];
@@ -66,14 +66,8 @@ public function add()
     $schoolinfo = getSchoolInfo();
     $system_id = $schoolinfo->system_id;
 
-    // Get all teachers (users with roleID = 5 for teachers)
-    $teachers = $this->db->query("
-        SELECT u.id, u.first_name, u.last_name, u.email 
-        FROM users u 
-        INNER JOIN user_roles ur ON ur.userID = u.id 
-        WHERE u.campus_id = ? AND u.status = 1 AND ur.roleID = 5
-        ORDER BY u.first_name
-    ", [$campus_id])->getResult();
+    // Get all teachers by role_name_id = 5, supporting both current and legacy user_roles mappings.
+    $teachers = $this->getTeachersByRoleNameId((int) $campus_id);
 
     // Get all subjects
     $subjects = $this->db->table('allsubject')
@@ -378,14 +372,8 @@ public function getSectionTeachers()
         return $this->response->setJSON(['error' => 'No campus ID']);
     }
 
-    // Get all teachers (users with roleID = 5 for teachers)
-    $teachers = $this->db->query("
-        SELECT u.id, u.first_name, u.last_name, u.email 
-        FROM users u 
-        INNER JOIN user_roles ur ON ur.userID = u.id 
-        WHERE u.campus_id = ? AND u.status = 1 AND ur.roleID = 5
-        ORDER BY u.first_name
-    ", [$campus_id])->getResult();
+    // Get all teachers by role_name_id = 5, supporting both current and legacy user_roles mappings.
+    $teachers = $this->getTeachersByRoleNameId((int) $campus_id);
 
     // Get all class sections with class and section names
     $classSections = $this->db->table('class_section cs')
@@ -419,5 +407,73 @@ public function getSectionTeachers()
             'sectionTeacherMap' => $sectionTeacherMap
         ]
     ]);
+}
+
+private function getTeachersByRoleNameId(int $campusId): array
+{
+    if ($campusId <= 0) {
+        return [];
+    }
+
+    $teacherUserIds = $this->getTeacherUserIds($this->getCampusPlanId($campusId));
+    if (empty($teacherUserIds)) {
+        return [];
+    }
+
+    return $this->db->table('users')
+        ->select('id, first_name, last_name, email')
+        ->where('campus_id', $campusId)
+        ->where('status', 1)
+        ->whereIn('id', $teacherUserIds)
+        ->orderBy('first_name', 'ASC')
+        ->orderBy('last_name', 'ASC')
+        ->get()
+        ->getResult();
+}
+
+private function getTeacherUserIds(int $planId): array
+{
+    $teacherRoleNameId = 5;
+    $teacherUserIds = [];
+
+    // Current mapping: user_roles.roleID stores roles.id.
+    $primary = $this->db->table('user_roles ur')
+        ->distinct()
+        ->select('ur.userID')
+        ->join('roles r', 'r.id = ur.roleID' . ($planId > 0 ? ' AND r.plan_id = ' . $planId : ''), 'inner')
+        ->where('r.role_name_id', $teacherRoleNameId)
+        ->get()
+        ->getResultArray();
+
+    // Legacy mapping: user_roles.roleID stores roles.role_name_id.
+    $legacy = $this->db->table('user_roles ur')
+        ->distinct()
+        ->select('ur.userID')
+        ->join('roles r', 'r.role_name_id = ur.roleID' . ($planId > 0 ? ' AND r.plan_id = ' . $planId : ''), 'inner')
+        ->where('r.role_name_id', $teacherRoleNameId)
+        ->get()
+        ->getResultArray();
+
+    foreach (array_merge($primary, $legacy) as $row) {
+        $userId = (int) ($row['userID'] ?? 0);
+        if ($userId > 0) {
+            $teacherUserIds[$userId] = $userId;
+        }
+    }
+
+    return array_values($teacherUserIds);
+}
+
+private function getCampusPlanId(int $campusId): int
+{
+    $row = $this->db->table('campus_bills')
+        ->select('plan_id')
+        ->where('status', 1)
+        ->where('campus_id', $campusId)
+        ->orderBy('campus_expiry', 'DESC')
+        ->get()
+        ->getRow();
+
+    return (int) ($row->plan_id ?? 0);
 }
 }

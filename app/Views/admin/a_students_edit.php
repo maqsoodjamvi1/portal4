@@ -130,23 +130,14 @@ function checkfathercnic() {
 	color: #fff !important;
 }
 </style>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Students
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Students</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content"> 
   <div class="row">
@@ -166,10 +157,10 @@ function checkfathercnic() {
 	<div class="row">
       <div class="col-5 col-sm-3">
         <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-          <a  class="nav-link mb-3 p-3 shadow active" id="v-pills-home-tab" data-toggle="pill" href="#vert-tabs-home" role="tab" aria-controls="v-pills-home" aria-selected="true">Basic Information</a>
-          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-profile-tab" data-toggle="pill" href="#vert-tabs-profile" role="tab" aria-controls="v-pills-profile" aria-selected="true">Contact Information</a>
-          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-messages-tab" data-toggle="pill" href="#vert-tabs-messages" role="tab" aria-controls="v-pills-messages" aria-selected="true">General Information</a>
-          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-settings-tab" data-toggle="pill" href="#vert-tabs-settings" role="tab" aria-controls="v-pills-settings" aria-selected="true">Student Subjects</a>
+          <a  class="nav-link mb-3 p-3 shadow active" id="v-pills-home-tab" data-bs-toggle="pill" href="#vert-tabs-home" role="tab" aria-controls="v-pills-home" aria-selected="true">Basic Information</a>
+          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-profile-tab" data-bs-toggle="pill" href="#vert-tabs-profile" role="tab" aria-controls="v-pills-profile" aria-selected="true">Contact Information</a>
+          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-messages-tab" data-bs-toggle="pill" href="#vert-tabs-messages" role="tab" aria-controls="v-pills-messages" aria-selected="true">General Information</a>
+          <a class="nav-link mb-3 p-3 shadow" id="vert-tabs-settings-tab" data-bs-toggle="pill" href="#vert-tabs-settings" role="tab" aria-controls="v-pills-settings" aria-selected="true">Student Subjects</a>
         
       </div>
       </div>

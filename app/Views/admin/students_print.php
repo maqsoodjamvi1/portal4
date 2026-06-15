@@ -1,20 +1,42 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
-
-<!-- Debug: Check if sectionsclassinfo has data -->
-<?php 
-if (empty($sectionsclassinfo)) {
-    echo '<div class="alert alert-warning">No class sections found. Please check your database.</div>';
-} else {
-    echo '<div class="alert alert-success">Found ' . count($sectionsclassinfo) . ' class sections.</div>';
-}
+<?php
+$initialShowAll = !empty($initial_show_all ?? false);
+$schoolPrintName = isset($schoolinfo->system_name) && $schoolinfo->system_name !== ''
+    ? $schoolinfo->system_name
+    : 'School';
 ?>
 <meta name="csrf-token-name" content="<?= csrf_token() ?>">
 <meta name="csrf-token-hash" content="<?= csrf_hash() ?>">
-<section class="content">
-    <div class="container-fluid">
-        <!-- Quick Stats Cards -->
-        <div class="row mb-4">
+<meta id="csrf-meta-chalan-edit" name="<?= csrf_token() ?>" content="<?= csrf_hash() ?>">
+<script type="application/json" id="students-print-sections-json"><?= json_encode($classSections ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
+<div class="no-print">
+<?= view('components/page_header', [
+    'title' => 'Students directory',
+    'icon' => 'fas fa-address-book',
+    'subtitle' => 'Browse, filter, and export students for this campus. Use Current only for active enrolments, or All students to include leavers.',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students', 'url' => base_url('admin/students')],
+        ['label' => 'Directory', 'active' => true],
+    ],
+]) ?>
+</div>
+<section class="content students-print-section">
+    <div class="container-fluid students-print-layout">
+        <!-- Quick Stats Cards (collapsed by default — expand to view counts) -->
+        <div class="card sms-card card-outline card-secondary collapsed-card no-print mb-2" id="studentsStatsCard">
+            <div class="card-header py-1">
+                <h3 class="card-title text-sm mb-0"><i class="fas fa-chart-bar me-1"></i> Summary</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse" title="Show / hide summary">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-2">
+        <div class="row mb-0 no-print">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
@@ -60,178 +82,124 @@ if (empty($sectionsclassinfo)) {
                 </div>
             </div>
         </div>
+            </div>
+        </div>
 
- <!-- Filters -->
-<div class="card card-primary">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-filter mr-2"></i>Filters
+ <!-- Filters: collapsed by default to maximize table area; expand from header tool -->
+<div class="card card-outline card-primary collapsed-card no-print mb-2 students-filters-card" id="studentsFiltersCard">
+    <div class="card-header py-1">
+        <h3 class="card-title text-sm mb-0">
+            <i class="fas fa-filter me-1"></i> Filters
+            <span class="badge text-bg-light text-dark fw-normal ms-2 align-middle" id="filterStatusBadge" title="">Default: current students</span>
         </h3>
         <div class="card-tools">
-            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                <i class="fas fa-minus"></i>
+            <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse" title="Show / hide filters">
+                <i class="fas fa-plus"></i>
             </button>
         </div>
     </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Student Name</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="search_name" placeholder="Type 3+ characters...">
-                        <div class="input-group-append">
-                            <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
-                                <i class="fas fa-times"></i>
-                            </span>
-                        </div>
-                    </div>
-                    <small class="text-muted">Type at least 3 characters for suggestions</small>
+    <div class="card-body p-2 students-filters-compact">
+        <div class="row align-items-end">
+            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="small mb-0 text-muted" for="search_name">Student</label>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="search_name" placeholder="Name…" title="Type 3+ characters for suggestions" autocomplete="off">
+                    <span class="input-group-text clear-search px-2" style="cursor:pointer" title="Clear"><i class="fas fa-times"></i></span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label><i class="fas fa-male"></i> Father Name</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="search_father" placeholder="Type 3+ characters...">
-                        <div class="input-group-append">
-                            <span class="input-group-text clear-search" style="cursor: pointer;" title="Clear">
-                                <i class="fas fa-times"></i>
-                            </span>
-                        </div>
-                    </div>
-                    <small class="text-muted">Type at least 3 characters for suggestions</small>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="small mb-0 text-muted" for="search_father">Father</label>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="search_father" placeholder="Father…" title="Type 3+ characters for suggestions" autocomplete="off">
+                    <span class="input-group-text clear-search px-2" style="cursor:pointer" title="Clear"><i class="fas fa-times"></i></span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label><i class="fas fa-chalkboard"></i> Class</label>
-                    <select id="class_id" class="form-control select2">
-                        <option value="">All Classes</option>
-                        <?php foreach (($classes ?? []) as $c): ?>
-                            <option value="<?= (int)$c['class_id'] ?>"><?= esc($c['class_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="small mb-0 text-muted" for="class_id">Class</label>
+                <select id="class_id" class="form-control form-control-sm select2">
+                    <option value="">All Classes</option>
+                    <?php foreach (($classes ?? []) as $c): ?>
+                        <option value="<?= (int)$c['class_id'] ?>"><?= esc($c['class_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="small mb-0 text-muted" for="cls_sec_id">Section</label>
+                <select id="cls_sec_id" class="form-control form-control-sm select2">
+                    <option value="">All Sections</option>
+                    <?php foreach (($classSections ?? []) as $sec): ?>
+                        <option value="<?= (int)$sec['cls_sec_id'] ?>" data-class-id="<?= (int)($sec['class_id'] ?? 0) ?>">
+                            <?= esc($sec['label']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-xl-auto col-lg-auto col-md-12 mb-1">
+                <label class="small mb-0 text-muted d-block">Status</label>
+                <div class="btn-group btn-group-sm btn-group-toggle" data-bs-toggle="buttons">
+                    <label class="btn btn-outline-primary <?= !$initialShowAll ? 'active' : '' ?>" id="btnCurrentOnly">
+                        <input type="radio" name="status_filter" value="current" <?= !$initialShowAll ? 'checked' : '' ?> autocomplete="off"> Current
+                    </label>
+                    <label class="btn btn-outline-secondary <?= $initialShowAll ? 'active' : '' ?>" id="btnAllStudents">
+                        <input type="radio" name="status_filter" value="all" <?= $initialShowAll ? 'checked' : '' ?> autocomplete="off"> All
+                    </label>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label><i class="fas fa-layer-group"></i> Class Section</label>
-                    <select id="cls_sec_id" class="form-control select2">
-                        <option value="">All Sections</option>
-                        <?php foreach (($classSections ?? []) as $sec): ?>
-                            <option value="<?= (int)$sec['cls_sec_id'] ?>">
-                                <?= esc($sec['label']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+            <div class="col mb-1 text-md-end">
+                <button type="button" id="resetFilters" class="btn btn-sm btn-outline-secondary mt-3 mt-md-0">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label><i class="fas fa-users"></i> Student Status</label>
-                    <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
-                        <label class="btn btn-outline-primary active" id="btnCurrentOnly">
-                            <input type="radio" name="status_filter" value="current" checked autocomplete="off">
-                            <i class="fas fa-user-check mr-1"></i> Current Only
-                        </label>
-                        <label class="btn btn-outline-secondary" id="btnAllStudents">
-                            <input type="radio" name="status_filter" value="all" autocomplete="off">
-                            <i class="fas fa-users mr-1"></i> All Students
-                        </label>
-                    </div>
-                    <small class="text-muted">Show only active students or all students</small>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="form-group text-right">
-                    <button type="button" id="resetFilters" class="btn btn-default">
-                        <i class="fas fa-undo mr-1"></i> Reset All Filters
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Filter Status Indicator -->
-        <div class="row mt-2">
-            <div class="col-12">
-                <div class="alert alert-info alert-dismissible fade show mb-0" role="alert" style="padding: 8px 15px;">
-                    <i class="fas fa-search mr-2"></i>
-                    <span id="filterStatus">No active filters</span>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="padding: 8px 15px;">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <p class="mb-0 mt-1 small text-muted"><code>?status=all</code> in URL loads everyone; name/father search needs 3+ characters for autocomplete.</p>
     </div>
 </div>
+<span id="filterStatus" class="d-none" aria-hidden="true"></span>
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <div class="btn-group view-presets">
-            <button type="button" class="btn btn-sm btn-outline-primary" id="viewBasic">
-                <i class="fas fa-eye"></i> Basic
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-success" id="viewContacts">
-                <i class="fas fa-phone"></i> Contacts
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-info" id="viewAcademic">
-                <i class="fas fa-graduation-cap"></i> Academic
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="viewAll">
-                <i class="fas fa-eye"></i> All
-            </button>
-        </div>
-    </div>
-    <div class="col-md-6 text-right">
-        <small class="text-muted">
-            <i class="fas fa-info-circle"></i> 
-            <span class="badge badge-info">←→</span> Scroll horizontally | 
-            <span class="badge badge-info">⬆⬇</span> Scroll vertically | 
-            <span class="badge badge-info">📌</span> Sticky columns
-        </small>
-    </div>
-</div>
-
-<!-- Floating Action Buttons -->
-<div class="floating-actions">
-    <button class="btn btn-primary btn-floating" id="scrollToTop" title="Scroll to Top">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-    <button class="btn btn-info btn-floating" id="scrollToRight" title="Scroll to Right">
-        <i class="fas fa-arrow-right"></i>
-    </button>
-    <button class="btn btn-info btn-floating" id="scrollToLeft" title="Scroll to Left">
-        <i class="fas fa-arrow-left"></i>
-    </button>
-    <button class="btn btn-secondary btn-floating" id="showColumnMenu" title="Toggle Columns">
-        <i class="fas fa-columns"></i>
-    </button>
-</div>
         <!-- Students Table -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-list mr-2"></i>Student List
-                </h3>
-                <div class="card-tools">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-default btn-sm" id="exportExcel">
-                            <i class="fas fa-file-excel"></i> Excel
-                        </button>
-                        <button type="button" class="btn btn-default btn-sm" id="exportPDF">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </button>
-                        <button type="button" class="btn btn-default btn-sm" id="toggleColumns">
-                            <i class="fas fa-columns"></i> Columns
-                        </button>
+        <div class="card students-print-card">
+            <div class="card-header no-print py-2 d-flex flex-wrap align-items-center justify-content-between">
+                <div class="d-flex flex-wrap align-items-center mb-1 mb-lg-0">
+                    <h3 class="card-title m-0 me-2 mb-0">
+                        <i class="fas fa-list me-1"></i> Student List
+                    </h3>
+                    <div class="btn-group btn-group-sm view-presets me-2" role="group" aria-label="Column presets">
+                        <button type="button" class="btn btn-outline-primary" id="viewBasic" title="Core columns"><i class="fas fa-eye"></i> Basic</button>
+                        <button type="button" class="btn btn-outline-success" id="viewContacts" title="Contact fields"><i class="fas fa-phone"></i> Contacts</button>
+                        <button type="button" class="btn btn-outline-info" id="viewAcademic" title="Academic fields"><i class="fas fa-graduation-cap"></i> Academic</button>
+                        <button type="button" class="btn btn-outline-secondary" id="viewAll" title="Show every column"><i class="fas fa-th-list"></i> All</button>
                     </div>
+                </div>
+                <div class="card-tools d-flex flex-wrap align-items-center justify-content-end">
+                    <div class="btn-group btn-group-sm me-2 mb-1 no-print" role="group" aria-label="Print contact list">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Opens a print-ready page for all rows matching current filters (may take a few seconds for large lists)">
+                            <i class="fas fa-address-book"></i> Print contacts
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <h6 class="dropdown-header">Grouping</h6>
+                            <a class="dropdown-item" href="#" id="printContactListClassWise"><i class="fas fa-school text-muted me-2"></i>Class / section</a>
+                            <a class="dropdown-item" href="#" id="printContactListFamilyWise"><i class="fas fa-users text-muted me-2"></i>Family (siblings)</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" id="printSectionRoster"><i class="fas fa-list-alt text-muted me-2"></i>Section roster (names only)</a>
+                            <div class="dropdown-divider"></div>
+                            <span class="dropdown-item-text small text-muted">Uses filters above; includes every matching student in one page.</span>
+                        </div>
+                    </div>
+                    <div id="dtButtons" class="dt-buttons-wrap"></div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <div class="students-print-head d-none d-print-block border-bottom mb-3 pb-2">
+                    <div class="text-uppercase small text-muted mb-1"><?= esc($schoolPrintName) ?></div>
+                    <h4 class="mb-1">Students directory</h4>
+                    <div class="small text-muted" id="studentsPrintMeta">—</div>
+                    <div class="small text-muted">Printed: <span id="studentsPrintWhen">—</span> · By: <?= esc((string) (session('member_name') ?? session('member_username') ?? 'User')) ?></div>
+                </div>
+                <p class="small text-muted no-print mb-0"><i class="fas fa-arrows-alt-h me-1"></i>Top &amp; bottom bars scroll wide tables.</p>
+                <div class="students-hscroll-top no-print" id="studentsHScrollTop" title="Scroll columns horizontally">
+                    <div class="students-hscroll-top-inner" id="studentsHScrollTopInner"></div>
+                </div>
+                <div id="studentsDtHost" class="students-dt-host students-print-table-wrap">
                     <table id="studentsTable" class="table table-bordered table-striped table-hover" style="width:100%">
                         <thead>
                             <tr>
@@ -243,8 +211,8 @@ if (empty($sectionsclassinfo)) {
                                 <th>Name</th>
                                 <th>Status</th>
                                 <th>Father</th>
-                                <th>Father CNIC</th>
-                                <th>Student CNIC</th>
+                                <th title="Father CNIC">F. CNIC</th>
+                                <th title="Student CNIC">Std. CNIC</th>
                                 <th>Gender</th>
                                 <th>DOB</th>
                                 <th>Age</th>
@@ -288,36 +256,39 @@ if (empty($sectionsclassinfo)) {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-user-graduate mr-2"></i>
+                    <i class="fas fa-user-graduate me-2"></i>
                     Student Actions
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
+                <button type="button" class="close text-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body p-0">
                 <div class="list-group list-group-flush">
                     <a href="#" id="modalProfileLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user mr-3 text-primary"></i> View Profile
+                        <i class="fas fa-user me-3 text-primary"></i> View Profile
                     </a>
                     <a href="#" id="modalChallansLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-file-invoice mr-3 text-success"></i> Show Challans
+                        <i class="fas fa-file-invoice me-3 text-success"></i> Show Challans
                     </a>
                     <a href="#" id="modalCreateChallanLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-plus mr-3 text-info"></i> Add new fee chalan
+                        <i class="fas fa-plus me-3 text-info"></i> Add new fee chalan
                     </a>
                     <div class="dropdown-divider m-0"></div>
                     <a href="#" id="modalSlcLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-certificate mr-3 text-warning"></i> <span id="slcLinkText">Generate SLC</span>
+                        <i class="fas fa-certificate me-3 text-warning"></i> <span id="slcLinkText">Generate SLC</span>
+                    </a>
+                    <a href="#" id="modalBonafideLink" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-signature me-3 text-info"></i> Generate Bonafide Certificate
                     </a>
                     <div class="dropdown-divider m-0"></div>
                     <a href="#" id="modalEditLink" class="list-group-item list-group-item-action">
-                        <i class="fas fa-edit mr-3 text-secondary"></i> Edit Profile
+                        <i class="fas fa-edit me-3 text-secondary"></i> Edit Profile
                     </a>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -329,9 +300,9 @@ if (empty($sectionsclassinfo)) {
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="challanGenerateOptionsTitle">
-                    <i class="fas fa-file-invoice mr-2"></i> Fee challan — options
+                    <i class="fas fa-file-invoice me-2"></i> Fee challan — options
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -340,7 +311,7 @@ if (empty($sectionsclassinfo)) {
                 <input type="hidden" id="cg_student_id" value="">
                 <input type="hidden" id="cg_parent_id" value="">
                 <div class="form-group">
-                    <label for="cg_fee_month">Fee month <span class="text-muted font-weight-normal">(optional)</span></label>
+                    <label for="cg_fee_month">Fee month <span class="text-muted fw-normal">(optional)</span></label>
                     <input type="month" class="form-control" id="cg_fee_month" autocomplete="off">
                     <small class="form-text text-muted">Leave empty to include unpaid challans for all months (same as generate page default).</small>
                 </div>
@@ -352,15 +323,15 @@ if (empty($sectionsclassinfo)) {
                     </select>
                 </div>
                 <div class="form-group mb-0">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="cg_payment_history" checked>
-                        <label class="custom-control-label" for="cg_payment_history">Include payment history (last 6 months)</label>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="cg_payment_history" checked>
+                        <label class="form-check-label" for="cg_payment_history">Include payment history (last 6 months)</label>
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="cg_fine_after">
-                        <label class="custom-control-label" for="cg_fine_after">Show payable after due date (late fee), if campus setting applies</label>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="cg_fine_after">
+                        <label class="form-check-label" for="cg_fine_after">Show payable after due date (late fee), if campus setting applies</label>
                     </div>
                 </div>
                 <div class="form-group">
@@ -373,8 +344,88 @@ if (empty($sectionsclassinfo)) {
                 </div>
             </div>
             <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-success btn-block" id="cgOpenChallanBtn">
-                    <i class="fas fa-external-link-alt mr-1"></i> Open challan
+                <button type="button" class="btn btn-success w-100" id="cgOpenChallanBtn">
+                    <i class="fas fa-external-link-alt me-1"></i> Open challan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bonafide certificate options -->
+<div class="modal fade" id="bonafideOptionsModal" tabindex="-1" role="dialog" aria-labelledby="bonafideOptionsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="bonafideOptionsTitle">
+                    <i class="fas fa-file-signature me-2"></i> Bonafide certificate options
+                </h5>
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="bc_student_id" value="">
+                <div class="form-group mb-2">
+                    <label class="mb-1">Recipient line</label>
+                    <select class="form-control" id="bc_recipient_mode">
+                        <option value="twmc" selected>To Whom It May Concern</option>
+                        <option value="custom">Custom recipient</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2" id="bc_custom_recipient_wrap" style="display:none;">
+                    <label class="mb-1" for="bc_recipient_name">Custom recipient text</label>
+                    <input type="text" id="bc_recipient_name" class="form-control" maxlength="120" placeholder="e.g., The Visa Officer">
+                </div>
+                <div class="form-group mb-2">
+                    <label class="mb-1" for="bc_reason"><strong>Certificate reason</strong></label>
+                    <select id="bc_reason" class="form-control" required>
+                        <option value="">Select reason</option>
+                        <option value="school transfer">School transfer</option>
+                        <option value="fee concession">Fee concession</option>
+                        <option value="scholarship">Scholarship</option>
+                        <option value="bank account opening">Bank account opening</option>
+                        <option value="visa application">Visa application</option>
+                        <option value="record purpose">Record purpose</option>
+                    </select>
+                    <small class="text-muted">Selected reason will be printed on the certificate.</small>
+                </div>
+
+                <label class="mb-1 mt-2">Show / hide information</label>
+                <div class="border rounded p-2">
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_reg_no" checked>
+                        <label class="form-check-label" for="bc_show_reg_no">Registration No</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_father" checked>
+                        <label class="form-check-label" for="bc_show_father">Father name</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_class" checked>
+                        <label class="form-check-label" for="bc_show_class">Current class / section</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_dob" checked>
+                        <label class="form-check-label" for="bc_show_dob">Date of birth</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_current_fee">
+                        <label class="form-check-label" for="bc_show_current_fee">Current fee (unpaid total)</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_monthly_fee">
+                        <label class="form-check-label" for="bc_show_monthly_fee">Monthly fee (standard - student discount)</label>
+                    </div>
+                    <div class="form-check form-check">
+                        <input type="checkbox" class="form-check-input" id="bc_show_issue_date" checked>
+                        <label class="form-check-label" for="bc_show_issue_date">Issue date</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-info w-100" id="bcOpenCertificateBtn">
+                    <i class="fas fa-external-link-alt me-1"></i> Open certificate
                 </button>
             </div>
         </div>
@@ -391,10 +442,25 @@ $(document).ready(function() {
     $('#currentStudentsCount').text(initialStats.current_students);
     $('#droppedStudentsCount').text(initialStats.dropped_students);
     $('#slcCount').text(initialStats.slc_count);
-    console.log('Initial stats loaded:', initialStats);
 });
 </script>
 
+<!-- Column visibility: Bootstrap modal (reliable vs ColVis dropdown clipped by layout) -->
+<div class="modal fade" id="studentsColumnModal" tabindex="-1" role="dialog" aria-labelledby="studentsColumnModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="studentsColumnModalTitle"><i class="fas fa-columns me-1"></i> Visible columns</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body py-2" id="studentsColumnModalBody"></div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" id="studentsColumnApply"><i class="fas fa-check me-1"></i> Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Readmission Modal -->
 <div class="modal fade" id="readmitModal" tabindex="-1" role="dialog">
@@ -402,9 +468,9 @@ $(document).ready(function() {
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title">
-                    <i class="fas fa-undo-alt mr-2"></i> Student Readmission
+                    <i class="fas fa-undo-alt me-2"></i> Student Readmission
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -455,7 +521,7 @@ $(document).ready(function() {
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-history mr-2"></i> Academic & Fee History
+                    <i class="fas fa-history me-2"></i> Academic & Fee History
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -479,7 +545,7 @@ $(document).ready(function() {
                             <div class="card card-success">
                                 <div class="card-header">
                                     <h3 class="card-title">
-                                        <i class="fas fa-chalkboard mr-2"></i> New Enrollment Details
+                                        <i class="fas fa-chalkboard me-2"></i> New Enrollment Details
                                     </h3>
                                 </div>
                                 <div class="card-body">
@@ -514,7 +580,7 @@ $(document).ready(function() {
     <div class="card card-info">
         <div class="card-header">
             <h3 class="card-title">
-                <i class="fas fa-money-bill-wave mr-2"></i> Fee Details
+                <i class="fas fa-money-bill-wave me-2"></i> Fee Details
             </h3>
         </div>
         <div class="card-body">
@@ -545,8 +611,8 @@ $(document).ready(function() {
                             </tr>
                         </tbody>
                         <tfoot>
-                            <tr class="bg-light font-weight-bold">
-                                <th colspan="2" class="text-right">Total Payable:</th>
+                            <tr class="bg-light fw-bold">
+                                <th colspan="2" class="text-end">Total Payable:</th>
                                 <th id="totalPayable" class="text-success">0.00</th>
                                 <th id="totalDiscount" class="text-danger">0.00</th>
                             </tr>
@@ -560,11 +626,11 @@ $(document).ready(function() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-1"></i> Cancel
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-warning" id="btnProcessReadmission">
-                    <i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice
+                    <i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice
                 </button>
             </div>
         </div>
@@ -607,12 +673,6 @@ $(document).ready(function() {
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 36px;
     }
-
-    .dataTables_scrollBody {
-    max-height: 65vh !important;
-    overflow-y: auto !important;
-    overflow-x: auto !important;
-}
 
 /* Sticky first column (Row number) */
 #studentsTable td:first-child,
@@ -678,31 +738,75 @@ $(document).ready(function() {
     background: #555;
 }
 
-/* Floating actions */
-.floating-actions {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+/* Top horizontal scroll synced with DataTables scrollX body */
+.students-hscroll-top {
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: 14px;
+    max-height: 18px;
+    border: 1px solid #dee2e6;
+    border-bottom: 0;
+    background: #f1f3f5;
+    cursor: pointer;
 }
 
-.btn-floating {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    transition: all 0.3s;
+.students-hscroll-top-inner {
+    height: 1px;
 }
 
-.btn-floating:hover {
-    transform: scale(1.1);
+.students-dt-host .dataTables_scrollBody {
+    border: 1px solid #dee2e6;
+    border-top: 0;
+    min-height: 280px;
+}
+
+.students-print-layout .content-header {
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.students-print-layout .content-header h1 {
+    font-size: 1.25rem;
+}
+
+.students-print-layout .students-print-card {
+    margin-bottom: 0;
+}
+
+.students-print-layout .students-print-card > .card-body {
+    padding-bottom: 0.5rem;
+}
+
+.students-print-layout #studentsStatsCard .small-box {
+    margin-bottom: 0;
+}
+
+.students-print-layout #studentsStatsCard .small-box .inner {
+    padding: 8px 10px;
+}
+
+.students-print-layout #studentsStatsCard .small-box h3 {
+    font-size: 1.45rem;
+}
+
+.students-print-card .card-header {
+    overflow: visible !important;
+    position: relative;
+    z-index: 6;
+}
+
+.students-filters-compact .select2-container {
+    min-width: 100% !important;
+}
+
+.students-filters-compact .select2-container--default .select2-selection--single {
+    min-height: 31px;
+    padding-top: 1px;
+    font-size: 0.875rem;
+}
+
+#studentsColumnModal {
+    z-index: 1055;
 }
 
 /* Column visibility dropdown */
@@ -741,7 +845,7 @@ $(document).ready(function() {
 
 #academicHistoryTable tbody tr.selected-history {
     background-color: #fff3cd;
-    border-left: 3px solid #ffc107;
+    border-start: 3px solid #ffc107;
 }
 
 .fee-row {
@@ -815,18 +919,16 @@ $(document).ready(function() {
 
 </style>
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2-bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -978,13 +1080,124 @@ tr:last-child .dt-actions .dropdown-menu {
     font-size: 12px;
 }
 
-.academic-history-container .badge-info {
+.academic-history-container .text-bg-info {
     background-color: #17a2b8;
 }
 
 .academic-history-container .alert-info {
     font-size: 13px;
     padding: 8px 12px;
+}
+
+/* DataTables Buttons toolbar (single toolbar — no duplicate Excel/PDF) */
+.dt-buttons-wrap .dt-buttons {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.dt-buttons-wrap .dt-button {
+    margin: 0 !important;
+}
+
+/* Print: clean A4 landscape student list */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 8mm 10mm;
+    }
+
+    body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: #fff !important;
+        font-size: 9pt;
+    }
+
+    .no-print,
+    .main-header,
+    .main-sidebar,
+    .main-footer,
+    .control-sidebar,
+    .preloader,
+  .content-wrapper,
+    .wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .content-wrapper > .content {
+        padding: 0 !important;
+    }
+
+    .content > .container-fluid {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .students-print-card {
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .students-print-card .card-body {
+        padding: 0 !important;
+    }
+
+    .students-print-table-wrap {
+        overflow: visible !important;
+    }
+
+    .dataTables_scrollBody {
+        overflow: visible !important;
+    }
+
+    #studentsTable {
+        width: 100% !important;
+        font-size: 8pt !important;
+    }
+
+    #studentsTable thead {
+        display: table-header-group;
+    }
+
+    #studentsTable th,
+    #studentsTable td {
+        padding: 3px 5px !important;
+        vertical-align: top !important;
+        border: 0.5pt solid #ccc !important;
+    }
+
+    #studentsTable thead th {
+        background: #1e293b !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #studentsTable tbody tr:nth-child(even) td {
+        background: #f8fafc !important;
+    }
+
+    .badge {
+        border: 0 !important;
+        color: #000 !important;
+        background: #e5e7eb !important;
+    }
+
+    .text-bg-success {
+        background: #d1fae5 !important;
+    }
+
+    .text-bg-warning {
+        background: #fef3c7 !important;
+    }
+
+    a[href]:after {
+        content: none !important;
+    }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -994,9 +1207,43 @@ tr:last-child .dt-actions .dropdown-menu {
 <script>
 $(function () {
     const CSRF = { name: '<?= csrf_token() ?>', hash: '<?= csrf_hash() ?>' };
+    const CSRF_HEADER = <?= json_encode(csrf_header()) ?>;
+
+    function refreshStudentsPrintCsrf(xhr) {
+        if (!xhr || !xhr.getResponseHeader) {
+            return;
+        }
+        const hash = xhr.getResponseHeader(CSRF_HEADER) || xhr.getResponseHeader('X-CSRF-TOKEN');
+        if (!hash) {
+            return;
+        }
+        CSRF.hash = hash;
+        $('meta[name="csrf-token-hash"]').attr('content', hash);
+        const $meta = $('#csrf-meta-chalan-edit');
+        if ($meta.length) {
+            $meta.attr('content', hash);
+        }
+    }
+
+    $(document).ajaxComplete(function (_e, xhr) {
+        refreshStudentsPrintCsrf(xhr);
+    });
+
     const printedBy = <?= json_encode((string) (session('member_name') ?? session('member_username') ?? 'User')) ?>;
+    const studentsPrintUserId = <?= json_encode((string) (session('member_userid') ?? '0')) ?>;
+    const studentsPrintCampusId = <?= json_encode((string) (session('member_campusid') ?? '0')) ?>;
+    const schoolPrintName = <?= json_encode($schoolPrintName) ?>;
     const ADMIN = <?= json_encode(rtrim(base_url('admin'), '/')) ?>;
     window.ADMIN = ADMIN;
+
+    if ($.fn.select2) {
+        $('#class_id, #cls_sec_id').each(function () {
+            const $el = $(this);
+            if (!$el.hasClass('select2-hidden-accessible')) {
+                $el.select2({ theme: 'bootstrap-5', width: '100%' });
+            }
+        });
+    }
 
     // Debounce function
     function debounce(func, wait) {
@@ -1017,6 +1264,47 @@ $(function () {
         } catch {
             return new Date().toLocaleString();
         }
+    }
+
+    /** RFC-style CSV cell quoting (Excel-safe; neutralize leading = + - @ as formula) */
+    function csvQuoteCell(val) {
+        let s = String(val ?? '');
+        const c0 = s.charAt(0);
+        if (c0 === '=' || c0 === '+' || c0 === '-' || c0 === '@') {
+            s = "'" + s;
+        }
+        if (/[",\r\n]/.test(s)) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    }
+
+    function buildCsvPreamble() {
+        const summary = ($('#filterStatus').text() || '').replace(/\s+/g, ' ').trim();
+        const rows = [
+            ['Report', 'Students directory'],
+            ['School', schoolPrintName],
+            ['Generated (PKT)', printedOn()],
+            ['Printed by', printedBy],
+            ['Filters / scope', summary || '—'],
+            [],
+        ];
+        return rows.map((r) => (r.length ? r.map(csvQuoteCell).join(',') : '')).join('\r\n') + '\r\n';
+    }
+
+    function renderStatusBadge(data, type, row) {
+        const s = parseInt(row.status, 10);
+        if (type === 'sort' || type === 'filter') {
+            return s;
+        }
+        if (s === 1) {
+            return '<span class="badge text-bg-success">Current</span>';
+        }
+        if (s === 4) {
+            return '<span class="badge text-bg-warning">Dropped</span>';
+        }
+        const t = row.status_text || data || 'Other';
+        return '<span class="badge text-bg-secondary">' + $('<div>').text(t).html() + '</span>';
     }
 
     // Render actions button
@@ -1042,6 +1330,50 @@ $(function () {
     let localStateLoaded = false;
     let tableInitialized = false;
 
+    let sectionsJsonList = [];
+    try {
+        sectionsJsonList = JSON.parse(document.getElementById('students-print-sections-json').textContent || '[]');
+    } catch (e) {
+        sectionsJsonList = [];
+    }
+
+    function rebuildClassSectionOptions() {
+        const cid = parseInt($('#class_id').val(), 10) || 0;
+        const prev = $('#cls_sec_id').val();
+        const $sel = $('#cls_sec_id');
+        $sel.empty();
+        $sel.append($('<option></option>').val('').text('All Sections'));
+        sectionsJsonList.forEach(function (sec) {
+            const sid = parseInt(String(sec.class_id || 0), 10);
+            if (cid && sid !== cid) {
+                return;
+            }
+            const id = parseInt(String(sec.cls_sec_id || 0), 10);
+            const label = sec.label || '';
+            $sel.append(
+                $('<option></option>')
+                    .val(id)
+                    .text(label)
+                    .attr('data-class-id', sid)
+            );
+        });
+        if (prev && $sel.find('option[value="' + prev + '"]').length) {
+            $sel.val(prev);
+        } else {
+            $sel.val('');
+        }
+        $sel.trigger('change.select2');
+    }
+
+    function syncStudentsPrintStatusUrl() {
+        const showAll = $('input[name="status_filter"]:checked').val() === 'all';
+        try {
+            const u = new URL(window.location.href);
+            u.searchParams.set('status', showAll ? 'all' : '1');
+            history.replaceState({}, '', u.toString());
+        } catch (e) { /* ignore */ }
+    }
+
     // Autocomplete setup for Student Name
     $('#search_name').autocomplete({
         source: function(request, response) {
@@ -1054,10 +1386,10 @@ $(function () {
                 dataType: "json",
                 data: {
                     term: request.term,
-                    campus_id: '<?= session('campus_id') ?>',
-                    [CSRF.name]: CSRF.hash
+                    campus_id: '<?= (int) session('member_campusid') ?>'
                 },
-                success: function(data) {
+                success: function(data, _textStatus, xhr) {
+                    refreshStudentsPrintCsrf(xhr);
                     response($.map(data, function(item) {
                         return {
                             label: `${item.first_name} ${item.last_name || ''} (${item.reg_no || 'No Reg'}) - Class: ${item.class_name || 'N/A'}`,
@@ -1106,10 +1438,10 @@ $(function () {
                 dataType: "json",
                 data: {
                     term: request.term,
-                    campus_id: '<?= session('campus_id') ?>',
-                    [CSRF.name]: CSRF.hash
+                    campus_id: '<?= (int) session('member_campusid') ?>'
                 },
-                success: function(data) {
+                success: function(data, _textStatus, xhr) {
+                    refreshStudentsPrintCsrf(xhr);
                     response($.map(data, function(item) {
                         return {
                             label: `${item.father_name} (Student: ${item.student_name || item.first_name}) - ${item.reg_no || 'No Reg'}`,
@@ -1148,17 +1480,94 @@ $(function () {
 
     const debouncedReload = debounce(reloadDataTable, 800);
 
-    // Initialize DataTable - OPTIMIZED (only ONE initialization)
+    if ($.fn.DataTable.isDataTable('#studentsTable')) {
+        $('#studentsTable').DataTable().destroy();
+    }
+
+    const STUDENTS_DATA_URL = "<?= site_url('admin/students_print/data') ?>";
+
+    function buildContactListPrintUrl(mode) {
+        const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
+        const params = new URLSearchParams();
+        params.set('mode', mode === 'family' ? 'family' : 'class');
+        const statusValue = $('input[name="status_filter"]:checked').val();
+        params.set('show_all', statusValue === 'all' ? '1' : '0');
+        const cid = $('#class_id').val();
+        if (cid) {
+            params.set('class_id', cid);
+        }
+        const csid = $('#cls_sec_id').val();
+        if (csid) {
+            params.set('cls_sec_id', csid);
+        }
+        const sn = ($('#search_name').val() || '').trim();
+        if (sn) {
+            params.set('search_name', sn);
+        }
+        const sf = ($('#search_father').val() || '').trim();
+        if (sf) {
+            params.set('search_father', sf);
+        }
+        return ADMIN_URL + '/students_print/contact-list?' + params.toString();
+    }
+
+    function buildSectionRosterPrintUrl() {
+        const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
+        const params = new URLSearchParams();
+        const cid = $('#class_id').val();
+        if (cid) {
+            params.set('class_id', cid);
+        }
+        const csid = $('#cls_sec_id').val();
+        if (csid) {
+            params.set('cls_sec_id', csid);
+        }
+        return ADMIN_URL + '/students_print/section-roster?' + params.toString();
+    }
+
+    $('#printContactListClassWise').on('click', function (e) {
+        e.preventDefault();
+        window.open(buildContactListPrintUrl('class'), '_blank', 'noopener,noreferrer');
+    });
+    $('#printContactListFamilyWise').on('click', function (e) {
+        e.preventDefault();
+        window.open(buildContactListPrintUrl('family'), '_blank', 'noopener,noreferrer');
+    });
+    $('#printSectionRoster').on('click', function (e) {
+        e.preventDefault();
+        window.open(buildSectionRosterPrintUrl(), '_blank', 'noopener,noreferrer');
+    });
+
+    function studentsTableScrollHeightPx() {
+        const $host = $('#studentsDtHost');
+        if (!$host.length) {
+            return Math.max(320, window.innerHeight - 320);
+        }
+        const hostTop = $host.offset().top || 0;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const viewportBottom = scrollTop + window.innerHeight;
+        const reservedBottom = 96;
+        return Math.max(280, Math.floor(viewportBottom - hostTop - reservedBottom));
+    }
+
+    function applyStudentsTableScrollHeight() {
+        const px = studentsTableScrollHeightPx() + 'px';
+        $('#studentsDtHost .dataTables_scrollBody').css({ maxHeight: px, height: px });
+    }
+
+    // Initialize DataTable — scrollY keeps horizontal scrollbar in viewport; dom omits B (avoids duplicate button bars with scrollX) and f (no global search; use filters above).
     const table = $('#studentsTable').DataTable({
         processing: true,
         serverSide: true,
         orderMulti: true,
         scrollX: true,
+        scrollY: studentsTableScrollHeightPx() + 'px',
+        scrollCollapse: false,
         autoWidth: false,
         stateSave: false,  // CHANGED: Disabled to prevent extra calls
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
         pageLength: 25,
-        dom: 'Bfrtip',
+        dom: 'lrtip',
         ajax: {
             url: "<?= site_url('admin/students_print/data') ?>",
             type: "POST",
@@ -1179,7 +1588,14 @@ $(function () {
                 
                 d[CSRF.name] = CSRF.hash;
             },
-            error: function(xhr) {
+            complete: function(xhr) {
+                refreshStudentsPrintCsrf(xhr);
+            },
+            error: function(xhr, status) {
+                if (status === 'abort') {
+                    return;
+                }
+                refreshStudentsPrintCsrf(xhr);
                 console.error('DataTables Ajax error:', xhr.status);
                 Swal.fire({
                     icon: 'error',
@@ -1193,17 +1609,16 @@ $(function () {
             }
         },
         columns: [
-            { data: 'status', title: 'Status', visible: true },
-            { data: 'status_text', title: 'Status Text', visible: false },
             { data: 'rownum', title: '#', orderable: false, searchable: false },
             { data: 'profile_photo', title: 'Photo', orderable: false, searchable: false },
             { data: 'student_id', title: 'Student ID', visible: false },
             { data: null, title: 'Actions', orderable: false, searchable: false, className: 'text-center', width: '100px', render: renderActions },
             { data: 'reg_no', title: 'Reg No' },
             { data: 'student_name', title: 'Name' },
+            { data: 'status', title: 'Status', render: renderStatusBadge },
             { data: 'father_name', title: 'Father' },
-            { data: 'father_cnic', title: 'Father CNIC' },
-            { data: 'std_cnic', title: 'Student CNIC' },
+            { data: 'father_cnic', title: 'F. CNIC' },
+            { data: 'std_cnic', title: 'Std. CNIC' },
             { data: 'gender', title: 'Gender' },
             { data: 'dob', title: 'DOB' },
             { data: 'age', title: 'Age' },
@@ -1236,59 +1651,322 @@ $(function () {
             { data: 'hear_source', title: 'Heard From', visible: false },
             { data: 'emergency_contact_person', title: 'Emergency Contact Person', visible: false },
             { data: 'relationship', title: 'Relationship', visible: false },
+            { data: 'status_text', title: 'Status Text', visible: false },
             { data: 'has_slc', visible: false },
             { data: 'slc_id', visible: false },
             { data: 'parent_id', visible: false }
         ],
-        initComplete: function() {
-            // Stats are already loaded from PHP - no AJAX call needed
-            console.log('DataTable initialized');
+        initComplete: function () {
+            $('#dtButtons').empty();
+            table.buttons().container().appendTo('#dtButtons');
+            applyStudentsTableScrollHeight();
+            table.columns.adjust();
+            bindStudentsHorizontalScrollSync();
         },
-        drawCallback: function() {
-            // Do nothing extra here
+        drawCallback: function () {
+            applyStudentsTableScrollHeight();
+            bindStudentsHorizontalScrollSync();
         },
-        order: [[12, 'asc'], [13, 'asc'], [5, 'asc']],
+        order: [[2, 'asc']],
         buttons: [
-            { extend: 'colvis', text: 'Columns', columns: ':gt(3)', collectionLayout: 'two-column' },
-            { extend: 'colvisGroup', text: 'Essential', show: [4, 5, 12, 13, 15], hide: [6, 7, 8, 9, 10, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40] },
-            { extend: 'colvisGroup', text: 'Contacts', show: [4, 5, 15, 16, 17, 18, 3], hide: [6, 7, 8, 9, 10, 11, 12, 13, 14, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40] },
-            { extend: 'colvisRestore', text: 'Show All' },
             {
-                extend: 'csvHtml5',
-                text: 'CSV',
-                bom: true,
-                title: () => 'students_' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15),
-                exportOptions: { columns: (idx, node, col) => table.column(idx).visible() && idx > 3, stripHtml: true },
-                customize: (csv) => 'Printed on,' + printedOn() + ',Printed by,' + printedBy + '\n' + csv
+                text: '<i class="fas fa-columns"></i> Columns',
+                className: 'btn btn-secondary btn-sm',
+                action: function () {
+                    openStudentsColumnModal();
+                },
             },
             {
-                extend: 'pdfHtml5',
-                text: 'PDF',
-                title: 'Students',
-                orientation: 'landscape',
-                pageSize: 'A4',
-                exportOptions: { columns: (idx, node, col) => table.column(idx).visible() && idx > 3, stripHtml: true },
-                customize: function(doc) {
-                    doc.content.unshift({
-                        columns: [
-                            { text: 'Printed on: ' + printedOn(), alignment: 'left', margin: [0, 0, 0, 6] },
-                            { text: 'Printed by: ' + printedBy, alignment: 'right', margin: [0, 0, 0, 6] }
-                        ],
-                        fontSize: 9
-                    });
-                    doc.styles.tableHeader.alignment = 'left';
-                    doc.defaultStyle.fontSize = 9;
-                    const tbl = doc.content.find(n => n.table);
-                    if (tbl) {
-                        const n = tbl.table.body[0].length;
-                        tbl.table.widths = Array(n).fill('auto');
-                    }
-                }
-            }
-        ]
+                text: '<i class="fas fa-file-csv"></i> CSV (all rows)',
+                className: 'btn btn-secondary btn-sm',
+                action: function () { exportStudentsCsvFull(); },
+            },
+            {
+                text: '<i class="fas fa-file-pdf"></i> PDF (all rows)',
+                className: 'btn btn-secondary btn-sm',
+                action: function () { exportStudentsPdfFull(); },
+            },
+        ],
     });
 
-    table.buttons().container().appendTo('#dtButtons');
+    function showAllPostForExport() {
+        const statusValue = $('input[name="status_filter"]:checked').val();
+        return statusValue === 'all' ? 'true' : 'false';
+    }
+
+    function stripExportCell(val) {
+        if (val === null || val === undefined) {
+            return '';
+        }
+        return $('<div>').html(String(val)).text().replace(/\s+/g, ' ').trim();
+    }
+
+    function fetchAllStudentRows(done) {
+        $.ajax({
+            url: STUDENTS_DATA_URL,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                draw: 1,
+                start: 0,
+                length: 1,
+                export_all: '1',
+                search_name: $('#search_name').val() || '',
+                search_father: $('#search_father').val() || '',
+                class_id: $('#class_id').val() || '',
+                cls_sec_id: $('#cls_sec_id').val() || '',
+                show_all: showAllPostForExport(),
+                [CSRF.name]: CSRF.hash,
+            },
+        }).done(function (res) {
+            if (!res || !Array.isArray(res.data)) {
+                done(new Error('bad'), []);
+                return;
+            }
+            done(null, res.data);
+        }).fail(function (xhr) {
+            done(xhr, []);
+        });
+    }
+
+    function getExportColumnMeta() {
+        const meta = [];
+        table.columns().every(function (idx) {
+            if ([1, 2, 3].indexOf(idx) !== -1) {
+                return;
+            }
+            if (!this.visible()) {
+                return;
+            }
+            const col = this.settings()[0].aoColumns[idx];
+            const key = col.data;
+            if (key === null || key === undefined || key === '') {
+                return;
+            }
+            const title = (col.sTitle && String(col.sTitle).trim()) || $(this.header()).text().trim() || String(key);
+            meta.push({ key: key, title: title });
+        });
+        return meta;
+    }
+
+    function buildCsvFromRows(rows, colMeta) {
+        const headerRow = colMeta.map(function (c) { return csvQuoteCell(c.title); });
+        const lines = [headerRow.join(',')];
+        rows.forEach(function (row) {
+            const cells = colMeta.map(function (c) {
+                return csvQuoteCell(stripExportCell(row[c.key]));
+            });
+            lines.push(cells.join(','));
+        });
+        return lines.join('\r\n');
+    }
+
+    function downloadBlob(filename, blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function exportStudentsCsvFull() {
+        const colMeta = getExportColumnMeta();
+        if (!colMeta.length) {
+            Swal.fire({ icon: 'warning', title: 'No columns', text: 'Show at least one data column before exporting.', timer: 2800, toast: true, position: 'top-end', showConfirmButton: false });
+            return;
+        }
+        Swal.fire({ title: 'Loading all rows…', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        fetchAllStudentRows(function (err, rows) {
+            Swal.close();
+            if (err) {
+                Swal.fire({ icon: 'error', title: 'Export failed', text: 'Could not load all rows for the current filters.' });
+                return;
+            }
+            if (!rows.length) {
+                Swal.fire({ icon: 'info', title: 'No data', text: 'Nothing to export.', timer: 2500, toast: true, position: 'top-end', showConfirmButton: false });
+                return;
+            }
+            const bodyCsv = buildCsvFromRows(rows, colMeta);
+            const csv = buildCsvPreamble() + bodyCsv;
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            downloadBlob('students_directory_' + new Date().toISOString().slice(0, 10) + '.csv', blob);
+        });
+    }
+
+    function exportStudentsPdfFull() {
+        if (typeof pdfMake === 'undefined') {
+            Swal.fire({ icon: 'error', title: 'PDF unavailable', text: 'pdfMake is not loaded.' });
+            return;
+        }
+        const colMeta = getExportColumnMeta();
+        if (!colMeta.length) {
+            return;
+        }
+        Swal.fire({ title: 'Loading all rows…', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        fetchAllStudentRows(function (err, rows) {
+            Swal.close();
+            if (err) {
+                Swal.fire({ icon: 'error', title: 'Export failed', text: 'Could not load all rows for the current filters.' });
+                return;
+            }
+            if (!rows.length) {
+                Swal.fire({ icon: 'info', title: 'No data', text: 'Nothing to export.', timer: 2500, toast: true, position: 'top-end', showConfirmButton: false });
+                return;
+            }
+            const headRow = colMeta.map(function (c) { return String(c.title).slice(0, 36); });
+            const body = rows.map(function (row) {
+                return colMeta.map(function (c) {
+                    return stripExportCell(row[c.key]).slice(0, 160);
+                });
+            });
+            const docDef = {
+                pageOrientation: 'landscape',
+                pageSize: 'A4',
+                pageMargins: [14, 22, 14, 14],
+                defaultStyle: { fontSize: 6 },
+                content: [
+                    { text: schoolPrintName, fontSize: 11, bold: true, margin: [0, 0, 0, 4] },
+                    { text: 'Students directory — ' + rows.length + ' row(s)', fontSize: 9, margin: [0, 0, 0, 2] },
+                    { text: 'Printed (PKT): ' + printedOn() + ' · By: ' + printedBy, fontSize: 8, margin: [0, 0, 0, 2] },
+                    { text: ($('#filterStatus').text() || '').replace(/\s+/g, ' ').trim(), fontSize: 7, margin: [0, 0, 0, 8] },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: Array(colMeta.length).fill('auto'),
+                            body: [headRow].concat(body),
+                        },
+                        layout: 'lightHorizontalLines',
+                    },
+                ],
+            };
+            pdfMake.createPdf(docDef).download('students_directory_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+    }
+
+    let hScrollSyncBound = false;
+    function bindStudentsHorizontalScrollSync() {
+        const $body = $('#studentsDtHost .dataTables_scrollBody');
+        const $top = $('#studentsHScrollTop');
+        const $inner = $('#studentsHScrollTopInner');
+        if (!$body.length || !$top.length) {
+            return;
+        }
+        const bodyEl = $body[0];
+        const topEl = $top[0];
+        const syncWidth = function () {
+            $inner.css('width', bodyEl.scrollWidth + 'px');
+        };
+        syncWidth();
+        if (bodyEl.scrollWidth <= bodyEl.clientWidth + 6) {
+            $top.css({ visibility: 'hidden', height: '0', minHeight: '0', border: '0' });
+            return;
+        }
+        $top.css({ visibility: 'visible', height: '', minHeight: '', border: '' });
+        if (!hScrollSyncBound) {
+            hScrollSyncBound = true;
+            $top.on('scroll.stuXsync', function () {
+                bodyEl.scrollLeft = topEl.scrollLeft;
+            });
+            $body.on('scroll.stuXsync', function () {
+                topEl.scrollLeft = bodyEl.scrollLeft;
+            });
+        } else {
+            topEl.scrollLeft = bodyEl.scrollLeft;
+            syncWidth();
+        }
+    }
+
+    function openStudentsColumnModal() {
+        const $body = $('#studentsColumnModalBody').empty();
+        const settings = table.settings()[0];
+        const ao = settings.aoColumns;
+        const locked = { 2: true, 3: true };
+        for (let idx = 0; idx < ao.length; idx++) {
+            if (locked[idx]) {
+                continue;
+            }
+            const col = ao[idx];
+            const colApi = table.column(idx);
+            let title = (col.sTitle && String(col.sTitle).trim()) || $(colApi.header()).text().trim();
+            if (!title && col.data !== undefined && col.data !== null && col.data !== '') {
+                title = String(col.data);
+            }
+            if (!title) {
+                title = 'Column ' + idx;
+            }
+            const id = 'stu_col_cb_' + idx;
+            const checked = colApi.visible() ? ' checked' : '';
+            const safeTitle = $('<div>').text(title || ('Column ' + idx)).html();
+            $body.append(
+                '<div class="form-check form-check mb-1">' +
+                '<input type="checkbox" class="form-check-input stu-col-cb" id="' + id + '" data-col-idx="' + idx + '"' + checked + '>' +
+                '<label class="form-check-label" for="' + id + '">' + safeTitle + '</label></div>'
+            );
+        }
+        $('#studentsColumnModal').modal('show');
+    }
+
+    const studentsColumnStateKey = `students_print_column_state_v1_u${studentsPrintUserId}_c${studentsPrintCampusId}`;
+    function persistStudentsColumnState() {
+        try {
+            localStorage.setItem(studentsColumnStateKey, JSON.stringify(getCurrentViewState()));
+        } catch (e) {
+            // Ignore quota/private-mode issues silently
+        }
+    }
+
+    function restoreStudentsColumnState() {
+        try {
+            const raw = localStorage.getItem(studentsColumnStateKey);
+            if (!raw) return false;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') return false;
+            applyViewState(parsed);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    $(document).on('click', '#studentsColumnApply', function () {
+        if (!$.fn.DataTable.isDataTable('#studentsTable')) {
+            return;
+        }
+        const $applyBtn = $(this);
+        // Move focus outside modal before hide to avoid aria-hidden focus warning.
+        $applyBtn.trigger('blur');
+        $('#viewBasic').trigger('focus');
+        const dt = $('#studentsTable').DataTable();
+        $('.stu-col-cb').each(function () {
+            const idx = parseInt($(this).data('col-idx'), 10);
+            if (isNaN(idx)) {
+                return;
+            }
+            dt.column(idx).visible($(this).is(':checked'), false);
+        });
+        dt.column(2).visible(false, false);
+        dt.column(3).visible(true, false);
+        dt.draw(false);
+        persistStudentsColumnState();
+        $('#studentsColumnModal').modal('hide');
+        setTimeout(function () {
+            dt.columns.adjust();
+            bindStudentsHorizontalScrollSync();
+        }, 80);
+    });
+
+    function applyColumnPreset(showIdx) {
+        const show = new Set(showIdx);
+        const n = table.columns().count();
+        for (let i = 0; i < n; i++) {
+            table.column(i).visible(show.has(i), false);
+        }
+        table.column(2).visible(false, false);
+        table.draw(false);
+        persistStudentsColumnState();
+        setTimeout(() => table.columns.adjust(), 80);
+    }
 
     // REMOVED: stateLoaded event (since stateSave is false)
     // REMOVED: init.dt event with applyViewState (was causing extra call)
@@ -1297,11 +1975,32 @@ $(function () {
     let adjustTimeout;
     table.on('column-visibility.dt', function() {
         clearTimeout(adjustTimeout);
-        adjustTimeout = setTimeout(() => table.columns.adjust(), 100);
+        adjustTimeout = setTimeout(function () {
+            table.columns.adjust();
+            bindStudentsHorizontalScrollSync();
+        }, 120);
     });
     
-    $(document).on('shown.lte.pushmenu collapsed.lte.pushmenu', () => setTimeout(() => table.columns.adjust(), 200));
-    $(window).on('resize', () => table.columns.adjust());
+    $(document).on('shown.lte.pushmenu collapsed.lte.pushmenu', function () {
+        setTimeout(function () {
+            applyStudentsTableScrollHeight();
+            table.columns.adjust();
+            bindStudentsHorizontalScrollSync();
+        }, 200);
+    });
+    $(window).on('resize', function () {
+        applyStudentsTableScrollHeight();
+        table.columns.adjust();
+        bindStudentsHorizontalScrollSync();
+    });
+
+    $(document).on('expanded.lte.cardwidget collapsed.lte.cardwidget', '#studentsStatsCard, #studentsFiltersCard', function () {
+        setTimeout(function () {
+            applyStudentsTableScrollHeight();
+            table.columns.adjust();
+            bindStudentsHorizontalScrollSync();
+        }, 280);
+    });
 
     // Instant filtering
     $('#search_name, #search_father').on('keyup', function(e) {
@@ -1319,25 +2018,53 @@ $(function () {
     });
     
     $('#class_id').on('change', function() {
-        $('#cls_sec_id').val('').trigger('change.select2');
+        rebuildClassSectionOptions();
         reloadDataTable();
+        updateFilterStatus();
     });
-    
+
     $('#cls_sec_id').on('change', function() {
         reloadDataTable();
+        updateFilterStatus();
     });
-    
+
     $('input[name="status_filter"]').on('change', function() {
+        syncStudentsPrintStatusUrl();
         reloadDataTable();
+        updateFilterStatus();
     });
-    
+
+    $('#viewBasic').on('click', function () {
+        applyColumnPreset([0, 1, 3, 4, 5, 6, 13, 14, 16]);
+    });
+    $('#viewContacts').on('click', function () {
+        applyColumnPreset([0, 1, 3, 4, 5, 6, 17, 18, 19, 20, 21, 22]);
+    });
+    $('#viewAcademic').on('click', function () {
+        applyColumnPreset([0, 1, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 22, 23, 24, 25, 27, 28, 29]);
+    });
+    $('#viewAll').on('click', function () {
+        const n = table.columns().count();
+        for (let i = 0; i < n; i++) {
+            table.column(i).visible(true, false);
+        }
+        table.column(2).visible(false, false);
+        table.draw(false);
+        persistStudentsColumnState();
+        setTimeout(() => table.columns.adjust(), 80);
+    });
+
     $('#resetFilters').on('click', function () {
         $('#search_name').val('');
         $('#search_father').val('');
         $('#class_id').val('').trigger('change.select2');
+        rebuildClassSectionOptions();
         $('#cls_sec_id').val('').trigger('change.select2');
         $('input[name="status_filter"][value="current"]').prop('checked', true);
-        $('#btnCurrentOnly').button('toggle');
+        $('input[name="status_filter"][value="all"]').prop('checked', false);
+        $('#btnCurrentOnly').addClass('active');
+        $('#btnAllStudents').removeClass('active');
+        syncStudentsPrintStatusUrl();
         reloadDataTable();
         updateFilterStatus();
     });
@@ -1348,11 +2075,24 @@ $(function () {
         if ($('#search_father').val()) filters.push(`Father: ${$('#search_father').val()}`);
         if ($('#class_id').val()) filters.push(`Class: ${$('#class_id option:selected').text()}`);
         if ($('#cls_sec_id').val()) filters.push(`Section: ${$('#cls_sec_id option:selected').text()}`);
-        $('#filterStatus').text(filters.length ? `Active filters: ${filters.join(' | ')}` : 'No active filters');
+        if ($('input[name="status_filter"]:checked').val() === 'all') {
+            filters.push('Status: all students');
+        }
+        const statusMsg = filters.length ? `Active filters: ${filters.join(' | ')}` : 'No active filters (current students only)';
+        $('#filterStatus').text(statusMsg);
+        $('#studentsPrintMeta').text(statusMsg);
+        const badgeShort = filters.length
+            ? (filters.length + ' filter' + (filters.length > 1 ? 's' : ''))
+            : 'Current students';
+        $('#filterStatusBadge').text(badgeShort).attr('title', statusMsg);
     }
-    
+
     updateFilterStatus();
-    
+
+    table.on('draw.dt', function () {
+        updateFilterStatus();
+    });
+
     table.on('processing.dt', function(e, settings, processing) {
         $('#studentsTable').css('opacity', processing ? '0.6' : '1');
     });
@@ -1373,8 +2113,14 @@ $(function () {
         if (state.length) table.page.len(parseInt(state.length, 10));
         if (state.order && Array.isArray(state.order) && state.order.length) table.order(state.order);
         table.draw(false);
+        persistStudentsColumnState();
         setTimeout(() => table.columns.adjust(), 60);
     }
+
+    // Keep focus on a safe target when modal closes
+    $('#studentsColumnModal').on('hidden.bs.modal', function () {
+        $('#viewBasic').trigger('focus');
+    });
 
     $('#saveDefault').on('click', function () {
         const $btn = $(this).prop('disabled', true).text('Saving...');
@@ -1397,6 +2143,9 @@ $(function () {
                 $btn.prop('disabled', false).text('Save as default view'); 
             });
     });
+
+    // Auto-restore user-selected visible columns/order/length on next visits
+    restoreStudentsColumnState();
 });
 
 // Global function for showing student actions modal
@@ -1417,8 +2166,24 @@ function showStudentActions(studentId) {
         
         $('#modalProfileLink').attr('href', `${ADMIN_URL}/profile-student?id=${studentId}`);
         $('#modalChallansLink').attr('href', '#');
-        $('#modalCreateChallanLink').attr('href', `${ADMIN_URL}/fee-chalan/add?id=${studentId}`);
+        $('#modalCreateChallanLink').attr('href', '#');
         $('#modalEditLink').attr('href', `${ADMIN_URL}/students/edit?id=${studentId}`);
+        $('#modalBonafideLink').off('click').on('click', function(e) {
+            e.preventDefault();
+            $('#studentActionsModal').modal('hide');
+            $('#bc_student_id').val(studentId);
+            $('#bc_recipient_mode').val('twmc').trigger('change');
+            $('#bc_recipient_name').val('');
+            $('#bc_reason').val('');
+            $('#bc_show_reg_no').prop('checked', true);
+            $('#bc_show_father').prop('checked', true);
+            $('#bc_show_class').prop('checked', true);
+            $('#bc_show_dob').prop('checked', true);
+            $('#bc_show_current_fee').prop('checked', false);
+            $('#bc_show_monthly_fee').prop('checked', false);
+            $('#bc_show_issue_date').prop('checked', true);
+            $('#bonafideOptionsModal').modal('show');
+        });
         
         if (hasSlc && slcId) {
             $('#modalSlcLink').attr('href', `${ADMIN_URL}/slc/view/${slcId}`);
@@ -1441,7 +2206,6 @@ function showStudentActions(studentId) {
 
 $(document).on('click', '#modalChallansLink', function (e) {
     e.preventDefault();
-    const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
     const studentId = $('#studentActionsModal').data('activeStudentId');
     const parentId = $('#studentActionsModal').data('activeParentId') || 0;
     if (!studentId) {
@@ -1463,8 +2227,69 @@ $(document).on('click', '#modalChallansLink', function (e) {
     $('#challanGenerateOptionsModal').modal('show');
 });
 
+$(document).on('click', '#modalCreateChallanLink', function (e) {
+    e.preventDefault();
+    const studentId = $('#studentActionsModal').data('activeStudentId');
+    const parentId = $('#studentActionsModal').data('activeParentId') || 0;
+    if (!studentId) {
+        return;
+    }
+    $('#studentActionsModal').modal('hide');
+    if (typeof window.openChalanEditForPay === 'function') {
+        window.openChalanEditForPay(parentId, studentId);
+    }
+});
+
 $('#cg_scope').on('change', function () {
     $('#cg_scope_family_hint').toggle($(this).val() === 'family');
+});
+
+$('#bc_recipient_mode').on('change', function () {
+    const customMode = $(this).val() === 'custom';
+    $('#bc_custom_recipient_wrap').toggle(customMode);
+    if (!customMode) {
+        $('#bc_recipient_name').val('');
+    }
+});
+
+$('#bcOpenCertificateBtn').on('click', function () {
+    const ADMIN_URL = window.ADMIN || '<?= rtrim(base_url('admin'), '/') ?>';
+    const studentId = parseInt($('#bc_student_id').val(), 10) || 0;
+    if (!studentId) {
+        return;
+    }
+
+    const recipientMode = $('#bc_recipient_mode').val() === 'custom' ? 'custom' : 'twmc';
+    const recipientName = ($('#bc_recipient_name').val() || '').trim();
+
+    if (recipientMode === 'custom' && recipientName === '') {
+        alert('Please enter custom recipient text.');
+        $('#bc_recipient_name').focus();
+        return;
+    }
+
+    const reasonText = ($('#bc_reason').val() || '').trim();
+    if (!reasonText) {
+        alert('Please select certificate reason.');
+        $('#bc_reason').focus();
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.set('student_id', String(studentId));
+    params.set('recipient_mode', recipientMode);
+    params.set('recipient_name', recipientName);
+    params.set('purpose', reasonText);
+    params.set('show_reg_no', $('#bc_show_reg_no').is(':checked') ? '1' : '0');
+    params.set('show_father', $('#bc_show_father').is(':checked') ? '1' : '0');
+    params.set('show_class', $('#bc_show_class').is(':checked') ? '1' : '0');
+    params.set('show_dob', $('#bc_show_dob').is(':checked') ? '1' : '0');
+    params.set('show_current_fee', $('#bc_show_current_fee').is(':checked') ? '1' : '0');
+    params.set('show_monthly_fee', $('#bc_show_monthly_fee').is(':checked') ? '1' : '0');
+    params.set('show_issue_date', $('#bc_show_issue_date').is(':checked') ? '1' : '0');
+
+    window.open(`${ADMIN_URL}/students_print/bonafide-certificate?${params.toString()}`, '_blank');
+    $('#bonafideOptionsModal').modal('hide');
 });
 
 $('#cgOpenChallanBtn').on('click', function () {
@@ -1632,7 +2457,7 @@ function openEditModal(studentId) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit SLC Information</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body" id="slcEditModalBody">
                     <div class="text-center p-5">
@@ -1806,7 +2631,7 @@ function loadAcademicHistory(studentId) {
                     
                     html += `
                         <div class="card card-secondary mb-2">
-                            <div class="card-header p-2" style="cursor: pointer;" data-toggle="collapse" data-target="#${sessionId}">
+                            <div class="card-header p-2" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#${sessionId}">
                                 <div class="row">
                                     <div class="col-md-3">
                                         <strong>${escapeHtml(history.session_name || 'N/A')}</strong>
@@ -1815,9 +2640,9 @@ function loadAcademicHistory(studentId) {
                                         Class: ${escapeHtml(history.class_section || 'N/A')}
                                     </div>
                                     <div class="col-md-3">
-                                        Total: <span class="badge badge-info">PKR ${sessionTotal.toLocaleString()}</span>
+                                        Total: <span class="badge text-bg-info">PKR ${sessionTotal.toLocaleString()}</span>
                                     </div>
-                                    <div class="col-md-3 text-right">
+                                    <div class="col-md-3 text-end">
                                         <i class="fas fa-chevron-down"></i>
                                     </div>
                                 </div>
@@ -1940,13 +2765,13 @@ $(document).on('change', '#readmitClsSecId', function() {
                     html += `<tr class="fee-row" data-fee-type-id="${fee.fee_type_id}" data-is-monthly="${isMonthly}">
                         <td>
                             ${fee.fee_type_title}
-                            ${isMonthly ? '<span class="badge badge-info ml-1">Monthly</span>' : ''}
+                            ${isMonthly ? '<span class="badge text-bg-info ms-1">Monthly</span>' : ''}
                             <input type="hidden" class="fee-type-id" value="${fee.fee_type_id}">
                             <input type="hidden" class="is-monthly" value="${isMonthly ? '1' : '0'}">
                             <input type="hidden" class="standard-amount" value="${standardAmount}">
                         </td>
                         <td class="standard-amount-cell">
-                            <span class="badge badge-secondary">PKR ${standardAmount.toLocaleString()}</span>
+                            <span class="badge text-bg-secondary">PKR ${standardAmount.toLocaleString()}</span>
                         </td>
                         <td>
                             <input type="number" class="form-control form-control-sm net-payable-input" 
@@ -2069,7 +2894,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
     
     // Disable button and show loading
     const $btn = $(this);
-    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing...');
     
     $.ajax({
         url: ADMIN_URL + '/students/process_readmission',
@@ -2087,7 +2912,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
         },
         dataType: 'json',
         success: function(response) {
-            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice');
+            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice');
             
             if (response.success) {
                 Swal.fire({
@@ -2113,7 +2938,7 @@ $(document).on('click', '#btnProcessReadmission', function() {
             }
         },
         error: function(xhr) {
-            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt mr-1"></i> Process Readmission & Generate Invoice');
+            $btn.prop('disabled', false).html('<i class="fas fa-undo-alt me-1"></i> Process Readmission & Generate Invoice');
             let errorMsg = 'An error occurred while processing readmission';
             try {
                 const response = JSON.parse(xhr.responseText);
@@ -2149,4 +2974,8 @@ function escapeHtml(text) {
     });
 }
 </script>
+<?= view('admin/chalanview/partials/chalan_edit_modal_shared', [
+    'csrfMetaId' => 'csrf-meta-chalan-edit',
+    'chalanEditAfterSave' => 'reload',
+]) ?>
 <?= $this->endSection() ?>

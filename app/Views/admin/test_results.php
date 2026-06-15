@@ -2,24 +2,19 @@
 <?= $this->section('content') ?>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.3/dist/jquery.validate.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.3.0/jquery.form.min.js"></script>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Add Test Results</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/test_results') ?>">Test Results</a></li>
-          <li class="breadcrumb-item active">Add</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Add Test Results',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Add', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <div class="card card-primary card-outline">
@@ -38,7 +33,7 @@
 <input type="hidden" id="test_id" name="test_id">
 
 <!-- NEW: evaluation mode + remarks toggle -->
-<div class="form-row align-items-end">
+<div class="row align-items-end">
   <div class="form-group col-md-4">
     <label for="cls_sec_id">Class Section</label>
     <select id="cls_sec_id" name="cls_sec_id" class="form-control">
@@ -62,7 +57,7 @@
   </div>
 </div>
 
-<div class="form-row align-items-end">
+<div class="row align-items-end">
   <div class="form-group col-md-3">
     <label for="test_marks">Total Marks</label>
     <input type="number" class="form-control" id="test_marks" name="test_marks" min="1" required>
@@ -126,8 +121,8 @@
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h5 class="mb-0">Students List</h5>
 
-    <div class="form-inline">
-      <label for="order_by" class="mr-2 mb-0">Order by:</label>
+    <div class="d-flex flex-wrap align-items-center">
+      <label for="order_by" class="me-2 mb-0">Order by:</label>
       <select id="order_by" class="form-control form-control-sm">
         <option value="name">Name (A–Z)</option>
         <option value="student_id">Student ID</option>

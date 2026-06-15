@@ -41,7 +41,7 @@
         <button type="button" id="btnMarkAttendance" class="btn btn-success btn-lg px-4">
             <i class="fa fa-check-circle"></i> Mark attendance
         </button>
-        <button type="button" id="btnRetryCamera" class="btn btn-outline-secondary btn-lg ml-1" style="display:none;" title="Release and reopen the camera">
+        <button type="button" id="btnRetryCamera" class="btn btn-outline-secondary btn-lg ms-1" style="display:none;" title="Release and reopen the camera">
             <i class="fa fa-sync-alt"></i> Retry camera
         </button>
     </div>

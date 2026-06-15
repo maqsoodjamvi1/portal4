@@ -10,7 +10,7 @@
 		buttons : {
 			main : {
 				label : "Confirm",
-				className : "btn-default",
+				className : "btn-secondary",
 				callback : function () {
 
 					$.get(link, {
@@ -126,7 +126,7 @@
             <div class="form-group">
               <div class="controls">
                 <button type="submit" class="btn btn-primary">Save</button>
-				<button type="button" class="btn btn-default cancel-form">cancel</button>
+				<button type="button" class="btn btn-secondary cancel-form">cancel</button>
 				<?php 
 				if($id != ''){
 					?>

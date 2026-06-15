@@ -1,0 +1,312 @@
+/**
+ * Datesheet report — screen overview + A4 landscape class-wise print.
+ */
+
+.ds-toolbar {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-bottom: 0;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.ds-overview-wrap {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid #dee2e6;
+}
+
+.ds-overview-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+  margin-bottom: 0;
+}
+
+.ds-overview-table th,
+.ds-overview-table td {
+  background: #fff;
+  vertical-align: top;
+  border: 1px solid #dee2e6;
+}
+
+.ds-overview-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #343a40;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.25rem;
+}
+
+.ds-overview-table .ds-sticky-sec {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  min-width: 10rem;
+  max-width: 14rem;
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+.ds-overview-table thead .ds-sticky-sec {
+  z-index: 5;
+  background: #212529;
+}
+
+.ds-overview-table tbody .ds-sticky-sec {
+  background: #f1f3f5;
+}
+
+.ds-overview-table .ds-date-col {
+  min-width: 4.5rem;
+  max-width: 7rem;
+  text-align: center;
+  padding: 0.25rem;
+}
+
+.ds-subj-line {
+  display: block;
+  line-height: 1.25;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0c5460;
+}
+
+.ds-subj-line + .ds-subj-line {
+  margin-top: 0.15rem;
+}
+
+.ds-empty-cell {
+  color: #adb5bd;
+  text-align: center;
+}
+
+/* Print root hidden on screen */
+.ds-print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 6mm 8mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .main-sidebar,
+  .main-header,
+  .main-footer,
+  .control-sidebar,
+  .preloader,
+  .content-header,
+  .card-header,
+  .card-outline,
+  .no-print,
+  .no-print *,
+  .ds-screen-only {
+    display: none !important;
+  }
+
+  .wrapper,
+  .content-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+
+  .content,
+  .container-fluid,
+  .card,
+  .card-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+  }
+
+  .ds-print-root {
+    display: block !important;
+  }
+
+  .ds-print-root[data-print-mode="list"] .ds-print-layout-list {
+    display: block !important;
+  }
+
+  .ds-print-root[data-print-mode="list"] .ds-print-layout-matrix {
+    display: none !important;
+  }
+
+  .ds-print-root[data-print-mode="matrix"] .ds-print-layout-list {
+    display: none !important;
+  }
+
+  .ds-print-root[data-print-mode="matrix"] .ds-print-layout-matrix {
+    display: block !important;
+  }
+
+  .ds-print-root[data-print-mode="matrix"] .ds-print-layout-matrix.d-none {
+    display: block !important;
+  }
+
+  .ds-print-sheet {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  .ds-print-sheet + .ds-print-sheet {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .ds-print-head {
+    text-align: center;
+    margin-bottom: 3mm;
+    border-bottom: 1px solid #000;
+    padding-bottom: 2mm;
+  }
+
+  .ds-print-head .ds-school {
+    font-size: 13pt;
+    font-weight: 700;
+    margin: 0 0 1mm;
+    line-height: 1.2;
+  }
+
+  .ds-print-head .ds-exam {
+    font-size: 11pt;
+    font-weight: 700;
+    margin: 0 0 1mm;
+  }
+
+  .ds-print-head .ds-class {
+    font-size: 10pt;
+    font-weight: 700;
+    margin: 0 0 1mm;
+  }
+
+  .ds-print-head .ds-meta {
+    font-size: 8pt;
+    color: #333;
+  }
+
+  .ds-class-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8pt;
+    line-height: 1.25;
+    color: #000;
+  }
+
+  .ds-class-table thead th {
+    background: #e8e8e8 !important;
+    border: 1px solid #000 !important;
+    padding: 1.5mm 1mm !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ds-class-table tbody td {
+    border: 1px solid #000 !important;
+    padding: 1.5mm 1.5mm !important;
+    vertical-align: top !important;
+  }
+
+  .ds-class-table .ds-col-sn {
+    width: 6%;
+    text-align: center;
+  }
+
+  .ds-class-table .ds-col-date {
+    width: 14%;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .ds-class-table .ds-col-day {
+    width: 10%;
+    text-align: center;
+  }
+
+  .ds-class-table .ds-col-subj {
+    width: auto;
+  }
+
+  .ds-class-table .ds-print-subj {
+    display: inline-block;
+    margin: 0 2mm 1mm 0;
+    padding: 0.5mm 1.5mm;
+    border: 1px solid #666;
+    border-radius: 1mm;
+    font-weight: 600;
+    font-size: 7.5pt;
+    line-height: 1.2;
+  }
+
+  .ds-class-table .ds-print-empty {
+    color: #888;
+    text-align: center;
+  }
+
+  /* Matrix chunk layout (optional wide grid per class) */
+  .ds-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 7pt;
+    line-height: 1.2;
+  }
+
+  .ds-matrix-table thead th,
+  .ds-matrix-table tbody td,
+  .ds-matrix-table tbody th {
+    border: 1px solid #000 !important;
+    padding: 1mm !important;
+    vertical-align: top !important;
+  }
+
+  .ds-matrix-table thead th {
+    background: #e8e8e8 !important;
+    text-align: center !important;
+    font-size: 6.5pt !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ds-matrix-table .ds-mx-sec {
+    width: 18%;
+    background: #f5f5f5 !important;
+    font-weight: 700;
+  }
+
+  .ds-matrix-table.ds-cols-many {
+    font-size: 6pt;
+  }
+
+  .ds-matrix-table.ds-cols-many .ds-print-subj {
+    font-size: 6pt;
+    padding: 0.3mm 1mm;
+    margin: 0 1mm 0.5mm 0;
+  }
+
+  .ds-chunk-note {
+    font-size: 7pt;
+    text-align: right;
+    margin-top: 1mm;
+    color: #444;
+  }
+}

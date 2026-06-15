@@ -40,7 +40,7 @@
     <div class="card-body">
     <div class="row">
       <div class="col-lg-12">
-        <form id="form-filter" class="form-inline">
+        <form id="form-filter" class="d-flex flex-wrap align-items-center">
                 <div class="col-lg-2">
                     <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
                        <option value="0">Select Student</option>   
@@ -86,7 +86,7 @@
                 </div>
                 <div class="col-lg-2">
                   <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
+                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-secondary">Reset</button>
                 </div>
         </form>
     </div>

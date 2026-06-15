@@ -97,7 +97,13 @@ class Students extends MY_Controller {
 				$sectionName = $sectionInfo->section_name;
 			}
 
-			$getclassfee = $this->db->query('SELECT * FROM `fee_amount` WHERE class_id='.$classsectioninfo->class_id.' and fee_type_id IN(select fee_type_id from fee_type where is_monthly_fee=1) and session_id='.$sessionid.' and campus_id='.$campusid)->row();
+			$monthlyFeeSub = $this->db->select('fee_type_id')->from('fee_type')->where('is_monthly_fee', 1)->get_compiled_select();
+			$getclassfee = $this->db->from('fee_amount')
+				->where('class_id', (int) $classsectioninfo->class_id)
+				->where("fee_type_id IN ($monthlyFeeSub)", null, false)
+				->where('session_id', (int) $sessionid)
+				->where('campus_id', (int) $campusid)
+				->get()->row();
 			
 			if($getclassfee){	
 		   		$projectedfee = ($getclassfee->amount - $row->discounted_amount);
@@ -177,10 +183,10 @@ class Students extends MY_Controller {
 		$campusid = $this->session->userdata('member_campusid');
 		$sessionid = $this->session->userdata('member_sessionid');
 
-		$campus_bill_info = $this->db->query('select * from campus_bills WHERE status=1 AND campus_id='.$campusid)->row();
-		$max_student_id = $campus_bill_info->max_students;
+		$campus_bill_info = $this->db->from('campus_bills')->where('status', 1)->where('campus_id', (int) $campusid)->get()->row();
+		$max_student_id = (int) ($campus_bill_info->max_students ?? 0);
 
-		$max_no_of_students_info = $this->db->query('select no_of_students from number_of_students where id='.$max_student_id)->row();
+		$max_no_of_students_info = $this->db->select('no_of_students')->from('number_of_students')->where('id', $max_student_id)->get()->row();
 		//print_r($max_no_of_students_info->no_of_students);
 		$max_student_limit = $max_no_of_students_info->no_of_students;
 		//exit;
@@ -469,12 +475,17 @@ class Students extends MY_Controller {
 	function get_parentinfo(){
 		$campusid = $this->session->userdata('member_campusid');
 		$term = $this->input->post('term');		
-		$parentssinfo = $this->db->query("select * from parents where (f_name like '%".$term['term']."%' )  ")->result_array();
+		$searchTerm = trim((string) ($term['term'] ?? ''));
+		$this->db->from('parents');
+		if ($searchTerm !== '') {
+			$this->db->like('f_name', $searchTerm);
+		}
+		$parentssinfo = $this->db->get()->result_array();
 		 // Initialize Array with fetched data
 
      $data = array();
      foreach($parentssinfo as $parent){
-     	$classstudents = $this->db->query("select * from students where parent_id = ".$parent['parent_id'])->row();
+     	$classstudents = $this->db->from('students')->where('parent_id', (int) $parent['parent_id'])->get()->row();
      	if($classstudents){
      		 $data[] = array("id" => $parent['parent_id'], "text" => $parent['f_name']);
      	}
@@ -493,12 +504,22 @@ function get_studentinfo(){
 		$term = $this->input->post('term');		
 		$status = $this->input->post('status');		
 		//echo "select * from students where (first_name like '%".$term['term']."%' OR last_name like '%".$term['term']."%') AND status=".$status." AND campus_id=".$campusid;
-		$studentsinfo = $this->db->query("select * from students where (first_name like '%".$term['term']."%' OR last_name like '%".$term['term']."%') AND status=".$status." AND campus_id=".$campusid)->result_array();
+		$searchTerm = trim((string) ($term['term'] ?? ''));
+		$this->db->from('students');
+		$this->db->where('status', (int) $status);
+		$this->db->where('campus_id', (int) $campusid);
+		if ($searchTerm !== '') {
+			$this->db->group_start();
+			$this->db->like('first_name', $searchTerm);
+			$this->db->or_like('last_name', $searchTerm);
+			$this->db->group_end();
+		}
+		$studentsinfo = $this->db->get()->result_array();
 		 // Initialize Array with fetched data 
      $data = array();
      foreach($studentsinfo as $student){
-     	$classstudents = $this->db->query("select * from student_class where  student_id = ".$student['student_id'])->row();
-     	$parentsInfo = $this->db->query("select f_name from parents where  parent_id = ".$student['parent_id'])->row();
+     	$classstudents = $this->db->from('student_class')->where('student_id', (int) $student['student_id'])->get()->row();
+     	$parentsInfo = $this->db->select('f_name')->from('parents')->where('parent_id', (int) $student['parent_id'])->get()->row();
 
      	
      	$stdInfotxt = $student['first_name']." ".$student['last_name']." c/o ".$parentsInfo->f_name;

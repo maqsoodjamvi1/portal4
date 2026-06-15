@@ -23,7 +23,6 @@
 		$session_id = $sessionData['sessionid'];
 	}
 ?>
-<!-- Content Header (Page header) -->
 <style type="text/css">
 th{ text-align: center; }
 .select2-container--default .select2-selection--single, .select2-selection .select2-selection--single{
@@ -37,23 +36,14 @@ th{ text-align: center; }
     right: 3px;
 }
 </style>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-          Students Late Comming
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Students Late Comming</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students Late Comming',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students Late Comming', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -73,7 +63,7 @@ th{ text-align: center; }
 		  </div>
 		   <input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
 		   <div class="row">
-		    <div class="form-inline col-lg-12">
+		    <div class="d-flex flex-wrap align-items-center col-lg-12">
 	            <div class="form-group ">
 	              <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;">
 	              	 <option value="0">Select Student</option>   
@@ -95,8 +85,8 @@ th{ text-align: center; }
 		  <div class="col-lg-12">	  	
           <div class="form-group">
             <button type="submit"  id="submitBtn" class="btn btn-primary">Save</button>
-            <button type="reset" class="btn btn-default">Reset</button>
-            <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+            <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
 		  </div>
 		  </div>

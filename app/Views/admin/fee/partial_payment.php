@@ -5,7 +5,7 @@
   <div class="container-fluid">
     <div class="row mb-2">
       <div class="col-sm-6">
-        <h1><i class="fas fa-wallet mr-1"></i> Partial Fee Payment</h1>
+        <h1><i class="fas fa-wallet me-1"></i> Partial Fee Payment</h1>
       </div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
@@ -23,14 +23,12 @@
       <div class="card card-primary card-outline card-tabs">
         <div class="card-body">
           <?= form_open(base_url('admin/fee-chalan-pay/process-payment'), ['id' => 'partial-payment-form']) ?>
-          <div class="form-row">
+          <div class="row">
             <div class="form-group col-md-3">
               <label for="datePaid">Date Paid</label>
               <div class="input-group date" id="datepicker" data-target-input="nearest">
-                <input type="text" name="paid_date" id="datePaid" class="form-control datetimepicker-input" data-target="#datepicker" autocomplete="off" required />
-                <div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-                  <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                </div>
+                <input type="text" name="paid_date" id="datePaid" class="form-control datetimepicker-input" data-bs-target="#datepicker" autocomplete="off" required />
+                <span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
               </div>
             </div>
 
@@ -59,7 +57,7 @@
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="row">
             <div class="form-group col-md-6">
               <label for="parent_id">Parent</label>
               <select class="form-control select2" name="parent_id" id="parent_id">
@@ -74,7 +72,7 @@
 
           <div id="feetypeinfo">
             <table class="table table-bordered table-hover mt-4">
-              <thead class="thead-dark">
+              <thead class="table-dark">
                 <tr>
                   <th>#</th>
                   <th>Fee Type</th>

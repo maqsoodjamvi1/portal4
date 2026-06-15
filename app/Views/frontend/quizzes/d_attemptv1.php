@@ -34,8 +34,8 @@
   .q-answered{background:#eafff4;border-color:#28a745}
   .q-flag{position:relative}
   .q-flag::after{
-    content:"";position:absolute;top:2px;right:4px;width:0;height:0;border-left:6px solid transparent;
-    border-right:6px solid transparent;border-bottom:10px solid #ffc107
+    content:"";position:absolute;top:2px;right:4px;width:0;height:0;border-start:6px solid transparent;
+    border-end:6px solid transparent;border-bottom:10px solid #ffc107
   }
   .palette-legend .legend{display:flex;align-items:center;margin-right:10px;font-size:.85rem}
   .legend .swatch{width:14px;height:14px;border:1px solid #dee2e6;margin-right:6px;border-radius:3px}
@@ -63,8 +63,8 @@
 
   <div class="d-flex align-items-center">
     <?php if ($quiz->time_limit_sec): ?>
-      <div class="mr-3">
-        <span class="badge badge-light px-3 py-2">
+      <div class="me-3">
+        <span class="badge text-bg-light px-3 py-2">
           ⏱️ Time Left:
           <strong id="timeLeft" class="timer-pill timer-ok">--:--</strong>
         </span>
@@ -96,12 +96,12 @@
           <div class="card-header d-flex align-items-center justify-content-between">
             <div>
               <strong>Q<?= $qNo ?>.</strong>
-              <small class="text-muted ml-2">ID: <?= $qid ?></small>
-              <?php if (isset($row->marks)): ?><span class="badge badge-info ml-2"><?= (float)$row->marks ?> mark(s)</span><?php endif; ?>
+              <small class="text-muted ms-2">ID: <?= $qid ?></small>
+              <?php if (isset($row->marks)): ?><span class="badge text-bg-info ms-2"><?= (float)$row->marks ?> mark(s)</span><?php endif; ?>
             </div>
-            <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input mark-flag" id="flag-<?= $qid ?>" data-qid="<?= $qid ?>">
-              <label class="custom-control-label" for="flag-<?= $qid ?>">Mark for review</label>
+            <div class="form-check form-check">
+              <input type="checkbox" class="form-check-input mark-flag" id="flag-<?= $qid ?>" data-qid="<?= $qid ?>">
+              <label class="form-check-label" for="flag-<?= $qid ?>">Mark for review</label>
             </div>
           </div>
 
@@ -191,9 +191,9 @@
             </div>
             <hr class="my-2">
             <div class="d-flex flex-wrap palette-legend">
-              <div class="legend mr-3"><span class="swatch"></span> Not Answered</div>
-              <div class="legend mr-3"><span class="swatch swatch-ans"></span> Answered</div>
-              <div class="legend mr-3"><span class="swatch swatch-flag"></span> Marked</div>
+              <div class="legend me-3"><span class="swatch"></span> Not Answered</div>
+              <div class="legend me-3"><span class="swatch swatch-ans"></span> Answered</div>
+              <div class="legend me-3"><span class="swatch swatch-flag"></span> Marked</div>
               <div class="legend"><span class="swatch swatch-cur"></span> Current</div>
             </div>
           </div>
@@ -218,13 +218,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Attempt Summary</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
       </div>
       <div class="modal-body" id="summaryBody">
         <!-- filled by JS -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Continue</button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Continue</button>
         <button type="button" class="btn btn-success" id="summarySubmit">Submit Now</button>
       </div>
     </div>

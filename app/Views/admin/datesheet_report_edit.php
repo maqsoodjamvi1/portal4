@@ -1,6 +1,8 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
+<link rel="stylesheet" href="<?= base_url('assets/css/datesheet-report-print.css') ?>?v=1">
+
 <?php
 	if(isset($info)){		
 			$header = 'Edit Datesheet Report';
@@ -17,29 +19,19 @@
 			$subject_id = '';
 		}
 ?>
-<!-- Content Header (Page header) -->  
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Datesheet Report
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active"> Datesheet Report</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Datesheet Report',
+    'icon' => 'fas fa-file-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Datesheet Report', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
         <div class="col-lg-12">
-		   <div class="card card-primary card-outline card-tabs">
+		   <div class="card sms-card card-primary card-outline card-tabs">
         	<div class="card-header p-0 pt-1 border-bottom-0">
 			<ul class="nav nav-tabs">
 			<?php if($id == ''){ ?>
@@ -122,34 +114,17 @@ $(function(){
 	});
 });
 
- $(document).on('click', '#dsPrintBtn', function (e) {
+ $(document).on('click', '[data-ds-print-mode]', function () {
+    var mode = $(this).data('ds-print-mode') || 'list';
+    $('[data-ds-print-mode]').removeClass('active');
+    $(this).addClass('active');
+    $('#dsPrintRoot').attr('data-print-mode', mode);
+  });
+
+  $(document).on('click', '#dsPrintBtn', function (e) {
     e.preventDefault();
     window.print();
   });
 </script>
-
-
-<style>
-/* sticky table + nicer badges */
-.table-sticky-wrap { overflow: auto; }
-.ds-table { border-collapse: separate; border-spacing: 0; }
-.ds-table th, .ds-table td { background: #fff; vertical-align: top; }
-
-.ds-table thead th { position: sticky; top: 0; z-index: 5; }
-.sticky-col { position: sticky; left: 0; z-index: 6; background: #fff; }
-.th-sec, .td-sec { min-width: 220px; max-width: 340px; }
-
-.ds-badge { font-weight: 600; }
-.ds-badge + .small { margin-left: .25rem; }
-.ds-toolbar { background: #f8f9fa; border: 1px solid #e9ecef; border-bottom: 0; }
-
-/* Print: hide controls, show header */
-@media print {
-  .no-print, .main-sidebar, .main-header, .main-footer { display: none !important; }
-  .ds-print-header { display: block !important; }
-  .table-sticky-wrap { overflow: visible !important; }
-  .sticky-col, .ds-table thead th { position: static !important; }
-}
-</style>
 
 <?= $this->endSection() ?>

@@ -1,21 +1,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-clipboard-list"></i> Events & Participants Report</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Reports</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Events & Participants Report',
+    'icon' => 'fas fa-clipboard-list',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Reports', 'active' => true],
+    ],
+]) ?>
 
 <style>
 /* ================== NAME & LINES ================== */
@@ -542,21 +535,21 @@
         <strong>Report</strong>
         <div class="d-flex align-items-center flex-wrap mt-2 mt-md-0">
 
-          <div class="form-check mr-3">
+          <div class="form-check me-3">
             <input class="form-check-input" type="checkbox" id="filterShowPhoto" checked>
             <label class="form-check-label" for="filterShowPhoto">
               Show profile photo
             </label>
           </div>
 
-          <div class="form-check mr-3">
+          <div class="form-check me-3">
             <input class="form-check-input" type="checkbox" id="filterShowEvents">
             <label class="form-check-label" for="filterShowEvents">
               Show participation events
             </label>
           </div>
 
-          <button class="btn btn-sm btn-secondary ml-md-2 mt-2 mt-md-0" onclick="window.print()">
+          <button class="btn btn-sm btn-secondary ms-md-2 mt-2 mt-md-0" onclick="window.print()">
             <i class="fas fa-print"></i> Print
           </button>
         </div>

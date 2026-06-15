@@ -68,7 +68,7 @@
             background: #f5f5f5;
             padding: 10px;
             margin-bottom: 20px;
-            border-left: 4px solid #007bff;
+            border-start: 4px solid #007bff;
         }
         
         .report-info p {
@@ -98,7 +98,7 @@
         .class-title {
             background: #e9ecef;
             padding: 6px 10px;
-            border-left: 3px solid #28a745;
+            border-start: 3px solid #28a745;
             margin: 10px 0 8px 0;
             font-size: 14px;
             font-weight: bold;

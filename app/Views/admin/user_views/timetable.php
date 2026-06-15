@@ -17,7 +17,7 @@
             <tbody>
                 <?php foreach ($days as $day): ?>
                 <tr>
-                    <td class="font-weight-bold bg-light"><?= $day ?></td>
+                    <td class="fw-bold bg-light"><?= $day ?></td>
                     <?php 
                     $daySlots = $schedule[$day] ?? [];
                     for ($i = 0; $i < 8; $i++):
@@ -25,7 +25,7 @@
                     ?>
                     <td class="align-middle">
                         <?php if ($slot): ?>
-                            <div class="text-primary font-weight-bold"><?= esc($slot->subject_name) ?></div>
+                            <div class="text-primary fw-bold"><?= esc($slot->subject_name) ?></div>
                             <div class="small"><?= esc($slot->class_name) ?> - <?= esc($slot->section_name) ?></div>
                             <div class="small text-muted">
                                 <?= date('h:i A', strtotime($slot->start_time)) ?> - 
@@ -43,6 +43,6 @@
     </div>
 <?php else: ?>
     <div class="alert alert-info">
-        <i class="fas fa-info-circle mr-2"></i> No timetable assigned to this teacher.
+        <i class="fas fa-info-circle me-2"></i> No timetable assigned to this teacher.
     </div>
 <?php endif; ?>

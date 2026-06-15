@@ -9,21 +9,15 @@
     $subject_id = (string) ($info->subject_id ?? '');
 ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Subjects Teacher</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Subjects Teacher</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Teacher Subjects',
+    'icon' => 'fas fa-chalkboard-teacher',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Teacher Subjects', 'url' => base_url('admin/teacher_subjects')],
+        ['label' => 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
 <div class="row">

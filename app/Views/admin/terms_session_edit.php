@@ -16,21 +16,16 @@
   }
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-8">
-        <h1 class="mb-0">Terms Session</h1>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Terms Session</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Terms Session',
+    'icon' => 'fas fa-calendar',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Terms Session', 'url' => base_url('admin/terms_session')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -71,8 +66,8 @@
                 <div class="border rounded p-2 h-100">
                   <div class="small text-muted mb-1">Selected Session</div>
                   <div class="d-flex flex-wrap align-items-center">
-                    <span id="sessionName" class="font-weight-600 mr-2">—</span>
-                    <span id="sessionCode" class="badge badge-info">—</span>
+                    <span id="sessionName" class="fw-semibold me-2">—</span>
+                    <span id="sessionCode" class="badge text-bg-info">—</span>
                   </div>
                 </div>
               </div>
@@ -80,17 +75,17 @@
                 <div class="border rounded p-2 h-100">
                   <div class="small text-muted mb-1">Session Dates & Weeks</div>
                   <div class="d-flex flex-wrap align-items-center">
-                    <span class="mr-3">
+                    <span class="me-3">
                       <span class="text-muted">Start:</span>
-                      <span id="sessionStart" class="font-weight-600 mr-1">—</span>
+                      <span id="sessionStart" class="fw-semibold me-1">—</span>
                     </span>
-                    <span class="mr-3">
+                    <span class="me-3">
                       <span class="text-muted">End:</span>
-                      <span id="sessionEnd" class="font-weight-600 mr-1">—</span>
+                      <span id="sessionEnd" class="fw-semibold me-1">—</span>
                     </span>
                     <span>
                       <span class="text-muted">Weeks:</span>
-                      <span id="sessionWeeks" class="font-weight-600">0</span>
+                      <span id="sessionWeeks" class="fw-semibold">0</span>
                     </span>
                   </div>
                 </div>
@@ -109,9 +104,9 @@
 
         <!-- Actions (inside the form) -->
         <div class="mt-3 d-flex flex-wrap">
-          <button type="submit" id="submitBtn" class="btn btn-primary btn-sm mr-2">Save</button>
-          <button type="reset" class="btn btn-default btn-sm mr-2">Reset</button>
-          <button type="button" class="btn btn-default btn-sm" onclick="history.back()">Cancel</button>
+          <button type="submit" id="submitBtn" class="btn btn-primary btn-sm me-2">Save</button>
+          <button type="reset" class="btn btn-secondary btn-sm me-2">Reset</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="history.back()">Cancel</button>
         </div>
 
         </form><!-- /user-edit-form -->
@@ -123,7 +118,7 @@
 
 <style>
   .overlay{position:absolute;inset:0;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;z-index:10}
-  .font-weight-600{font-weight:600}
+  
 </style>
 
 <script>

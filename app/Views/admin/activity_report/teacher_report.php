@@ -87,7 +87,7 @@
 }
 .review-box {
     background: #e8f5e9;
-    border-left: 4px solid #4caf50;
+    border-start: 4px solid #4caf50;
     padding: 12px;
     border-radius: 8px;
     margin-top: 15px;
@@ -123,21 +123,14 @@
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>My Activity Report</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Activity Report</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'My Activity Report',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Activity Report', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
     <!-- Session Info Banner -->
@@ -163,7 +156,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>&nbsp;</label>
-                    <button type="submit" class="btn btn-primary btn-block">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="fa fa-filter"></i> Filter Activities
                     </button>
                 </div>
@@ -201,7 +194,7 @@
                         <div class="mb-4">
                             <h5>
                                 <?= esc($act['name']) ?>
-                                <span class="activity-badge badge-<?= $act['type'] ?>">
+                                <span class="activity-badge text-bg-<?=  $act['type'] ?>">
                                     <?php
                                     $types = ['discussion' => 'Discussion', 'group-work' => 'Group Work', 
                                              'presentation' => 'Presentation', 'lab' => 'Lab', 
@@ -265,7 +258,7 @@
                                         <?php elseif ($media['type'] == 'video'): ?>
                                             <video controls><source src="<?= $media['url'] ?>"></video>
                                         <?php else: ?>
-                                            <a href="<?= $media['url'] ?>" target="_blank" class="btn btn-sm btn-outline-primary btn-block">
+                                            <a href="<?= $media['url'] ?>" target="_blank" class="btn btn-sm btn-outline-primary w-100">
                                                 <i class="fa fa-external-link"></i> View Media
                                             </a>
                                         <?php endif; ?>
@@ -325,7 +318,7 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title"><i class="fa fa-link"></i> Add Media Link</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="media_did">
@@ -344,7 +337,7 @@
                 <div id="media_preview" class="mt-2" style="display: none;"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-success" onclick="submitMediaLink()">
                     <i class="fa fa-save"></i> Add Link
                 </button>

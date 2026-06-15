@@ -119,11 +119,11 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '/admin/classdairy/edit?id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '/admin/classdairy/edit?id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 						   if(row.issys == '1'){
 
 						  }else{
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete?id='); ?>' + data + '\',\'classdairy-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete?id='); ?>' + data + '\',\'classdairy-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 						  }
 
 					html += '</div>';

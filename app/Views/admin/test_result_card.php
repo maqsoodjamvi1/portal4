@@ -1,6 +1,13 @@
 // app/Views/admin/test_result_card.php
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
-<section class="content-header"><h1>Test Result Card</h1></section>
+<?= view('components/page_header', [
+    'title' => 'Test Result Card',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Test Result Card', 'active' => true],
+    ],
+]) ?>
+
 <section class="content"><div class="container-fluid">It works.</div></section>
 <?= $this->endSection() ?>

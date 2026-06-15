@@ -53,7 +53,7 @@
             <h3 class="card-title mb-0">Target Class & Subject</h3>
           </div>
           <div class="card-body pb-2">
-            <div class="form-row">
+            <div class="row">
               <!-- Term -->
               <div class="form-group col-lg-4 col-md-6 col-sm-12">
                 <label for="term_session_id">Term <span class="text-danger">*</span></label>
@@ -138,7 +138,7 @@
           <div class="card-body">
 
             <!-- Row 1: Title + Start + End -->
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-4">
                 <label for="title">Quiz Title <span class="text-danger">*</span></label>
                 <input type="text"
@@ -174,7 +174,7 @@
             </div>
 
             <!-- Row 2: Time / Attempts / Marks / Neg / Total Q -->
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-2">
                 <label for="time_limit_min">Time (min)</label>
                 <input type="number"
@@ -222,7 +222,7 @@
               <div class="form-group col-md-3">
                 <label for="questions_count">Total Questions</label>
                 <input type="number"
-                       class="form-control text-center font-weight-bold"
+                       class="form-control text-center fw-bold"
                        id="questions_count"
                        name="questions_count"
                        value="<?= esc(old('questions_count', '0')) ?>"
@@ -231,7 +231,7 @@
             </div>
 
             <!-- Row 3: Per-type Question Counts -->
-            <div class="form-row border rounded p-3 bg-light">
+            <div class="row border rounded p-3 bg-light">
               <div class="form-group col-md-2">
                 <label for="count_mcq_single">MCQ Single</label>
                 <input type="number"
@@ -310,97 +310,97 @@
             <h3 class="card-title mb-0">Quiz Behaviour Settings</h3>
           </div>
           <div class="card-body">
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-3">
                 <label class="d-block">Shuffle Questions</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="shuffle_questions"
                          name="shuffle_questions"
                          value="1"
                          <?= old('shuffle_questions', '1') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="shuffle_questions">Enable</label>
+                  <label class="form-check-label" for="shuffle_questions">Enable</label>
                 </div>
               </div>
 
               <div class="form-group col-md-3">
                 <label class="d-block">Shuffle Options</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="shuffle_options"
                          name="shuffle_options"
                          value="1"
                          <?= old('shuffle_options', '1') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="shuffle_options">Enable</label>
+                  <label class="form-check-label" for="shuffle_options">Enable</label>
                 </div>
               </div>
 
               <div class="form-group col-md-3">
                 <label class="d-block">Show Solution</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="show_solution"
                          name="show_solution"
                          value="1"
                          <?= old('show_solution', '1') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="show_solution">After submit</label>
+                  <label class="form-check-label" for="show_solution">After submit</label>
                 </div>
               </div>
 
               <div class="form-group col-md-3">
                 <label class="d-block">WiFi Only</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="wifi_only"
                          name="wifi_only"
                          value="1"
                          <?= old('wifi_only') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="wifi_only">Restrict</label>
+                  <label class="form-check-label" for="wifi_only">Restrict</label>
                 </div>
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-3">
                 <label class="d-block">Urdu Quiz?</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="is_urdu"
                          name="is_urdu"
                          value="1"
                          <?= old('is_urdu') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="is_urdu">Store in is_urdu (0/1)</label>
+                  <label class="form-check-label" for="is_urdu">Store in is_urdu (0/1)</label>
                 </div>
               </div>
 
               <div class="form-group col-md-3">
                 <label class="d-block">Order by Question Type</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="is_order_by_qtype"
                          name="is_order_by_qtype"
                          value="1"
                          <?= old('is_order_by_qtype') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="is_order_by_qtype">Group by type</label>
+                  <label class="form-check-label" for="is_order_by_qtype">Group by type</label>
                 </div>
               </div>
 
               <div class="form-group col-md-3">
                 <label class="d-block">Publish</label>
-                <div class="custom-control custom-switch">
+                <div class="form-check form-switch">
                   <input type="checkbox"
-                         class="custom-control-input"
+                         class="form-check-input"
                          id="is_published"
                          name="is_published"
                          value="1"
                          <?= old('is_published', '1') ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="is_published">Visible to students</label>
+                  <label class="form-check-label" for="is_published">Visible to students</label>
                 </div>
               </div>
             </div>
@@ -435,10 +435,10 @@
           <div class="card-header d-flex justify-content-between align-items-center py-2">
             <h3 class="card-title mb-0">Question Bank</h3>
             <div>
-              <button type="button" class="btn btn-xs btn-outline-primary" id="qbSelectAll">
+              <button type="button" class="btn btn-sm btn-outline-primary" id="qbSelectAll">
                 Select All
               </button>
-              <button type="button" class="btn btn-xs btn-outline-secondary ml-1" id="qbClearAll">
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="qbClearAll">
                 Unselect All
               </button>
             </div>
@@ -475,7 +475,7 @@
       <div class="card-footer d-flex justify-content-between">
         <a href="<?= base_url('admin/quizzes') ?>" class="btn btn-secondary">Cancel</a>
         <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save mr-1"></i> Save Quiz
+          <i class="fas fa-save me-1"></i> Save Quiz
         </button>
       </div>
     </form>
@@ -643,11 +643,11 @@ jQuery(function ($) {
           </td>
           <td>${idx + 1}</td>
           <td>
-            <span class="badge badge-info">${typeLabel}</span>
+            <span class="badge text-bg-info">${typeLabel}</span>
           </td>
           <td>${$('<div>').text(questionText).html()}</td>
           <td>
-            <span class="badge badge-light">${difficulty}</span>
+            <span class="badge text-bg-light">${difficulty}</span>
           </td>
           <td><small>${createdAt}</small></td>
         </tr>
@@ -674,7 +674,7 @@ jQuery(function ($) {
 
       const topics = resp.topics || [];
       if (!topics.length) {
-        clearTopics('<span class="badge badge-warning">No topics defined for this class &amp; subject.</span>');
+        clearTopics('<span class="badge text-bg-warning">No topics defined for this class &amp; subject.</span>');
         reloadQuestions(secSubId);
         return;
       }
@@ -684,9 +684,9 @@ jQuery(function ($) {
 
       topics.forEach(function (t) {
         html += `
-          <label class="mr-2 mb-1 badge badge-light">
+          <label class="me-2 mb-1 badge text-bg-light">
             <input type="checkbox"
-                   class="topic-filter mr-1"
+                   class="topic-filter me-1"
                    name="quiz_topic_ids[]"
                    value="${t.id}"
                    checked>
@@ -915,8 +915,8 @@ jQuery(function ($) {
         let html = '<div class="row">';
         j.data.forEach(function (q) {
           const pubBadge = q.is_published
-            ? '<span class="badge badge-success">Published</span>'
-            : '<span class="badge badge-secondary">Draft</span>';
+            ? '<span class="badge text-bg-success">Published</span>'
+            : '<span class="badge text-bg-secondary">Draft</span>';
 
           const attempts = (q.max_attempts && q.max_attempts > 0)
             ? q.max_attempts

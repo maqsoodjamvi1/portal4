@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-     <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Campus Bills
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Campus Bills</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+     <?= view('components/page_header', [
+    'title' => 'Campus Bills',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus Bills', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
 <section class="content">
 <div class="row">
@@ -58,8 +49,8 @@
 <div class="modal fade" id="makeCurrent" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Set Campus Discount</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Set Campus Discount</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form>
@@ -71,7 +62,7 @@
  		       </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -111,14 +102,14 @@ $(function(){
 		sortable:false,
 		render:function(data, type, row){
 		var html = '';
-		html += '<a href="<?php echo '#/campus_bill?id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Print Chalan</a>';
+		html += '<a href="<?php echo '#/campus_bill?id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Print Chalan</a>';
 		//if(row.bill_status == 'unpaid'){
-			// html += ' <button data-toggle="modal" class="makeCurrent" id="#makeCurrent' + data + '" data-target="#makeCurrent" data-discount="' + row.campus_bill_discount + '"  data-id="' + row.id + '" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Pay Bill</button>';	
-			html += '<a style="width:100%;" href="#/bill_amount?m=add&campus_id=' + row.campus_id + '"  style="font-size: .75rem !important;" id="#payBill' + data + '"  data-id="' + row.campus_id + '" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Pay Bill</a>';
+			// html += ' <button data-bs-toggle="modal" class="makeCurrent" id="#makeCurrent' + data + '" data-bs-target="#makeCurrent" data-discount="' + row.campus_bill_discount + '"  data-id="' + row.id + '" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Pay Bill</button>';	
+			html += '<a style="width:100%;" href="#/bill_amount?m=add&campus_id=' + row.campus_id + '"  style="font-size: .75rem !important;" id="#payBill' + data + '"  data-id="' + row.campus_id + '" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Pay Bill</a>';
 		// }else{
-		// 	html += ' <a  title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Paid</a>';
+		// 	html += ' <a  title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Paid</a>';
 		// }
-		html += '<a style="width:100%;" href="#/campus_chalan?campus_id=' + row.campus_id + '"  style="font-size: .75rem !important;" id="#payBill' + data + '"  data-id="' + row.campus_id + '" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Create Campus Chalan</a>';
+		html += '<a style="width:100%;" href="#/campus_chalan?campus_id=' + row.campus_id + '"  style="font-size: .75rem !important;" id="#payBill' + data + '"  data-id="' + row.campus_id + '" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Create Campus Chalan</a>';
 		return html;
 		}
 		}

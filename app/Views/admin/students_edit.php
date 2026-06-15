@@ -107,6 +107,15 @@
   $date_of_admission_dmy = $fmt($date_of_admission ?? '');
   $date_of_birth_dmy     = $fmt($date_of_birth ?? '');
 ?>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-user-graduate',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students', 'url' => base_url('admin/students')],
+        ['label' => $isEdit ? 'Edit student' : 'Add student', 'active' => true],
+    ],
+]) ?>
 <script>
 function checkfathercnic() {
   var father_cnic = $('#father_cnic').val();

@@ -445,6 +445,97 @@ label.kids-option.option{
   min-height: 140px;
 }
 
+/* True/False: 2 big buttons */
+.kids-options-grid.kids-tf-grid{
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  max-width:720px;
+  margin:0 auto;
+}
+
+/* Multi-select: responsive grid */
+.kids-options-grid.kids-multi-grid{
+  grid-template-columns:repeat(2, minmax(0,1fr));
+}
+@media (min-width:768px){
+  .kids-options-grid.kids-multi-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+
+label.kids-option.kids-check{
+  min-height:100px;
+}
+label.kids-option.kids-check input[type="checkbox"]{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+label.kids-option.kids-check.checked{
+  border-color:var(--brand);
+  box-shadow:0 12px 28px rgba(103,89,255,.22);
+}
+.kids-check-text{
+  font-size:1.05rem;
+  font-weight:700;
+  line-height:1.35;
+  text-align:center;
+  padding:0 8px;
+  color:var(--ink);
+}
+
+/* Match in kids mode */
+.kids-match .match-chip{
+  font-size:1.05rem;
+  padding:10px 16px;
+  border-radius:14px;
+  border-width:2px;
+  font-weight:700;
+}
+.kids-match .match-dropzone{
+  min-height:52px;
+  border-radius:12px;
+  border-width:2px dashed #94a3b8;
+  font-size:1rem;
+}
+.kids-match .match-left-label{
+  font-size:1.05rem;
+  font-weight:700;
+}
+
+.kids-sentence{
+  font-size:1.25rem;
+  line-height:1.7;
+  font-weight:700;
+  color:var(--ink);
+  padding:8px 4px;
+}
+
+.quiz-footer{
+  position:fixed;
+  bottom:12px;
+  left:0;
+  right:0;
+  z-index:1040;
+  pointer-events:none;
+}
+.quiz-footer .container-fluid{ pointer-events:auto; }
+.quiz-footer .d-flex{
+  background:#fff;
+  padding:.55rem .75rem;
+  border-radius:999px;
+  box-shadow:0 10px 28px rgba(0,0,0,.15);
+  max-width:520px;
+  margin:0 auto;
+}
+.btn-pill{ border-radius:999px; font-weight:700; padding:.55rem 1.4rem; }
+.btn-next{ background:var(--brand); color:#fff; border:0; }
+.btn-submit{ background:var(--ok); color:#fff; border:0; }
+
+.kids-body .form-control{
+  font-size:1.1rem;
+  padding:12px 14px;
+  border-radius:14px;
+  border-width:2px;
+}
+
 .question-block{ display:none !important; }
 .question-block.active{ display:block !important; }
 </style>
@@ -540,8 +631,20 @@ if (!empty($topicList)) {
   </div>
 </section>
 
+<?php
+  $quizUrls = $quizUrls ?? [
+    'submit'       => base_url('student/quizzes/submit'),
+    'saveAnswer'   => base_url('student/quizzes/save-answer'),
+    'review'       => base_url('student/quizzes/review/' . (int) ($attemptId ?? 0)),
+    'submitLevel'  => base_url('student/quizzes/submit-level'),
+    'nextLevel'    => base_url('student/quizzes/move-to-next-level'),
+    'retryLevel'   => base_url('student/quizzes/retry-current-level'),
+    'completeQuiz' => base_url('student/quizzes/complete-adaptive-quiz'),
+    'catalog'      => base_url('student/quizzes'),
+  ];
+?>
 <section class="content">
-  <form action="<?= base_url('student/quizzes/submit') ?>" method="post" id="attemptForm">
+  <form action="<?= esc($quizUrls['submit']) ?>" method="post" id="attemptForm">
     <?= csrf_field() ?>
     <input type="hidden" name="attempt_id" value="<?= (int)$attemptId ?>">
     <input type="hidden" id="currentIndex" value="0">
@@ -561,12 +664,19 @@ if (!empty($topicList)) {
   ?>
 <?php
   // use whatever field you have in your query/result:
-  // commonly: $row->correct_option (A/B/C/D)
+  $qtEarly = $row->question_type ?? 'mcq_single';
   $correct = strtoupper(trim((string)($row->correct_option ?? $row->correct_answer ?? '')));
+  if (in_array($qtEarly, ['tf', 'true_false'], true)) {
+      $c = strtoupper(trim((string)($row->correct_option ?? $row->answer_text ?? 'T')));
+      if ($c === 'TRUE' || $c === '1') { $correct = 'T'; }
+      elseif ($c === 'FALSE' || $c === '0') { $correct = 'F'; }
+      else { $correct = $c; }
+  }
 ?>
  <div class="q-card question-block mb-3 <?= $isQImg ? 'q-image-question' : '' ?> kids-card"
      data-index="<?= $index ?>"
      data-qid="<?= $qid ?>"
+     data-qtype="<?= esc($qtEarly) ?>"
      data-correct="<?= esc($correct) ?>"
      id="qblock-<?= $qid ?>">
 
@@ -673,19 +783,24 @@ if (!empty($topicList)) {
         <?php endif; ?>
 
       <?php elseif ($qt === 'true_false' || $qt === 'tf'): ?>
-
-        <div class="kids-options">
-          <?php foreach (['True','False'] as $val): ?>
-            <?php $id = 'q'.$qid.'_'.$val; ?>
+        <?php
+          $tfCorrect = strtoupper(trim((string)($row->correct_option ?? $row->answer_text ?? 'T')));
+          if ($tfCorrect === 'TRUE' || $tfCorrect === '1') { $tfCorrect = 'T'; }
+          if ($tfCorrect === 'FALSE' || $tfCorrect === '0') { $tfCorrect = 'F'; }
+          $tfOptions = ['T' => 'True', 'F' => 'False'];
+        ?>
+        <div class="kids-options-grid kids-tf-grid">
+          <?php foreach ($tfOptions as $letter => $label): ?>
+            <?php $id = 'q'.$qid.'_'.$letter; ?>
             <label class="kids-option option" for="<?= $id ?>">
               <input type="radio"
-                     class="answer-input kids-answer"
+                     class="answer-input"
                      id="<?= $id ?>"
                      name="ans_<?= $qid ?>"
                      data-qid="<?= $qid ?>"
                      data-type="tf"
-                     value="<?= esc($val) ?>">
-              <span class="kids-opt-text"><?= esc($val) ?></span>
+                     value="<?= esc($letter) ?>">
+              <span class="kids-opt-text"><?= esc($label) ?></span>
             </label>
           <?php endforeach; ?>
         </div>
@@ -729,11 +844,11 @@ if (!empty($topicList)) {
               }
             ?>
 
-            <div class="options-wrap">
+            <div class="kids-options-grid kids-multi-grid">
               <?php foreach ($optionsToShow as $letter => $label): ?>
                 <?php if (trim($label) === '') continue; ?>
                 <?php $id = 'q'.$qid.'_'.$letter; ?>
-                <label class="option" for="<?= $id ?>">
+                <label class="kids-option option kids-check" for="<?= $id ?>">
                   <input type="checkbox"
                          id="<?= $id ?>"
                          class="answer-input"
@@ -741,7 +856,7 @@ if (!empty($topicList)) {
                          data-qid="<?= $qid ?>"
                          data-type="mcq_multi"
                          value="<?= esc($letter) ?>">
-                  <span><?= esc($letter) ?>) <?= esc($label) ?></span>
+                  <span class="kids-check-text"><?= esc($letter) ?>) <?= esc($label) ?></span>
                 </label>
               <?php endforeach; ?>
             </div>
@@ -771,12 +886,12 @@ if (!empty($topicList)) {
                   shuffle($shuffledRight);
                 ?>
 
-                <div class="match-dnd" data-qid="<?= $qid ?>">
+                <div class="match-dnd kids-match" data-qid="<?= $qid ?>">
                   <div class="row">
                     <div class="col-md-6">
                       <?php foreach ($leftItems as $left): ?>
                         <div class="match-row d-flex align-items-center" data-left="<?= esc($left) ?>">
-                          <div class="match-left-label pr-2">
+                          <div class="match-left-label pe-2">
                             <strong><?= esc($left) ?></strong>
                           </div>
                           <div class="match-dropzone flex-fill">
@@ -807,7 +922,7 @@ if (!empty($topicList)) {
 
               <?php else: ?>
 
-                <div class="match-wrapper">
+                <div class="match-wrapper kids-match">
                   <?php foreach ($pairs as $p): ?>
                     <div class="match-row d-flex align-items-center mb-2">
                       <div style="width:45%;"><strong><?= esc($p['left']) ?></strong></div>
@@ -838,9 +953,14 @@ if (!empty($topicList)) {
   <?php $qNo++; $index++; endforeach; ?>
 </div>
 
-      
-
-   
+    <div class="quiz-footer">
+      <div class="container-fluid px-2">
+        <div class="d-flex justify-content-center align-items-center" style="gap:.75rem">
+          <button type="button" class="btn btn-light btn-pill btn-prev" id="btnPrev">← Previous</button>
+          <button type="button" class="btn btn-next btn-pill" id="btnNext" data-mode="next">Next →</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Zoom Modal -->
     <div class="modal fade" id="imgZoomModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -850,7 +970,7 @@ if (!empty($topicList)) {
             <img id="zoomImg" src="" alt="Zoom" style="width:100%;height:auto;display:block">
           </div>
           <div class="modal-footer py-2">
-            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -866,6 +986,8 @@ if (!empty($topicList)) {
    - Keeps your TIMER + COUNTER + AUTOSAVE + MATCH + saveAnswer
    IMPORTANT: Remove any other duplicated blocks/setCurrent code from page.
 ========================================================= */
+
+window.__savedAnswers = <?= json_encode($savedAnswers ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 /* -----------------------------------
    TIMER (mm:ss)
@@ -987,18 +1109,33 @@ function debounce(fn, delay){
 ----------------------------------- */
 document.addEventListener('change', function(e){
   const inp = e.target;
-  if (!inp.matches('.option input, input.answer-input')) return;
+  if (!inp.matches('.option input, input.answer-input, label.kids-option input')) return;
 
   const wrap = inp.closest('.q-card');
   if (!wrap) return;
 
   if (inp.type === 'checkbox') {
-    wrap.querySelectorAll('.option input[type="checkbox"]').forEach(cb=>{
-      cb.closest('.option')?.classList.toggle('checked', cb.checked);
+    wrap.querySelectorAll('label.kids-check input[type="checkbox"], .option input[type="checkbox"]').forEach(cb=>{
+      const lbl = cb.closest('label.kids-option, .option');
+      if (lbl) lbl.classList.toggle('checked', cb.checked);
     });
   } else if (inp.type === 'radio') {
-    wrap.querySelectorAll('.option').forEach(o=>o.classList.remove('checked'));
-    inp.closest('.option')?.classList.add('checked');
+    wrap.querySelectorAll('label.kids-option, .option').forEach(o=>o.classList.remove('checked'));
+    inp.closest('label.kids-option, .option')?.classList.add('checked');
+  }
+});
+
+document.addEventListener('click', function(e){
+  const label = e.target.closest('label.kids-option, label.option');
+  if (!label) return;
+  const input = label.querySelector('input[type="checkbox"], input[type="radio"]');
+  if (!input || e.target === input) return;
+  if (input.type === 'checkbox') {
+    input.checked = !input.checked;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  } else if (input.type === 'radio') {
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 });
 
@@ -1131,21 +1268,20 @@ function saveAnswer(e){
   form.append('<?= csrf_token() ?>','<?= csrf_hash() ?>');
   form.append('attempt_id', attemptId);
   form.append('question_id', qid);
+  form.append('question_type', type || '');
 
   if (type === 'mcq_single' || type === 'tf') {
     const checked = document.querySelector(`input[name="ans_${qid}"]:checked`);
     if (!checked) return;
-    if (type === 'mcq_single') form.append('selected_option', checked.value);
-    else form.append('answer_text', checked.value);
+    form.append('selected_option', checked.value);
 
   } else if (type === 'fill' || type === 'short') {
     form.append('answer_text', el.value);
 
   } else if (type === 'mcq_multi') {
     const vals = [];
-    ['A','B','C','D'].forEach(L=>{
-      const cb = document.querySelector(`#q${qid}_`+L);
-      if (cb && cb.checked) vals.push(cb.value);
+    document.querySelectorAll(`input[name="ans_${qid}[]"]:checked`).forEach(cb => {
+      vals.push(cb.value);
     });
     vals.forEach(v => form.append('selected_options[]', v));
 
@@ -1171,7 +1307,7 @@ function saveAnswer(e){
   }
 
   setAutosaveState('pending');
-  fetch('<?= base_url('student/quizzes/save-answer') ?>', {
+  fetch('<?= esc($quizUrls['saveAnswer']) ?>', {
     method: 'POST',
     headers: {
       'X-Requested-With':'XMLHttpRequest',
@@ -1184,30 +1320,64 @@ function saveAnswer(e){
 }
 
 /* =========================================================
-   ONE QUESTION AT A TIME + KIDS AUTO FLOW
+   ONE QUESTION AT A TIME + NAVIGATION
 ========================================================= */
 const blocks = Array.from(document.querySelectorAll('.question-block'));
-let currentIndex = 0;
+const currentIndexInput = document.getElementById('currentIndex');
+const btnPrev  = document.getElementById('btnPrev');
+const btnNext  = document.getElementById('btnNext');
+const totalQuestions = blocks.length;
 
 function setCurrent(idx){
   if (!blocks.length) return;
 
   idx = Math.max(0, Math.min(idx, blocks.length - 1));
-  currentIndex = idx;
 
   blocks.forEach(b => b.classList.remove('active'));
-  blocks[idx].classList.add('active');
+  if (blocks[idx]) blocks[idx].classList.add('active');
 
-  const currentIndexInput = document.getElementById('currentIndex');
   if (currentIndexInput) currentIndexInput.value = idx;
+
+  if (btnPrev) btnPrev.disabled = (idx === 0);
+
+  if (btnNext) {
+    if (idx === totalQuestions - 1) {
+      btnNext.textContent = 'Submit Quiz';
+      btnNext.classList.remove('btn-next');
+      btnNext.classList.add('btn-submit');
+      btnNext.setAttribute('data-mode', 'submit');
+    } else {
+      btnNext.textContent = 'Next →';
+      btnNext.classList.remove('btn-submit');
+      btnNext.classList.add('btn-next');
+      btnNext.setAttribute('data-mode', 'next');
+    }
+  }
 
   if (typeof window.quizUpdateRemaining === 'function') {
     window.quizUpdateRemaining(idx);
   }
 }
 
-// init: show only first question
 setCurrent(0);
+
+if (btnPrev) {
+  btnPrev.addEventListener('click', () => {
+    setCurrent(parseInt(currentIndexInput?.value || '0', 10) - 1);
+  });
+}
+
+if (btnNext) {
+  btnNext.addEventListener('click', () => {
+    const mode = btnNext.getAttribute('data-mode') || 'next';
+    if (mode === 'submit') {
+      const form = document.getElementById('attemptForm');
+      if (form) form.submit();
+      return;
+    }
+    setCurrent(parseInt(currentIndexInput?.value || '0', 10) + 1);
+  });
+}
 
 // Fill blank helper (works with your generated spans)
 function fillBlank(block, letterText){
@@ -1237,47 +1407,125 @@ document.addEventListener('click', function(e){
   const input = opt.querySelector('input[type="radio"].answer-input');
   if (!input) return;
 
-  // Only for mcq_single auto-next behavior
-  if ((input.dataset.type || '') !== 'mcq_single') return;
+  const qtype = input.dataset.type || block.getAttribute('data-qtype') || '';
+  if (qtype !== 'mcq_single' && qtype !== 'tf') return;
 
   if (kidsBusy) return;
   kidsBusy = true;
 
-  // select
   input.checked = true;
-
-  // clear old marks
   block.querySelectorAll('.kids-option').forEach(o => o.classList.remove('correct','wrong'));
 
-  // fill blank with visible option text
-  const shown = (opt.querySelector('.kids-opt-text')?.textContent || '').trim();
-  fillBlank(block, shown);
+  if (qtype === 'mcq_single') {
+    const shown = (opt.querySelector('.kids-opt-text')?.textContent || '').trim();
+    fillBlank(block, shown);
+  }
 
-  // correctness (data-correct is on your question wrapper)
   const correct = (block.getAttribute('data-correct') || '').toUpperCase().trim();
   const selected = (input.value || '').toUpperCase().trim();
-
   if (correct && selected === correct) opt.classList.add('correct');
-  else opt.classList.add('wrong');
+  else if (correct) opt.classList.add('wrong');
 
-  // autosave
   input.dispatchEvent(new Event('change', { bubbles:true }));
-
   lockBlock(block);
 
+  const idx = parseInt(currentIndexInput?.value || '0', 10);
   setTimeout(function(){
-    // last -> submit
-    if (currentIndex >= blocks.length - 1) {
+    if (idx >= blocks.length - 1) {
       const form = document.getElementById('attemptForm');
       if (form) form.submit();
       return;
     }
-
     unlockBlock(block);
-    setCurrent(currentIndex + 1);
+    setCurrent(idx + 1);
     kidsBusy = false;
-  }, 2000);
+  }, qtype === 'tf' ? 1200 : 2000);
 });
+
+/* Restore saved answers on load */
+(function(){
+  const saved = window.__savedAnswers || {};
+  Object.keys(saved).forEach(function(qid){
+    const answer = saved[qid];
+    if (!answer) return;
+    const type = answer.type || answer.question_type || '';
+    if (type === 'mcq_single' || type === 'tf' || type === 'true_false') {
+      const val = (answer.selected_option || answer.answer_text || '').trim();
+      if (!val) return;
+      document.querySelectorAll('input[name="ans_'+qid+'"]').forEach(function(r){
+        if (r.value.toUpperCase() === val.toUpperCase() ||
+            (val.toUpperCase()==='TRUE' && r.value.toUpperCase()==='T') ||
+            (val.toUpperCase()==='FALSE' && r.value.toUpperCase()==='F')) {
+          r.checked = true;
+          r.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    } else if (type === 'mcq_multi') {
+      let selected = answer.selected_options || [];
+      if (typeof selected === 'string') {
+        try { selected = JSON.parse(selected); } catch(e) { selected = []; }
+      }
+      if (!Array.isArray(selected)) selected = [];
+      selected.forEach(function(letter){
+        const cb = document.querySelector('input[name="ans_'+qid+'[]"][value="'+letter+'"]');
+        if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
+    } else if (type === 'fill' || type === 'short' || type === 'fill_blank') {
+      const el = document.querySelector('[name="ans_'+qid+'"]');
+      if (el && answer.answer_text) {
+        el.value = answer.answer_text;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else if (type === 'match') {
+      let data = [];
+      try {
+        data = typeof answer.answer_text === 'string'
+          ? JSON.parse(answer.answer_text || '[]')
+          : (answer.answer_text || []);
+      } catch(e) { data = []; }
+      if (!Array.isArray(data)) return;
+
+      const wrapperDnd = document.querySelector('.match-dnd[data-qid="'+qid+'"]');
+      if (wrapperDnd) {
+        const bank = wrapperDnd.querySelector('.match-bank');
+        data.forEach(function(item){
+          const left = (item.left || '').trim();
+          const value = (item.value || '').trim();
+          if (!left || !value) return;
+          const row = wrapperDnd.querySelector('.match-row[data-left="'+CSS.escape(left)+'"]');
+          if (!row) return;
+          const dropzone = row.querySelector('.match-dropzone');
+          let chip = wrapperDnd.querySelector('.match-chip[data-value="'+CSS.escape(value)+'"]');
+          if (!chip) {
+            wrapperDnd.querySelectorAll('.match-chip').forEach(function(c){
+              if ((c.textContent || '').trim() === value) chip = c;
+            });
+          }
+          if (!dropzone || !chip) return;
+          if (bank && bank.contains(chip)) bank.removeChild(chip);
+          const existing = dropzone.querySelector('.match-chip');
+          if (existing && bank) bank.appendChild(existing);
+          dropzone.innerHTML = '';
+          dropzone.appendChild(chip);
+          dropzone.classList.add('filled');
+        });
+        const hidden = document.querySelector('.match-store[data-qid="'+qid+'"]');
+        if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        data.forEach(function(item){
+          const left = (item.left || '').trim();
+          const value = (item.value || '').trim();
+          if (!left) return;
+          const inp = document.querySelector('.match-input[data-qid="'+qid+'"][data-left="'+CSS.escape(left)+'"]');
+          if (inp) {
+            inp.value = value;
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+      }
+    }
+  });
+})();
 </script>
 
 

@@ -40,6 +40,7 @@ class AttendanceMonthlyReport extends BaseController
 
 public function get_students_byclass()
 {
+   helper('school');
    $eid = $this->request->getPost('eid');
         $session_id = $this->request->getPost('session_id') ?: session('member_sessionid');
         $campus_id = $this->request->getPost('campus_id');
@@ -101,29 +102,11 @@ public function get_students_byclass()
             $timestamp = strtotime($datevalue);
             $monthyear = date('F Y', $timestamp);
 
-            // Active timing type for this campus (required for OFF/working day logic)
-            $activeTimingType = $db->table('school_timing_types')
-                ->select('type_id')
-                ->where('campus_id', (int)$campus_id)
-                ->where('status', 1)
-                ->orderBy('type_id', 'ASC')
-                ->get()
-                ->getRow();
-            $activeTypeId = $activeTimingType->type_id ?? 0;
-
             // Timings by day name for selected section
             $timingsByDay = [];
-            if ($activeTypeId > 0) {
-                $timings = $db->table('school_timings')
-                    ->select('dayname, checkin_timing, checkout_timing')
-                    ->where('cls_sec_id', (int)$id)
-                    ->where('type_id', (int)$activeTypeId)
-                    ->get()
-                    ->getResultArray();
-
-                foreach ($timings as $timing) {
-                    $timingsByDay[strtolower($timing['dayname'])] = $timing;
-                }
+            $timingRows = getSchoolTimingsForSections([(int) $id], (int) $campus_id);
+            foreach ($timingRows as $timing) {
+                $timingsByDay[strtolower($timing['dayname'])] = $timing;
             }
 
             // Dates where at least one attendance record exists for section

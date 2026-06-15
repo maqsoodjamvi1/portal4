@@ -20,22 +20,17 @@ $show_line1   = $_GET['show_line1'] ?? '';
 $footer_line2 = $_GET['footer_line2'] ?? '';
 $show_line2   = $_GET['show_line2'] ?? '';
 ?>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-4"><h1>Hostel Fee Chalan</h1></div>
-      <div class="col-sm-4 text-center">
-        <a href="<?= base_url('admin/fee-chalan/pdf') ?>" class="btn btn-primary">Print Individual Chalan</a>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="#/">Dashboard</a></li>
-          <li class="breadcrumb-item active">Hostel Fee Chalan</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Hostel Fee Chalan',
+    'icon' => 'fas fa-bed',
+    'actionsHtml' => '<div class="text-sm-right">'
+        . '<a href="' . esc(base_url('admin/fee-chalan/pdf'), 'attr') . '" class="btn btn-primary btn-sm">Print Individual Chalan</a></div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Print Fee Chalan', 'url' => base_url('admin/print-fee-chalan')],
+        ['label' => 'Hostel', 'active' => true],
+    ],
+]) ?>
 <section class="content">
   <div class="row">
     <div class="col-lg-12">

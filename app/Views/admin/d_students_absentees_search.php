@@ -68,10 +68,10 @@ $date_value = $_GET['date'] ?? date('Y-m-d');
     margin-left: 10px;
 }
 
-.badge-success { background: #28a745; color: white; }
-.badge-danger { background: #dc3545; color: white; }
-.badge-warning { background: #ffc107; color: #856404; }
-.badge-info { background: #17a2b8; color: white; }
+.text-bg-success { background: #28a745; color: white; }
+.text-bg-danger { background: #dc3545; color: white; }
+.text-bg-warning { background: #ffc107; color: #856404; }
+.text-bg-info { background: #17a2b8; color: white; }
 
 .loading-spinner {
     display: inline-block;
@@ -198,7 +198,7 @@ function renderSearchResults(families, date) {
         html += `<div class="family-card">
             <div class="family-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div><i class="fas fa-family text-primary"></i> <strong>${escapeHtml(family.family_name)}</strong> <span class="badge badge-secondary ml-2">${family.sibling_count} children</span></div>
+                    <div><i class="fas fa-family text-primary"></i> <strong>${escapeHtml(family.family_name)}</strong> <span class="badge text-bg-secondary ms-2">${family.sibling_count} children</span></div>
                     <div>
                         <button class="btn btn-sm btn-outline-success bulk-family-mark" data-parent-id="${family.parent_id}" data-status="P">All Present</button>
                         <button class="btn btn-sm btn-outline-danger bulk-family-mark" data-parent-id="${family.parent_id}" data-status="A">All Absent</button>
@@ -211,16 +211,16 @@ function renderSearchResults(families, date) {
             html += `<div class="sibling-row" data-student-id="${student.student_id}">
                 <div class="sibling-info">
                     <div class="sibling-photo"><i class="fas fa-user"></i></div>
-                    <div><div class="font-weight-bold">${escapeHtml(student.name)}</div><div class="small text-muted">Reg: ${escapeHtml(student.reg_no || 'N/A')} | Class: ${escapeHtml(student.class_name)}</div></div>
+                    <div><div class="fw-bold">${escapeHtml(student.name)}</div><div class="small text-muted">Reg: ${escapeHtml(student.reg_no || 'N/A')} | Class: ${escapeHtml(student.class_name)}</div></div>
                 </div>
                 <div class="sibling-status">
-                    <div class="status-buttons btn-group btn-group-toggle" data-toggle="buttons">
+                    <div class="status-buttons btn-group btn-group-toggle" data-bs-toggle="buttons">
                         <label class="btn btn-sm btn-outline-success ${student.status === 'P' ? 'active' : ''}" data-status="P"><input type="radio" name="status_${student.student_id}" value="P" ${student.status === 'P' ? 'checked' : ''}> P</label>
                         <label class="btn btn-sm btn-outline-danger ${student.status === 'A' ? 'active' : ''}" data-status="A"><input type="radio" name="status_${student.student_id}" value="A" ${student.status === 'A' ? 'checked' : ''}> A</label>
                         <label class="btn btn-sm btn-outline-warning ${student.status === 'L' ? 'active' : ''}" data-status="L"><input type="radio" name="status_${student.student_id}" value="L" ${student.status === 'L' ? 'checked' : ''}> L</label>
                         <label class="btn btn-sm btn-outline-info ${student.status === 'LC' ? 'active' : ''}" data-status="LC"><input type="radio" name="status_${student.student_id}" value="LC" ${student.status === 'LC' ? 'checked' : ''}> LC</label>
                     </div>
-                    <span class="status-badge badge-${student.status_class}">${student.status_label}</span>
+                    <span class="status-badge text-bg-${student.status_class}">${student.status_label}</span>
                 </div>
             </div>`;
         });
@@ -244,7 +244,7 @@ function attachSearchEventHandlers(date) {
         
         let statusText = getStatusText(newStatus);
         let statusClass = getStatusClass(newStatus);
-        $row.find('.status-badge').removeClass('badge-success badge-danger badge-warning badge-info').addClass(`badge-${statusClass}`).text(statusText);
+        $row.find('.status-badge').removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info').addClass(`badge-${statusClass}`).text(statusText);
         
         $.ajax({
             url: '/admin/students_absentees/update_attendance_status_single',
@@ -266,7 +266,7 @@ function attachSearchEventHandlers(date) {
             let $targetLabel = $(this).find(`.btn-group label[data-status="${newStatus}"]`);
             $targetLabel.addClass('active').siblings().removeClass('active');
             $targetLabel.find('input').prop('checked', true);
-            $(this).find('.status-badge').removeClass('badge-success badge-danger badge-warning badge-info').addClass(`badge-${getStatusClass(newStatus)}`).text(getStatusText(newStatus));
+            $(this).find('.status-badge').removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info').addClass(`badge-${getStatusClass(newStatus)}`).text(getStatusText(newStatus));
             $.ajax({ url: '/admin/students_absentees/update_attendance_status_single', type: "POST", data: { student_id: studentId, attendanceDate: date, status: newStatus } });
         });
         toastr.success(`All students marked as ${getStatusText(newStatus)}`);

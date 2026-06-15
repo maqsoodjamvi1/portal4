@@ -20,7 +20,7 @@ if ($line_height > 3.0) $line_height = 3.0;
     <div class="page-actions no-print">
       <div class="card card-outline card-primary">
         <div class="card-body py-2">
-          <form action="<?= base_url('admin/datesheet') ?>" method="get" class="form-row align-items-end">
+          <form action="<?= base_url('admin/datesheet') ?>" method="get" class="row align-items-end">
             <?php if (!empty($_GET['mode'])): ?>
               <input type="hidden" name="mode" value="<?= esc($_GET['mode']) ?>">
             <?php endif; ?>
@@ -29,22 +29,22 @@ if ($line_height > 3.0) $line_height = 3.0;
             <ul class="nav nav-tabs w-100 px-2 mb-3">
               <li class="nav-item">
                 <a class="nav-link <?= $mode === '' ? 'active' : '' ?>" href="<?= base_url('admin/datesheet') ?>">
-                  <i class="fas fa-id-card-alt mr-1"></i> Admit Card
+                  <i class="fas fa-id-card-alt me-1"></i> Admit Card
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link <?= $mode === 'without_syllabus' ? 'active' : '' ?>" href="<?= base_url('admin/datesheet?mode=without_syllabus') ?>">
-                  <i class="fas fa-table mr-1"></i> Admit Card Without Syllabus
+                  <i class="fas fa-table me-1"></i> Admit Card Without Syllabus
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link <?= url_is('admin/datesheet/add-syllabus') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add-syllabus') ?>">
-                  <i class="fas fa-list-ul mr-1"></i> Add Syllabus
+                  <i class="fas fa-list-ul me-1"></i> Add Syllabus
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link <?= url_is('admin/datesheet/add') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add') ?>">
-                  <i class="far fa-calendar-plus mr-1"></i> Add Datesheet
+                  <i class="far fa-calendar-plus me-1"></i> Add Datesheet
                 </a>
               </li>
             </ul>
@@ -54,9 +54,9 @@ if ($line_height > 3.0) $line_height = 3.0;
               <div class="card card-secondary mb-0">
                 <div class="card-header py-2">
                   <h3 class="card-title mb-0">
-                    <i class="fas fa-info-circle mr-1"></i> Exam Instructions
+                    <i class="fas fa-info-circle me-1"></i> Exam Instructions
                     <?php if (!empty($examInstructions)): ?>
-                      <span class="badge badge-success ml-2">Saved</span>
+                      <span class="badge text-bg-success ms-2">Saved</span>
                     <?php endif; ?>
                   </h3>
                 </div>
@@ -79,9 +79,9 @@ if ($line_height > 3.0) $line_height = 3.0;
                       </select>
                     </div>
                     <div class="col-md-2">
-                     <button type="button" class="btn btn-success btn-sm btn-block" 
+                     <button type="button" class="btn btn-success btn-sm w-100" 
         onclick="saveInstructions()" id="save_instructions_btn">
-    <i class="fas fa-save mr-1"></i> Save
+    <i class="fas fa-save me-1"></i> Save
 </button>
 <div id="save_status" class="mt-1"></div>
                       <div id="save_status" class="mt-1"></div>
@@ -107,10 +107,10 @@ if ($line_height > 3.0) $line_height = 3.0;
 
             <div class="form-group col-md-2">
               <label class="mb-0 d-block"><small><strong>Hide Marks</strong></small></label>
-              <div class="custom-control custom-switch custom-switch-md mt-1">
-                <input type="checkbox" class="custom-control-input" id="hide_marks_switch" 
+              <div class="form-check form-switch form-switch-md mt-1">
+                <input type="checkbox" class="form-check-input" id="hide_marks_switch" 
                        name="hide_marks" value="1" <?= ($hide_marks=='1'?'checked':'') ?>>
-                <label class="custom-control-label" for="hide_marks_switch"></label>
+                <label class="form-check-label" for="hide_marks_switch"></label>
               </div>
             </div>
 
@@ -123,22 +123,22 @@ if ($line_height > 3.0) $line_height = 3.0;
             
             <div class="form-group col-md-2">
               <label class="mb-0 d-block">&nbsp;</label>
-              <button class="btn btn-primary btn-sm btn-block" name="submit" value="view" type="submit">
-                <i class="fas fa-eye mr-1"></i> View
+              <button class="btn btn-primary btn-sm w-100" name="submit" value="view" type="submit">
+                <i class="fas fa-eye me-1"></i> View
               </button>
             </div>
 
             <div class="form-group col-md-2">
               <label class="mb-0 d-block">&nbsp;</label>
-              <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-sm btn-block">
-                <i class="fas fa-print mr-1"></i> Print
+              <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fas fa-print me-1"></i> Print
               </button>
             </div>
 
             <div class="form-group col-md-1">
               <label class="mb-0 d-block">&nbsp;</label>
               <button type="button" onclick="window.location.href='<?= base_url('admin/datesheet/debugExamStatus') ?>'" 
-                      class="btn btn-warning btn-sm btn-block" title="Debug">
+                      class="btn btn-warning btn-sm w-100" title="Debug">
                 <i class="fas fa-bug"></i>
               </button>
             </div>
@@ -205,19 +205,32 @@ if ($line_height > 3.0) $line_height = 3.0;
 
           <!-- Exam headline + dotted line -->
           <div class="headline">
-            <span class="ribbon"><i class="far fa-id-card mr-2"></i>Admit Card of <?= esc($examName) ?></span>
+            <span class="ribbon"><i class="far fa-id-card me-2"></i>Admit Card of <?= esc($examName) ?></span>
           </div>
           <hr class="header-sep">
 
           <div class="admit-body">
+            <?= view('admin/partials/admit_card_bmi_strip', ['admit' => $value]) ?>
+            <?= view('admin/partials/admit_card_attendance_strip', [
+              'workingDays' => $workingDays,
+              'cntA'          => $cntA,
+              'cntL'          => $cntL,
+              'cntLC'         => $cntLC,
+              'cntEL'         => $cntEL,
+              'dues'          => $dues,
+            ]) ?>
+
             <!-- Student facts -->
             <div class="student-row">
               <div class="avatar">
                 <?php if (!empty($profile)): ?>
-                  <img src="<?= base_url('uploads/'.$profile) ?>" alt="Student Photo" 
-                       onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2250%22 y=%2255%22 text-anchor=%22middle%22 font-size=%2236%22 fill=%22%23999%22%3E%3Ctspan%3E?%3C/tspan%3E%3C/text%3E%3C/svg%3E'">
+                  <span class="avatar-photo-shell">
+                    <img class="avatar-img" src="<?= base_url('uploads/'.$profile) ?>" alt=""
+                         data-admit-avatar="1"
+                         onerror="this.onerror=null;this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2250%22 y=%2255%22 text-anchor=%22middle%22 font-size=%2236%22 fill=%22%23999%22%3E%3Ctspan%3E?%3C/tspan%3E%3C/text%3E%3C/svg%3E'">
+                  </span>
                 <?php else: ?>
-                  <i class="fa fa-user" style="font-size: 40px; color: #666;"></i>
+                  <span class="avatar-placeholder" aria-hidden="true"><i class="fa fa-user"></i></span>
                 <?php endif; ?>
               </div>
 
@@ -231,31 +244,12 @@ if ($line_height > 3.0) $line_height = 3.0;
                 <div class="fact"><b>Contact 2</b> <?= esc($value['mother_contact'] ?? '-') ?></div>
               </div>
             </div>
-
-            <!-- Attendance Summary -->
-            <div class="att-wrap">
-              <div class="att-title english-text"><i class="fas fa-clipboard-check mr-1"></i> Attendance Summary </div>
-              <?php if ((float)$dues > 0): ?>
-                <div class="due-badge" title="Remaining dues">
-                  <span><?= number_format((float)$dues) ?></span>
-                </div>
-              <?php endif; ?>
-              <div class="chips">
-                <?php if ($workingDays !== null): ?>
-                  <div class="chip badge-wd" title="Working days"><i class="fas fa-business-time"></i> Working Days: <strong><?= (int)$workingDays ?></strong></div>
-                <?php endif; ?>
-                <?php if ($cntA !== null): ?><div class="chip badge-A"><i class="fas fa-user-slash"></i> A: <strong><?= (int)$cntA ?></strong></div><?php endif; ?>
-                <?php if ($cntL !== null): ?><div class="chip badge-L"><i class="fas fa-door-open"></i> L: <strong><?= (int)$cntL ?></strong></div><?php endif; ?>
-                <?php if ($cntLC !== null): ?><div class="chip badge-LC"><i class="fas fa-clock"></i> LC: <strong><?= (int)$cntLC ?></strong></div><?php endif; ?>
-                <?php if ($cntEL !== null): ?><div class="chip badge-EL"><i class="fas fa-walking"></i> EL: <strong><?= (int)$cntEL ?></strong></div><?php endif; ?>
-              </div>
-            </div>
 <!-- Instructions BEFORE datesheet (if enabled) -->
 <!-- Instructions BEFORE datesheet (if enabled) -->
 <?php if ($showInstructions && $instructionsPosition === 'before' && !empty($examInstructions)): ?>
     <div class="instructions-section">
         <div class="instructions-title english-text">
-            <i class="fas fa-info-circle mr-1"></i> Exam Instructions
+            <i class="fas fa-info-circle me-1"></i> Exam Instructions
         </div>
         <div class="instructions-content english-text" style="line-height: 1.2; margin: 0; padding: 0 0 0 15px;">
             <?php
@@ -413,7 +407,7 @@ if ($line_height > 3.0) $line_height = 3.0;
 <?php if ($showInstructions && $instructionsPosition === 'after' && !empty($examInstructions)): ?>
     <div class="instructions-section">
         <div class="instructions-title english-text">
-            <i class="fas fa-info-circle mr-1"></i> Exam Instructions
+            <i class="fas fa-info-circle me-1"></i> Exam Instructions
         </div>
         <div class="instructions-content english-text" style="line-height: 1.2; margin: 0; padding: 0 0 0 15px;">
             <?php
@@ -439,17 +433,12 @@ if ($line_height > 3.0) $line_height = 3.0;
         </div>
     </div>
 <?php endif; ?>
-            <!-- Print watermark (optional) -->
-            <div class="print-watermark">
-              <div class="watermark-text"><?= esc($schoolName) ?> - <?= esc($examName) ?></div>
-            </div>
-
           </div> <!-- /.admit-body -->
         </div>   <!-- /.admit-card -->
       <?php endforeach; ?>
 
     <?php else: ?>
-      <div class="alert alert-info"><i class="fas fa-info-circle mr-1"></i> No records to display. Choose a class and click "View".</div>
+      <div class="alert alert-info"><i class="fas fa-info-circle me-1"></i> No records to display. Choose a class and click "View".</div>
     <?php endif; ?>
 
   </div>
@@ -493,7 +482,7 @@ function saveInstructions() {
         statusDiv.innerHTML = `
             <div class="alert alert-info alert-dismissible fade show py-2 mb-0">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    <i class="fas fa-spinner fa-spin me-2"></i>
                     <div>
                         <strong>Saving instructions...</strong>
                         <div class="small text-muted">Please wait while we save your changes.</div>
@@ -507,7 +496,7 @@ function saveInstructions() {
     const saveBtn = document.getElementById('save_instructions_btn');
     if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
     }
     
     // Redirect directly
@@ -540,10 +529,10 @@ function showStatus(message, type = 'info') {
     statusDiv.innerHTML = `
         <div class="alert ${alertClass} alert-dismissible fade show py-2 mb-0">
             <div class="d-flex align-items-center">
-                <i class="fas ${iconClass} mr-2"></i>
+                <i class="fas ${iconClass} me-2"></i>
                 <div>${message}</div>
             </div>
-            <button type="button" class="close" data-dismiss="alert">
+            <button type="button" class="close" data-bs-dismiss="alert">
                 <span>&times;</span>
             </button>
         </div>
@@ -604,7 +593,7 @@ document.addEventListener("DOMContentLoaded", function() {
             let badge = cardHeader.querySelector('.badge');
             if (!badge) {
                 badge = document.createElement('span');
-                badge.className = 'badge badge-success ml-2';
+                badge.className = 'badge text-bg-success ms-2';
                 cardHeader.appendChild(badge);
             }
             badge.textContent = 'Saved';
@@ -615,7 +604,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const debugBtn = document.createElement('button');
     debugBtn.type = 'button';
     debugBtn.className = 'btn btn-sm btn-warning mt-2';
-    debugBtn.innerHTML = '<i class="fas fa-bug mr-1"></i> Debug Save';
+    debugBtn.innerHTML = '<i class="fas fa-bug me-1"></i> Debug Save';
     debugBtn.onclick = testSave;
     
     const statusDiv = document.getElementById('save_status');
@@ -630,6 +619,43 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+</script>
+<script>
+(function () {
+  var ADMIT_AVATAR_MAX = 92;
+  function fitAdmitAvatarImages() {
+    document.querySelectorAll('img.avatar-img[data-admit-avatar="1"]').forEach(function (img) {
+      function apply() {
+        var nw = img.naturalWidth;
+        var nh = img.naturalHeight;
+        if (!nw || !nh) {
+          return;
+        }
+        var s = Math.min(ADMIT_AVATAR_MAX / nw, ADMIT_AVATAR_MAX / nh, 1);
+        img.style.width = Math.round(nw * s) + 'px';
+        img.style.height = Math.round(nh * s) + 'px';
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+      }
+      if (img.complete && img.naturalWidth) {
+        apply();
+      } else {
+        img.addEventListener('load', apply, { once: true });
+      }
+    });
+  }
+  window.fitAdmitAvatarImages = fitAdmitAvatarImages;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(fitAdmitAvatarImages, 0); });
+  } else {
+    setTimeout(fitAdmitAvatarImages, 0);
+  }
+  window.addEventListener('load', function () {
+    setTimeout(fitAdmitAvatarImages, 100);
+    setTimeout(fitAdmitAvatarImages, 500);
+  });
+  window.addEventListener('beforeprint', fitAdmitAvatarImages);
+})();
 </script>
 <style type="text/css">
 
@@ -665,26 +691,26 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 
 /* Compact switch */
-.custom-switch.custom-switch-md .custom-control-label {
+.form-switch.form-switch-md .form-check-label {
     padding-left: 1.5rem;
     padding-bottom: 0;
     line-height: 1.5rem;
 }
 
-.custom-switch.custom-switch-md .custom-control-label::before {
+.form-switch.form-switch-md .form-check-label::before {
     height: 1.2rem;
     width: 2.5rem;
     border-radius: .6rem;
 }
 
-.custom-switch.custom-switch-md .custom-control-label::after {
+.form-switch.form-switch-md .form-check-label::after {
     width: 1rem;
     height: 1rem;
     border-radius: .5rem;
     left: .15rem;
 }
 
-.custom-switch.custom-switch-md .custom-control-input:checked ~ .custom-control-label::after {
+.form-switch.form-switch-md .form-check-input:checked ~ .form-check-label::after {
     transform: translateX(1.2rem);
 }
 
@@ -760,32 +786,51 @@ textarea[name="instructions"] {
 /* ===============================
    Datesheet Table Dynamic Columns
    =============================== */
-.datesheet-wrap{ 
-  margin-top:6px; 
+.datesheet-wrap {
+  margin-top: 12px;
+  padding: 12px 14px 14px;
+  border-top: 4px double #000;
+  border-start: 3px solid #000;
+  border-end: 1px solid #000;
+  border-bottom: none;
+  background: #fff;
 }
+
 .datesheet-table {
   width: 100%;
   border-collapse: collapse !important;
-  border: 2px solid #000 !important;
+  border: none !important;
   table-layout: fixed;
 }
 
 .datesheet-table thead th {
   background: #f2f2f2 !important;
-  border-bottom: 3px solid #000 !important;
+  border: none !important;
+  border-bottom: 3px double #000 !important;
   font-weight: 800;
   text-align: center;
   padding: 10px 5px !important;
 }
 
-.datesheet-table td{ 
-  border: 1px solid #000 !important;
+.datesheet-table td {
+  border: none !important;
+  border-bottom: 1px dotted #94a3b8 !important;
+  border-end: none !important;
   padding: 10px 5px !important;
-  font-size: 15px; 
+  font-size: 15px;
   vertical-align: middle;
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.datesheet-table thead th:not(:last-child),
+.datesheet-table tbody td:not(:last-child) {
+  border-end: 1px solid #000 !important;
+}
+
+.datesheet-table tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
 /* 3 columns layout */
@@ -837,11 +882,11 @@ textarea[name="instructions"] {
   align-items: center;
   justify-content: center;
   background: transparent !important;
-  border: 2px solid #e0e0e0 !important;
-  border-radius: 8px !important;
-  overflow: hidden;
-  padding: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible;
+  padding: 0;
+  box-shadow: none !important;
 }
 
 .school-logo img {
@@ -851,55 +896,6 @@ textarea[name="instructions"] {
   background: white !important;
   display: block;
 }
-
-/* ===============================
-   Datesheet Table with Equal Columns
-   =============================== */
-.datesheet-wrap{ 
-  margin-top:6px; 
-}
-.datesheet-table {
-  width: 100%;
-  border-collapse: collapse !important;
-  border: 2px solid #000 !important;
-  table-layout: fixed;
-}
-
-.datesheet-table thead th {
-  background: #f2f2f2 !important;
-  border-bottom: 3px solid #000 !important;
-  font-weight: 800;
-  text-align: center;
-  padding: 10px 5px !important;
-}
-
-.datesheet-table td{ 
-  border: 1px solid #000 !important;
-  padding: 10px 5px !important;
-  font-size: 15px; 
-  vertical-align: middle;
-  text-align: center;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-/* Ensure equal width for all columns */
-.datesheet-table th,
-.datesheet-table td {
-  width: 25% !important;
-  min-width: 0 !important;
-  max-width: 25% !important;
-}
-
-/* Better readability + subtle striping */
-.datesheet-table.compact.relax tbody tr:nth-child(odd) td{
-  background: #fbfcff;
-}
-.datesheet-table.compact.relax tbody tr:hover td{
-  background: #f3f7ff;
-}
-
-/* Rest of your existing CSS remains the same... */
 
 /* ---- Palette ---- */
 :root{
@@ -982,10 +978,11 @@ html, body, .content-wrapper, .content, .container-fluid{
   align-items:center; 
   justify-content:center;
   background:transparent !important;
-  border:2px solid #e0e0e0 !important;
-  border-radius:8px !important;
-  overflow:hidden;
-  padding:4px;
+  border:none !important;
+  border-radius:0 !important;
+  overflow:visible;
+  padding:0;
+  box-shadow:none !important;
 }
 .school-logo img{
   width:100%; 
@@ -1053,11 +1050,11 @@ html, body, .content-wrapper, .content, .container-fluid{
   position:relative; 
 }
 
-/* Corner badge */
+/* Dues badge (corner of attendance strip) */
 .due-badge{
   position:absolute; 
-  top:140px; 
-  right:40px; 
+  top:8px; 
+  right:12px; 
   background:#fff;
   border:1px dashed var(--danger-weak); 
   color:var(--danger);
@@ -1070,34 +1067,50 @@ html, body, .content-wrapper, .content, .container-fluid{
   font-family: 'Times New Roman', Times, serif;
 }
 
-/* ---- Student row ---- */
-.student-row{ 
+/* ---- Student row — border hugs scaled photo ---- */
+.admit-card .student-row{ 
   display:grid; 
-  grid-template-columns:84px 1fr; 
+  grid-template-columns: auto 1fr; 
   column-gap:12px; 
   align-items:start; 
   margin-bottom:12px; 
 }
-.avatar{ 
-  width:84px; 
-  height:84px; 
-  border:1px solid #ddd; 
-  border-radius:6px; 
-  overflow:hidden; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center; 
-  background:#f5f7fb; 
-  color:#90a4ae; 
+.admit-card .avatar{ 
+  margin: 0;
+  line-height: 0;
 }
-.avatar img{ 
-  width:100%; 
-  height:100%; 
-  object-fit:cover; 
+.admit-card .avatar-photo-shell {
+  display: inline-block;
+  vertical-align: top;
+  border: 2px solid #1e293b;
+  border-radius: 6px;
+  overflow: hidden;
+  line-height: 0;
+  background: #f8fafc;
 }
-.avatar i{ 
-  font-size:40px; 
-  opacity:.65; 
+.admit-card .avatar-photo-shell .avatar-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 92px;
+  max-height: 92px;
+  object-fit: contain;
+  vertical-align: top;
+}
+.admit-card .avatar-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border: 2px solid #1e293b;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+}
+.admit-card .avatar-placeholder i {
+  font-size: 32px;
+  opacity: 0.65;
 }
 
 /* Facts */
@@ -1146,6 +1159,59 @@ html, body, .content-wrapper, .content, .container-fluid{
 .facts-compact .fact b::after{
   content: ":";
   margin-left: 2px;
+}
+
+/* BMI + Attendance strips — same horizontal band */
+.admit-bmi-strip,
+.admit-attendance-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  padding: 8px 12px 8px 14px;
+  border: none;
+  border-start: 4px double #1e293b;
+  border-top: 1px dotted #cbd5e1;
+  border-bottom: 1px solid #94a3b8;
+  border-radius: 0;
+  background: #f8fafc;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.admit-attendance-strip {
+  position: relative;
+}
+
+.admit-attendance-strip--dues {
+  padding-right: 88px;
+}
+
+.admit-bmi-title,
+.admit-attendance-title {
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.admit-bmi-title i,
+.admit-attendance-title i {
+  margin-right: 6px;
+  color: #334155;
+}
+
+.admit-bmi-items,
+.admit-attendance-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: baseline;
+}
+
+.admit-bmi-item b,
+.admit-attendance-item b {
+  font-weight: 700;
+  margin-right: 4px;
 }
 
 /* ---- Chips / badges ---- */
@@ -1249,7 +1315,7 @@ html, body, .content-wrapper, .content, .container-fluid{
   .page-actions,
   .card.card-outline.card-primary,
   .nav.nav-tabs,
-  .form-row,
+  .row,
   .alert.alert-info {
     display: none !important;
     visibility: hidden !important;
@@ -1265,11 +1331,14 @@ html, body, .content-wrapper, .content, .container-fluid{
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: none !important;
+    border: 1px solid #000 !important;
+    border-start: 4px double #000 !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    box-shadow: none !important;
+    filter: none !important;
   }
 
   .admit-card:last-child {
@@ -1287,8 +1356,31 @@ html, body, .content-wrapper, .content, .container-fluid{
     grid-template-columns: 96px 1fr !important;
     gap: 16px !important;
     padding: 16px 16px 10px !important;
-    border-bottom: 2px solid var(--accent) !important;
+    border-bottom: 3px double #000 !important;
     page-break-inside: avoid !important;
+  }
+
+  .admit-card .avatar-photo-shell {
+    border: 2px solid #000 !important;
+    background: #fafafa !important;
+  }
+
+  .headline .ribbon {
+    border: 2px double #000 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  .fact {
+    border: none !important;
+    border-start: 3px solid #000 !important;
+    border-top: 1px dotted #000 !important;
+    border-bottom: 1px dotted #000 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
   }
   
   .admit-body {
@@ -1299,18 +1391,71 @@ html, body, .content-wrapper, .content, .container-fluid{
   
   .school-logo {
     background: white !important;
-    border: 2px solid #e0e0e0 !important;
+    border: none !important;
+    box-shadow: none !important;
     display: flex !important;
   }
-  
+
+  .admit-bmi-strip,
+  .admit-attendance-strip,
+  .admit-bmi-strip .admit-bmi-title i,
+  .admit-attendance-strip .admit-attendance-title i {
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    border-start: 4px double #000 !important;
+    border-top: 1px dotted #000 !important;
+    border-bottom: 1px solid #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .due-badge {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px dashed #000 !important;
+  }
+
+  .datesheet-wrap {
+    border-top: 4px double #000 !important;
+    border-start: 3px solid #000 !important;
+    border-end: 1px solid #000 !important;
+    border-bottom: none !important;
+    padding: 10px 12px !important;
+    background: #fff !important;
+  }
+
+  .datesheet-table thead th {
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    border-bottom: 3px double #000 !important;
+  }
+
+  .datesheet-table td {
+    border: none !important;
+    border-bottom: 1px dotted #000 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .datesheet-table thead th:not(:last-child),
+  .datesheet-table tbody td:not(:last-child) {
+    border-end: 1px solid #000 !important;
+  }
+
+  .datesheet-table tbody tr:last-child td {
+    border-bottom: none !important;
+  }
+
   .school-logo img {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     background: white !important;
   }
-  
+
   .datesheet-table {
-    border: 2px solid #000 !important;
+    border: none !important;
     page-break-inside: avoid !important;
     display: table !important;
   }

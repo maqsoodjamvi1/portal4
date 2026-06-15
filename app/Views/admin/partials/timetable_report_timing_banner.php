@@ -7,7 +7,7 @@ if ($t === '' && $d === '') {
 ?>
 <div class="alert alert-info mb-3 small tt-timing-banner">
     <?php if ($t !== ''): ?>
-        <div><strong>Active timing type:</strong> <?= esc($t) ?></div>
+        <div><strong>School timing:</strong> <?= esc($t !== '' ? $t : 'Campus schedule') ?></div>
     <?php endif; ?>
     <?php if ($d !== ''): ?>
         <div class="mt-1"><strong>School days in this report</strong> (check-in ≠ check-out): <?= esc($d) ?></div>

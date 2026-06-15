@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class EmployeesAttendance extends BaseController
 {
@@ -15,13 +16,13 @@ class EmployeesAttendance extends BaseController
     public function __construct()
     {
         helper(['form', 'url']);
-        $this->db = \Config\Database::connect();
+        $this->db      = \Config\Database::connect();
         $this->session = session();
 
         check_permission('admin-student-attendance');
 
-        $this->userId = $this->session->get('member_userid');
-        $this->campusId = $this->session->get('member_campusid');
+        $this->userId    = $this->session->get('member_userid');
+        $this->campusId  = $this->session->get('member_campusid');
         $this->sessionId = $this->session->get('member_sessionid');
     }
 
@@ -29,22 +30,19 @@ class EmployeesAttendance extends BaseController
     {
         return view('admin/employees_attendance', [
             'sessionData' => [
-                'campusid' => $this->campusId,
-                'sessionid' => $this->sessionId
-            ]
+                'campusid'  => $this->campusId,
+                'sessionid' => $this->sessionId,
+            ],
         ]);
     }
 
     public function data()
     {
         $request = service('request');
-        $draw = $request->getPost('draw');
-        $search = $request->getPost('search');
-        $keyword = $search['value'] ?? '';
+        $draw    = $request->getPost('draw');
 
-        $builder = $this->db->table('attendance');
+        $builder      = $this->db->table('attendance');
         $recordsTotal = $builder->countAllResults(false);
-
         $attendanceData = $builder->get()->getResult();
 
         $academicSession = $this->db->table('academic_session')
@@ -55,26 +53,29 @@ class EmployeesAttendance extends BaseController
         foreach ($attendanceData as $row) {
             $student = $this->db->table('users')->where('id', $row->student_id)->get()->getRow();
             $studentClass = $this->db->table('student_class')->where('student_id', $row->student_id)->get()->getRow();
-            $class = $this->db->table('classes')->where('class_id', $studentClass->class_id)->get()->getRow();
+            $class = $studentClass
+                ? $this->db->table('classes')->where('class_id', $studentClass->class_id)->get()->getRow()
+                : null;
 
             $termName = '';
             $termsSession = $this->db->query(
-                "SELECT * FROM terms_session WHERE session_id = {$this->sessionId} AND '{$row->date}' BETWEEN start_date AND end_date"
+                "SELECT * FROM terms_session WHERE session_id = ? AND ? BETWEEN start_date AND end_date",
+                [$this->sessionId, $row->date]
             )->getResult();
 
-            if (!empty($termsSession)) {
+            if (! empty($termsSession)) {
                 $term = $this->db->table('terms')->where('term_id', $termsSession[0]->term_id)->get()->getRow();
-                $termName = $term->name;
+                $termName = $term->name ?? '';
             }
 
             $data[] = [
-                'id'            => $row->attendance_id,
-                'student'       => $student->first_name . ' ' . $student->last_name,
-                'class'         => $class->class_name,
-                'session_name'  => $academicSession->session_name,
-                'term_name'     => $termName,
-                'date'          => $row->date,
-                'detail'        => $row->detail
+                'id'           => $row->attendance_id,
+                'student'      => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'class'        => $class->class_name ?? '',
+                'session_name' => $academicSession->session_name ?? '',
+                'term_name'    => $termName,
+                'date'         => $row->date,
+                'detail'       => $row->detail,
             ];
         }
 
@@ -82,7 +83,7 @@ class EmployeesAttendance extends BaseController
             'draw'            => $draw,
             'recordsTotal'    => $recordsTotal,
             'recordsFiltered' => $recordsTotal,
-            'data'            => $data
+            'data'            => $data,
         ]);
     }
 
@@ -90,152 +91,373 @@ class EmployeesAttendance extends BaseController
     {
         check_permission('admin-add-student-attendance');
 
-        $data = [
-            'sessionData'       => ['campusid' => $this->campusId, 'sessionid' => $this->sessionId],
-            'infousers'         => $this->db->table('users')->get()->getResult(),
-            'classesinfo'       => $this->db->table('classes')->get()->getResult(),
-            'sectionsclassinfo' => userClassSections(),
-            'campusinfo'        => $this->db->table('campus')->where('campus_id', $this->campusId)->get()->getResult(),
-            'examinfo'          => $this->db->table('exam')->where(['campus_id' => $this->campusId, 'session_id' => $this->sessionId])->get()->getResult(),
-            'academic_session'  => $this->db->table('academic_session')->where('session_id', $this->sessionId)->get()->getResult(),
-            'subjectinfo'       => $this->db->table('allsubject')->get()->getResult(),
-        ];
-
-        return view('admin/employees_attendance_edit', $data);
+        return view('admin/employees_attendance_edit', [
+            'sessionData' => [
+                'campusid'  => $this->campusId,
+                'sessionid' => $this->sessionId,
+            ],
+        ]);
     }
 
     public function edit()
     {
         check_permission('admin-edit-student-attendance');
-        $id = (int) $this->request->getGet('id');
 
-        $data = [
-            'sessionData'   => ['campusid' => $this->campusId, 'sessionid' => $this->sessionId],
-            'info'          => $this->db->table('studentsresults')->where('student_id', $id)->get()->getRow(),
-            'infostudents'  => $this->db->table('students')->get()->getResult(),
-            'classesinfo'   => $this->db->table('classes')->get()->getResult(),
-            'subjectinfo'   => $this->db->table('allsubject')->get()->getResult(),
-        ];
-
-        return view('admin/employees_attendance_edit', $data);
+        return view('admin/employees_attendance_edit', [
+            'sessionData' => [
+                'campusid'  => $this->campusId,
+                'sessionid' => $this->sessionId,
+            ],
+        ]);
     }
 
-    public function save()
-	{
-	    check_permission('admin-add-student-attendance');
+    public function save(): ResponseInterface
+    {
+        check_permission('admin-add-student-attendance');
 
-	    $employee_ids = $this->request->getPost('employee_id');
-	    $date = date('Y-m-d');
-	    $inputDate = $this->request->getPost('date');
-	    $day = date('l', strtotime($inputDate));
+        $employeeIds = $this->request->getPost('employee_id');
+        $inputDate   = $this->request->getPost('date');
+        $now         = date('Y-m-d');
 
-	    $this->db->transStart();
+        if (! $employeeIds || ! $inputDate) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Date and employees are required.']);
+        }
 
-	    foreach ($employee_ids as $employee_id) {
-	        $status = $this->request->getPost("{$employee_id}_status");
-	        $checkin = $this->request->getPost("{$employee_id}_checkin_date");
-	        $checkout = $status === 'A' ? $checkin : $this->request->getPost("{$employee_id}_checkout_date");
+        if (! is_array($employeeIds)) {
+            $employeeIds = [$employeeIds];
+        }
 
-	        $empTiming = $this->db->table('emp_timings')
-	            ->where('user_id', $employee_id)
-	            ->get()->getRow();
+        $employeeIds = array_values(array_unique(array_map('intval', $employeeIds)));
+        $day         = date('l', strtotime($inputDate));
 
-	        $lc_time_def = (strtotime($checkin) - strtotime($empTiming->checkin)) / 60;
-	        $el_time_def = (strtotime($empTiming->checkout) - strtotime($checkout)) / 60;
+        $timingsByUser = $this->loadTimingsForDay($employeeIds, $day);
 
-	        $builder = $this->db->table('attendance_employee');
+        $this->db->transStart();
 
-	        $exists = $builder
-	            ->where(['emp_id' => $employee_id, 'date' => $inputDate])
-	            ->get()->getRow();
+        foreach ($employeeIds as $employeeId) {
+            $status = $this->request->getPost("{$employeeId}_status");
+            if ($status === null || $status === '') {
+                continue;
+            }
 
-	        $data = [
-	            'emp_id' => $employee_id,
-	            'date' => $inputDate,
-	            'status' => $status,
-	            'checkin' => $checkin,
-	            'checkout' => $checkout,
-	            'lc_duration' => $lc_time_def,
-	            'el_duration' => $el_time_def,
-	            'user_id' => $this->userId,
-	            ($exists ? 'updated_date' : 'created_date') => $date
-	        ];
+            $empTiming = $this->resolveEmployeeTiming($employeeId, $day, $timingsByUser, (int) $this->campusId);
 
-	        if ($exists) {
-	            $builder->where(['emp_id' => $employee_id, 'date' => $inputDate])->update($data);
-	        } else {
-	            $builder->insert($data);
-	        }
-	    }
+            $status = $this->normalizeAttendanceStatus($status);
+            if ($status === '') {
+                continue;
+            }
 
-	    $this->db->transComplete();
+            $remarks = trim((string) $this->request->getPost("{$employeeId}_remarks"));
+            $scheduledIn  = $this->normalizeTime($empTiming->checkin ?? '');
+            $scheduledOut = $this->normalizeTime($empTiming->checkout ?? '');
 
-	    return $this->response->setJSON(['success' => true, 'msg' => 'Attendance saved successfully.']);
-	}
+            $checkin  = '';
+            $checkout = '';
+            $lcDuration = 0;
+            $elDuration = 0;
 
-	public function get_employees()
-	{
-	    $campus_id = $this->request->getPost('campus_id');
-	    $datevalue = $this->request->getPost('date');
-	    $day = date('l', strtotime($datevalue));
-	    $users = $this->db->table('users')->where(['status' => 1, 'campus_id' => $campus_id])->get()->getResult();
+            switch ($status) {
+                case 'P':
+                    $checkin  = $scheduledIn;
+                    $checkout = $scheduledOut;
+                    break;
+                case 'LC':
+                    $checkin = $this->normalizeTime($this->request->getPost("{$employeeId}_checkin_date"));
+                    if ($checkin === '') {
+                        $checkin = $scheduledIn;
+                    }
+                    $checkout = $scheduledOut;
+                    if ($checkin && $scheduledIn) {
+                        $lcDuration = max(0, (int) round((strtotime($checkin) - strtotime($scheduledIn)) / 60));
+                    }
+                    break;
+                case 'EL':
+                    $checkin  = $scheduledIn;
+                    $checkout = $this->normalizeTime($this->request->getPost("{$employeeId}_checkout_date"));
+                    if ($checkout === '') {
+                        $checkout = $scheduledOut;
+                    }
+                    if ($checkout && $scheduledOut) {
+                        $elDuration = max(0, (int) round((strtotime($scheduledOut) - strtotime($checkout)) / 60));
+                    }
+                    break;
+                case 'A':
+                case 'L':
+                    break;
+            }
 
-	    $html = '<div class="table-responsive"><table class="table" style="width:100%;">
-	    <tr><th>Photo</th><th>Name</th><th>A</th><th>P</th><th>LC</th><th>EL</th></tr>';
+            $builder = $this->db->table('attendance_employee');
+            $exists  = $builder
+                ->where(['emp_id' => $employeeId, 'date' => $inputDate])
+                ->get()
+                ->getRow();
 
-	    foreach ($users as $row) {
-	        $empTiming = $this->db->table('emp_timings')->where(['user_id' => $row->id, 'dayname' => $day])->get()->getRow();
+            $row = [
+                'emp_id'      => $employeeId,
+                'date'        => $inputDate,
+                'status'      => $status,
+                'checkin'     => $checkin,
+                'checkout'    => $checkout,
+                'lc_duration' => $lcDuration,
+                'el_duration' => $elDuration,
+                'remarks'     => in_array($status, ['A', 'L'], true) ? $remarks : '',
+                'user_id'     => $this->userId,
+            ];
 
-	        if (!$empTiming) {
-	            return $this->response->setBody(
-	                "<div class='alert alert-danger'>Set employee timing first. <a href='/admin.php#/emp_timing?m=add'>Set Timing</a></div>"
-	            );
-	        }
+            if ($exists) {
+                $row['updated_date'] = $now;
+                $builder->where(['emp_id' => $employeeId, 'date' => $inputDate])->update($row);
+            } else {
+                $row['created_date'] = $now;
+                $builder->insert($row);
+            }
+        }
 
-	        $attendance = $this->db->table('attendance_employee')
-	            ->where(['emp_id' => $row->id, 'date' => $datevalue])
-	            ->get()->getRow();
+        $this->db->transComplete();
 
-	        $photo = $row->photo && file_exists(FCPATH . 'uploads/' . $row->photo)
-	            ? "<img style='width:50px;height:50px;border-radius:30px;margin:0 auto;display:block;' src='" . base_url("uploads/{$row->photo}") . "'>"
-	            : "<i class='fa fa-user' style='font-size:40px;display:block;text-align:center;'></i>";
+        if (! $this->db->transStatus()) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Failed to save attendance.']);
+        }
 
-	        $name = esc($row->first_name . ' ' . $row->last_name);
+        return $this->response->setJSON(['success' => true, 'msg' => 'Attendance saved successfully.']);
+    }
 
-	        $checkin = $attendance->checkin ?? $empTiming->checkin;
-	        $checkout = $attendance->checkout ?? $empTiming->checkout;
+    public function get_employees(): ResponseInterface
+    {
+        check_permission('admin-add-student-attendance');
 
-	        $status = $attendance->status ?? '';
+        try {
+            return $this->buildEmployeesAttendanceGrid();
+        } catch (\Throwable $e) {
+            log_message('error', 'EmployeesAttendance::get_employees — ' . $e->getMessage());
 
-	        $html .= "<tr>
-	            <td>$photo<input type='hidden' name='employee_id[]' value='{$row->id}'></td>
-	            <td>$name</td>
-	            <td><input type='radio' name='{$row->id}_status' value='A' " . ($status == 'A' ? 'checked' : '') . "> A</td>
-	            <td><input type='radio' name='{$row->id}_status' value='P' " . ($status == 'P' ? 'checked' : '') . "> P</td>
-	            <td><input type='radio' name='{$row->id}_status' value='LC' " . ($status == 'LC' ? 'checked' : '') . "> LC
-	                <input type='text' name='{$row->id}_checkin_date' value='$checkin' class='form-control clockpicker'></td>
-	            <td><input type='radio' name='{$row->id}_status' value='EL' " . ($status == 'EL' ? 'checked' : '') . "> EL
-	                <input type='text' name='{$row->id}_checkout_date' value='$checkout' class='form-control clockpicker'></td>
-	        </tr>";
-	    }
+            return $this->response->setStatusCode(500)->setBody(
+                "<div class='alert alert-danger mb-0'>Could not load employees. Please refresh and try again.</div>"
+            );
+        }
+    }
 
-	    $html .= '</table></div><script>$(function(){$(".clockpicker").clockpicker();});</script>';
+    private function buildEmployeesAttendanceGrid(): ResponseInterface
+    {
+        $campusId  = (int) $this->request->getPost('campus_id');
+        $dateValue = $this->request->getPost('date');
 
-	    return $this->response->setBody($html);
-	}
+        if ($campusId <= 0) {
+            $campusId = (int) $this->campusId;
+        }
 
-	public function delete()
-	{
-	    check_permission('admin-del-attendance');
-	    $id = (int) $this->request->getGet('id');
+        if (! $dateValue || ! strtotime($dateValue)) {
+            return $this->response->setBody(
+                "<div class='alert alert-warning mb-0'>Please select a valid date.</div>"
+            );
+        }
 
-	    $this->db->transStart();
-	    $this->db->table('attendance_employee')->where('attendance_id', $id)->delete();
-	    $this->db->transComplete();
+        $day = date('l', strtotime($dateValue));
 
-	    return $this->response->setJSON(['success' => true, 'msg' => 'Attendance record deleted successfully.']);
-	}
+        $users = $this->db->table('users')
+            ->select('id, first_name, last_name, photo, designation')
+            ->where(['status' => 1, 'campus_id' => $campusId])
+            ->orderBy('first_name', 'ASC')
+            ->orderBy('last_name', 'ASC')
+            ->get()
+            ->getResult();
 
+        if ($users === []) {
+            return $this->response->setBody(
+                "<div class='alert alert-info mb-0'>No active employees found for this campus.</div>"
+            );
+        }
 
+        $userIds = array_map(static fn ($u) => (int) $u->id, $users);
 
+        $timingsByUser = $this->loadTimingsForDay($userIds, $day);
+
+        $attendanceByUser = [];
+        $attendanceRows = $this->db->table('attendance_employee')
+            ->where('date', $dateValue)
+            ->whereIn('emp_id', $userIds)
+            ->get()
+            ->getResult();
+
+        foreach ($attendanceRows as $row) {
+            $attendanceByUser[(int) $row->emp_id] = $row;
+        }
+
+        $employees           = [];
+        $missingTimingCount  = 0;
+
+        foreach ($users as $user) {
+            $uid = (int) $user->id;
+            $hasCustomTiming = isset($timingsByUser[$uid]);
+            $timing = $this->resolveEmployeeTiming($uid, $day, $timingsByUser, $campusId);
+
+            if (! $hasCustomTiming) {
+                $missingTimingCount++;
+            }
+
+            $attendance = $attendanceByUser[$uid] ?? null;
+            $status     = $this->normalizeAttendanceStatus(
+                $attendance ? (string) ($attendance->status ?? '') : ''
+            );
+
+            $checkin = ($attendance && $status === 'LC' && ! empty($attendance->checkin))
+                ? $attendance->checkin
+                : ($timing->checkin ?? '');
+            $checkout = ($attendance && $status === 'EL' && ! empty($attendance->checkout))
+                ? $attendance->checkout
+                : ($timing->checkout ?? '');
+
+            $employees[] = [
+                'id'            => $uid,
+                'name'          => trim($user->first_name . ' ' . $user->last_name),
+                'designation'   => trim((string) ($user->designation ?? '')),
+                'photo_url'     => $this->employeePhotoUrl($user->photo ?? null),
+                'status'        => $status,
+                'has_saved'     => $attendance !== null,
+                'has_custom_timing' => $hasCustomTiming,
+                'remarks'       => $attendance ? (string) ($attendance->remarks ?? '') : '',
+                'checkin'       => $this->formatTimeForInput($checkin),
+                'checkout'      => $this->formatTimeForInput($checkout),
+                'scheduled_in'  => $this->formatTimeForInput($timing->checkin ?? ''),
+                'scheduled_out' => $this->formatTimeForInput($timing->checkout ?? ''),
+            ];
+        }
+
+        return $this->response->setBody(view('admin/partials/employees_attendance_grid', [
+            'employees'            => $employees,
+            'missing_timing_count' => $missingTimingCount,
+            'day_label'            => $day,
+        ]));
+    }
+
+    public function delete(): ResponseInterface
+    {
+        check_permission('admin-del-attendance');
+        $id = (int) $this->request->getGet('id');
+
+        $this->db->table('attendance_employee')->where('attendance_id', $id)->delete();
+
+        return $this->response->setJSON(['success' => true, 'msg' => 'Attendance record deleted successfully.']);
+    }
+
+    /**
+     * Employee-specific timing for a day, or campus default when not configured.
+     */
+    private function resolveEmployeeTiming(int $userId, string $day, array $timingsByUser, int $campusId): object
+    {
+        if (isset($timingsByUser[$userId])) {
+            return $timingsByUser[$userId];
+        }
+
+        return $this->defaultCampusTiming($campusId);
+    }
+
+    private function defaultCampusTiming(int $campusId): object
+    {
+        $settings = null;
+        if ($campusId > 0) {
+            $settings = $this->db->table('attendance_settings')
+                ->where('campus_id', $campusId)
+                ->get()
+                ->getRow();
+        }
+
+        $checkin = $this->normalizeTime($settings->checkin ?? '08:00');
+        $checkout = $this->normalizeTime(
+            $settings->halfday_checkout ?? $settings->checkout ?? '16:00'
+        );
+
+        return (object) [
+            'user_id'  => 0,
+            'dayname'  => '',
+            'checkin'  => $checkin !== '' ? $checkin : '08:00',
+            'checkout' => $checkout !== '' ? $checkout : '16:00',
+        ];
+    }
+
+    /**
+     * @param int[] $userIds
+     * @return array<int, object>
+     */
+    private function loadTimingsForDay(array $userIds, string $day): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $rows = $this->db->table('emp_timings')
+            ->where('dayname', $day)
+            ->whereIn('user_id', $userIds)
+            ->get()
+            ->getResult();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->user_id] = $row;
+        }
+
+        return $map;
+    }
+
+    private function employeePhotoUrl(?string $photo): string
+    {
+        if (function_exists('getEmployeePhotoUrl')) {
+            return getEmployeePhotoUrl($photo);
+        }
+
+        if (! empty($photo) && is_file(FCPATH . 'uploads/' . $photo)) {
+            return base_url('uploads/' . $photo);
+        }
+
+        return base_url('resource/adminlte/dist/img/emp-avatar.jpg');
+    }
+
+    private function normalizeTime(?string $time): string
+    {
+        if ($time === null || $time === '') {
+            return '';
+        }
+
+        $time = trim($time);
+        if (preg_match('/^\d{1,2}:\d{2}$/', $time)) {
+            return $time;
+        }
+
+        $ts = strtotime($time);
+
+        return $ts ? date('H:i', $ts) : $time;
+    }
+
+    /**
+     * HH:MM for HTML time inputs.
+     */
+    private function formatTimeForInput($time): string
+    {
+        $normalized = $this->normalizeTime($time !== null ? (string) $time : '');
+
+        return strlen($normalized) >= 5 ? substr($normalized, 0, 5) : $normalized;
+    }
+
+    private function normalizeAttendanceStatus(?string $status): string
+    {
+        $code = strtoupper(trim((string) $status));
+        $map  = [
+            'PRESENT' => 'P',
+            'PR'      => 'P',
+            'ABSENT'  => 'A',
+            'AB'      => 'A',
+            'LATE'    => 'LC',
+            'LATE COMING' => 'LC',
+            'EARLY'   => 'EL',
+            'EARLY LEAVING' => 'EL',
+            'LEAVE'   => 'L',
+            'LV'      => 'L',
+        ];
+
+        if (isset($map[$code])) {
+            return $map[$code];
+        }
+
+        return in_array($code, ['P', 'A', 'LC', 'EL', 'L'], true) ? $code : '';
+    }
 }

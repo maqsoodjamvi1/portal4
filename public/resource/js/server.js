@@ -1,4 +1,4 @@
-//
+// server.js v20260526 — Sammy.js SPA router removed; CI4 serves full admin pages.
 
 if (typeof toastr != 'undefined') {
 	// 提示组件配置
@@ -148,8 +148,23 @@ $(function () {
 		}
 		return paramStr.substr(1);
 	};
+	var adminDispatchBase = function () {
+		var base = (typeof BASE_URL !== 'undefined' ? BASE_URL : '/');
+		return base.replace(/\/?$/, '/') + 'admin';
+	};
+
+	var contentAlreadyRendered = function () {
+		var $cw = $('.content-wrapper');
+		if (!$cw.length) {
+			return false;
+		}
+		return $cw.find('section.content .container-fluid').children().length > 0
+			|| $cw.find('.card, table.dataTable, form, .profile-user-img').length > 0;
+	};
+
 	var loadURL = function (uri) {
-		$('.content-wrapper').load(BASE_URL + uri, function (response, status, xhr) {
+		var fetchUrl = (uri.charAt(0) === '?') ? adminDispatchBase() + uri : (BASE_URL + uri);
+		$('.content-wrapper').load(fetchUrl, function (response, status, xhr) {
 			var source = '<section class="content-header">\
 								      <h1>\
 								        Msg\
@@ -168,6 +183,17 @@ $(function () {
 								    </section>';
 
 			if (status == 'error') {
+				if (xhr.status === 401) {
+					var login401 = (typeof BASE_URL !== 'undefined' ? BASE_URL : '/') + 'admin/login';
+					try {
+						var j401 = $.parseJSON(xhr.responseText || response || '{}');
+						if (j401 && j401.redirect) {
+							login401 = j401.redirect;
+						}
+					} catch (e401) {}
+					window.location.href = login401;
+					return;
+				}
 				var msg = "Sorry but there was an error: ";
 				msg = msg + xhr.status + " " + xhr.statusText;
 				var render = template.compile(source);
@@ -182,6 +208,10 @@ $(function () {
 					var json = $.parseJSON(response);
 					if (json.success) {}
 					else {
+						if (json.code === 'session_expired' && json.redirect) {
+							window.location.href = json.redirect;
+							return;
+						}
 						var msg = json.msg;
 						var render = template.compile(source);
 						var html = render({
@@ -195,8 +225,7 @@ $(function () {
 			}
 		});
 	};
-	
-(function($){
+
   // remember last AJAX request so we can soft-refresh after actions
   window.LAST_REQUEST_URI = null;
   var __originalLoadURL = loadURL;
@@ -219,79 +248,50 @@ $(function () {
     } catch(e){}
   }
 
-  // one-time shim: convert legacy "#/..." to clean "/admin/..."
+  // one-time shim: convert legacy "#/..." to clean "/admin/..." (and ?m=add → /add)
   (function hashToPushStateShim(){
     if (location.hash && location.hash.indexOf('#/') === 0) {
-      var frag = location.hash.substring(2); // after "#/"
-      var target = '/admin/' + frag.replace(/^\/+/, '');
+      var frag = location.hash.substring(2).replace(/^\/+/, '');
+      var qIdx = frag.indexOf('?');
+      var pathPart = qIdx >= 0 ? frag.substring(0, qIdx) : frag;
+      var queryPart = qIdx >= 0 ? frag.substring(qIdx + 1) : '';
+      var params = new URLSearchParams(queryPart);
+      var m = params.get('m');
+      if (m && m !== 'index') {
+        pathPart = pathPart.replace(/\/+$/, '') + '/' + m;
+        params.delete('m');
+      }
+      var remaining = params.toString();
+      var target = '/admin/' + pathPart + (remaining ? '?' + remaining : '');
       history.replaceState(null, '', target);
     }
   })();
 
   $(function(){
-    var app = $.sammy(function(){
-      this.use(Sammy.PushLocation); // HTML5 pushState (no "#")
+    // Legacy Sammy.js SPA is disabled. CI4 serves full admin pages; boot-time app.run() and
+    // link interception were calling loadURL() and replacing .content-wrapper with the
+    // site root (Home::index → CodeIgniter welcome page).
+    window.loadURL = loadURL;
 
-      // /admin/ -> dashboard
-      this.get('/admin/', function(){
-        setActiveFromPath('/admin/');
-        loadURL('?c=welcome&m=dashboard');
-      });
+    var path = window.location.pathname || '';
+    if (path.indexOf('/admin') === 0) {
+      setActiveFromPath(path);
+    }
 
-      // /admin/:controller
-      this.get('/admin/:controller', function(){
-        setActiveFromPath(this.path);
-        var c = this.params.controller;
-        loadURL('?c=' + encodeURIComponent(c));
-      });
-
-      // /admin/:controller/:method
-      this.get('/admin/:controller/:method', function(){
-        setActiveFromPath(this.path);
-        var p = this.params;
-        loadURL('?c=' + encodeURIComponent(p.controller)
-              + '&m=' + encodeURIComponent(p.method));
-      });
-
-      // /admin/:controller/:method/:param1
-      this.get('/admin/:controller/:method/:param1', function(){
-        setActiveFromPath(this.path);
-        var p = this.params;
-        loadURL('?c=' + encodeURIComponent(p.controller)
-              + '&m=' + encodeURIComponent(p.method)
-              + '&param1=' + encodeURIComponent(p.param1));
-      });
-
-      // /admin/:controller/:method/:param1/:param2
-      this.get('/admin/:controller/:method/:param1/:param2', function(){
-        setActiveFromPath(this.path);
-        var p = this.params;
-        loadURL('?c=' + encodeURIComponent(p.controller)
-              + '&m=' + encodeURIComponent(p.method)
-              + '&param1=' + encodeURIComponent(p.param1)
-              + '&param2=' + encodeURIComponent(p.param2));
-      });
-    });
-
-    // start router at /admin/
-    app.run('/admin/');
-
-    // expose for other scripts (e.g., del_confirm soft-refresh)
-    window.__sammyApp = app;
-
-    // intercept internal admin links to prevent full reloads
-    $(document).on('click', 'a[href^="/admin/"]', function(e){
-      if (e.metaKey || e.ctrlKey || this.target === '_blank') return;
-      var href = this.getAttribute('href') || '';
-      if (/^\/admin(\/.*)?$/.test(href)) {
-        e.preventDefault();
-        app.setLocation(href);
-      }
-    });
-
-    // keep active menu on back/forward
-    window.addEventListener('popstate', function(){
+    window.addEventListener('popstate', function () {
       setActiveFromPath(location.pathname);
+    });
+
+    // Any admin AJAX returning 401 (session expired) → sign-in page
+    $(document).ajaxComplete(function (_evt, xhr) {
+      if (xhr.status !== 401) return;
+      if (window.location.pathname.indexOf('admin/login') !== -1) return;
+      var login = (typeof BASE_URL !== 'undefined' ? BASE_URL : '/') + 'admin/login';
+      try {
+        var j = $.parseJSON(xhr.responseText || '{}');
+        if (j && j.redirect) login = j.redirect;
+      } catch (ex) {}
+      window.location.href = login;
     });
   });
 })(jQuery);

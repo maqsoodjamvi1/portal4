@@ -3,6 +3,7 @@
 namespace App\Controllers\Frontend;
 
 use App\Controllers\BaseController;
+use App\Libraries\CommonsImageLookup;
 use Config\Database;
 
 class VocabBank extends BaseController
@@ -14,13 +15,11 @@ class VocabBank extends BaseController
     {
         $this->db = Database::connect();
         $this->session = session();
-        helper(['url', 'form']);
+        helper(['url', 'form', 'parent_portal']);
     }
     
     public function index()
     {
-        log_message('info', 'VOCABULARY CONTROLLER HIT');
-        
         // 1) Auth check
         $auth = $this->session->get('auth');
 
@@ -31,24 +30,25 @@ class VocabBank extends BaseController
         $role = $auth['role'];
         $userId = (int) $auth['user_id'];
         
-        // 2) For parents: Get all children
+        // 2) For parents: same child list + selection as datesheet
         if ($role === 'parent') {
-            $children = $this->getParentChildren($userId);
-            
-            // If no active student selected, show list of children
+            $children = \parent_portal_get_children($userId);
+
             $activeStudentId = (int) ($this->session->get('active_student_id') ?? 0);
+            if ($activeStudentId <= 0 && ! empty($children)) {
+                $activeStudentId = (int) $children[0]['student_id'];
+                $this->session->set('active_student_id', $activeStudentId);
+            }
             
             $data = [
                 'role' => $role,
                 'name' => $auth['name'] ?? 'User',
-                'title' => 'Vocabulary Bank',
+                'title' => 'Vocabulary',
                 'children' => $children,
                 'active_student_id' => $activeStudentId,
                 'is_parent' => true,
-                'vocabulary_data' => null
             ];
             
-            // If a student is selected, get their vocabulary
             if ($activeStudentId > 0) {
                 $studentVocabulary = $this->getStudentVocabularyData($activeStudentId);
                 $data = array_merge($data, $studentVocabulary);
@@ -72,29 +72,6 @@ class VocabBank extends BaseController
         }
         
         return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
-    }
-    
-    /**
-     * Get all children for a parent (same as DatesheetController)
-     */
-    private function getParentChildren($parentId)
-    {
-        return $this->db->table('students s')
-            ->select('s.student_id, s.first_name, s.last_name, s.profile_photo, s.reg_no, 
-                     cs.cls_sec_id, c.class_name, sec.section_name,
-                     campus.campus_name')
-            ->join('student_class sc', 'sc.student_id = s.student_id AND sc.status = 1', 'left')
-            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
-            ->join('classes c', 'c.class_id = cs.class_id', 'left')
-            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
-            ->join('campus', 'campus.campus_id = s.campus_id', 'left')
-            ->where('s.parent_id', $parentId)
-            ->where('s.status', 1)
-            ->groupBy('s.student_id')
-            ->orderBy('c.class_id', 'ASC')
-            ->orderBy('s.first_name', 'ASC')
-            ->get()
-            ->getResultArray();
     }
     
     /**
@@ -375,14 +352,9 @@ public function getVocabularyData()
         
         $topicIds = array_column($topics, 'id');
         
-        // Get vocabulary words for ALL topics
+        // Get vocabulary words for ALL topics (optional image columns if present)
         $vocabulary = $this->db->table('vocab_bank')
-            ->select([
-                'id', 'topic_id', 'word', 'meaning_en', 'meaning_ur',
-                'example_sentence', 'part_of_speech', 'syllables',
-                'synonyms', 'antonyms', 'related_words', 'confusing_pair',
-                'confusing_pair_difference', 'difficulty_level'
-            ])
+            ->select($this->getVocabBankSelectColumns())
             ->where('class_id', $classId)
             ->whereIn('subject_id', $subjectIds)
             ->whereIn('topic_id', $topicIds)
@@ -390,6 +362,8 @@ public function getVocabularyData()
             ->orderBy('word', 'ASC')
             ->get()
             ->getResultArray();
+
+        $vocabulary = $this->enrichVocabularyRowsWithIllustrationUrl($vocabulary);
         
         log_message('info', 'Found ' . count($vocabulary) . ' vocabulary words');
         
@@ -449,6 +423,78 @@ public function getVocabularyData()
         ]);
     }
 }
+
+    /**
+     * Batch-resolve Wikimedia Commons thumbnails for words without teacher images (cached server-side).
+     */
+    public function commonsImagesBatch()
+    {
+        // Do not rely on X-Requested-With — some proxies/CDNs strip it while JSON POST is still valid.
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return $this->response->setStatusCode(405)
+                ->setJSON(['status' => 'error', 'msg' => 'Method not allowed']);
+        }
+
+        $auth = $this->session->get('auth');
+        if (! $auth || empty($auth['logged_in'])) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg' => 'Please login first',
+            ]);
+        }
+
+        $role = $auth['role'] ?? '';
+        if ($role !== 'parent' && $role !== 'student') {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Unauthorized']);
+        }
+
+        $payload = $this->request->getJSON(true);
+        if (! is_array($payload)) {
+            $payload = [];
+        }
+        $items = $payload['items'] ?? [];
+        if ($items === [] || ! is_array($items)) {
+            return $this->response->setJSON(['status' => 'ok', 'images' => []]);
+        }
+
+        $items = array_slice($items, 0, 40);
+        $lookup = new CommonsImageLookup();
+        $out = [];
+
+        foreach ($items as $it) {
+            if (! is_array($it)) {
+                continue;
+            }
+            $id = (int) ($it['id'] ?? 0);
+            $term = isset($it['term']) ? trim((string) $it['term']) : '';
+            $meaningEn = isset($it['meaning_en']) ? trim((string) $it['meaning_en']) : '';
+            if ($id <= 0 || $term === '') {
+                continue;
+            }
+
+            $r = $lookup->resolveForVocabularyWord($term, $meaningEn !== '' ? $meaningEn : null);
+            if ($r !== null) {
+                $out[] = [
+                    'id' => $id,
+                    'url' => $r['url'],
+                    'file_page' => $r['file_page'],
+                    'credit' => $r['credit'],
+                    'description' => $r['description'] ?? '',
+                ];
+            } else {
+                $out[] = [
+                    'id' => $id,
+                    'url' => '',
+                    'file_page' => '',
+                    'credit' => '',
+                    'description' => '',
+                ];
+            }
+        }
+
+        return $this->response->setJSON(['status' => 'ok', 'images' => $out]);
+    }
+
     /**
      * AJAX endpoint to switch student (for parents)
      */
@@ -491,5 +537,88 @@ public function getVocabularyData()
         }
         
         return '';
+    }
+
+    /**
+     * Columns to load from vocab_bank; includes illustration fields only if they exist.
+     *
+     * @return list<string>
+     */
+    private function getVocabBankSelectColumns(): array
+    {
+        $base = [
+            'id', 'topic_id', 'word', 'meaning_en', 'meaning_ur',
+            'example_sentence', 'part_of_speech', 'syllables',
+            'synonyms', 'antonyms', 'related_words', 'confusing_pair',
+            'confusing_pair_difference', 'difficulty_level',
+        ];
+        foreach ($this->vocabBankOptionalImageColumnNames() as $optional) {
+            if (! in_array($optional, $base, true)) {
+                $base[] = $optional;
+            }
+        }
+
+        return array_values(array_unique($base));
+    }
+
+    /**
+     * Image columns present on vocab_bank (teacher uploads / URLs).
+     *
+     * @return list<string>
+     */
+    private function vocabBankOptionalImageColumnNames(): array
+    {
+        static $memo = null;
+        if ($memo !== null) {
+            return $memo;
+        }
+        $memo = [];
+        try {
+            $tbl = $this->db->prefixTable('vocab_bank');
+            $rows = $this->db->query(
+                'SHOW COLUMNS FROM ' . $this->db->escapeIdentifiers($tbl)
+            )->getResultArray();
+            $have = array_column($rows, 'Field');
+            foreach (['question_image', 'word_image', 'image_url'] as $c) {
+                if (in_array($c, $have, true)) {
+                    $memo[] = $c;
+                }
+            }
+        } catch (\Throwable $e) {
+            $memo = [];
+        }
+
+        return $memo;
+    }
+
+    /**
+     * Add illustration_url for the portal (teacher-uploaded image path or absolute URL).
+     *
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    private function enrichVocabularyRowsWithIllustrationUrl(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            $raw = trim((string) (
+                $row['question_image'] ??
+                $row['word_image'] ??
+                $row['image_url'] ??
+                ''
+            ));
+            $row['illustration_url'] = $raw === '' ? '' : $this->vocabIllustrationPublicUrl($raw);
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private function vocabIllustrationPublicUrl(string $raw): string
+    {
+        if (preg_match('#^https?://#i', $raw)) {
+            return $raw;
+        }
+
+        return base_url(ltrim(str_replace('\\', '/', $raw), '/'));
     }
 }

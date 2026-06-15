@@ -1,0 +1,384 @@
+/* Employee profile view — professional layout */
+
+.ep-hero-card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ep-hero-banner {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 55%, #3182ce 100%);
+  padding: 1.75rem 1.5rem 3.5rem;
+  position: relative;
+}
+
+.ep-hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.ep-hero-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ep-hero-title {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.25rem;
+}
+
+.ep-hero-actions .btn {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.ep-hero-body {
+  position: relative;
+  z-index: 2;
+  margin-top: -2.5rem;
+  padding: 0 1.5rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem;
+}
+
+.ep-photo-wrap {
+  flex-shrink: 0;
+}
+
+.ep-photo {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: #e9ecef;
+}
+
+.ep-identity {
+  flex: 1;
+  min-width: 200px;
+  padding-bottom: 0.25rem;
+}
+
+.ep-name {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0 0 0.2rem;
+  line-height: 1.2;
+}
+
+.ep-designation {
+  color: #5a6775;
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.ep-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ep-status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.ep-status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.ep-role-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ep-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.ep-role-pill .fa-shield-alt {
+  opacity: 0.85;
+  font-size: 0.75rem;
+}
+
+.ep-quick-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0;
+  border-top: 1px solid #edf0f3;
+  background: #fafbfc;
+}
+
+.ep-quick-item {
+  padding: 0.85rem 1.25rem;
+  border-right: 1px solid #edf0f3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ep-quick-item:last-child {
+  border-right: none;
+}
+
+.ep-quick-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8b95a1;
+}
+
+.ep-quick-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #2d3748;
+  word-break: break-word;
+}
+
+.ep-quick-value a {
+  color: #2c5282;
+}
+
+/* Role detail cards */
+.ep-roles-section {
+  margin-bottom: 1.25rem;
+}
+
+.ep-roles-section .section-heading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6c757d;
+  margin-bottom: 0.75rem;
+}
+
+.ep-role-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  height: 100%;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ep-role-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-color: #dee2e6;
+}
+
+.ep-role-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ep-role-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.ep-role-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.ep-role-card-level {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.1rem;
+}
+
+.ep-role-card-detail {
+  font-size: 0.85rem;
+  color: #5a6775;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.ep-sys-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: #fff3cd;
+  color: #856404;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+/* Main tabs card */
+.ep-main-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ep-main-card > .card-header {
+  background: #fff;
+  border-bottom: 1px solid #edf0f3;
+  border-radius: 12px 12px 0 0;
+  padding: 0.5rem 1rem;
+}
+
+.ep-tab-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.ep-tab-nav .nav-link {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5a6775;
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  margin-right: 0.25rem;
+}
+
+.ep-tab-nav .nav-link.active {
+  background: #2c5282;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ep-tab-nav .nav-link:not(.active):hover {
+  background: #f1f5f9;
+  color: #2c5282;
+}
+
+/* Info sections inside profile tab */
+.ep-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.ep-info-panel {
+  background: #fafbfc;
+  border: 1px solid #edf0f3;
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+}
+
+.ep-info-panel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2c5282;
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.ep-info-panel-title i {
+  margin-right: 0.4rem;
+  opacity: 0.85;
+}
+
+.ep-dl {
+  margin: 0;
+}
+
+.ep-dl dt {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #8b95a1;
+  margin-bottom: 0.1rem;
+}
+
+.ep-dl dd {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #2d3748;
+  margin: 0 0 0.65rem;
+}
+
+.ep-dl dd:last-child {
+  margin-bottom: 0;
+}
+
+.ep-no-role-alert {
+  border-radius: 10px;
+  border: 1px dashed #dee2e6;
+  background: #f8f9fa;
+  padding: 1.25rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+@media (max-width: 767px) {
+  .ep-hero-body {
+    padding: 0 1rem 1rem;
+    margin-top: -2rem;
+  }
+
+  .ep-photo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .ep-name {
+    font-size: 1.35rem;
+  }
+
+  .ep-quick-item {
+    border-right: none;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .ep-quick-item:last-child {
+    border-bottom: none;
+  }
+}

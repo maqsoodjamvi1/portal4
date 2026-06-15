@@ -32,24 +32,22 @@
     </ul>
 
     <!-- Right navbar links -->
-    <ul class="navbar-nav ml-auto">
+    <ul class="navbar-nav ms-auto">
       <!-- Navbar Search -->
       <li class="nav-item">
         <a class="nav-link" data-widget="navbar-search" href="#" role="button">
           <i class="fas fa-search"></i>
         </a>
         <div class="navbar-search-block">
-          <form class="form-inline">
+          <form class="d-flex flex-wrap align-items-center">
             <div class="input-group input-group-sm">
               <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
-              <div class="input-group-append">
-                <button class="btn btn-navbar" type="submit">
+              <button class="btn btn-navbar" type="submit">
                   <i class="fas fa-search"></i>
                 </button>
                 <button class="btn btn-navbar" type="button" data-widget="navbar-search">
                   <i class="fas fa-times"></i>
                 </button>
-              </div>
             </div>
           </form>
         </div>
@@ -57,22 +55,22 @@
 
       <!-- Messages Dropdown Menu -->
       <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="#">
+        <a class="nav-link" data-bs-toggle="dropdown" href="#">
           <i class="far fa-comments"></i>
-          <span class="badge badge-danger navbar-badge">3</span>
+          <span class="badge text-bg-danger navbar-badge">3</span>
         </a>
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
           <a href="#" class="dropdown-item">
             <!-- Message Start -->
-            <div class="media">
-              <img src="../../dist/img/user1-128x128.jpg" alt="User Avatar" class="img-size-50 mr-3 img-circle">
-              <div class="media-body">
+            <div class="d-flex align-items-start">
+              <img src="../../dist/img/user1-128x128.jpg" alt="User Avatar" class="img-size-50 me-3 img-circle">
+              <div class="flex-grow-1">
                 <h3 class="dropdown-item-title">
                   Brad Diesel
-                  <span class="float-right text-sm text-danger"><i class="fas fa-star"></i></span>
+                  <span class="float-end text-sm text-danger"><i class="fas fa-star"></i></span>
                 </h3>
                 <p class="text-sm">Call me whenever you can...</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
+                <p class="text-sm text-muted"><i class="far fa-clock me-1"></i> 4 Hours Ago</p>
               </div>
             </div>
             <!-- Message End -->
@@ -80,15 +78,15 @@
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item">
             <!-- Message Start -->
-            <div class="media">
-              <img src="../../dist/img/user8-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
-              <div class="media-body">
+            <div class="d-flex align-items-start">
+              <img src="../../dist/img/user8-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle me-3">
+              <div class="flex-grow-1">
                 <h3 class="dropdown-item-title">
                   John Pierce
-                  <span class="float-right text-sm text-muted"><i class="fas fa-star"></i></span>
+                  <span class="float-end text-sm text-muted"><i class="fas fa-star"></i></span>
                 </h3>
                 <p class="text-sm">I got your message bro</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
+                <p class="text-sm text-muted"><i class="far fa-clock me-1"></i> 4 Hours Ago</p>
               </div>
             </div>
             <!-- Message End -->
@@ -96,15 +94,15 @@
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item">
             <!-- Message Start -->
-            <div class="media">
-              <img src="../../dist/img/user3-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
-              <div class="media-body">
+            <div class="d-flex align-items-start">
+              <img src="../../dist/img/user3-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle me-3">
+              <div class="flex-grow-1">
                 <h3 class="dropdown-item-title">
                   Nora Silvester
-                  <span class="float-right text-sm text-warning"><i class="fas fa-star"></i></span>
+                  <span class="float-end text-sm text-warning"><i class="fas fa-star"></i></span>
                 </h3>
                 <p class="text-sm">The subject goes here</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
+                <p class="text-sm text-muted"><i class="far fa-clock me-1"></i> 4 Hours Ago</p>
               </div>
             </div>
             <!-- Message End -->
@@ -115,26 +113,26 @@
       </li>
       <!-- Notifications Dropdown Menu -->
       <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="#">
+        <a class="nav-link" data-bs-toggle="dropdown" href="#">
           <i class="far fa-bell"></i>
-          <span class="badge badge-warning navbar-badge">15</span>
+          <span class="badge text-bg-warning navbar-badge">15</span>
         </a>
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
           <span class="dropdown-item dropdown-header">15 Notifications</span>
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item">
-            <i class="fas fa-envelope mr-2"></i> 4 new messages
-            <span class="float-right text-muted text-sm">3 mins</span>
+            <i class="fas fa-envelope me-2"></i> 4 new messages
+            <span class="float-end text-muted text-sm">3 mins</span>
           </a>
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item">
-            <i class="fas fa-users mr-2"></i> 8 friend requests
-            <span class="float-right text-muted text-sm">12 hours</span>
+            <i class="fas fa-users me-2"></i> 8 friend requests
+            <span class="float-end text-muted text-sm">12 hours</span>
           </a>
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item">
-            <i class="fas fa-file mr-2"></i> 3 new reports
-            <span class="float-right text-muted text-sm">2 days</span>
+            <i class="fas fa-file me-2"></i> 3 new reports
+            <span class="float-end text-muted text-sm">2 days</span>
           </a>
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
@@ -146,7 +144,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
+        <a class="nav-link" data-widget="control-sidebar" data-bs-slide="true" href="#" role="button">
           <i class="fas fa-th-large"></i>
         </a>
       </li>
@@ -159,7 +157,7 @@
     <!-- Brand Logo -->
     <a href="../../index3.html" class="brand-link">
       <img src="../../dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-      <span class="brand-text font-weight-light">AdminLTE 3</span>
+      <span class="brand-text fw-light">AdminLTE 3</span>
     </a>
 
     <!-- Sidebar -->
@@ -175,14 +173,12 @@
       </div>
 
       <!-- SidebarSearch Form -->
-      <div class="form-inline">
+      <div class="d-flex flex-wrap align-items-center">
         <div class="input-group" data-widget="sidebar-search">
           <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
-          <div class="input-group-append">
-            <button class="btn btn-sidebar">
+          <button class="btn btn-sidebar">
               <i class="fas fa-search fa-fw"></i>
             </button>
-          </div>
         </div>
       </div>
 
@@ -225,7 +221,7 @@
               <i class="nav-icon fas fa-th"></i>
               <p>
                 Widgets
-                <span class="right badge badge-danger">New</span>
+                <span class="right badge text-bg-danger">New</span>
               </p>
             </a>
           </li>
@@ -235,7 +231,7 @@
               <p>
                 Layout Options
                 <i class="fas fa-angle-left right"></i>
-                <span class="badge badge-info right">6</span>
+                <span class="badge text-bg-info right">6</span>
               </p>
             </a>
             <ul class="nav nav-treeview">
@@ -453,7 +449,7 @@
               <i class="nav-icon far fa-calendar-alt"></i>
               <p>
                 Calendar
-                <span class="badge badge-info right">2</span>
+                <span class="badge text-bg-info right">2</span>
               </p>
             </a>
           </li>
@@ -853,7 +849,7 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-md-3">
-            <a href="mailbox.html" class="btn btn-primary btn-block mb-3">Back to Inbox</a>
+            <a href="mailbox.html" class="btn btn-primary w-100 mb-3">Back to Inbox</a>
 
             <div class="card">
               <div class="card-header">
@@ -870,7 +866,7 @@
                   <li class="nav-item active">
                     <a href="#" class="nav-link">
                       <i class="fas fa-inbox"></i> Inbox
-                      <span class="badge bg-primary float-right">12</span>
+                      <span class="badge bg-primary float-end">12</span>
                     </a>
                   </li>
                   <li class="nav-item">
@@ -886,7 +882,7 @@
                   <li class="nav-item">
                     <a href="#" class="nav-link">
                       <i class="fas fa-filter"></i> Junk
-                      <span class="badge bg-warning float-right">65</span>
+                      <span class="badge bg-warning float-end">65</span>
                     </a>
                   </li>
                   <li class="nav-item">
@@ -943,23 +939,23 @@
               <div class="mailbox-read-info">
                 <h5>Message Subject Is Placed Here</h5>
                 <h6>From: support@adminlte.io
-                  <span class="mailbox-read-time float-right">15 Feb. 2015 11:03 PM</span></h6>
+                  <span class="mailbox-read-time float-end">15 Feb. 2015 11:03 PM</span></h6>
               </div>
               <!-- /.mailbox-read-info -->
               <div class="mailbox-controls with-border text-center">
                 <div class="btn-group">
-                  <button type="button" class="btn btn-default btn-sm" data-container="body" title="Delete">
+                  <button type="button" class="btn btn-secondary btn-sm" data-container="body" title="Delete">
                     <i class="far fa-trash-alt"></i>
                   </button>
-                  <button type="button" class="btn btn-default btn-sm" data-container="body" title="Reply">
+                  <button type="button" class="btn btn-secondary btn-sm" data-container="body" title="Reply">
                     <i class="fas fa-reply"></i>
                   </button>
-                  <button type="button" class="btn btn-default btn-sm" data-container="body" title="Forward">
+                  <button type="button" class="btn btn-secondary btn-sm" data-container="body" title="Forward">
                     <i class="fas fa-share"></i>
                   </button>
                 </div>
                 <!-- /.btn-group -->
-                <button type="button" class="btn btn-default btn-sm" title="Print">
+                <button type="button" class="btn btn-secondary btn-sm" title="Print">
                   <i class="fas fa-print"></i>
                 </button>
               </div>
@@ -1012,7 +1008,7 @@
                     <a href="#" class="mailbox-attachment-name"><i class="fas fa-paperclip"></i> Sep2014-report.pdf</a>
                         <span class="mailbox-attachment-size clearfix mt-1">
                           <span>1,245 KB</span>
-                          <a href="#" class="btn btn-default btn-sm float-right"><i class="fas fa-cloud-download-alt"></i></a>
+                          <a href="#" class="btn btn-secondary btn-sm float-end"><i class="fas fa-cloud-download-alt"></i></a>
                         </span>
                   </div>
                 </li>
@@ -1023,7 +1019,7 @@
                     <a href="#" class="mailbox-attachment-name"><i class="fas fa-paperclip"></i> App Description.docx</a>
                         <span class="mailbox-attachment-size clearfix mt-1">
                           <span>1,245 KB</span>
-                          <a href="#" class="btn btn-default btn-sm float-right"><i class="fas fa-cloud-download-alt"></i></a>
+                          <a href="#" class="btn btn-secondary btn-sm float-end"><i class="fas fa-cloud-download-alt"></i></a>
                         </span>
                   </div>
                 </li>
@@ -1034,7 +1030,7 @@
                     <a href="#" class="mailbox-attachment-name"><i class="fas fa-camera"></i> photo1.png</a>
                         <span class="mailbox-attachment-size clearfix mt-1">
                           <span>2.67 MB</span>
-                          <a href="#" class="btn btn-default btn-sm float-right"><i class="fas fa-cloud-download-alt"></i></a>
+                          <a href="#" class="btn btn-secondary btn-sm float-end"><i class="fas fa-cloud-download-alt"></i></a>
                         </span>
                   </div>
                 </li>
@@ -1045,7 +1041,7 @@
                     <a href="#" class="mailbox-attachment-name"><i class="fas fa-camera"></i> photo2.png</a>
                         <span class="mailbox-attachment-size clearfix mt-1">
                           <span>1.9 MB</span>
-                          <a href="#" class="btn btn-default btn-sm float-right"><i class="fas fa-cloud-download-alt"></i></a>
+                          <a href="#" class="btn btn-secondary btn-sm float-end"><i class="fas fa-cloud-download-alt"></i></a>
                         </span>
                   </div>
                 </li>
@@ -1053,12 +1049,12 @@
             </div>
             <!-- /.card-footer -->
             <div class="card-footer">
-              <div class="float-right">
-                <button type="button" class="btn btn-default"><i class="fas fa-reply"></i> Reply</button>
-                <button type="button" class="btn btn-default"><i class="fas fa-share"></i> Forward</button>
+              <div class="float-end">
+                <button type="button" class="btn btn-secondary"><i class="fas fa-reply"></i> Reply</button>
+                <button type="button" class="btn btn-secondary"><i class="fas fa-share"></i> Forward</button>
               </div>
-              <button type="button" class="btn btn-default"><i class="far fa-trash-alt"></i> Delete</button>
-              <button type="button" class="btn btn-default"><i class="fas fa-print"></i> Print</button>
+              <button type="button" class="btn btn-secondary"><i class="far fa-trash-alt"></i> Delete</button>
+              <button type="button" class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
             </div>
             <!-- /.card-footer -->
           </div>
@@ -1073,7 +1069,7 @@
   </div>
   <!-- /.content-wrapper -->
   <footer class="main-footer">
-    <div class="float-right d-none d-sm-block">
+    <div class="float-end d-none d-sm-block">
       <b>Version</b> 3.1.0
     </div>
     <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
@@ -1088,8 +1084,9 @@
 
 <!-- jQuery -->
 <script src="../../plugins/jquery/jquery.min.js"></script>
-<!-- Bootstrap 4 -->
-<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap 5 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
 <!-- AdminLTE App -->
 <script src="../../dist/js/adminlte.min.js"></script>
 <!-- AdminLTE for demo purposes -->

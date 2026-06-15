@@ -35,7 +35,7 @@
             display: block;
             line-height: 1.4;
             padding-left: 10px;
-            border-left: 2px solid #ddd;
+            border-start: 2px solid #ddd;
             margin-top: 3px;
             white-space: normal;
             word-wrap: break-word;
@@ -237,6 +237,7 @@
                 <?php foreach ($familyGroup as $family): ?>
                     <div class="family-col">
                         <?php
+                        helper('school');
                         // Get system name with fallback
                         $system_name = $family['system_name'] ?? '';
                         if (empty($system_name)) {
@@ -290,7 +291,10 @@
                         // Format head student name with class in brackets
                         $formattedHeadStudent = '';
                         if ($headStudent) {
-                            $headName = $headStudent['student_name'] ?? '';
+                            $headName = fee_chalan_student_display_name(
+                                $headStudent['student_name'] ?? '',
+                                $headStudent['reg_no'] ?? null
+                            );
                             $headClass = $headStudent['class_name'] ?? '';
                             $headSection = $headStudent['section_short_name'] ?? '';
                             
@@ -304,14 +308,17 @@
                             
                             $formattedHeadStudent = $headName;
                             if (!empty($classPart)) {
-                                $formattedHeadStudent .= ' <span class="class-badge">(' . $classPart . ')</span>';
+                                $formattedHeadStudent .= ' <span class="class-badge">(' . esc($classPart) . ')</span>';
                             }
                         }
                         
                         // Format other students with their individual classes in brackets
                         $formattedOtherStudents = [];
                         foreach ($otherStudents as $student) {
-                            $studentName = $student['student_name'] ?? '';
+                            $studentName = fee_chalan_student_display_name(
+                                $student['student_name'] ?? '',
+                                $student['reg_no'] ?? null
+                            );
                             $studentClass = $student['class_name'] ?? '';
                             $studentSection = $student['section_short_name'] ?? '';
                             
@@ -325,7 +332,7 @@
                             
                             $formattedStudent = $studentName;
                             if (!empty($classPart)) {
-                                $formattedStudent .= ' (' . $classPart . ')';
+                                $formattedStudent .= ' (' . esc($classPart) . ')';
                             }
                             $formattedOtherStudents[] = $formattedStudent;
                         }

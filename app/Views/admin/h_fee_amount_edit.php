@@ -49,8 +49,8 @@ if(isset($info)){
 			<div class="">
 				<div class="form-group">
 					<div class="row">
-					<div class="pull-left ml-2"><label>Choose Session</label></div>
-					<div class="pull-left col-sm-6">
+					<div class="float-start ms-2"><label>Choose Session</label></div>
+					<div class="float-start col-sm-6">
 					<?php $session_id = $this->session->userdata('member_sessionid'); ?>
 					<select name="session_id" id="session_id" class="form-control col-lg-4">
 						<option value="">Select Session</option>
@@ -66,9 +66,9 @@ if(isset($info)){
 	    	</div>
 			<div id="feeamountarea" class="feeamountarea"></div>
               <div class="form-group">
-                <button type="submit" id="submitBtn" class="btn btn-primary mr-2">Save</button>
-								<!-- <button type="reset" class="btn btn-default">Reset</button> -->
-								<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+                <button type="submit" id="submitBtn" class="btn btn-primary me-2">Save</button>
+								<!-- <button type="reset" class="btn btn-secondary">Reset</button> -->
+								<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
               </div>
             <?php echo form_close();?>
 			</div>

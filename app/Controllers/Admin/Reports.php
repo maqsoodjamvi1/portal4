@@ -74,37 +74,37 @@ class Reports extends MY_Controller {
               <h4>Student Information</h4>
             </div>
 
-            <div class="form-row row">
+            <div class="row row">
               <div class="col-lg-2 col-md-4">
                 <label for="">First Name</label>
                 <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-leftindc float-left">'.$info->first_name.'</span>
+                <span class="indc float-start">'.$info->first_name.'</span>
               </div>
               <div class="col-lg-2 col-md-4">
                 <label for="">Last Name</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-               <span class="indc float-left"> '.$info->last_name.'</span>
+               <span class="indc float-start"> '.$info->last_name.'</span>
               </div>
             </div>
 
-            <div class="form-row row">
+            <div class="row row">
                <div class="col-lg-2 col-md-4">
                 <label for="">Date of Birth</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-left">'. $info->date_of_birth.'</span>
+                <span class="indc float-start">'. $info->date_of_birth.'</span>
               </div>
                <div class="col-lg-2 col-md-4">
                 <label for="">Gender</label>
                 <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8 pt-1">
-                <span class="indc float-left text-capitalize">'.$info->gender.'</span>
+                <span class="indc float-start text-capitalize">'.$info->gender.'</span>
               </div>
             </div>
 
@@ -112,72 +112,72 @@ class Reports extends MY_Controller {
               <h4>Parent Details</h4>
             </div>
 
-            <div class="form-row row">
+            <div class="row row">
                 <div class="col-lg-2 col-md-4">
                 <label for="">Father Name</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->f_name.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->f_name.'</span>
               </div>
                <div class="col-lg-2 col-md-4">
                 <label for="">Father Profession</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->father_occupation.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->father_occupation.'</span>
               </div>
             </div>
-            <div class="form-row row">
+            <div class="row row">
                 <div class="col-lg-2 col-md-4">
                 <label for="">Father Contact No</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->father_contact.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->father_contact.'</span>
               </div>
                 <div class="col-lg-2 col-md-4">
                 <label for="">Mother Contact No</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                  <span class="indc float-left text-capitalize">'.$parentInfo->mother_contact.'</span>
+                  <span class="indc float-start text-capitalize">'.$parentInfo->mother_contact.'</span>
               </div>
             </div>
             <div class="form-title row">
               <h4>Contact Information</h4>
             </div>
-             <div class="form-row row">
+             <div class="row row">
                 <div class="col-lg-2 col-md-4">
                 <label for="">Whatsapp</label>
                  <span class="indc">:</span>
               </div>
               <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->whatsapp.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->whatsapp.'</span>
               </div>
                <div class="col-lg-2 col-md-4">
                 <label for="">Email Address</label>
                 <span class="indc">:</span>
               </div>
                <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->father_email.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->father_email.'</span>
               </div>
             </div>
 
-            <div class="form-row row">
+            <div class="row row">
                 <div class="col-lg-2 col-md-4">
                 <label for="">City</label>
                  <span class="indc">:</span>
               </div>
                <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->city.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->city.'</span>
               </div>
                 <div class="col-lg-2 col-md-4">
                 <label for="">Address</label>
                   <span class="indc">:</span>
               </div>
                <div class="col-lg-4 col-md-8">
-                <span class="indc float-left text-capitalize">'.$parentInfo->address_line1.'</span>
+                <span class="indc float-start text-capitalize">'.$parentInfo->address_line1.'</span>
               </div>
             </div>
            </div>
@@ -356,34 +356,34 @@ body {
   font-weight: 600;
 }
 
-.form-row label {
+.row label {
   padding-top: 4px;
 }
-.form-row .form-control {
+.row .form-control {
   background-color: rgba(204, 204, 204, 0.12);
   border-radius: 0px;
   margin-bottom: 30px;
 }
-.form-row .form-control:active {
+.row .form-control:active {
   border: 2px solid #0e5cad !important;
 }
-.form-row .form-control:focus {
+.row .form-control:focus {
   border: 2px solid #0e5cad !important;
   box-shadow: none;
 }
-.form-row input {
+.row input {
   margin-bottom: 30px;
 }
-.form-row .indc {
+.row .indc {
   float: right;
   padding-top: 5px;
 }
 @media screen and (max-width: 767px) {
-  .form-row .indc {
+  .row .indc {
     float: none;
   }
 }
-.form-row .req {
+.row .req {
   color: #f00;
   font-size: 0.7rem;
 }
@@ -411,12 +411,11 @@ function singleStudentFeedata(){
   
   foreach($academicSession as $sessionValue){
     
-    $strQuery = 'select * from student_class';
-    $strQuery .= ' Where session_id='.$sessionValue->session_id;
-    $strQuery .= ' AND student_id IN('.$student_id.')';
-    
     $data .= '<table class="table">';
-    $studentClass = $this->db->query($strQuery)->result();
+    $studentClass = $this->db->from('student_class')
+      ->where('session_id', (int) $sessionValue->session_id)
+      ->where('student_id', (int) $student_id)
+      ->get()->result();
 
     
     $start = new DateTime($sessionValue->start_date);
@@ -454,13 +453,23 @@ function singleStudentFeedata(){
         
         $Yearmonths = $dt->format("m/Y");
 
-        $feeInfo = $this->db->query('SELECT SUM(amount) as total from fee_chalan WHERE fee_type_id IN(SELECT fee_type_id FROM fee_type WHERE is_monthly_fee=1) AND student_id='.$students->student_id.' AND fee_month="'.$Yearmonths.'"')->row();
-
-      $paidInfo = $this->db->query('select SUM(amount) as total from fee_chalan where fee_type_id IN(select fee_type_id from fee_type where is_monthly_fee=1) AND status="paid" AND student_id='.$students->student_id.' AND fee_month="'.$Yearmonths.'"')->row();
-
-      $unpaidInfo = $this->db->query('select SUM(amount) as total from fee_chalan where fee_type_id IN(select fee_type_id from fee_type where is_monthly_fee=1) AND status="unpaid" AND student_id='.$students->student_id.' AND fee_month="'.$Yearmonths.'"')->row();
-
-      $discountInfo = $this->db->query('select SUM(amount) as total from fee_chalan where fee_type_id IN(select fee_type_id from fee_type where is_monthly_fee=1) AND status="discounted" AND student_id='.$students->student_id.' AND fee_month="'.$Yearmonths.'"')->row();
+        $monthlyFeeSub = $this->db->select('fee_type_id')->from('fee_type')->where('is_monthly_fee', 1)->get_compiled_select();
+        $studentId = (int) $students->student_id;
+        $feeChalanSum = function (?string $status = null) use ($studentId, $Yearmonths, $monthlyFeeSub) {
+          $builder = $this->db->table('fee_chalan')
+            ->selectSum('amount', 'total')
+            ->where('student_id', $studentId)
+            ->where('fee_month', $Yearmonths)
+            ->where("fee_type_id IN ($monthlyFeeSub)", null, false);
+          if ($status !== null) {
+            $builder->where('status', $status);
+          }
+          return $builder->get()->row();
+        };
+        $feeInfo = $feeChalanSum();
+        $paidInfo = $feeChalanSum('paid');
+        $unpaidInfo = $feeChalanSum('unpaid');
+        $discountInfo = $feeChalanSum('discounted');
 
 
     // echo "<pre>";
@@ -560,12 +569,11 @@ function singleStudentAttendancedata(){
     
   foreach($academicSession as $sessionValue){
     
-    $strQuery = 'select * from student_class';
-    $strQuery .= ' Where session_id='.$sessionValue->session_id;
-    $strQuery .= ' AND student_id IN('.$student_id.')';
-  
     $data .= '<table class="table">';
-    $studentClass = $this->db->query($strQuery)->result();
+    $studentClass = $this->db->from('student_class')
+      ->where('session_id', (int) $sessionValue->session_id)
+      ->where('student_id', (int) $student_id)
+      ->get()->result();
 
   
     $start = new DateTime($sessionValue->start_date);
@@ -602,23 +610,33 @@ function singleStudentAttendancedata(){
 
     foreach ($period as $dt) {
         
-      $Year = $dt->format("Y");
-      $Month = $dt->format("m");
+      $Year = (int) $dt->format('Y');
+      $Month = (int) $dt->format('m');
+      $studentId = (int) $students->student_id;
+      $monthStart = sprintf('%04d-%02d-01', $Year, $Month);
+      $monthEnd = date('Y-m-d', strtotime($monthStart . ' +1 month'));
 
+      $attendanceCount = function (array $extraWhere = []) use ($studentId, $monthStart, $monthEnd) {
+        $builder = $this->db->table('attendance')
+          ->selectCount('attendance_id', 'total')
+          ->where('student_id', $studentId)
+          ->where('date >=', $monthStart)
+          ->where('date <', $monthEnd);
+        foreach ($extraWhere as $field => $value) {
+          if (is_int($field)) {
+            $builder->where($value, null, false);
+          } else {
+            $builder->where($field, $value);
+          }
+        }
+        return $builder->get()->row();
+      };
 
-      $presentTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="P" AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $absTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="A" AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $absTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="A" AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $lcTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="A" AND lc_duration > 0 AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $elTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="A" AND el_duration > 0 AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $elTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE status="A" AND el_duration > 0 AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row();
-
-      $offDaysTotal = $this->db->query('SELECT count(attendance_id) as total from attendance WHERE checkin = checkout AND student_id='.$students->student_id.' AND YEAR(date) = "'.$Year.'" AND MONTH(date) = "'.$Month.'"')->row(); 
+      $presentTotal = $attendanceCount(['status' => 'P']);
+      $absTotal = $attendanceCount(['status' => 'A']);
+      $lcTotal = $attendanceCount(['status' => 'A', 'lc_duration >' => 0]);
+      $elTotal = $attendanceCount(['status' => 'A', 'el_duration >' => 0]);
+      $offDaysTotal = $attendanceCount([0 => 'checkin = checkout']);
 
       {
         $data .= '<td style="">';

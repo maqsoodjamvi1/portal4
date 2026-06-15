@@ -1,10 +1,10 @@
 <?php require_once(APPPATH.'/views/templates/sidebar.php'); ?>
 <div class="main">
 <div class="row page-content">
-    <div class="col-lg-12 text-left">
-        <!-- <a class="btn btn-info btn-xs" href="<?php print site_url() ?>profile/edit"><i class="fa fa-user"></i> Edit</a>
-        <a class="btn btn-warning btn-xs" href="<?php print site_url() ?>setting"><i class="fa fa-gear"></i> Settings</a>
-        <a class="btn btn-danger btn-xs" href="<?php print site_url() ?>auth/logout"><i class="fa fa-power-off"></i> Log Out</a> -->
+    <div class="col-lg-12 text-start">
+        <!-- <a class="btn btn-info btn-sm" href="<?php print site_url() ?>profile/edit"><i class="fa fa-user"></i> Edit</a>
+        <a class="btn btn-warning btn-sm" href="<?php print site_url() ?>setting"><i class="fa fa-gear"></i> Settings</a>
+        <a class="btn btn-danger btn-sm" href="<?php print site_url() ?>auth/logout"><i class="fa fa-power-off"></i> Log Out</a> -->
         <div class="row">
             <div class="col-lg-12 col-sm-12">
                 <div class="card hovercard">                    

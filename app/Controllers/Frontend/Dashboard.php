@@ -17,7 +17,7 @@ class Dashboard extends BaseController
         $this->session   = session();
         $this->db        = Database::connect();
         $this->authModel = new AuthModel();
-        helper(['url', 'form', 'server']); // Added 'server' helper
+        helper(['url', 'form', 'server', 'parent_portal', 'hifz', 'school']);
     }
 
    public function index()
@@ -60,6 +60,24 @@ class Dashboard extends BaseController
 
         $totalUnpaidAmount = $active > 0 ? $this->getTotalUnpaidAmountForFamily($parentId) : ['monthly' => 0, 'other' => 0, 'total' => 0];
 
+        $dashboardUnannouncedDatesheet = $active > 0 ? $this->getDashboardUnannouncedDatesheet($active) : ['show' => false];
+        $dashboardLastAnnouncedResult    = $active > 0 ? $this->getDashboardLastAnnouncedExamResult($active) : ['exam' => null];
+        $showHifzPortal = $active > 0 && campusHifzEnabled() && studentHifzActive($active) !== null;
+        $campusId       = (int) ($campusInfo->campus_id ?? session()->get('member_campusid') ?? 0);
+        $portalNotices  = $active > 0 ? parent_portal_get_notices($active, $campusId) : [];
+        $hifzSummary    = $active > 0 ? parent_portal_hifz_summary($active) : null;
+
+        $parentActionCenter = parent_portal_build_action_center(
+            $totalUnpaidAmount,
+            is_array($quizSchedule) ? $quizSchedule : [],
+            is_array($todayDiary) ? $todayDiary : []
+        );
+
+        $actionCenterCount = count($parentActionCenter);
+        $actionCenterFirstUrl = $actionCenterCount > 0
+            ? ($parentActionCenter[0]['url'] ?? base_url('student/dashboard#alerts'))
+            : base_url('student/dashboard#alerts');
+
         return view('frontend/dashboard/parent', [
             'role'          => 'parent',
             'name'          => $name,
@@ -83,6 +101,14 @@ class Dashboard extends BaseController
 
             'bmiSuggestions' => $bmiSuggestions,
               'totalUnpaidAmount' => $totalUnpaidAmount,
+            'dashboardUnannouncedDatesheet' => $dashboardUnannouncedDatesheet,
+            'dashboardLastAnnouncedResult' => $dashboardLastAnnouncedResult,
+            'showHifzPortal' => $showHifzPortal,
+            'portalNotices' => $portalNotices,
+            'hifzSummary' => $hifzSummary,
+            'parentActionCenter' => $parentActionCenter,
+            'actionCenterCount'  => $actionCenterCount,
+            'actionCenterFirstUrl' => $actionCenterFirstUrl,
         ]);
     }
 
@@ -116,67 +142,7 @@ private function getCurrentLanguage()
      */
  protected function getChildrenWithCurrentClass(int $parentId): array
 {
-    $sql = "
-        SELECT 
-            s.student_id,
-            s.first_name,
-            s.last_name,
-            s.date_of_birth,
-            s.profile_photo,
-            s.reg_no,
-            c.class_name,
-            sec.section_name,
-            sc.cls_sec_id
-        FROM students s
-        JOIN student_class sc ON sc.student_id = s.student_id AND sc.status = 1
-        JOIN class_section cs ON cs.cls_sec_id = sc.cls_sec_id
-        JOIN classes c ON c.class_id = cs.class_id
-        LEFT JOIN sections sec ON sec.section_id = cs.section_id
-        WHERE s.parent_id = ? AND s.status = '1'
-        ORDER BY s.first_name ASC
-    ";
-
-    $rows = $this->db->query($sql, [$parentId])->getResultArray();
-
-    $children = [];
-    foreach ($rows as $row) {
-        $photoFile = $row['profile_photo'] ?? '';
-        $photoFile = ltrim((string)$photoFile, '/');
-        
-        // Build photo URL - check if in uploads or student_photos directory
-        $photoUrl = getStudentPhotoUrl($row['profile_photo'] ?? '');// default
-        if (!empty($photoFile)) {
-            // Try different possible paths
-            $possiblePaths = [
-                'uploads/' . $photoFile,
-                'student_photos/' . $photoFile,
-                'system-logo/' . $photoFile
-            ];
-            
-            foreach ($possiblePaths as $path) {
-                $fullPath = FCPATH . $path;
-                if (file_exists($fullPath)) {
-                    $photoUrl = base_url($path);
-                    break;
-                }
-            }
-        }
-        
-        $children[] = [
-            'student_id' => (int)$row['student_id'],
-            'name' => trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')),
-            'first_name' => $row['first_name'] ?? '',
-            'last_name' => $row['last_name'] ?? '',
-            'reg_no' => $row['reg_no'] ?? '',
-            'class_name' => $row['class_name'] ?? '',
-            'section_name' => $row['section_name'] ?? '',
-            'class_display' => trim(($row['class_name'] ?? '') . ' ' . ($row['section_name'] ?? '')),
-            'profile_photo_url' => $photoUrl,
-            'cls_sec_id' => (int)$row['cls_sec_id']
-        ];
-    }
-
-    return $children;
+    return \parent_portal_get_children($parentId);
 }
     /**
      * Get student name by ID
@@ -721,6 +687,727 @@ protected function getTodayDiary(int $studentId): array
     
     return $diaryEntries;
 }
+
+/**
+ * Get diary entries for a specific date (no weekend shifting).
+ */
+protected function getDiaryForDate(int $studentId, string $date): array
+{
+    $clsSecId = $this->getStudentClsSecId($studentId);
+    if (!$clsSecId) {
+        return [];
+    }
+
+    $sql = "
+    SELECT 
+        cd.did,
+        cd.detail as homework,
+        cd.other_detail as classwork,
+        cd.video_url,
+        cd.is_book,
+        cd.is_notebook,
+        cd.is_audio,
+        cd.is_video,
+        cd.is_picture,
+        cd.audio_caption,
+        cd.video_caption,
+        cd.picture_caption,
+        cd.quiz_id,
+        ss.subject_id,
+        sub.subject_name,
+        q.title as quiz_title,
+        q.time_limit_sec,
+        q.questions_count
+    FROM classdairy cd
+    LEFT JOIN section_subjects ss ON ss.sec_sub_id = cd.sec_sub_id
+    LEFT JOIN allsubject sub ON sub.sid = ss.subject_id
+    LEFT JOIN quizzes q ON q.quiz_id = cd.quiz_id
+    WHERE cd.cls_sec_id = ? 
+        AND cd.date = ?
+    ORDER BY sub.subject_name ASC
+    ";
+
+    $query = $this->db->query($sql, [$clsSecId, $date]);
+    if (!$query) {
+        return [];
+    }
+
+    $diaryEntries = $query->getResultArray();
+    if (empty($diaryEntries)) {
+        return [];
+    }
+
+    foreach ($diaryEntries as &$entry) {
+        $did = (int)($entry['did'] ?? 0);
+
+        $entry['diary_date'] = $date;
+        $entry['diary_day_name'] = date('l', strtotime($date));
+
+        $audioQuery = $this->db->table('student_audio_recordings')
+            ->select('recording_id, audio_file_path, audio_duration, recording_date, status, teacher_feedback, rating')
+            ->where('student_id', $studentId)
+            ->where('class_dairy_id', $did)
+            ->orderBy('recording_id', 'DESC')
+            ->get();
+        $entry['audio_recordings'] = ($audioQuery && $audioQuery->getResultArray()) ? $audioQuery->getResultArray() : [];
+
+        $videoQuery = $this->db->table('student_video_recordings')
+            ->select('recording_id, video_file_path, video_duration, recording_date, status, teacher_feedback, rating')
+            ->where('student_id', $studentId)
+            ->where('class_dairy_id', $did)
+            ->orderBy('recording_id', 'DESC')
+            ->get();
+        $entry['video_recordings'] = ($videoQuery && $videoQuery->getResultArray()) ? $videoQuery->getResultArray() : [];
+
+        $pictureQuery = $this->db->table('student_picture_recording')
+            ->select('picture_id, picture_path, created_date, status, teacher_remarks, rating')
+            ->where('student_id', $studentId)
+            ->where('classdairy_id', $did)
+            ->orderBy('picture_id', 'DESC')
+            ->get();
+        $entry['picture_recordings'] = ($pictureQuery && $pictureQuery->getResultArray()) ? $pictureQuery->getResultArray() : [];
+
+        $entry['homework_formatted'] = !empty($entry['homework']) ? nl2br(esc($entry['homework'])) : '<em class="text-muted">No homework assigned.</em>';
+        $entry['classwork_formatted'] = !empty($entry['classwork']) ? nl2br(esc($entry['classwork'])) : '<em class="text-muted">No classwork recorded.</em>';
+        $entry['subject_name'] = $entry['subject_name'] ?? 'General';
+
+        $entry['has_quiz'] = !empty($entry['quiz_id']);
+        if ($entry['has_quiz']) {
+            $entry['quiz_duration_minutes'] = ceil(($entry['time_limit_sec'] ?? 0) / 60);
+        }
+
+        $entry['requires_audio'] = (int)($entry['is_audio'] ?? 0) === 1;
+        $entry['requires_video'] = (int)($entry['is_video'] ?? 0) === 1;
+        $entry['requires_picture'] = (int)($entry['is_picture'] ?? 0) === 1;
+
+        $entry['audio_caption'] = $entry['audio_caption'] ?? null;
+        $entry['video_caption'] = $entry['video_caption'] ?? null;
+        $entry['picture_caption'] = $entry['picture_caption'] ?? null;
+    }
+
+    return $diaryEntries;
+}
+
+/**
+ * Academic session id for diary/term weeks: member session first, else from student's campus.
+ */
+protected function resolveAcademicSessionIdForDiary(int $studentId): int
+{
+    $sid = (int) (session('member_sessionid') ?? 0);
+    if ($sid > 0) {
+        return $sid;
+    }
+
+    $fromStudent = $this->getCurrentAcademicSessionIdForStudent($studentId);
+    if ($fromStudent !== null && $fromStudent > 0) {
+        return $fromStudent;
+    }
+
+    $campusSystemId = $this->getStudentCampusSystemId($studentId);
+    if ($campusSystemId > 0) {
+        $latest = $this->getLatestAcademicSessionIdForCampusSystem($campusSystemId);
+        if ($latest !== null && $latest > 0) {
+            return $latest;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @return list<array<string,mixed>>
+ */
+private function buildTermDiaryIndexRows(int $systemId, int $sessionId): array
+{
+    if ($systemId <= 0 || $sessionId <= 0) {
+        return [];
+    }
+
+    $termSessions = $this->db->table('terms_session ts')
+        ->select('ts.term_session_id, ts.term_id, ts.start_date, ts.end_date, t.name as term_name, t.short_name as term_short')
+        ->join('terms t', 't.term_id = ts.term_id AND t.system_id = ts.system_id', 'left')
+        ->where('ts.system_id', $systemId)
+        ->where('ts.session_id', $sessionId)
+        ->orderBy('ts.start_date', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    if (empty($termSessions)) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($termSessions as $ts) {
+        $termSessionId = (int) ($ts['term_session_id'] ?? 0);
+        if ($termSessionId <= 0) {
+            continue;
+        }
+
+        $weeks = $this->db->table('term_weeks tw')
+            ->select('tw.term_weeks_id, tw.week_no, tw.week_name, tw.start_date, tw.end_date')
+            ->where('tw.system_id', $systemId)
+            ->where('tw.term_session_id', $termSessionId)
+            ->orderBy('tw.start_date', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $weeksOut = [];
+        foreach ($weeks as $w) {
+            $start = (string) ($w['start_date'] ?? '');
+            $end = (string) ($w['end_date'] ?? '');
+            if ($start === '' || $end === '') {
+                continue;
+            }
+
+            try {
+                $cursor = new \DateTime($start);
+                $endDt = new \DateTime($end);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            $cursor->setTime(0, 0, 0);
+            $endDt->setTime(0, 0, 0);
+
+            $days = [];
+            while ($cursor <= $endDt) {
+                $days[] = [
+                    'date' => $cursor->format('Y-m-d'),
+                    'day_name' => $cursor->format('l'),
+                    'day_short' => $cursor->format('D'),
+                ];
+                $cursor->modify('+1 day');
+            }
+
+            $weekName = trim((string) ($w['week_name'] ?? ''));
+            $weekNo = (string) ($w['week_no'] ?? '');
+            $weekLabel = $weekName !== '' ? $weekName : ('Week ' . $weekNo);
+
+            $weeksOut[] = [
+                'term_weeks_id' => (int) ($w['term_weeks_id'] ?? 0),
+                'week_name' => $weekName,
+                'week_label' => $weekLabel,
+                'start_date' => $start,
+                'end_date' => $end,
+                'days' => $days,
+            ];
+        }
+
+        $termName = trim((string) ($ts['term_name'] ?? ''));
+        $termShort = trim((string) ($ts['term_short'] ?? ''));
+        $termLabel = $termName !== '' ? $termName : ($termShort !== '' ? $termShort : ('Term #' . (int) ($ts['term_id'] ?? 0)));
+
+        $out[] = [
+            'term_session_id' => $termSessionId,
+            'term_label' => $termLabel,
+            'term_start' => (string) ($ts['start_date'] ?? ''),
+            'term_end' => (string) ($ts['end_date'] ?? ''),
+            'weeks' => $weeksOut,
+        ];
+    }
+
+    return $out;
+}
+
+private function getStudentCampusSystemId(int $studentId): int
+{
+    if ($studentId <= 0) {
+        return 0;
+    }
+
+    $row = $this->db->table('students s')
+        ->select('c.system_id')
+        ->join('campus c', 'c.campus_id = s.campus_id', 'left')
+        ->where('s.student_id', $studentId)
+        ->get()
+        ->getRowArray();
+
+    return (int) ($row['system_id'] ?? 0);
+}
+
+private function getLatestAcademicSessionIdForCampusSystem(int $systemId): ?int
+{
+    if ($systemId <= 0) {
+        return null;
+    }
+
+    $session = $this->db->table('academic_session')
+        ->select('session_id')
+        ->where('system_id', $systemId)
+        ->orderBy('start_date', 'DESC')
+        ->limit(1)
+        ->get()
+        ->getRowArray();
+
+    return isset($session['session_id']) ? (int) $session['session_id'] : null;
+}
+
+/**
+ * Build Term -> Weeks -> Days index for the diary page (all terms in session).
+ */
+protected function getTermDiaryIndex(int $studentId): array
+{
+    $school = getSchoolInfo();
+    $schoolSystemId = isset($school->system_id) ? (int) $school->system_id : 0;
+    $campusSystemId = $this->getStudentCampusSystemId($studentId);
+    $sessionId = $this->resolveAcademicSessionIdForDiary($studentId);
+
+    $seen = [];
+    $try = function (int $sys, int $sid) use (&$seen): array {
+        if ($sys <= 0 || $sid <= 0) {
+            return [];
+        }
+        $k = $sys . ':' . $sid;
+        if (isset($seen[$k])) {
+            return [];
+        }
+        $seen[$k] = true;
+
+        return $this->buildTermDiaryIndexRows($sys, $sid);
+    };
+
+    $out = $try($schoolSystemId, $sessionId);
+    if ($out !== []) {
+        return $out;
+    }
+
+    if ($campusSystemId > 0 && $campusSystemId !== $schoolSystemId) {
+        $out = $try($campusSystemId, $sessionId);
+        if ($out !== []) {
+            return $out;
+        }
+    }
+
+    $latestSession = $campusSystemId > 0
+        ? $this->getLatestAcademicSessionIdForCampusSystem($campusSystemId)
+        : null;
+    if ($latestSession !== null && $latestSession > 0 && $latestSession !== $sessionId) {
+        if ($campusSystemId > 0) {
+            $out = $try($campusSystemId, $latestSession);
+            if ($out !== []) {
+                return $out;
+            }
+        }
+        if ($schoolSystemId > 0 && $schoolSystemId !== $campusSystemId) {
+            $out = $try($schoolSystemId, $latestSession);
+            if ($out !== []) {
+                return $out;
+            }
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Calendar week (Mon–Sun) with diary entries per day (server-rendered).
+ *
+ * @return array{week_start:string,week_end:string,days:array<int,array{date:string,day_name:string,day_short:string,is_today:bool,entries:array}>}
+ */
+protected function getCurrentCalendarWeekDiaries(int $studentId): array
+{
+    $monday = new \DateTime('today');
+    if ((int) $monday->format('N') !== 1) {
+        $monday->modify('last monday');
+    }
+    $monday->setTime(0, 0, 0);
+
+    $today = (new \DateTime('today'))->format('Y-m-d');
+    $days = [];
+    $cursor = clone $monday;
+    for ($i = 0; $i < 7; $i++) {
+        $d = $cursor->format('Y-m-d');
+        $days[] = [
+            'date' => $d,
+            'day_name' => $cursor->format('l'),
+            'day_short' => $cursor->format('D'),
+            'is_today' => $d === $today,
+            'entries' => $this->getDiaryForDate($studentId, $d),
+        ];
+        $cursor->modify('+1 day');
+    }
+
+    $weekEnd = (clone $monday)->modify('+6 days')->format('Y-m-d');
+
+    return [
+        'week_start' => $monday->format('Y-m-d'),
+        'week_end' => $weekEnd,
+        'days' => $days,
+    ];
+}
+
+/**
+ * Term weeks for the term session that contains today (single term block).
+ *
+ * @return list<array<string,mixed>>
+ */
+protected function getCurrentTermDiaryIndex(int $studentId): array
+{
+    $all = $this->getTermDiaryIndex($studentId);
+    if ($all === []) {
+        return [];
+    }
+
+    $today = date('Y-m-d');
+    foreach ($all as $term) {
+        $start = (string) ($term['term_start'] ?? '');
+        $end = (string) ($term['term_end'] ?? '');
+        if ($start !== '' && $end !== '' && $today >= $start && $today <= $end) {
+            return [$term];
+        }
+    }
+
+    // Fallback: term with max overlap with current calendar week
+    $week = $this->getCurrentCalendarWeekDiaries($studentId);
+    $ws = $week['week_start'] ?? $today;
+    $we = $week['week_end'] ?? $today;
+    $best = null;
+    $bestScore = -1;
+    foreach ($all as $term) {
+        $start = (string) ($term['term_start'] ?? '');
+        $end = (string) ($term['term_end'] ?? '');
+        if ($start === '' || $end === '') {
+            continue;
+        }
+        $overlapStart = max($start, $ws);
+        $overlapEnd = min($end, $we);
+        if ($overlapStart <= $overlapEnd) {
+            $score = (int) ((new \DateTime($overlapEnd))->diff(new \DateTime($overlapStart))->days) + 1;
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $best = $term;
+            }
+        }
+    }
+
+    if ($best !== null) {
+        return [$best];
+    }
+
+    $last = $all[count($all) - 1] ?? null;
+
+    return $last !== null ? [$last] : [];
+}
+
+    /**
+     * Term weeks for the current term only (`term_weeks` rows for that term session).
+     *
+     * @return list<array<string,mixed>>
+     */
+    protected function getTermWeeksForCurrentTerm(int $studentId): array
+    {
+        $terms = $this->getCurrentTermDiaryIndex($studentId);
+        if (empty($terms[0]['weeks'])) {
+            return [];
+        }
+
+        return $terms[0]['weeks'];
+    }
+
+    /**
+     * Current term session date range only (no other terms).
+     *
+     * @return array{start:string,end:string,label:string}|null
+     */
+    protected function getCurrentTermDateBounds(int $studentId): ?array
+    {
+        $terms = $this->getCurrentTermDiaryIndex($studentId);
+        if (empty($terms[0])) {
+            return null;
+        }
+        $t = $terms[0];
+        $start = (string) ($t['term_start'] ?? '');
+        $end = (string) ($t['term_end'] ?? '');
+        if ($start === '' || $end === '') {
+            return null;
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+            'label' => (string) ($t['term_label'] ?? ''),
+        ];
+    }
+
+    /**
+     * Diary page date from ?date= (Y-m-d), default today, clamped to current term.
+     * When term bounds are missing (e.g. parent has no session in session), still honour ?date=
+     * so Prev/Next and day links load the requested day instead of snapping to today.
+     */
+    protected function resolveParentDiaryViewDate(?array $bounds): string
+    {
+        $today = date('Y-m-d');
+        $raw = $this->request->getGet('date');
+        $viewDate = $today;
+        if (is_string($raw) && trim($raw) !== '') {
+            try {
+                $viewDate = (new \DateTime(trim($raw)))->format('Y-m-d');
+            } catch (\Throwable $e) {
+                $viewDate = $today;
+            }
+        }
+
+        if ($bounds === null) {
+            try {
+                $min = (new \DateTime($today))->modify('-400 days')->format('Y-m-d');
+                $max = (new \DateTime($today))->modify('+400 days')->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return $viewDate;
+            }
+            if ($viewDate < $min) {
+                return $min;
+            }
+            if ($viewDate > $max) {
+                return $max;
+            }
+
+            return $viewDate;
+        }
+
+        if ($viewDate < $bounds['start']) {
+            return $bounds['start'];
+        }
+        if ($viewDate > $bounds['end']) {
+            return $bounds['end'];
+        }
+
+        return $viewDate;
+    }
+
+    /**
+     * ISO weekday numbers (1=Mon … 7=Sun) that are configured in `school_timings` with
+     * check-in and check-out times that differ, for the student's section and campus active timing type.
+     *
+     * @return array<int, true> empty means fall back to Monday–Friday in the UI.
+     */
+    protected function getDiaryWorkingWeekdayNumbers(int $studentId): array
+    {
+        $clsSecId = $this->getStudentClsSecId($studentId);
+        if ($clsSecId === null || $clsSecId <= 0) {
+            return [];
+        }
+
+        $campusRow = $this->db->table('students')
+            ->select('campus_id')
+            ->where('student_id', $studentId)
+            ->get()
+            ->getRowArray();
+        $campusId = (int) ($campusRow['campus_id'] ?? 0);
+        if ($campusId <= 0) {
+            return [];
+        }
+
+        $nums = getWorkingWeekdayNumbersForSection((int) $clsSecId, $campusId);
+
+        return $nums !== [] ? array_fill_keys($nums, true) : [];
+    }
+
+    /**
+     * @param array<int, true> $workingMap
+     */
+    protected function isDiarySchoolWorkingYmd(string $ymd, array $workingMap): bool
+    {
+        try {
+            $n = (int) (new \DateTime($ymd))->format('N');
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        if ($workingMap === []) {
+            return $n >= 1 && $n <= 5;
+        }
+
+        return ! empty($workingMap[$n]);
+    }
+
+    /**
+     * @param array<int, true> $workingMap
+     */
+    protected function annotateDiaryToolbarDayRow(array $day, string $viewDate, ?array $bounds, array $workingMap): ?array
+    {
+        $d = (string) ($day['date'] ?? '');
+        if ($d === '' || ! $this->isDiarySchoolWorkingYmd($d, $workingMap)) {
+            return null;
+        }
+
+        $enabled = true;
+        if ($bounds !== null) {
+            $enabled = ($d >= $bounds['start'] && $d <= $bounds['end']);
+        }
+
+        $abbrKeys = [
+            1 => 'day_abbr_mon', 2 => 'day_abbr_tue', 3 => 'day_abbr_wed', 4 => 'day_abbr_thu',
+            5 => 'day_abbr_fri', 6 => 'day_abbr_sat', 7 => 'day_abbr_sun',
+        ];
+        try {
+            $n = (int) (new \DateTime($d))->format('N');
+        } catch (\Throwable $e) {
+            $n = 1;
+        }
+        $langKey = $abbrKeys[$n] ?? 'day_abbr_mon';
+        $dayAbbr = lang('ParentPortal.' . $langKey);
+
+        $ts = strtotime($d);
+        $yr = $ts ? (int) date('Y', $ts) : 0;
+        $curY = (int) date('Y');
+        $dateShort = ($ts && $yr !== $curY) ? date('j M Y', $ts) : ($ts ? date('j M', $ts) : '');
+
+        return array_merge($day, [
+            'enabled' => $enabled,
+            'is_today' => $d === date('Y-m-d'),
+            'is_selected' => $d === $viewDate,
+            'day_abbr' => $dayAbbr,
+            'date_short' => $dateShort,
+        ]);
+    }
+
+    /**
+     * Prayer-style toolbar: Prev / Next move adjacent `term_weeks` rows; center pill = week name; one day row.
+     *
+     * @param array{start:string,end:string,label:string}|null $bounds
+     *
+     * @return array{
+     *   week_pill:string,
+     *   prev_url:?string,
+     *   next_url:?string,
+     *   week_start:string,
+     *   week_end:string,
+     *   range_label:string,
+     *   days:list<array<string,mixed>>,
+     *   used_term_weeks:bool
+     * }
+     */
+    protected function buildDiaryTermWeekToolbar(int $studentId, string $viewDate, ?array $bounds): array
+    {
+        $base = base_url('student/dashboard/section/diary');
+        $weeks = $this->getTermWeeksForCurrentTerm($studentId);
+
+        if ($weeks === []) {
+            return $this->buildDiaryCalendarWeekToolbarFallback($studentId, $viewDate, $bounds, $base);
+        }
+
+        $idx = -1;
+        foreach ($weeks as $i => $w) {
+            $s = (string) ($w['start_date'] ?? '');
+            $e = (string) ($w['end_date'] ?? '');
+            if ($s !== '' && $e !== '' && $viewDate >= $s && $viewDate <= $e) {
+                $idx = $i;
+                break;
+            }
+        }
+
+        if ($idx < 0) {
+            $idx = 0;
+            for ($i = count($weeks) - 1; $i >= 0; $i--) {
+                $s = (string) ($weeks[$i]['start_date'] ?? '');
+                if ($s !== '' && $viewDate >= $s) {
+                    $idx = $i;
+                    break;
+                }
+            }
+        }
+
+        $cur = $weeks[$idx];
+        $wStart = (string) ($cur['start_date'] ?? '');
+        $wEnd = (string) ($cur['end_date'] ?? '');
+
+        $weekNameDb = trim((string) ($cur['week_name'] ?? ''));
+        $pill = $weekNameDb !== '' ? $weekNameDb : trim((string) ($cur['week_label'] ?? ''));
+        if ($pill === '' && $wStart !== '') {
+            $pill = $this->resolveTermWeekLabelForStudentMonday($studentId, $wStart);
+        }
+
+        $prevUrl = null;
+        if ($idx > 0) {
+            $ps = (string) ($weeks[$idx - 1]['start_date'] ?? '');
+            if ($ps !== '') {
+                $prevUrl = $base . '?date=' . rawurlencode($ps);
+            }
+        }
+
+        $nextUrl = null;
+        if ($idx < count($weeks) - 1) {
+            $ns = (string) ($weeks[$idx + 1]['start_date'] ?? '');
+            if ($ns !== '') {
+                $nextUrl = $base . '?date=' . rawurlencode($ns);
+            }
+        }
+
+        $workingMap = $this->getDiaryWorkingWeekdayNumbers($studentId);
+        $daysOut = [];
+        foreach ($cur['days'] ?? [] as $day) {
+            if (! is_array($day)) {
+                continue;
+            }
+            $row = $this->annotateDiaryToolbarDayRow($day, $viewDate, $bounds, $workingMap);
+            if ($row !== null) {
+                $daysOut[] = $row;
+            }
+        }
+
+        return [
+            'week_pill' => $pill,
+            'prev_url' => $prevUrl,
+            'next_url' => $nextUrl,
+            'week_start' => $wStart,
+            'week_end' => $wEnd,
+            'range_label' => '',
+            'days' => $daysOut,
+            'used_term_weeks' => true,
+        ];
+    }
+
+    /**
+     * @param array{start:string,end:string,label:string}|null $bounds
+     *
+     * @return array<string,mixed>
+     */
+    private function buildDiaryCalendarWeekToolbarFallback(int $studentId, string $viewDate, ?array $bounds, string $base): array
+    {
+        try {
+            $monday = new \DateTime($viewDate);
+        } catch (\Throwable $e) {
+            $monday = new \DateTime('today');
+        }
+        $monday->setTime(0, 0, 0);
+        if ((int) $monday->format('N') !== 1) {
+            $monday->modify('last monday');
+        }
+
+        $workingMap = $this->getDiaryWorkingWeekdayNumbers($studentId);
+        $daysOut = [];
+        $cursor = clone $monday;
+        for ($i = 0; $i < 7; $i++) {
+            $d = $cursor->format('Y-m-d');
+            $day = [
+                'date' => $d,
+                'day_name' => $cursor->format('l'),
+                'day_short' => $cursor->format('D'),
+            ];
+            $row = $this->annotateDiaryToolbarDayRow($day, $viewDate, $bounds, $workingMap);
+            if ($row !== null) {
+                $daysOut[] = $row;
+            }
+            $cursor->modify('+1 day');
+        }
+
+        $monStr = $monday->format('Y-m-d');
+        $wEnd = (clone $monday)->modify('+6 days')->format('Y-m-d');
+        $prevMon = (clone $monday)->modify('-7 days')->format('Y-m-d');
+        $nextMon = (clone $monday)->modify('+7 days')->format('Y-m-d');
+
+        $pill = $this->resolveTermWeekLabelForStudentMonday($studentId, $monStr);
+
+        return [
+            'week_pill' => $pill,
+            'prev_url' => $base . '?date=' . rawurlencode($prevMon),
+            'next_url' => $base . '?date=' . rawurlencode($nextMon),
+            'week_start' => $monStr,
+            'week_end' => $wEnd,
+            'range_label' => '',
+            'days' => $daysOut,
+            'used_term_weeks' => false,
+        ];
+    }
 
     /**
      * Get bag pack items for tomorrow
@@ -1307,8 +1994,229 @@ private function compressVideo($inputPath, $outputPath)
 
         if ($row) {
             $this->session->set('active_student_id', (int) $studentId);
+
+            $sc = $this->db->table('student_class sc')
+                ->select('sc.cls_sec_id, cs.class_id')
+                ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'inner')
+                ->where('sc.student_id', $studentId)
+                ->where('sc.status', 1)
+                ->orderBy('sc.sc_id', 'DESC')
+                ->get()
+                ->getRowArray();
+            if ($sc) {
+                $this->session->set([
+                    'student_id'       => (int) $studentId,
+                    'cls_sec_id'       => (int) ($sc['cls_sec_id'] ?? 0),
+                    'student_class_id' => (int) ($sc['class_id'] ?? 0),
+                ]);
+            }
         }
+
+        $to = $this->request->getGet('to');
+        if (is_string($to) && $to !== '') {
+            $path = rawurldecode(trim($to));
+            $path = trim(str_replace('\\', '/', $path), '/');
+            if ($path !== '' && \function_exists('parent_portal_is_safe_return_path') && \parent_portal_is_safe_return_path($path)) {
+                return redirect()->to(base_url($path));
+            }
+        }
+
         return redirect()->route('dashboard');
+    }
+
+    /**
+     * Dedicated class diary page (action center and bookmarks).
+     */
+    public function classDiary()
+    {
+        return $this->parentSection('diary');
+    }
+
+    /**
+     * Parent-only: BMI, diary, bag, prayers on their own pages (hub links here).
+     */
+    public function parentSection(string $segment)
+    {
+        helper('hifz');
+        $allowed = ['bmi', 'diary', 'bag', 'prayers', 'hifz'];
+        if (! in_array($segment, $allowed, true)) {
+            return redirect()->route('dashboard');
+        }
+
+        $auth = $this->session->get('auth');
+        if (! $auth || empty($auth['logged_in']) || ($auth['role'] ?? '') !== 'parent') {
+            return redirect()->route('login');
+        }
+
+        $parentId = (int) $auth['user_id'];
+        $children = $this->getChildrenWithCurrentClass($parentId);
+        $active     = (int) ($this->session->get('active_student_id') ?? 0);
+        if (! $active && ! empty($children)) {
+            $active = (int) $children[0]['student_id'];
+            $this->session->set('active_student_id', $active);
+        }
+
+        $schoolInfo = getSchoolInfo();
+        $campusInfo = getCampusInfo();
+        $studentInfo = $active > 0 ? $this->getStudentInfo($active) : null;
+        $currentLanguage = $this->getCurrentLanguage();
+        $isUrdu          = strtolower(trim((string) $currentLanguage)) === 'ur';
+
+        $studentAge = 0;
+        if ($studentInfo && ! empty($studentInfo->date_of_birth)) {
+            $studentAge = (int) date_diff(date_create($studentInfo->date_of_birth), date_create('today'))->y;
+        }
+        $campusPrayerStartAge     = isset($campusInfo->prayer_tracking_start_age) ? (int) $campusInfo->prayer_tracking_start_age : 7;
+        $campusPrayerMandatoryAge = isset($campusInfo->prayer_tracking_mandatory_age) ? (int) $campusInfo->prayer_tracking_mandatory_age : 10;
+        $isEligibleForPrayer      = $studentAge >= $campusPrayerStartAge;
+        $isMandatory              = $studentAge >= $campusPrayerMandatoryAge;
+
+        if ($segment === 'prayers' && ! $isEligibleForPrayer) {
+            return redirect()->route('dashboard')->with('error', 'Prayer tracking is not available for this age yet.');
+        }
+
+        if ($segment === 'hifz') {
+            if (! campusHifzEnabled()) {
+                return redirect()->route('dashboard')->with('error', lang('ParentPortal.hifz_not_available'));
+            }
+            if ($active <= 0 || studentHifzActive($active) === null) {
+                return redirect()->route('dashboard')->with('error', lang('ParentPortal.hifz_not_enrolled'));
+            }
+        }
+
+        $titles = [
+            'bmi'     => lang('ParentPortal.section_bmi'),
+            'diary'   => lang('ParentPortal.section_diary'),
+            'bag'     => lang('ParentPortal.section_bag'),
+            'prayers' => lang('ParentPortal.section_prayers'),
+            'hifz'    => lang('ParentPortal.section_hifz'),
+        ];
+
+        $data = [
+            'title'             => $titles[$segment] ?? 'Portal',
+            'role'              => 'parent',
+            'name'              => $auth['name'] ?? '',
+            'schoolInfo'        => $schoolInfo,
+            'campusInfo'        => $campusInfo,
+            'children'          => $children,
+            'activeStudentId'   => $active,
+            'activeStudentName' => $this->getStudentName($active),
+            'studentInfo'       => $studentInfo,
+            'isUrdu'            => $isUrdu,
+            'segment'           => $segment,
+            'returnPath'        => 'student/dashboard/section/' . $segment,
+            'isEligibleForPrayer' => $isEligibleForPrayer,
+            'isMandatory'         => $isMandatory,
+        ];
+
+        switch ($segment) {
+            case 'bmi':
+                $bmiData = $active > 0 ? $this->getStudentBMI($active) : null;
+                $data['bmiData']        = $bmiData;
+                $data['bmiHistory']     = $active > 0 ? $this->getBMIHistory($active) : [];
+                $data['bmiSuggestions'] = ($bmiData && ! empty($bmiData->bmi_category))
+                    ? $this->getBMISuggestions($bmiData->bmi_category)
+                    : null;
+                break;
+
+            case 'diary':
+                $bounds = $active > 0 ? $this->getCurrentTermDateBounds($active) : null;
+                $viewDate = $active > 0 ? $this->resolveParentDiaryViewDate($bounds) : date('Y-m-d');
+                $data['diaryViewDate'] = $viewDate;
+                $data['diaryViewDayName'] = date('l', strtotime($viewDate));
+                $data['diaryEntries'] = $active > 0 ? $this->getDiaryForDate($active, $viewDate) : [];
+                $data['diaryTermBounds'] = $bounds;
+                $data['diaryWeekPicker'] = $active > 0
+                    ? $this->buildDiaryTermWeekToolbar($active, $viewDate, $bounds)
+                    : [
+                        'week_pill' => '',
+                        'prev_url' => null,
+                        'next_url' => null,
+                        'week_start' => '',
+                        'week_end' => '',
+                        'range_label' => '',
+                        'days' => [],
+                        'used_term_weeks' => false,
+                    ];
+                $base = base_url('student/dashboard/section/diary');
+                $data['diaryNav'] = [
+                    'today' => $base . '?date=' . rawurlencode(date('Y-m-d')),
+                    'is_viewing_today' => $viewDate === date('Y-m-d'),
+                ];
+                $data['quizSchedule'] = $active > 0 ? $this->getQuizSchedule($active) : [];
+                $data['todayDiary'] = [];
+                $data['returnPath'] = 'student/dashboard/section/diary?date=' . rawurlencode($viewDate);
+                break;
+
+            case 'bag':
+                $data['bagPackItems'] = $active > 0 ? $this->getBagPackItems($active) : [];
+                break;
+
+            case 'prayers':
+                // flags already in $data
+                break;
+
+            case 'hifz':
+                $sessionId = hifzStudentSessionId($active);
+                $data['hifzData'] = (new \App\Libraries\HifzReportService())->getPortalData($active, $sessionId, 30);
+                break;
+        }
+
+        return view('frontend/dashboard/parent_section', $data);
+    }
+
+    /**
+     * AJAX: return diary HTML for a specific date.
+     * GET params: student_id (required), date (YYYY-MM-DD required)
+     */
+    public function getDiaryByDate()
+    {
+        $auth = $this->session->get('auth');
+        if (!$auth || empty($auth['logged_in']) || ($auth['role'] ?? '') !== 'parent') {
+            return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $studentId = (int) ($this->request->getGet('student_id') ?? 0);
+        $date = (string) ($this->request->getGet('date') ?? '');
+        if ($studentId <= 0 || $date === '') {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid request']);
+        }
+
+        try {
+            $dt = new \DateTime($date);
+        } catch (\Throwable $e) {
+            $dt = null;
+        }
+        if (!$dt) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid date']);
+        }
+        $date = $dt->format('Y-m-d');
+
+        // Verify student belongs to this parent
+        $verify = $this->db->table('students')
+            ->where('student_id', $studentId)
+            ->where('parent_id', (int) $auth['user_id'])
+            ->get()
+            ->getRowArray();
+        if (!$verify) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'Invalid student']);
+        }
+
+        $entries = $this->getDiaryForDate($studentId, $date);
+        $dayName = (new \DateTime($date))->format('l');
+
+        $html = view('frontend/dashboard/partials/diary_day_entries', [
+            'activeStudentId' => $studentId,
+            'diaryDate' => $date,
+            'diaryDayName' => $dayName,
+            'diaryEntries' => $entries,
+        ]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'date' => $date,
+            'html' => $html,
+        ]);
     }
 
 
@@ -1418,6 +2326,208 @@ public function prayerTracking(Request $request)
             'total_offered' => (int)$prayer->total_offered,
             'is_completed' => (int)$prayer->is_completed
         ]
+    ]);
+}
+
+/**
+ * Week label for prayer toolbar: `term_weeks.week_name` (same source as admin / diary index).
+ * Uses school system + active member session first (matches getTermDiaryIndex), then campus fallback.
+ */
+private function resolveTermWeekLabelForStudentMonday(int $studentId, string $mondayYmd): string
+{
+    $school = function_exists('getSchoolInfo') ? getSchoolInfo() : null;
+    $schoolSystemId = isset($school->system_id) ? (int) $school->system_id : 0;
+    $sessionId = $this->resolveAcademicSessionIdForDiary($studentId);
+
+    if ($schoolSystemId > 0 && $sessionId > 0) {
+        $row = $this->db->table('term_weeks tw')
+            ->select('tw.week_name, tw.week_no')
+            ->join('terms_session ts', 'ts.term_session_id = tw.term_session_id', 'inner')
+            ->where('tw.system_id', $schoolSystemId)
+            ->where('ts.system_id', $schoolSystemId)
+            ->where('ts.session_id', $sessionId)
+            ->where('tw.start_date <=', $mondayYmd)
+            ->where('tw.end_date >=', $mondayYmd)
+            ->orderBy('tw.start_date', 'ASC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if (!empty($row)) {
+            $name = trim((string) ($row['week_name'] ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+            $wno = (int) ($row['week_no'] ?? 0);
+            if ($wno > 0) {
+                return 'Week ' . $wno;
+            }
+        }
+    }
+
+    // Fallback: campus system (older / alternate installs)
+    $ctx = $this->db->table('students s')
+        ->select('c.system_id')
+        ->join('campus c', 'c.campus_id = s.campus_id', 'left')
+        ->where('s.student_id', $studentId)
+        ->get()
+        ->getRowArray();
+
+    $campusSystemId = isset($ctx['system_id']) ? (int) $ctx['system_id'] : 0;
+    if ($campusSystemId > 0) {
+        $row2 = $this->db->table('term_weeks tw')
+            ->select('tw.week_name, tw.week_no')
+            ->join('terms_session ts', 'ts.term_session_id = tw.term_session_id', 'inner')
+            ->where('tw.system_id', $campusSystemId)
+            ->where('tw.start_date <=', $mondayYmd)
+            ->where('tw.end_date >=', $mondayYmd)
+            ->where('ts.start_date <=', $mondayYmd)
+            ->where('ts.end_date >=', $mondayYmd)
+            ->orderBy('tw.start_date', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if (!empty($row2)) {
+            $name = trim((string) ($row2['week_name'] ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+            $wno = (int) ($row2['week_no'] ?? 0);
+            if ($wno > 0) {
+                return 'Week ' . $wno;
+            }
+        }
+    }
+
+    return $this->resolvePrayerWeekFallbackLabel($mondayYmd);
+}
+
+private function resolvePrayerWeekFallbackLabel(string $mondayYmd): string
+{
+    try {
+        $dt = new \DateTime($mondayYmd);
+        $end = (clone $dt)->modify('+6 days');
+
+        return $dt->format('M j') . ' – ' . $end->format('M j, Y');
+    } catch (\Throwable $e) {
+        return $mondayYmd;
+    }
+}
+
+/**
+ * Get prayer status for a full week (Monday to Sunday).
+ * Query params:
+ * - student_id (required)
+ * - week_start (optional, YYYY-MM-DD; must be a Monday). Defaults to current week Monday.
+ */
+public function getPrayerWeekStatus()
+{
+    $studentId = (int) ($this->request->getGet('student_id') ?? 0);
+    $weekStart = (string) ($this->request->getGet('week_start') ?? '');
+
+    $auth = $this->session->get('auth');
+    if (!$auth || (($auth['role'] ?? '') !== 'parent' && ($auth['role'] ?? '') !== 'student')) {
+        return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+    }
+
+    if ($studentId <= 0) {
+        return $this->response->setJSON(['success' => false, 'message' => 'Invalid student']);
+    }
+
+    // Verify student belongs to this parent (if parent role)
+    if (($auth['role'] ?? '') === 'parent') {
+        $verify = $this->db->table('students')
+            ->where('student_id', $studentId)
+            ->where('parent_id', (int) $auth['user_id'])
+            ->get()
+            ->getRow();
+
+        if (!$verify) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid student']);
+        }
+    }
+
+    // Compute current week Monday if not provided / invalid
+    $dt = null;
+    if ($weekStart !== '') {
+        try {
+            $dt = new \DateTime($weekStart);
+        } catch (\Throwable $e) {
+            $dt = null;
+        }
+    }
+
+    if (!$dt) {
+        $dt = new \DateTime('today');
+    }
+    $dt->setTime(0, 0, 0);
+    $dayOfWeek = (int) $dt->format('N'); // 1=Mon ... 7=Sun
+    if ($dayOfWeek !== 1) {
+        $dt->modify('last monday');
+    }
+
+    $start = $dt->format('Y-m-d');
+    $endDt = clone $dt;
+    $endDt->modify('+6 days');
+    $end = $endDt->format('Y-m-d');
+
+    $rows = $this->db->table('student_prayer_tracking')
+        ->select('prayer_date, fajr, dhuhr, asr, maghrib, isha, total_offered, is_completed')
+        ->where('student_id', $studentId)
+        ->where('prayer_date >=', $start)
+        ->where('prayer_date <=', $end)
+        ->orderBy('prayer_date', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    $byDate = [];
+    foreach ($rows as $r) {
+        $d = (string) ($r['prayer_date'] ?? '');
+        if ($d === '') {
+            continue;
+        }
+        $byDate[$d] = [
+            'fajr' => (int) ($r['fajr'] ?? 0),
+            'dhuhr' => (int) ($r['dhuhr'] ?? 0),
+            'asr' => (int) ($r['asr'] ?? 0),
+            'maghrib' => (int) ($r['maghrib'] ?? 0),
+            'isha' => (int) ($r['isha'] ?? 0),
+            'total_offered' => (int) ($r['total_offered'] ?? 0),
+            'is_completed' => (int) ($r['is_completed'] ?? 0),
+        ];
+    }
+
+    $days = [];
+    $cursor = clone $dt;
+    for ($i = 0; $i < 7; $i++) {
+        $dateStr = $cursor->format('Y-m-d');
+        $days[] = [
+            'date' => $dateStr,
+            'day_name' => $cursor->format('l'),
+            'day_short' => $cursor->format('D'),
+            'prayers' => $byDate[$dateStr] ?? [
+                'fajr' => 0,
+                'dhuhr' => 0,
+                'asr' => 0,
+                'maghrib' => 0,
+                'isha' => 0,
+                'total_offered' => 0,
+                'is_completed' => 0,
+            ],
+        ];
+        $cursor->modify('+1 day');
+    }
+
+    $weekLabel = $this->resolveTermWeekLabelForStudentMonday($studentId, $start);
+
+    return $this->response->setJSON([
+        'success' => true,
+        'week_start' => $start,
+        'week_end' => $end,
+        'week_label' => $weekLabel,
+        'week_name' => $weekLabel,
+        'days' => $days,
     ]);
 }
 
@@ -1663,5 +2773,205 @@ private function getBMISuggestions(string $bmiCategory)
         ->limit(1)
         ->get()
         ->getRow();
+}
+
+/**
+ * Academic session for student (same idea as Frontend\DatesheetController).
+ */
+private function getCurrentAcademicSessionIdForStudent(int $studentId): ?int
+{
+    $student = $this->db->table('students')
+        ->select('campus_id')
+        ->where('student_id', $studentId)
+        ->get()
+        ->getRowArray();
+
+    if (!$student || empty($student['campus_id'])) {
+        return null;
+    }
+
+    $campus = $this->db->table('campus')
+        ->select('system_id')
+        ->where('campus_id', (int) $student['campus_id'])
+        ->get()
+        ->getRowArray();
+
+    if (!$campus || empty($campus['system_id'])) {
+        return null;
+    }
+
+    $session = $this->db->table('academic_session')
+        ->select('session_id')
+        ->where('system_id', (int) $campus['system_id'])
+        ->where('CURDATE() BETWEEN start_date AND end_date', null, false)
+        ->orderBy('start_date', 'DESC')
+        ->limit(1)
+        ->get()
+        ->getRowArray();
+
+    return isset($session['session_id']) ? (int) $session['session_id'] : null;
+}
+
+/**
+ * Student campus + class section for exam/datesheet scoping.
+ */
+private function getStudentCampusClsSecForExam(int $studentId): ?array
+{
+    $row = $this->db->table('students s')
+        ->select('s.campus_id, sc.cls_sec_id')
+        ->join('student_class sc', 'sc.student_id = s.student_id AND sc.status = 1', 'left')
+        ->where('s.student_id', $studentId)
+        ->get()
+        ->getRowArray();
+
+    if (!$row || empty($row['campus_id'])) {
+        return null;
+    }
+
+    return [
+        'campus_id' => (int) $row['campus_id'],
+        'cls_sec_id' => isset($row['cls_sec_id']) ? (int) $row['cls_sec_id'] : 0,
+    ];
+}
+
+/**
+ * Latest exam row for session + campus (status 0 or 1), ordered by eid DESC.
+ */
+private function getLatestExamForStudentSession(int $studentId): ?object
+{
+    $ctx = $this->getStudentCampusClsSecForExam($studentId);
+    $sessionId = $this->getCurrentAcademicSessionIdForStudent($studentId);
+    if (!$ctx || !$sessionId) {
+        return null;
+    }
+
+    $campusId = $ctx['campus_id'];
+
+    return $this->db->table('exam')
+        ->where('session_id', $sessionId)
+        ->groupStart()
+            ->where('campus_id', $campusId)
+            ->orWhere('campus_id', 0)
+            ->orWhere('campus_id IS NULL', null, false)
+        ->groupEnd()
+        ->whereIn('status', [0, 1])
+        ->orderBy('eid', 'DESC')
+        ->get(1)
+        ->getRow() ?: null;
+}
+
+/**
+ * Datesheet for dashboard: only when the latest exam for the session is still unannounced.
+ * Exam.status: 0 = Unannounced, 1 = Announced (same as admin Exams switch).
+ *
+ * @return array{show:bool,eid?:int,exam_name?:string,datesheet?:array,message?:string}
+ */
+private function getDashboardUnannouncedDatesheet(int $studentId): array
+{
+    $base = ['show' => false];
+    $exam = $this->getLatestExamForStudentSession($studentId);
+    if (!$exam || (int) $exam->status !== 0) {
+        return $base;
+    }
+
+    $ctx = $this->getStudentCampusClsSecForExam($studentId);
+    if (!$ctx || $ctx['cls_sec_id'] <= 0) {
+        return [
+            'show' => true,
+            'eid' => (int) $exam->eid,
+            'exam_name' => (string) ($exam->exam_name ?? ''),
+            'datesheet' => [],
+            'message' => 'Class not assigned.',
+        ];
+    }
+
+    $eid = (int) $exam->eid;
+    $datesheetData = $this->db->table('datesheet ds')
+        ->select('ds.*, sub.subject_name, ss.subject_id')
+        ->join('section_subjects ss', 'ss.sec_sub_id = ds.sec_sub_id AND ss.status = 1')
+        ->join('allsubject sub', 'sub.sid = ss.subject_id')
+        ->where('ds.eid', $eid)
+        ->where('ds.cls_sec_id', $ctx['cls_sec_id'])
+        ->where('ds.total_marks !=', 0)
+        ->orderBy('ds.exam_date', 'ASC')
+        ->get()
+        ->getResultArray();
+
+    $datesheet = [];
+    foreach ($datesheetData as $row) {
+        $d = $row['exam_date'];
+        $datesheet[$d][] = $row;
+    }
+
+    return [
+        'show' => true,
+        'eid' => $eid,
+        'exam_name' => (string) ($exam->exam_name ?? ''),
+        'datesheet' => $datesheet,
+        'message' => empty($datesheet) ? 'No datesheet rows published yet for this class.' : null,
+    ];
+}
+
+/**
+ * Latest announced exam (exam.status = 1) and compiled exam_results + per-subject marks if present.
+ * Exam.status: 0 = Unannounced, 1 = Announced.
+ *
+ * @return array{exam: ?object, exam_result: ?object, subjects: array<int, array<string,mixed>>}
+ */
+private function getDashboardLastAnnouncedExamResult(int $studentId): array
+{
+    $out = ['exam' => null, 'exam_result' => null, 'subjects' => []];
+
+    $ctx = $this->getStudentCampusClsSecForExam($studentId);
+    $sessionId = $this->getCurrentAcademicSessionIdForStudent($studentId);
+    if (!$ctx || !$sessionId) {
+        return $out;
+    }
+
+    $campusId = $ctx['campus_id'];
+
+    $exam = $this->db->table('exam')
+        ->where('session_id', $sessionId)
+        ->groupStart()
+            ->where('campus_id', $campusId)
+            ->orWhere('campus_id', 0)
+            ->orWhere('campus_id IS NULL', null, false)
+        ->groupEnd()
+        ->where('status', 1)
+        ->orderBy('eid', 'DESC')
+        ->get(1)
+        ->getRow();
+
+    if (!$exam) {
+        return $out;
+    }
+
+    $eid = (int) $exam->eid;
+    $out['exam'] = $exam;
+
+    $examResult = $this->db->table('exam_results')
+        ->where('eid', $eid)
+        ->where('student_id', $studentId)
+        ->get(1)
+        ->getRow();
+
+    $out['exam_result'] = $examResult ?: null;
+
+    if ($ctx['cls_sec_id'] > 0) {
+        $subjects = $this->db->table('subject_results sr')
+            ->select('sub.subject_name, sr.obtained_marks, ds.total_marks, ds.exam_date')
+            ->join('datesheet ds', 'ds.eid = sr.eid AND ds.cls_sec_id = sr.cls_sec_id AND ds.sec_sub_id = sr.sec_sub_id', 'inner')
+            ->join('section_subjects ss', 'ss.sec_sub_id = sr.sec_sub_id AND ss.status = 1', 'inner')
+            ->join('allsubject sub', 'sub.sid = ss.subject_id', 'inner')
+            ->where('sr.eid', $eid)
+            ->where('sr.student_id', $studentId)
+            ->orderBy('ds.exam_date', 'ASC')
+            ->orderBy('sub.subject_name', 'ASC')
+            ->get()
+            ->getResultArray();
+        $out['subjects'] = $subjects;
+    }
+
+    return $out;
 }
 }

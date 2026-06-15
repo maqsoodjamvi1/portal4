@@ -159,7 +159,12 @@ class StudentsContactList extends BaseController
         $max_no_of_students_info = $this->db->table('number_of_students')->where('id', $max_student_id)->get()->getRow();
         $max_student_limit = $max_no_of_students_info->no_of_students ?? 0;
 
-        $students_info = $this->db->query('select count(student_id) as studentTotal from students WHERE student_id IN(SELECT student_id from student_class WHERE status=1)  AND campus_id=' . $campusid)->getRow();
+        $students_info = $this->db->table('students')
+            ->selectCount('students.student_id', 'studentTotal')
+            ->join('student_class', 'student_class.student_id = students.student_id AND student_class.status = 1', 'inner')
+            ->where('students.campus_id', (int) $campusid)
+            ->get()
+            ->getRow();
         $noOfstudent = $students_info->studentTotal ?? 0;
 
         $max_limit = $noOfstudent >= $max_student_limit ? '<div class="col-lg-12">Maximum Limit Exceeded</div>' : '';

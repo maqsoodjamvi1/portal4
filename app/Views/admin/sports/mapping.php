@@ -3,19 +3,14 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Assign Students to Houses</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Sports Mapping</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Assign Students to Houses',
+    'icon' => 'fas fa-exchange-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Mapping', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -23,7 +18,7 @@
    <div class="card card-primary">
     <div class="card-header"><h3 class="card-title">Bulk Assignment</h3></div>
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-3">
           <label>Class</label>
           <select id="class_id" class="form-control select2">
@@ -57,7 +52,7 @@
    <div class="card card-outline card-info">
     <div class="card-header"><h3 class="card-title">Current House Badges</h3></div>
     <div class="card-body" id="currentMapping">
-      <em>Select class/section to load students…</em>
+      <em>Select class/section to load studentsï¿½</em>
     </div>
    </div>
   </div>
@@ -98,7 +93,7 @@ $(function(){
   function loadCurrent(){
     const sid = $('#section_id').val();
     if(!sid) return;
-    $('#currentMapping').html('<i class="fas fa-spinner fa-spin"></i> Loading…');
+    $('#currentMapping').html('<i class="fas fa-spinner fa-spin"></i> Loadingï¿½');
     $.post("<?= base_url('admin/sports/mapping/current') ?>", {[CSRF_NAME]:CSRF_HASH, cls_sec_id:sid}, function(html){
       $('#currentMapping').html(html);
     }, 'html');

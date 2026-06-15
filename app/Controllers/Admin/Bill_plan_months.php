@@ -31,42 +31,37 @@ class Bill_plan_months extends MY_Controller {
 	function data(){
 		$response = new stdClass;
 		$response->draw = $this->input->post('draw');
-		$campus_id = $this->session->userdata('member_campusid');
+		$campus_id = (int) $this->session->userdata('member_campusid');
 
-		$search = $this->input->post('search');
-		$keyword = '';
-		if($search) $keyword = $search['value'];
-		$this->db->select('count(A.bill_plan_id) as ccount', FALSE);
+		$this->db->select('count(A.plan_month_id) as ccount', false);
 		$this->db->from('bill_plan_months A');
-		$this->db->where('(A.campus_id =' . $this->db->escape($campus_id) . ')');
-		$this->db->where('(A.status=1)');
-		
+		$this->db->where('A.campus_id', $campus_id);
+		$this->db->where('A.status', 1);
+
 		$q = $this->db->get()->row();
-		$response->recordsTotal = $q->ccount;
-	
+		$response->recordsTotal = (int) ($q->ccount ?? 0);
+
 		$this->db->select('A.*');
 		$this->db->from('bill_plan_months A');
-		$this->db->where('(A.campus_id =' . $this->db->escape($campus_id) . ')');
-		$this->db->where('(A.status=1)');
-		
-		$this->db->order_by('A.bill_plan_id', 'desc');
-		$this->db->limit($this->input->post('length'), $this->input->post('start'));
+		$this->db->where('A.campus_id', $campus_id);
+		$this->db->where('A.status', 1);
+
+		$this->db->order_by('A.plan_month_id', 'desc');
+		$this->db->limit((int) $this->input->post('length'), (int) $this->input->post('start'));
 		$results = $this->db->get()->result();
 
 		$response->recordsFiltered = $response->recordsTotal;
 
-		$response->data = array();
-		foreach($results as $row){
-			
-		$this->db->where('plan_id', $row->plan_month_id);
-		$billPlansinfo = $this->db->get('bill_plans')->row();
-		
-			$data = array();
-			$data['id'] = $row->plan_month_id;
-			$data['plan_name'] = $billPlansinfo->plan_name;
-			$data['month'] = $row->month;
-			$response->data[] = $data;
+		$response->data = [];
+		foreach ($results as $row) {
+			$this->db->where('plan_id', (int) ($row->bill_plan_id ?? 0));
+			$billPlansinfo = $this->db->get('bill_plans')->row();
 
+			$response->data[] = [
+				'id'        => $row->plan_month_id,
+				'plan_name' => $billPlansinfo->plan_name ?? '',
+				'month'     => $row->month,
+			];
 		}
 
 		$this->output->set_output(json_encode($response));
@@ -139,7 +134,7 @@ class Bill_plan_months extends MY_Controller {
 
             $.ajax({
                 type: "POST",
-                url: "admin.php?c=bill_plan_months&m=updateBillPlanMonth", 
+                url: "' . base_url('admin/bill_plan_months/updateBillPlanMonth') . '", 
                 data: {plan_month_id:plan_month_id,status:status},
                 success:function(res){
             		toastr.success(res.msg);

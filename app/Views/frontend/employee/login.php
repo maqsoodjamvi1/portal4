@@ -17,7 +17,7 @@
             <div class="col-lg-12">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-user"></i>
                         </span>
                         <input type="text" name="user_name" class="form-control" id="username" placeholder="Parent CNIC" data-inputmask='"mask": "99999-9999999-9"' data-mask>
@@ -27,7 +27,7 @@
             <div class="col-lg-12">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-lock"></i>
                         </span>
                         <input type="password" name="password" class="form-control" id="password" placeholder="Password">
@@ -38,14 +38,14 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="form-group">
-                    <span class="small pull-left">Not a user yet? </span><a href="<?php print site_url(); ?>signup" class="small pull-left">&nbsp;Register Now</a>
-                    <a href="<?php print site_url(); ?>forgotpwd" class="small pull-right">Forgot password?</a>
+                    <span class="small float-start">Not a user yet? </span><a href="<?php print site_url(); ?>signup" class="small float-start">&nbsp;Register Now</a>
+                    <a href="<?php print site_url(); ?>forgotpwd" class="small float-end">Forgot password?</a>
                 </div>
             </div>                
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <div class="form-group pull-right">
+                <div class="form-group float-end">
                     <button type="submit" id="login" class="btn btn-info">Login</button>
                 </div>
             </div>

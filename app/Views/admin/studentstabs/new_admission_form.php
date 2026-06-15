@@ -79,7 +79,7 @@
 }
 
 @media print {
-    .btn, .card-header button, .custom-file-label, .custom-file-input {
+    .btn, .card-header button, .form-label, .form-control {
         display: none !important;
     }
     body {
@@ -113,7 +113,7 @@
 
 .alert-section {
     background-color: #e8f4ff;
-    border-left: 4px solid var(--primary-color);
+    border-start: 4px solid var(--primary-color);
     padding: 1rem;
     border-radius: 0 0.5rem 0.5rem 0;
     margin-bottom: 1.5rem;
@@ -137,7 +137,7 @@
     border-color: #1cc88a;
 }
 
-.custom-file-label::after {
+.form-label::after {
     content: "Browse";
 }
 
@@ -154,7 +154,7 @@
 <div class="container-fluid px-3">
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i>Student Admission Form</h5>
+            <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Admission Form</h5>
             <button type="button" class="btn btn-light btn-sm" onclick="window.print();">
                 <i class="fas fa-print"></i> Print / Save PDF
             </button>
@@ -173,12 +173,12 @@
                 <div class="card mb-3">
                     <div class="card-header" id="headingStudent">
                         <h6 class="mb-0">
-                            <button class="accordion-button" type="button" data-toggle="collapse" data-target="#collapseStudent" aria-expanded="true">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStudent" aria-expanded="true">
                                 <i class="fas fa-user me-2"></i> Student Information
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseStudent" class="collapse show" data-parent="#admissionAccordion">
+                    <div id="collapseStudent" class="collapse show" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -263,12 +263,12 @@
                 <div class="card mb-3">
                     <div class="card-header" id="headingFee">
                         <h6 class="mb-0">
-                            <button class="accordion-button collapsed" type="button" data-toggle="collapse" data-target="#collapseFee">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFee">
                                 <i class="fas fa-money-check-alt me-2"></i> Fee Structure & Discounts
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseFee" class="collapse" data-parent="#admissionAccordion">
+                    <div id="collapseFee" class="collapse" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -303,7 +303,7 @@
                                     <label for="discount_display" class="form-label">Discount</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="text" class="form-control form-control-sm bg-light font-weight-bold" readonly id="discount_display" value="0">
+                                        <input type="text" class="form-control form-control-sm bg-light fw-bold" readonly id="discount_display" value="0">
                                         <span class="input-group-text bg-success text-white">
                                             <i class="fas fa-tag"></i>
                                         </span>
@@ -378,12 +378,12 @@
                 <div class="card mb-3">
                     <div class="card-header" id="headingParent">
                         <h6 class="mb-0">
-                            <button class="accordion-button collapsed" type="button" data-toggle="collapse" data-target="#collapseParent">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseParent">
                                 <i class="fas fa-user-friends me-2"></i> Parent & Contact Information
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseParent" class="collapse" data-parent="#admissionAccordion">
+                    <div id="collapseParent" class="collapse" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="row">
                                 <?php
@@ -430,12 +430,12 @@
                 <div class="card">
                     <div class="card-header" id="headingAttachments">
                         <h6 class="mb-0">
-                            <button class="accordion-button collapsed" type="button" data-toggle="collapse" data-target="#collapseAttachments">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAttachments">
                                 <i class="fas fa-paperclip me-2"></i> Attachments
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseAttachments" class="collapse" data-parent="#admissionAccordion">
+                    <div id="collapseAttachments" class="collapse" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>Please upload clear scanned copies of the following documents.
@@ -490,13 +490,13 @@
             <!-- Form Buttons -->
             <div class="d-flex justify-content-center mt-4">
                 <button type="submit" class="btn btn-success px-4">
-                    <i class="fas fa-save mr-2"></i>Save Admission
+                    <i class="fas fa-save me-2"></i>Save Admission
                 </button>
                 <button type="reset" class="btn btn-secondary px-4 ms-2">
-                    <i class="fas fa-redo mr-2"></i>Reset
+                    <i class="fas fa-redo me-2"></i>Reset
                 </button>
                 <a href="<?= base_url('admin/students') ?>" class="btn btn-light px-4 ms-2">
-                    <i class="fas fa-times mr-2"></i>Cancel
+                    <i class="fas fa-times me-2"></i>Cancel
                 </a>
             </div>
         </div>
@@ -576,16 +576,16 @@ $(document).ready(function() {
             const today = new Date();
             const ageYears = today.getFullYear() - dobDate.getFullYear();
             
-            let badgeClass = 'badge-info';
-            if (ageYears < 5) badgeClass = 'badge-warning';
-            if (ageYears > 18) badgeClass = 'badge-danger';
+            let badgeClass = 'text-bg-info';
+            if (ageYears < 5) badgeClass = 'text-bg-warning';
+            if (ageYears > 18) badgeClass = 'text-bg-danger';
             
             $('#age-badge').html(`
                 <div class="d-flex mt-2">
                     <span class="badge ${badgeClass} text-white badge-custom me-2">
                         <i class="fas fa-user-clock me-1"></i> ${age}
                     </span>
-                    <span class="badge ${ageYears >= 5 && ageYears <= 18 ? 'badge-success' : 'badge-danger'} text-white badge-custom">
+                    <span class="badge ${ageYears >= 5 && ageYears <= 18 ? 'text-bg-success' : 'text-bg-danger'} text-white badge-custom">
                         <i class="fas ${ageYears >= 5 && ageYears <= 18 ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-1"></i>
                         ${ageYears >= 5 && ageYears <= 18 ? 'Valid age' : 'Age not in standard range'}
                     </span>
@@ -695,7 +695,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 beforeSend: function() {
                     $('button[type="submit"]').prop('disabled', true)
-                        .html('<i class="fas fa-spinner fa-spin mr-2"></i>Saving...');
+                        .html('<i class="fas fa-spinner fa-spin me-2"></i>Saving...');
                 },
                 success: function(response) {
                     if (response.success) {
@@ -706,13 +706,13 @@ $(document).ready(function() {
                     } else {
                         toastr.error(response.msg);
                         $('button[type="submit"]').prop('disabled', false)
-                            .html('<i class="fas fa-save mr-2"></i>Save Admission');
+                            .html('<i class="fas fa-save me-2"></i>Save Admission');
                     }
                 },
                 error: function() {
                     toastr.error('An error occurred. Please try again.');
                     $('button[type="submit"]').prop('disabled', false)
-                        .html('<i class="fas fa-save mr-2"></i>Save Admission');
+                        .html('<i class="fas fa-save me-2"></i>Save Admission');
                 }
             });
         }

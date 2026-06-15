@@ -377,7 +377,7 @@
         /* Instructions */
         .instructions {
             background: #fff9e6;
-            border-left: 4px solid #d4af37;
+            border-start: 4px solid #d4af37;
             padding: 15px;
             border-radius: 0 8px 8px 0;
             margin: 25px 0;
@@ -454,7 +454,7 @@
           <div class="no-print form-controls">
             <div class="row">
               <div class="col-lg-4 form-group">
-                <label for="class"><i class="fas fa-graduation-cap mr-1"></i> Class</label>
+                <label for="class"><i class="fas fa-graduation-cap me-1"></i> Class</label>
                 <select class="form-control" name="cls_sec_id" id="cls_sec_id">
                   <option value="">All Classes</option>
                   <?php if(isset($sectionsclassinfo)): ?>
@@ -467,7 +467,7 @@
                 </select>
               </div>
               <div class="col-lg-4 form-group">
-                <label for="status"><i class="fas fa-user-check mr-1"></i> Status</label>
+                <label for="status"><i class="fas fa-user-check me-1"></i> Status</label>
                 <select class="form-control" id="statusFilter">
                   <option value="all">All Students</option>
                   <option value="active">Active Only</option>
@@ -476,7 +476,7 @@
               </div>
               <div class="col-lg-4 form-group d-flex align-items-end">
                 <button class="btn btn-primary w-100" id="ViewResutlt">
-                  <i class="fas fa-id-card mr-2"></i> Generate ID Cards
+                  <i class="fas fa-id-card me-2"></i> Generate ID Cards
                 </button>
               </div>
             </div>
@@ -520,8 +520,8 @@ $(function() {
         if($("#resultContainer").html().trim().length > 0) {
           if ($("#PrintCards").length === 0) {
             $('<div class="no-print text-center mt-4 mb-3">' +
-              '<button class="btn btn-success mr-2" id="PrintCards"><i class="fas fa-print mr-2"></i> Print ID Cards</button>' +
-              '<button class="btn btn-info" id="SaveAsPDF"><i class="fas fa-file-pdf mr-2"></i> Save as PDF</button>' +
+              '<button class="btn btn-success me-2" id="PrintCards"><i class="fas fa-print me-2"></i> Print ID Cards</button>' +
+              '<button class="btn btn-info" id="SaveAsPDF"><i class="fas fa-file-pdf me-2"></i> Save as PDF</button>' +
               '</div>')
               .insertAfter("#resultContainer")
               .find('#PrintCards')

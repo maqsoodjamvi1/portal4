@@ -260,6 +260,8 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->post('students_print/save-view', 'StudentsPrint::saveView');
         $routes->post('students_print/data', 'StudentsPrint::data');
         $routes->post('students-print/data', 'StudentsPrint::data');
+        $routes->get('students_print/contact-list', 'StudentsPrint::contactListPrint');
+        $routes->get('students-print/contact-list', 'StudentsPrint::contactListPrint');
     });
 
     $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
@@ -353,6 +355,7 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
     });
 
     $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
+        $routes->get('fee_setup', 'FeeSetup::index');
         $routes->get('fee_type', 'FeeType::index');
         $routes->get('fee_type/add', 'FeeType::add');
         $routes->get('fee_type/edit', 'FeeType::edit');
@@ -360,6 +363,7 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->get('fee_type/delete', 'FeeType::delete');
         $routes->post('fee_type/data', 'FeeType::data');
         $routes->post('fee_type/data2', 'FeeType::data2');
+        $routes->post('fee_type/toggle-status', 'FeeType::toggleStatus');
         $routes->post('fee_type/set-monthly-fee', 'FeeType::setMonthlyFee');
     });
 
@@ -428,6 +432,10 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
     $routes->post('admin/fee-chalan-pay/getStudentCardAjax', 'Admin\FeeChalanPay::getStudentCardAjax');
     $routes->post('admin/fee-chalan-pay1/getStudentCardAjax', 'Admin\FeeChalanPay1::getStudentCardAjax');
     $routes->get('admin/fee-chalan-pay', 'Admin\FeeChalanPay::index');
+    $routes->get('admin/advance-fee', 'Admin\FeeChalanPay::advanceFee');
+    $routes->post('admin/advance-fee/save', 'Admin\FeeChalanPay::saveAdvanceBalances');
+    $routes->get('admin/fee-chalan-pay/advance-fee', 'Admin\FeeChalanPay::advanceFee');
+    $routes->post('admin/fee-chalan-pay/advance-fee-save', 'Admin\FeeChalanPay::saveAdvanceBalances');
     $routes->get('admin/fee-chalan-pay1', 'Admin\FeeChalanPay1::index');
     $routes->post('admin/fee-chalan-pay/get-studentinfo', 'Admin\FeeChalanPay::get_studentinfo');
     $routes->post('admin/fee-chalan-pay1/get-studentinfo', 'Admin\FeeChalanPay1::get_studentinfo');
@@ -451,6 +459,8 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
 
     $routes->group('admin/fee-chalan-pay', ['namespace' => 'App\Controllers\Admin'], function($routes) {   
         $routes->post('data', 'FeeChalanPay::data');
+        $routes->get('advance-fee', 'FeeChalanPay::advanceFee');
+        $routes->post('advance-fee-save', 'FeeChalanPay::saveAdvanceBalances');
         $routes->get('add', 'FeeChalanPay::add');
         $routes->get('edit/(:num)', 'FeeChalanPay::edit/$1');
         $routes->post('get-students-list', 'FeeChalanPay::get_students_list');
@@ -493,6 +503,10 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->get('fee-chalan-balance', 'FeeChalanBalance::index');
         $routes->post('fee-chalan-balance/get-total-fee', 'FeeChalanBalance::getTotalfee');
         $routes->post('fee-chalan-balance/get-total-fee-by-month', 'FeeChalanBalance::getTotalfeebymonth');
+        $routes->get('fee-chalan-daily-collection', 'FeeChalanBalance::dailyCollection');
+        $routes->post('fee-chalan-daily-collection/data', 'FeeChalanBalance::getDailyCollection');
+        $routes->get('advance-fee', 'FeeChalanPay::advanceFee');
+        $routes->post('advance-fee/save', 'FeeChalanPay::saveAdvanceBalances');
     });
 
     $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
@@ -707,6 +721,11 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->post('timetable/get-subjects-timetable', 'Timetable::getSubjectsTimetable');
         $routes->post('timetable/update-slot', 'Timetable::updateSlot');
         $routes->post('timetable/bulk-update-slot-row', 'Timetable::bulkUpdateSlotRow');
+        $routes->get('timetable/generator', 'Timetable::generator');
+        $routes->get('timetable/generator-bootstrap', 'Timetable::generatorBootstrap');
+        $routes->post('timetable/save-generator-constraints', 'Timetable::saveGeneratorConstraints');
+        $routes->post('timetable/generate-from-constraints', 'Timetable::generateFromConstraints');
+        $routes->post('timetable/manual-place-from-pool', 'Timetable::manualPlaceFromPool');
         $routes->get('timetable/teachers', 'Timetable::viewTeacherTimetable');
         $routes->get('timetable/teacher', 'Timetable::getTeacherTimetable');
         $routes->get('timetable/time-table-add-new', 'Timetable::timeTableAddNew');
@@ -976,6 +995,8 @@ $routes->group('{locale}', ['filter' => 'locale'], function($routes) {
         $routes->post('profile-student/update-password', 'ProfileStudent::updatePassword');
         $routes->post('profile-student/student-fee-data', 'ProfileStudent::singleStudentFeedata');
         $routes->post('profile-student/student-attendance-data', 'ProfileStudent::singleStudentAttendancedata');
+        $routes->post('profile-student/student-health-data', 'ProfileStudent::studentHealthData');
+        $routes->post('profile-student/student-result-data', 'ProfileStudent::studentResultData');
     });
 
     $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {

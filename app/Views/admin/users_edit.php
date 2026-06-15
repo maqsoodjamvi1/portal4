@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = false; $uiNeedsSummernote = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -31,7 +32,7 @@ $experience = $info->experience ?? '';
 $skills = $info->skills ?? '';
 $contract_start = $info->contract_start ?? '';
 $contract_end = $info->contract_end ?? '';
-$salary = $emp_salary_info->salary ?? '';
+$salary = $info->basic_salary ?? '';
 $designation = $info->designation ?? '';
 $bank_name = $info->bank_name ?? '';
 $account_title = $info->account_title ?? '';
@@ -53,6 +54,7 @@ $selectedRoleDetails = $selectedRoleDetails ?? [];
 $currentUserLevel = $currentUserLevel ?? 999;
 $currentUserRoleName = $currentUserRoleName ?? 'Unknown';
 $canAssignMultipleRoles = $canAssignMultipleRoles ?? false;
+$requireOldPasswordForPasswordChange = $requireOldPasswordForPasswordChange ?? true;
 $levelNames = $levelNames ?? [
     1 => '🔹 Super Admin',
     2 => '🔸 Administrator',
@@ -76,32 +78,74 @@ ksort($rolesByLevel);
 ?>
 
 <style>
-    /* Tab styling */
+    /* Employee edit tabs */
     .nav-tabs-custom {
         margin-bottom: 20px;
         background: #fff;
-        border-radius: 4px;
-        box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        border: 1px solid #dbe4ee;
+        border-radius: 8px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
     }
     .nav-tabs-custom .nav-tabs {
-        border-bottom: 1px solid #ddd;
-        background: #f5f5f5;
-        border-radius: 4px 4px 0 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid #dbe4ee;
+        background: #f8fafc;
     }
-    .nav-tabs-custom .nav-tabs li a {
-        padding: 10px 15px;
-        color: #555;
-        border-radius: 0;
+    .nav-tabs-custom .nav-tabs .nav-item {
+        margin-bottom: 0;
     }
-    .nav-tabs-custom .nav-tabs li.active a {
-        border-top: 2px solid #3c8dbc;
-        color: #3c8dbc;
-        background: #fff;
+    .nav-tabs-custom .nav-tabs .nav-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0.5rem 0.78rem;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: #475569;
+        background: transparent;
+        font-size: 0.86rem;
+        font-weight: 700;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .nav-tabs-custom .nav-tabs .nav-link:hover,
+    .nav-tabs-custom .nav-tabs .nav-link:focus {
+        background: #eef4fa;
+        border-color: #c9d6e4;
+        color: #1f5f8b;
+        text-decoration: none;
+    }
+    .nav-tabs-custom .nav-tabs .nav-link.active {
+        background: #ffffff;
+        border-color: #3c8dbc;
+        color: #1f5f8b;
+        box-shadow: 0 4px 12px rgba(60, 141, 188, 0.14);
+    }
+    .nav-tabs-custom .nav-tabs .nav-link.active::before {
+        content: "";
+        width: 0.45rem;
+        height: 0.45rem;
+        margin-right: 0.45rem;
+        border-radius: 999px;
+        background: #3c8dbc;
     }
     .nav-tabs-custom .tab-content {
-        padding: 20px;
+        padding: 1.25rem;
         background: #fff;
-        border-radius: 0 0 4px 4px;
+    }
+    @media (max-width: 991.98px) {
+        .nav-tabs-custom .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     }
     
     /* Subject card styling */
@@ -117,11 +161,11 @@ ksort($rolesByLevel);
     }
     .subject-card.assigned {
         background: #e8f5e9;
-        border-left: 3px solid #4caf50;
+        border-start: 3px solid #4caf50;
     }
     .subject-card.assigned-to-other {
         background: #fff3e0;
-        border-left: 3px solid #ff9800;
+        border-start: 3px solid #ff9800;
     }
     .badge-assigned {
         background: #4caf50;
@@ -137,6 +181,28 @@ ksort($rolesByLevel);
         padding: 2px 6px;
         border-radius: 10px;
     }
+    .section-class-teacher-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        background: #eef6ff;
+        border: 1px solid #cfe2ff;
+        border-radius: 8px;
+    }
+    .section-class-teacher-row.assigned {
+        background: #e8f5e9;
+        border-color: #a5d6a7;
+    }
+    .section-class-teacher-row.assigned-to-other {
+        background: #fff3e0;
+        border-color: #ffcc80;
+    }
+    #assignmentSaveStatus.is-saving { color: #007bff; }
+    #assignmentSaveStatus.is-saved { color: #28a745; }
+    #assignmentSaveStatus.is-error { color: #dc3545; }
     
     /* Loading spinner */
     .loading-spinner {
@@ -156,7 +222,7 @@ ksort($rolesByLevel);
     .bg-success-light {
         background-color: #e8f5e9 !important;
     }
-    .custom-control-input:checked ~ .custom-control-label::before {
+    .form-check-input:checked ~ .form-check-label::before {
         background-color: #28a745;
         border-color: #28a745;
     }
@@ -188,9 +254,20 @@ ksort($rolesByLevel);
         border-radius: 4px;
     }
     .level-roles {
-        border-left: 2px dashed #dee2e6;
+        border-start: 2px dashed #dee2e6;
         margin-left: 15px;
         padding-left: 15px;
+    }
+    .availability-feedback {
+        display: block;
+        min-height: 18px;
+        margin-top: 4px;
+        font-size: 12px;
+    }
+    .availability-feedback.text-success,
+    .availability-feedback.text-danger,
+    .availability-feedback.text-muted {
+        font-weight: 600;
     }
 
 
@@ -208,33 +285,26 @@ ksort($rolesByLevel);
 }
 .class-card.assigned {
     background: #e8f5e9;
-    border-left: 3px solid #4caf50;
+    border-start: 3px solid #4caf50;
 }
 .class-card.assigned-to-other {
     background: #fff3e0;
-    border-left: 3px solid #ff9800;
+    border-start: 3px solid #ff9800;
 }
 .class-info {
     flex: 1;
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><?= esc($header) ?></h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/users') ?>">Employees</a></li>
-                    <li class="breadcrumb-item active"><?= esc($header) ?></li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-user-edit',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Employees', 'url' => base_url('admin/users')],
+        ['label' => $header, 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -281,21 +351,21 @@ ksort($rolesByLevel);
                 <div class="card-body">
                     <ul class="list-group list-group-unbordered mb-3">
                         <li class="list-group-item">
-                            <b>Username</b> <span class="float-right"><?= esc($username) ?></span>
+                            <b>Username</b> <span class="float-end"><?= esc($username) ?></span>
                         </li>
                         <li class="list-group-item">
-                            <b>Email</b> <span class="float-right"><?= esc($email) ?></span>
+                            <b>Email</b> <span class="float-end"><?= esc($email) ?></span>
                         </li>
                         <li class="list-group-item">
-                            <b>Mobile</b> <span class="float-right"><?= esc($mobile_no) ?></span>
+                            <b>Mobile</b> <span class="float-end"><?= esc($mobile_no) ?></span>
                         </li>
                         <li class="list-group-item">
                             <b>Status</b>
-                            <span class="float-right">
+                            <span class="float-end">
                                 <?php if ($status == 1): ?>
-                                    <span class="badge badge-success">Active</span>
+                                    <span class="badge text-bg-success">Active</span>
                                 <?php else: ?>
-                                    <span class="badge badge-danger">Inactive</span>
+                                    <span class="badge text-bg-danger">Inactive</span>
                                 <?php endif; ?>
                             </span>
                         </li>
@@ -305,22 +375,34 @@ ksort($rolesByLevel);
         </div>
         
         <div class="col-md-9">
-            <?= form_open_multipart(base_url('admin/users/save'), ['id' => 'user-edit-form', 'autocomplete' => 'off']) ?>
+            <?= form_open_multipart(base_url('admin/users/save'), ['id' => 'user-edit-form', 'class' => 'needs-validation', 'novalidate' => 'novalidate', 'autocomplete' => 'off']) ?>
             <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= esc($id) ?>">
             <input type="hidden" id="originalusername" value="<?= esc($username) ?>">
             <input type="hidden" id="originalemail" value="<?= esc($email) ?>">
             
             <div class="nav-tabs-custom">
-                <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab_basic" data-toggle="tab">Basic Info</a></li>
-                    <li><a href="#tab_contact" data-toggle="tab">Contact & Bank</a></li>
-                    <li><a href="#tab_employment" data-toggle="tab">Employment</a></li>
-                    <li><a href="#tab_roles" data-toggle="tab">Roles & Permissions</a></li>
-                    <li><a href="#tab_subjects" data-toggle="tab">Subject Assignments</a></li>
-                    <?php if (!empty($availableClasses)): ?>
-                    <li><a href="#tab_classes" data-toggle="tab">Class Teacher</a></li>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" href="#tab_basic" data-bs-toggle="tab" role="tab" aria-controls="tab_basic" aria-selected="true">Basic Info</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab_contact" data-bs-toggle="tab" role="tab" aria-controls="tab_contact" aria-selected="false">Contact &amp; Bank</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab_employment" data-bs-toggle="tab" role="tab" aria-controls="tab_employment" aria-selected="false">Employment</a>
+                    </li>
+                    <?php if (!empty($id)): ?>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab_password" data-bs-toggle="tab" role="tab" aria-controls="tab_password" aria-selected="false">Password</a>
+                    </li>
                     <?php endif; ?>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab_roles" data-bs-toggle="tab" role="tab" aria-controls="tab_roles" aria-selected="false">Roles &amp; Permissions</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab_subjects" data-bs-toggle="tab" role="tab" aria-controls="tab_subjects" aria-selected="false">Subject &amp; Class Assignments</a>
+                    </li>
                 </ul>
                 
                 <div class="tab-content">
@@ -343,14 +425,31 @@ ksort($rolesByLevel);
                                 <div class="form-group">
                                     <label>Username <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="username" id="username" value="<?= esc($username) ?>" required>
+                                    <small id="usernameAvailability" class="availability-feedback text-muted"></small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" name="email" id="email" value="<?= esc($email) ?>" required>
+                                    <small id="emailAvailability" class="availability-feedback text-muted"></small>
                                 </div>
                             </div>
+                            <?php if (empty($id)): ?>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" name="password" id="password" minlength="6" autocomplete="new-password" required>
+                                    <small class="text-muted">Minimum 6 characters</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Confirm Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" name="confirm_password" id="confirm_password" minlength="6" autocomplete="new-password" required>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Designation</label>
@@ -392,6 +491,7 @@ ksort($rolesByLevel);
                                         <option value="">Select</option>
                                         <option value="single" <?= $marital_status == 'single' ? 'selected' : '' ?>>Single</option>
                                         <option value="married" <?= $marital_status == 'married' ? 'selected' : '' ?>>Married</option>
+                                        <option value="divorced" <?= $marital_status == 'divorced' ? 'selected' : '' ?>>Divorced</option>
                                     </select>
                                 </div>
                             </div>
@@ -537,6 +637,45 @@ ksort($rolesByLevel);
                         </div>
                     </div>
                     
+                    <!-- TAB 4: Password -->
+                    <?php if (!empty($id)): ?>
+                    <div class="tab-pane" id="tab_password">
+                            <?php if ($requireOldPasswordForPasswordChange): ?>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-shield-alt"></i>
+                                    For your role, current password is required to change password.
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-user-shield"></i>
+                                    You can update this employee password without old password.
+                                </div>
+                            <?php endif; ?>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Your Current Password <?= $requireOldPasswordForPasswordChange ? '<span class="text-danger">*</span>' : '(Optional)' ?></label>
+                                        <input type="password" class="form-control" name="current_password" id="current_password" autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <div class="col-md-6"></div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <input type="password" class="form-control" name="new_password" id="new_password" minlength="6" autocomplete="new-password">
+                                        <small class="text-muted">Minimum 6 characters</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" class="form-control" name="confirm_new_password" id="confirm_new_password" minlength="6" autocomplete="new-password">
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <!-- TAB 4: Role Selection -->
                     <div class="tab-pane" id="tab_roles">
                         <?php if (!empty($assignableRoles)): ?>
@@ -558,7 +697,7 @@ ksort($rolesByLevel);
                                             <h6 class="level-header">
                                                 <?= $levelName ?>
                                                 <?php if (!$isAssignable): ?>
-                                                    <span class="badge badge-danger float-right">Cannot Assign</span>
+                                                    <span class="badge text-bg-danger float-end">Cannot Assign</span>
                                                 <?php endif; ?>
                                             </h6>
                                             <div class="level-roles">
@@ -574,15 +713,15 @@ ksort($rolesByLevel);
                                                                class="role-checkbox"
                                                                <?= $isSelected ? 'checked' : '' ?>
                                                                <?= !$isAssignable ? 'disabled' : '' ?>>
-                                                        <label for="role_<?= $role->id ?>" class="mb-0 ml-2">
+                                                        <label for="role_<?= $role->id ?>" class="mb-0 ms-2">
                                                             <?= esc($role->rolename) ?>
                                                             <?php if ($role->issys == 1): ?>
-                                                                <span class="badge badge-warning ml-1">System</span>
+                                                                <span class="badge text-bg-warning ms-1">System</span>
                                                             <?php endif; ?>
                                                         </label>
                                                     </div>
                                                     <?php if (!empty($role->detail)): ?>
-                                                        <small class="text-muted ml-4 d-block"><?= esc($role->detail) ?></small>
+                                                        <small class="text-muted ms-4 d-block"><?= esc($role->detail) ?></small>
                                                     <?php endif; ?>
                                                 </div>
                                                 <?php endforeach; ?>
@@ -601,7 +740,7 @@ ksort($rolesByLevel);
                                                 <?php if (!empty($selectedRoleIds)): ?>
                                                     <?php foreach ($selectedRoleIds as $rid): ?>
                                                         <?php if (isset($selectedRoleDetails[$rid])): ?>
-                                                            <span class="badge badge-primary m-1 p-2">
+                                                            <span class="badge text-bg-primary m-1 p-2">
                                                                 <?= esc($selectedRoleDetails[$rid]['name']) ?>
                                                             </span>
                                                         <?php endif; ?>
@@ -619,62 +758,38 @@ ksort($rolesByLevel);
                         <?php endif; ?>
                     </div>
                     
-                    <!-- TAB 5: Subject Assignments -->
+                    <!-- TAB 5: Subject & Class Teacher Assignments -->
                     <div class="tab-pane" id="tab_subjects">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Subject Assignment:</strong> Toggle the switch to assign/unassign subjects.
-                            <span class="badge badge-success">Green border</span> = Currently assigned to this teacher,
-                            <span class="badge badge-warning">Orange border</span> = Assigned to another teacher
+                        <div class="alert alert-info mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            Toggle switches to assign subjects or class teacher. Changes save automatically — no Save button needed on this tab.
+                            <span class="badge text-bg-success">Green</span> = assigned to this teacher,
+                            <span class="badge text-bg-warning">Orange</span> = assigned to someone else.
                         </div>
                         
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" id="subjectSearch" class="form-control" placeholder="Search subjects...">
-                                <div class="input-group-append">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                </div>
+                                <input type="text" id="subjectSearch" class="form-control" placeholder="Search class, section, or subject...">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
                             </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <small id="assignmentSaveStatus" class="text-muted"></small>
                         </div>
                         
                         <div id="subjectsList" class="row" data-teacher-id="<?= $id ?>">
                             <div class="col-12 text-center">
-                                <div class="loading-spinner"></div> Loading subjects...
+                                <div class="loading-spinner"></div> Loading assignments...
                             </div>
                         </div>
                     </div>
-                  <!-- TAB 6: Class Teacher Assignments with Toggle Buttons -->
-<?php if (!empty($availableClasses)): ?>
-<div class="tab-pane" id="tab_classes">
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> 
-        <strong>Class Teacher Assignment:</strong> Toggle the switch to assign/unassign as class teacher.
-        <span class="badge badge-success">Green border</span> = Currently assigned to this teacher,
-        <span class="badge badge-warning">Orange border</span> = Assigned to another teacher
-    </div>
-    
-    <div class="form-group">
-        <div class="input-group">
-            <div class="input-group-prepend">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-            </div>
-            <input type="text" id="classSearch" class="form-control" placeholder="Search classes by name or section...">
-        </div>
-    </div>
-    
-    <div id="classesList" class="row" data-teacher-id="<?= $id ?>">
-        <div class="col-12 text-center">
-            <div class="loading-spinner"></div> Loading classes...
-        </div>
-    </div>
-</div>
-<?php endif; ?>
             
-            <div class="form-group text-right">
+            <div class="form-group text-end">
                 <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
                     <i class="fas fa-save"></i> Save Employee
                 </button>
-                <a href="<?= base_url('admin/users') ?>" class="btn btn-default btn-lg">
+                <a href="<?= base_url('admin/users') ?>" class="btn btn-secondary btn-lg">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>
@@ -686,132 +801,114 @@ ksort($rolesByLevel);
 
 <script>
 $(document).ready(function() {
+    const requireOldPasswordForPasswordChange = <?= $requireOldPasswordForPasswordChange ? 'true' : 'false' ?>;
+    const availabilityUrl = '<?= base_url('admin/users/check-availability') ?>';
+    const availabilityState = {
+        username: null,
+        email: null
+    };
+    const availabilityTimers = {};
 
-
-    // Load classes via AJAX for class teacher assignment
-function loadClasses() {
-    var teacherId = $('#classesList').data('teacher-id');
-    if (!teacherId) {
-        $('#classesList').html('<div class="col-12 text-center text-muted">No teacher selected</div>');
-        return;
+    function setAvailabilityStatus(field, statusClass, message) {
+        $('#' + field + 'Availability')
+            .removeClass('text-muted text-success text-danger')
+            .addClass(statusClass)
+            .text(message);
     }
-    
-    $.ajax({
-        url: '<?= base_url("admin/users/get-teacher-classes/") ?>' + teacherId,
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            displayClasses(response);
-        },
-        error: function() {
-            $('#classesList').html('<div class="col-12 text-center text-danger">Error loading classes</div>');
-        }
-    });
-}
 
-function displayClasses(classes) {
-    if (!classes.length) {
-        $('#classesList').html('<div class="col-12 text-center text-muted">No classes available</div>');
-        return;
-    }
-    
-    var html = '<div class="col-12">';
-    html += '<div class="row">';
-    
-    classes.forEach(function(classItem) {
-        var cardClass = 'class-card';
-        if (classItem.is_selected) {
-            cardClass += ' assigned';
-        } else if (classItem.assigned_teacher_id && classItem.assigned_teacher_id != $('#classesList').data('teacher-id')) {
-            cardClass += ' assigned-to-other';
+    function checkAvailability(field) {
+        const input = $('#' + field);
+        const value = $.trim(input.val());
+
+        availabilityState[field] = null;
+
+        if (!value) {
+            setAvailabilityStatus(field, 'text-muted', '');
+            return;
         }
-        
-        html += '<div class="col-md-6">';
-        html += '<div class="' + cardClass + '" data-cls-sec-id="' + classItem.cls_sec_id + '">';
-        html += '<div class="d-flex justify-content-between align-items-center">';
-        html += '<div class="class-info">';
-        html += '<strong><i class="fas fa-chalkboard-teacher"></i> ' + escapeHtml(classItem.class_name) + '</strong>';
-        html += '<br><small class="text-muted">Section: ' + escapeHtml(classItem.section_name) + '</small>';
-        if (classItem.is_selected) {
-            html += ' <span class="badge-assigned"><i class="fas fa-check"></i> Current Class Teacher</span>';
-        } else if (classItem.assigned_teacher_name) {
-            html += ' <span class="badge-other"><i class="fas fa-user"></i> ' + escapeHtml(classItem.assigned_teacher_name) + '</span>';
-        }
-        html += '</div>';
-        html += '<div class="custom-control custom-switch">';
-        html += '<input type="checkbox" class="custom-control-input class-toggle" id="class_' + classItem.cls_sec_id + '"';
-        html += classItem.is_selected ? ' checked' : '';
-        html += ' data-cls-sec-id="' + classItem.cls_sec_id + '">';
-        html += '<label class="custom-control-label" for="class_' + classItem.cls_sec_id + '"></label>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-    });
-    
-    html += '</div>';
-    html += '</div>';
-    
-    $('#classesList').html(html);
-    
-    // Bind toggle events for class teacher
-    $('.class-toggle').on('change', function() {
-        var $toggle = $(this);
-        var clsSecId = $toggle.data('cls-sec-id');
-        var teacherId = $('#classesList').data('teacher-id');
-        var isChecked = $toggle.is(':checked');
-        var action = isChecked ? 'assign' : 'unassign';
-        
-        $toggle.prop('disabled', true);
-        var $card = $toggle.closest('.class-card');
-        $card.css('opacity', '0.6');
-        
+
+        setAvailabilityStatus(field, 'text-muted', 'Checking...');
+
         $.ajax({
-            url: '<?= base_url("admin/users/assign-class-teacher") ?>',
-            type: 'POST',
+            url: availabilityUrl,
+            type: 'GET',
+            dataType: 'json',
             data: {
-                teacher_id: teacherId,
-                cls_sec_id: clsSecId,
-                action: action,
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                field: field,
+                value: value,
+                id: $('input[name="id"]').val()
             },
+            success: function(response) {
+                availabilityState[field] = !!(response && response.available);
+                setAvailabilityStatus(
+                    field,
+                    availabilityState[field] ? 'text-success' : 'text-danger',
+                    response && response.msg ? response.msg : ''
+                );
+            },
+            error: function() {
+                availabilityState[field] = null;
+                setAvailabilityStatus(field, 'text-danger', 'Could not check availability');
+            }
+        });
+    }
+
+    $('#username, #email').on('input blur', function() {
+        const field = this.id;
+        clearTimeout(availabilityTimers[field]);
+        availabilityTimers[field] = setTimeout(function() {
+            checkAvailability(field);
+        }, 350);
+    });
+
+
+    function getCsrfData() {
+        var tokenName = '<?= csrf_token() ?>';
+        var data = {};
+        data[tokenName] = $('input[name="' + tokenName + '"]').val() || '';
+        return data;
+    }
+
+    function setAssignmentSaveStatus(state, message) {
+        var $el = $('#assignmentSaveStatus');
+        $el.removeClass('is-saving is-saved is-error');
+        if (state) {
+            $el.addClass('is-' + state);
+        }
+        $el.text(message || '');
+    }
+
+    function postAssignment(url, payload, onSuccess, onFail) {
+        var data = $.extend({}, payload, getCsrfData());
+        setAssignmentSaveStatus('saving', 'Saving...');
+        return $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
             dataType: 'json',
             success: function(response) {
-                if (response.success) {
-                    toastr.success(isChecked ? 'Class Teacher assigned successfully' : 'Class Teacher unassigned successfully');
-                    // Reload classes to update status
-                    loadClasses();
+                if (response && response.success) {
+                    setAssignmentSaveStatus('saved', 'Saved');
+                    if (typeof onSuccess === 'function') {
+                        onSuccess(response);
+                    }
                 } else {
-                    toastr.error(response.msg || 'Operation failed');
-                    $toggle.prop('checked', !isChecked);
+                    setAssignmentSaveStatus('error', 'Save failed');
+                    toastr.error((response && response.msg) ? response.msg : 'Operation failed');
+                    if (typeof onFail === 'function') {
+                        onFail(response);
+                    }
                 }
             },
             error: function() {
+                setAssignmentSaveStatus('error', 'Save failed');
                 toastr.error('Error processing request');
-                $toggle.prop('checked', !isChecked);
-            },
-            complete: function() {
-                $toggle.prop('disabled', false);
-                $card.css('opacity', '1');
+                if (typeof onFail === 'function') {
+                    onFail();
+                }
             }
         });
-    });
-}
-
-// Search filter for classes
-$('#classSearch').on('keyup', function() {
-    var searchTerm = $(this).val().toLowerCase();
-    $('.class-card').each(function() {
-        var text = $(this).text().toLowerCase();
-        $(this).toggle(text.indexOf(searchTerm) > -1);
-    });
-});
-
-// Load classes on page load
-if ($('#classesList').length && $('#classesList').data('teacher-id')) {
-    loadClasses();
-}
-
+    }
 
     // Initialize select2
     $('.select2').select2({ width: '100%' });
@@ -860,34 +957,73 @@ if ($('#classesList').length && $('#classesList').data('teacher-id')) {
             $('#subjectsList').html('<div class="col-12 text-center text-muted">No subjects available</div>');
             return;
         }
-        
-        // Group by class
+
+        var teacherId = parseInt($('#subjectsList').data('teacher-id'), 10);
         var grouped = {};
+
         subjects.forEach(function(subject) {
-            var classKey = subject.class_name + ' - ' + subject.section_name;
-            if (!grouped[classKey]) grouped[classKey] = [];
-            grouped[classKey].push(subject);
+            var key = String(subject.cls_sec_id);
+            if (!grouped[key]) {
+                grouped[key] = {
+                    cls_sec_id: subject.cls_sec_id,
+                    class_name: subject.class_name,
+                    section_name: subject.section_name,
+                    is_class_teacher: !!subject.is_class_teacher,
+                    section_class_teacher_id: parseInt(subject.section_class_teacher_id || 0, 10),
+                    section_class_teacher_name: subject.section_class_teacher_name || '',
+                    subjects: []
+                };
+            }
+            grouped[key].subjects.push(subject);
         });
-        
+
         var html = '';
-        for (var className in grouped) {
-            html += '<div class="col-12 mb-3">';
+        Object.keys(grouped).forEach(function(sectionKey) {
+            var section = grouped[sectionKey];
+            var sectionLabel = escapeHtml(section.class_name) + ' - ' + escapeHtml(section.section_name);
+            var sectionSearchText = (section.class_name + ' ' + section.section_name).toLowerCase();
+
+            var classTeacherRowClass = 'section-class-teacher-row';
+            if (section.is_class_teacher) {
+                classTeacherRowClass += ' assigned';
+            } else if (section.section_class_teacher_id && section.section_class_teacher_id !== teacherId) {
+                classTeacherRowClass += ' assigned-to-other';
+            }
+
+            html += '<div class="col-12 mb-3 assignment-section-group" data-section-search="' + escapeAttr(sectionSearchText) + '">';
             html += '<div class="card">';
             html += '<div class="card-header bg-light">';
-            html += '<strong><i class="fas fa-chalkboard"></i> ' + className + '</strong>';
-            html += '<span class="badge badge-info float-right">' + grouped[className].length + ' subjects</span>';
+            html += '<strong><i class="fas fa-chalkboard"></i> ' + sectionLabel + '</strong>';
+            html += '<span class="badge text-bg-info float-end">' + section.subjects.length + ' subjects</span>';
             html += '</div>';
             html += '<div class="card-body p-2">';
+
+            html += '<div class="' + classTeacherRowClass + '">';
+            html += '<div>';
+            html += '<strong><i class="fas fa-user-tie"></i> Class Teacher</strong>';
+            if (section.is_class_teacher) {
+                html += ' <span class="badge-assigned"><i class="fas fa-check"></i> This teacher</span>';
+            } else if (section.section_class_teacher_name) {
+                html += ' <span class="badge-other"><i class="fas fa-user"></i> ' + escapeHtml(section.section_class_teacher_name) + '</span>';
+            }
+            html += '</div>';
+            html += '<div class="form-check form-switch">';
+            html += '<input type="checkbox" class="form-check-input class-teacher-toggle" id="class_teacher_' + section.cls_sec_id + '"';
+            html += section.is_class_teacher ? ' checked' : '';
+            html += ' data-cls-sec-id="' + section.cls_sec_id + '">';
+            html += '<label class="form-check-label" for="class_teacher_' + section.cls_sec_id + '"></label>';
+            html += '</div>';
+            html += '</div>';
+
             html += '<div class="row">';
-            
-            grouped[className].forEach(function(subject) {
+            section.subjects.forEach(function(subject) {
                 var cardClass = 'subject-card';
                 if (subject.is_selected) {
                     cardClass += ' assigned';
-                } else if (subject.assigned_teacher_id && subject.assigned_teacher_id != $('#subjectsList').data('teacher-id')) {
+                } else if (subject.assigned_teacher_id && subject.assigned_teacher_id !== teacherId) {
                     cardClass += ' assigned-to-other';
                 }
-                
+
                 html += '<div class="col-md-6">';
                 html += '<div class="' + cardClass + '" data-sec-sub-id="' + subject.sec_sub_id + '">';
                 html += '<div class="d-flex justify-content-between align-items-center">';
@@ -899,66 +1035,87 @@ if ($('#classesList').length && $('#classesList').data('teacher-id')) {
                     html += ' <span class="badge-other"><i class="fas fa-user"></i> ' + escapeHtml(subject.assigned_teacher_name) + '</span>';
                 }
                 html += '</div>';
-                html += '<div class="custom-control custom-switch">';
-                html += '<input type="checkbox" class="custom-control-input subject-toggle" id="subj_' + subject.sec_sub_id + '"';
+                html += '<div class="form-check form-switch">';
+                html += '<input type="checkbox" class="form-check-input subject-toggle" id="subj_' + subject.sec_sub_id + '"';
                 html += subject.is_selected ? ' checked' : '';
                 html += ' data-sec-sub-id="' + subject.sec_sub_id + '">';
-                html += '<label class="custom-control-label" for="subj_' + subject.sec_sub_id + '"></label>';
+                html += '<label class="form-check-label" for="subj_' + subject.sec_sub_id + '"></label>';
                 html += '</div>';
                 html += '</div>';
                 html += '</div>';
                 html += '</div>';
             });
-            
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-        }
-        
+            html += '</div></div></div></div>';
+        });
+
         $('#subjectsList').html(html);
-        
-        // Bind toggle events
+
         $('.subject-toggle').on('change', function() {
             var $toggle = $(this);
             var secSubId = $toggle.data('sec-sub-id');
-            var teacherId = $('#subjectsList').data('teacher-id');
             var isChecked = $toggle.is(':checked');
             var action = isChecked ? 'assign' : 'unassign';
-            
+
             $toggle.prop('disabled', true);
             var $card = $toggle.closest('.subject-card');
             $card.css('opacity', '0.6');
-            
-            $.ajax({
-                url: '<?= base_url("admin/users/assign-subject") ?>',
-                type: 'POST',
-                data: {
+
+            postAssignment(
+                '<?= base_url("admin/users/assign-subject") ?>',
+                {
                     teacher_id: teacherId,
                     sec_sub_id: secSubId,
-                    action: action,
-                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                    action: action
                 },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success(isChecked ? 'Subject assigned successfully' : 'Subject unassigned successfully');
-                        loadSubjects();
-                    } else {
-                        toastr.error(response.msg || 'Operation failed');
-                        $toggle.prop('checked', !isChecked);
-                    }
+                function() {
+                    loadSubjects();
                 },
-                error: function() {
-                    toastr.error('Error processing request');
+                function() {
                     $toggle.prop('checked', !isChecked);
-                },
-                complete: function() {
-                    $toggle.prop('disabled', false);
-                    $card.css('opacity', '1');
                 }
+            ).always(function() {
+                $toggle.prop('disabled', false);
+                $card.css('opacity', '1');
             });
         });
+
+        $('.class-teacher-toggle').on('change', function() {
+            var $toggle = $(this);
+            var clsSecId = $toggle.data('cls-sec-id');
+            var isChecked = $toggle.is(':checked');
+            var action = isChecked ? 'assign' : 'unassign';
+
+            $toggle.prop('disabled', true);
+            var $row = $toggle.closest('.section-class-teacher-row');
+            $row.css('opacity', '0.6');
+
+            postAssignment(
+                '<?= base_url("admin/users/assign-class-teacher") ?>',
+                {
+                    teacher_id: teacherId,
+                    cls_sec_id: clsSecId,
+                    action: action
+                },
+                function() {
+                    loadSubjects();
+                },
+                function() {
+                    $toggle.prop('checked', !isChecked);
+                }
+            ).always(function() {
+                $toggle.prop('disabled', false);
+                $row.css('opacity', '1');
+            });
+        });
+    }
+
+    function escapeAttr(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
     
     function escapeHtml(text) {
@@ -971,23 +1128,24 @@ if ($('#classesList').length && $('#classesList').data('teacher-id')) {
             .replace(/'/g, '&#39;');
     }
     
-    // Search filter for subjects
+    // Search filter for sections and subjects
     $('#subjectSearch').on('keyup', function() {
         var searchTerm = $(this).val().toLowerCase();
-        $('.subject-card').each(function() {
-            var text = $(this).text().toLowerCase();
-            $(this).closest('.col-md-6').toggle(text.indexOf(searchTerm) > -1);
+        $('.assignment-section-group').each(function() {
+            var $group = $(this);
+            var sectionMatch = (($group.attr('data-section-search') || '').indexOf(searchTerm) !== -1);
+            var anySubject = false;
+
+            $group.find('.subject-card').each(function() {
+                var subjectMatch = ($(this).text().toLowerCase().indexOf(searchTerm) !== -1);
+                $(this).closest('.col-md-6').toggle(subjectMatch || sectionMatch);
+                if (subjectMatch) {
+                    anySubject = true;
+                }
+            });
+
+            $group.toggle(sectionMatch || anySubject);
         });
-    });
-    
-    // Update selected classes display
-    $('input[name="class_teachers[]"]').on('change', function() {
-        var selected = [];
-        $('input[name="class_teachers[]"]:checked').each(function() {
-            var label = $(this).next('label').text();
-            selected.push('<span class="badge badge-warning m-1 p-2">' + label + '</span>');
-        });
-        $('#selectedClassesList').html(selected.length ? selected.join('') : '<span class="text-muted">No classes selected</span>');
     });
     
     // Update selected roles display
@@ -995,7 +1153,7 @@ if ($('#classesList').length && $('#classesList').data('teacher-id')) {
         var selected = [];
         $('.role-checkbox:checked').each(function() {
             var label = $(this).next('label').text();
-            selected.push('<span class="badge badge-primary m-1 p-2">' + label + '</span>');
+            selected.push('<span class="badge text-bg-primary m-1 p-2">' + label + '</span>');
         });
         $('#selectedRolesList').html(selected.length ? selected.join('') : '<span class="text-muted">No roles selected</span>');
         
@@ -1027,6 +1185,54 @@ if ($('#classesList').length && $('#classesList').data('teacher-id')) {
         if (!$('input[name="email"]').val()) {
             toastr.error('Email is required');
             return false;
+        }
+        if (availabilityState.username === false) {
+            toastr.error('Username is already taken');
+            $('#username').focus();
+            return false;
+        }
+        if (availabilityState.email === false) {
+            toastr.error('Email is already taken or invalid');
+            $('#email').focus();
+            return false;
+        }
+        
+        var userId = $('input[name="id"]').val();
+        if (!userId && $('.role-checkbox:checked').length === 0) {
+            toastr.error('Please select at least one role before saving employee');
+            $('a[href="#tab_roles"]').tab('show');
+            return false;
+        }
+
+        if (!userId) {
+            var password = $('#password').val();
+            var confirmPassword = $('#confirm_password').val();
+            if (!password || password.length < 6) {
+                toastr.error('Password is required and must be at least 6 characters');
+                return false;
+            }
+            if (password !== confirmPassword) {
+                toastr.error('Password and confirm password do not match');
+                return false;
+            }
+        } else {
+            var newPassword = $('#new_password').val();
+            var confirmNewPassword = $('#confirm_new_password').val();
+            var currentPassword = $('#current_password').val();
+            if (newPassword || confirmNewPassword) {
+                if (requireOldPasswordForPasswordChange && !currentPassword) {
+                    toastr.error('Current password is required to change password');
+                    return false;
+                }
+                if (newPassword.length < 6) {
+                    toastr.error('New password must be at least 6 characters');
+                    return false;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    toastr.error('New password and confirm password do not match');
+                    return false;
+                }
+            }
         }
         
         var formData = new FormData(this);

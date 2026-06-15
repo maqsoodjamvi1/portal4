@@ -26,7 +26,7 @@
     </div>
 
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <!-- Class -->
         <div class="form-group col-md-4">
           <label for="class_id">Class</label>
@@ -59,59 +59,59 @@
 
       <div class="d-flex justify-content-between align-items-center mt-2">
         <!-- Column Visibility Toggles -->
-        <div class="form-inline">
-          <label class="mr-2 mb-0"><strong>Show / Hide Columns:</strong></label>
+        <div class="d-flex flex-wrap align-items-center">
+          <label class="me-2 mb-0"><strong>Show / Hide Columns:</strong></label>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_en" data-col-class="col-meaning-en" checked>
             <label class="form-check-label" for="toggle_en">Meaning (EN)</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_ur" data-col-class="col-meaning-ur" checked>
             <label class="form-check-label" for="toggle_ur">Meaning (UR)</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_pos" data-col-class="col-pos" checked>
             <label class="form-check-label" for="toggle_pos">Part of Speech</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_example" data-col-class="col-example" checked>
             <label class="form-check-label" for="toggle_example">Example Sentence</label>
           </div>
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-syllables" checked>
   <label class="form-check-label">Syllables</label>
 </div>
 
-<div class="form-check mr-2">
+<div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-synonyms" checked>
   <label class="form-check-label">Synonyms</label>
 </div>
 
-<div class="form-check mr-2">
+<div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-antonyms" checked>
   <label class="form-check-label">Antonyms</label>
 </div>
 
-<div class="form-check mr-2">
+<div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-related" checked>
   <label class="form-check-label">Related Words</label>
 </div>
 
-<div class="form-check mr-2">
+<div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-confusing" checked>
   <label class="form-check-label">Confusing Pair</label>
 </div>
 
-<div class="form-check mr-2">
+<div class="form-check me-2">
   <input class="form-check-input column-toggle" type="checkbox"
          data-col-class="col-confusing-diff" checked>
   <label class="form-check-label">Difference</label>
@@ -155,7 +155,7 @@
 
             <!-- Export / Print Buttons (NO PRINT themselves) -->
             <div class="no-print">
-              <button type="button" id="btnPrint" class="btn btn-default btn-sm">
+              <button type="button" id="btnPrint" class="btn btn-secondary btn-sm">
                 <i class="fa fa-print"></i> Print
               </button>
               <button type="button" id="btnPdf" class="btn btn-danger btn-sm">
@@ -186,7 +186,7 @@
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-bordered table-striped table-sm mb-0" id="vocabReportTable">
-          <thead class="thead-light">
+          <thead class="table-light">
 <tr>
   <th style="width:60px;">#</th>
   <th style="width:160px;">Word</th>

@@ -23,7 +23,7 @@
 
         <!-- ================= Class / Subject / Topic ================= -->
   <!-- ================= Class / Subject / Topic ================= -->
-<div class="form-row">
+<div class="row">
 
   <!-- Class -->
   <div class="form-group col-md-4">
@@ -51,14 +51,12 @@
       <select name="topic_id" id="topic_id" class="form-control" required>
         <option value="">-- Select Topic --</option>
       </select>
-      <div class="input-group-append">
-        <button type="button"
+      <button type="button"
                 class="btn btn-secondary"
-                data-toggle="modal"
-                data-target="#topicModal">
+                data-bs-toggle="modal"
+                data-bs-target="#topicModal">
           +
         </button>
-      </div>
     </div>
   </div>
 
@@ -203,7 +201,7 @@
         <div id="questionList"></div>
 
       </div>
-      <div class="card-footer text-right">
+      <div class="card-footer text-end">
         <button type="submit" class="btn btn-success">Save All Questions</button>
       </div>
     </form>
@@ -219,7 +217,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Add Topic</h5>
-          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
         </div>
         <div class="modal-body">
 
@@ -235,7 +233,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary">Save Topic</button>
         </div>
       </div>
@@ -326,12 +324,12 @@
 }
 
 /* colored left borders like your screenshot */
-.qb-summary-border-total  { border-left: 4px solid #28a745; }
-.qb-summary-border-mcq    { border-left: 4px solid #17a2b8; }
-.qb-summary-border-fill   { border-left: 4px solid #20c997; }
-.qb-summary-border-short  { border-left: 4px solid #ffc107; }
-.qb-summary-border-drag   { border-left: 4px solid #6f42c1; }
-.qb-summary-border-normal { border-left: 4px solid #dc3545; }
+.qb-summary-border-total  { border-start: 4px solid #28a745; }
+.qb-summary-border-mcq    { border-start: 4px solid #17a2b8; }
+.qb-summary-border-fill   { border-start: 4px solid #20c997; }
+.qb-summary-border-short  { border-start: 4px solid #ffc107; }
+.qb-summary-border-drag   { border-start: 4px solid #6f42c1; }
+.qb-summary-border-normal { border-start: 4px solid #dc3545; }
 
 /* nicer header bar */
 #qbSummaryBox .card-header {
@@ -370,9 +368,9 @@
           <option value="match">Match</option>
         </select>
 
-        <button type="button" class="btn btn-light btn-sm ml-2 btn-move-up">↑</button>
+        <button type="button" class="btn btn-light btn-sm ms-2 btn-move-up">↑</button>
         <button type="button" class="btn btn-light btn-sm btn-move-down">↓</button>
-        <button type="button" class="btn btn-danger btn-sm ml-2 btn-remove">×</button>
+        <button type="button" class="btn btn-danger btn-sm ms-2 btn-remove">×</button>
       </div>
     </div>
 
@@ -393,7 +391,7 @@
 
       <!-- ================= MCQ / MCQ_MULTI ================= -->
      <div class="q-block q-mcq q-mcq_multi">
-  <div class="form-row">
+  <div class="row">
     <div class="form-group col-md-6">
       <label>A</label>
       <input type="text"
@@ -612,7 +610,7 @@ $('#topicModal').on('show.bs.modal', function () {
   /* === Block builder === */
   function addMatchRow(container, i, rowIdx, leftVal = '', rightVal = '') {
     const row = document.createElement('div');
-    row.className = 'form-row mb-1';
+    row.className = 'row mb-1';
     row.innerHTML = `
       <div class="col">
         <input type="text"
@@ -699,13 +697,13 @@ if (initialType === 'match') {
   const infoDiv = card.querySelector('.card-header');
   if (infoDiv) {
     dragToggle = document.createElement('div');
-    dragToggle.className = 'is-drag-toggle d-inline-block ml-2';
+    dragToggle.className = 'is-drag-toggle d-inline-block ms-2';
     dragToggle.innerHTML = `
       <label class="switch">
         <input type="checkbox" name="questions[${i}][is_drag]" value="1" checked>
         <span class="slider round"></span>
       </label>
-      <small class="ml-1">Draggable</small>
+      <small class="ms-1">Draggable</small>
     `;
     infoDiv.appendChild(dragToggle);
   }
@@ -732,13 +730,13 @@ t.onchange = () => {
     if (!dragToggle) {
       const infoDiv = card.querySelector('.card-header');
       dragToggle = document.createElement('div');
-      dragToggle.className = 'is-drag-toggle d-inline-block ml-2';
+      dragToggle.className = 'is-drag-toggle d-inline-block ms-2';
       dragToggle.innerHTML = `
         <label class="switch">
           <input type="checkbox" name="questions[${i}][is_drag]" value="1">
           <span class="slider round"></span>
         </label>
-        <small class="ml-1">Draggable</small>
+        <small class="ms-1">Draggable</small>
       `;
       infoDiv.appendChild(dragToggle);
     }
@@ -897,7 +895,7 @@ topicForm.addEventListener('submit', function (e) {
   if (addPairBtn) {
     addPairBtn.addEventListener('click', () => {
       const mpContainer = card.querySelector('.q-match .match-pairs');
-      const rowIdx = mpContainer.querySelectorAll('.form-row').length;
+      const rowIdx = mpContainer.querySelectorAll('.row').length;
       addMatchRow(mpContainer, i, rowIdx, '', '');
     });
   }
@@ -1173,15 +1171,15 @@ topicSelect.onchange = () => {
     const bar = document.createElement('div');
     bar.className = 'w-100 mb-2';
     bar.innerHTML = `
-      <button type="button" id="btnSelAll" class="btn btn-sm btn-outline-primary mr-2">Select All</button>
-      <button type="button" id="btnUnselAll" class="btn btn-sm btn-outline-secondary mr-2">Unselect</button>
+      <button type="button" id="btnSelAll" class="btn btn-sm btn-outline-primary me-2">Select All</button>
+      <button type="button" id="btnUnselAll" class="btn btn-sm btn-outline-secondary me-2">Unselect</button>
       <button type="button" id="btnLoadSel" class="btn btn-sm btn-success">Load Selected to Form</button>
     `;
     aiCards.appendChild(bar);
 
     parsedQuestions.forEach((q, idx) => {
       const card = document.createElement('div');
-      card.className = 'border rounded p-2 mr-2 mb-2 position-relative';
+      card.className = 'border rounded p-2 me-2 mb-2 position-relative';
       card.style.width = '280px';
 
       const chk = document.createElement('input');

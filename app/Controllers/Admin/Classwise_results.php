@@ -80,7 +80,7 @@ class Classwise_results extends BaseController
 
         $examids = $request->getPost('examids');
         if (empty($examids)) {
-            echo "<div class='bg-danger pl-3 ml-3'>Select Exam For Result</div>";
+            echo "<div class='bg-danger ps-3 ms-3'>Select Exam For Result</div>";
             exit;
         }
 
@@ -117,10 +117,10 @@ class Classwise_results extends BaseController
                 $strResultCard .= '<div style="width:33%;float:left;">Marks</div>';
             }
             if (in_array('percentage', $academic_result)) {
-                $strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Per</div>';
+                $strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Per</div>';
             }
             if (in_array('grade', $academic_result)) {
-                $strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Grade</div>';
+                $strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Grade</div>';
             }
             $strResultCard .= '</th>';
         }
@@ -130,10 +130,10 @@ class Classwise_results extends BaseController
             $strResultCard .= '<div style="width:33%;float:left;">Marks</div>';
         }
         if (in_array('percentage', $academic_result)) {
-            $strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Per</div>';
+            $strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Per</div>';
         }
         if (in_array('grade', $academic_result)) {
-            $strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Grade</div>';
+            $strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Grade</div>';
         }
         $strResultCard .= '</th>';
 
@@ -237,18 +237,18 @@ class Classwise_results extends BaseController
                     }
                     if (in_array('percentage', $academic_result)) {
                         if ($datesheetinfo && $datesheetinfo->total_marks > 0) {
-                            $strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">' . $subjectPercentage . '% </div>';
+                            $strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">' . $subjectPercentage . '% </div>';
                         } else {
-                            $strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+                            $strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
                         }
                     }
                     if (in_array('grade', $academic_result)) {
                         if ($subjectgrade) {
                             $gradeinfo = $this->db->table('grades')->where('gid', $subjectgrade->gid)->get()->getRow();
                             if ($datesheetinfo && $datesheetinfo->total_marks > 0) {
-                                $strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">' . $gradeinfo->name . '</div>';
+                                $strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">' . $gradeinfo->name . '</div>';
                             } else {
-                                $strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+                                $strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
                             }
                         }
                     }

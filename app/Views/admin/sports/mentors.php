@@ -3,19 +3,14 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>House Mentors</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Sports Mentors</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'House Mentors',
+    'icon' => 'fas fa-user-tie',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Mentors', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -23,7 +18,7 @@
    <div class="card card-primary">
     <div class="card-header"><h3 class="card-title">Assign Mentor</h3></div>
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-4">
           <label>House</label>
           <select id="house_id" class="form-control select2"></select>
@@ -51,7 +46,7 @@
   <div class="col-lg-12">
    <div class="card card-outline card-info">
     <div class="card-header"><h3 class="card-title">House-wise Mentors</h3></div>
-    <div class="card-body" id="mentorList"><i class="fas fa-spinner fa-spin"></i> Loading…</div>
+    <div class="card-body" id="mentorList"><i class="fas fa-spinner fa-spin"></i> Loadingï¿½</div>
    </div>
   </div>
  </div>
@@ -78,7 +73,7 @@ $(function(){
     }, 'html');
   }
   function loadList(){
-    $('#mentorList').html('<i class="fas fa-spinner fa-spin"></i> Loading…');
+    $('#mentorList').html('<i class="fas fa-spinner fa-spin"></i> Loadingï¿½');
     $.post("<?= base_url('admin/sports/mentors/list') ?>", {[CSRF_NAME]:CSRF_HASH}, function(html){
       $('#mentorList').html(html);
     }, 'html');

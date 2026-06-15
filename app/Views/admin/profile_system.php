@@ -24,48 +24,48 @@ $api_secret       = $sms_settings_info->api_secret   ?? '';
 $api_token        = $sms_settings_info->api_token    ?? '';
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>System Profile
-          <?php $schoolinfo = getSchoolInfo();
-          if (empty($schoolinfo->reg_text)) : ?>
-            <span style="background: green; color: #fff; float: right; padding: 5px 10px; font-size: 16px;">
-              Step 1 Of 12 To Complete System Configuration
-            </span>
-            <div style="text-align: center;">
-              <audio autoplay controls>
-                <source src="<?= base_url('audio/Step1CampusProfile.m4a') ?>" type="audio/mpeg">
-                Your browser does not support the audio element.
-              </audio>
-            </div>
-          <?php endif; ?>
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">System Profile</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php
+$schoolinfo = getSchoolInfo();
+$systemSetupBadge = empty($schoolinfo->reg_text ?? null)
+    ? '<span class="badge text-bg-success">Step 1 of 12: System Configuration</span>'
+    : '';
+?>
+<?= view('components/page_header', [
+    'title' => $header ?? 'System Profile',
+    'icon' => 'fas fa-cogs',
+    'actionsHtml' => $systemSetupBadge !== '' ? '<div class="text-sm-right">' . $systemSetupBadge . '</div>' : null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'System Profile', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
+  <?php $trialWelcome = session()->getFlashdata('trial_welcome'); ?>
+  <?php if (is_array($trialWelcome) && ! empty($trialWelcome['school_name'])): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <strong>Welcome to your <?= (int) ($trialWelcome['expiry_days'] ?? 30) ?>-day free trial!</strong>
+      <?= esc($trialWelcome['school_name']) ?> is ready. Complete the steps below to configure your school.
+    </div>
+  <?php endif; ?>
+  <?php if (empty($schoolinfo->reg_text ?? null)): ?>
+    <audio autoplay controls hidden>
+      <source src="<?= base_url('audio/Step1CampusProfile.m4a') ?>" type="audio/mpeg">
+    </audio>
+  <?php endif; ?>
   <div class="row">
     <!-- Left Column: Logo -->
     <div class="col-md-3">
-      <div class="card card-primary card-outline">
+      <div class="card sms-card card-primary card-outline">
         <div class="card-body box-profile text-center">
           <img id="output" class="profile-user-img img-fluid"
                src="<?= base_url('system-logo/' . ($logo ?: 'Time-soft-sol-logo.png')) ?>" alt="Logo">
           <h3 class="profile-username text-center"><?= esc($system_name) ?></h3>
-          <a href="<?= base_url('logout') ?>" class="btn btn-danger btn-block"><b>Logout</b></a>
+          <a href="<?= base_url('logout') ?>" class="btn btn-danger w-100"><b>Logout</b></a>
         </div>
       </div>
-      <div class="card card-primary card-outline">
+      <div class="card sms-card card-primary card-outline">
         <div class="card-body box-profile text-center">
           <img id="output2" class="profile-user-img img-fluid"
                src="<?= base_url('system-logo/' . ($chalan_header ?: 'Time-soft-sol-logo.png')) ?>" alt="Chalan Header">
@@ -78,7 +78,7 @@ $api_token        = $sms_settings_info->api_token    ?? '';
       <div class="card">
         <div class="card-header p-2">
           <ul class="nav nav-pills">
-            <li class="nav-item"><a class="nav-link active" href="#settings" data-toggle="tab">Settings</a></li>
+            <li class="nav-item"><a class="nav-link active" href="#settings" data-bs-toggle="tab">Settings</a></li>
           </ul>
         </div>
         <div class="card-body">
@@ -113,15 +113,18 @@ $api_token        = $sms_settings_info->api_token    ?? '';
 
                 <!-- Column 2 -->
                 <div class="col-lg-4">
-                  <?= form_label('System Short Name (e.g. TSS)', 'reg_text') ?>
+                  <?= form_label(lang('SchoolSetup.reg_text_label'), 'reg_text') ?>
                   <?= form_input([
                     'name' => 'reg_text',
                     'id' => 'reg_text',
                     'value' => esc($reg_text),
                     'maxlength' => 3,
                     'required' => true,
-                    'class' => 'form-control'
+                    'placeholder' => lang('SchoolSetup.modal_placeholder'),
+                    'class' => 'form-control text-uppercase',
+                    'style' => 'text-transform: uppercase;'
                   ]) ?>
+                  <small class="form-text text-muted"><?= lang('SchoolSetup.reg_text_example', [date('y')]) ?></small>
 
                   <?= form_label('State', 'state') ?>
                   <?= form_input('state', esc($state), 'class="form-control"') ?>
@@ -146,11 +149,11 @@ $api_token        = $sms_settings_info->api_token    ?? '';
 
                   <?= form_label('School Logo') ?><br>
                   <input type="file" name="image" id="file" accept="image/*" onchange="loadFile(event)" hidden>
-                  <label for="file" class="btn btn-default"><i class="fa fa-image"></i> Upload Logo</label>
+                  <label for="file" class="btn btn-secondary"><i class="fa fa-image"></i> Upload Logo</label>
 
                   <?= form_label('Fee Header') ?><br>
                   <input type="file" name="image2" id="file2" accept="image/*" onchange="loadFile2(event)" hidden>
-                  <label for="file2" class="btn btn-default"><i class="fa fa-image"></i> Upload Header</label>
+                  <label for="file2" class="btn btn-secondary"><i class="fa fa-image"></i> Upload Header</label>
                 </div>
 
                 <!-- SMS Settings -->
@@ -175,8 +178,8 @@ $api_token        = $sms_settings_info->api_token    ?? '';
                 <!-- Actions -->
                 <div class="col-lg-12 mt-3">
                   <button type="submit" class="btn btn-primary">Save</button>
-                  <button type="reset" class="btn btn-default">Reset</button>
-                  <a href="<?= base_url('academic_session/add') ?>" class="btn btn-default">Cancel</a>
+                  <button type="reset" class="btn btn-secondary">Reset</button>
+                  <a href="<?= base_url('academic_session/add') ?>" class="btn btn-secondary">Cancel</a>
                 </div>
               </div>
 
@@ -205,7 +208,7 @@ $api_token        = $sms_settings_info->api_token    ?? '';
         mob_number: { required: true }
       },
       messages: {
-        reg_text: { required: 'Reg Text is required' },
+        reg_text: { required: '<?= esc(lang('SchoolSetup.reg_text_required'), 'js') ?>' },
         mob_number: { required: 'Mobile Number is required' }
       }
     });

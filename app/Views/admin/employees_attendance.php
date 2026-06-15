@@ -1,38 +1,27 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?= $this->extend('layouts/admin_template') ?>
-<?= $this->section('content') ?>
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
 
-<link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-              Employees Attdendance
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Employees Attdendance</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Employee Attendance',
+    'icon' => 'fas fa-id-badge',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Employee Attendance', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 					<li><a href="<?= base_url('admin/students_attendance') ?>">Students Attdendance</a></li>
-					<li><a href="<?= base_url('admin/students_attendance/add') ?>"> Add Students Attdendance </a></li>
+					<li><a href="<?= base_url('admin/students_absentees/add') ?>"> Add Students Attendance </a></li>
 				</ul>
-				<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+				<div class="tab-content table-responsive no-padding"><div class="col-12">
               <table class="table table-striped table-bordered table-hover" id="students-datatable" width="100%">
 					<thead>
 						<tr>
@@ -112,11 +101,11 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/sections?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/sections?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 						  if(row.issys == '1'){
 
 						  }else{
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 						  }
 
 					html += '</div>';

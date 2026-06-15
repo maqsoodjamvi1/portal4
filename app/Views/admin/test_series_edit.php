@@ -29,24 +29,14 @@
 			$status = 1;
 		}
 	?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Test Series
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Test Series</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Test Series',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Test Series', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -88,10 +78,8 @@
          			<div class="form-group">
          				<label for="exam_start_date">Series Start Date</label>
 	         			<div class="input-group date" id="exam_start_date" data-target-input="nearest">
-                        <input type="text" name="series_start_date"  class="form-control datetimepicker-input" data-target="#exam_start_date"/>
-                        <div class="input-group-append" data-target="#exam_start_date" data-toggle="datetimepicker">
-                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                        </div>
+                        <input type="text" name="series_start_date"  class="form-control datetimepicker-input" data-bs-target="#exam_start_date"/>
+                        <span class="input-group-text" data-bs-target="#exam_start_date" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                     </div>
          			</div>
          		</div>
@@ -99,10 +87,8 @@
          			<div class="form-group">
          				<label for="exam_end_date">Series End Date</label>
          				<div class="input-group date" id="exam_end_date" data-target-input="nearest">
-                        <input type="text" name="series_end_date"  class="form-control datetimepicker-input" data-target="#exam_end_date"/>
-                        <div class="input-group-append" data-target="#exam_end_date" data-toggle="datetimepicker">
-                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                        </div>
+                        <input type="text" name="series_end_date"  class="form-control datetimepicker-input" data-bs-target="#exam_end_date"/>
+                        <span class="input-group-text" data-bs-target="#exam_end_date" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
 
          			</div>
          		</div>
@@ -123,8 +109,8 @@
  </div>	
 <div class="form-group">
     <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-    <button type="reset" class="btn btn-default">Reset</button>
-    <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+    <button type="reset" class="btn btn-secondary">Reset</button>
+    <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 </div>
 <?php echo form_close();?> </div>
       </div>

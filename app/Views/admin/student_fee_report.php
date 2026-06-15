@@ -31,29 +31,19 @@ if(isset($info)){
 	}
 	tr{border-bottom:2px solid #000;}
 </style>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-8">
-            <h1>
-               Student Fee Report
-            </h1>
-          </div>
-          <div class="col-sm-4">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Terms Session</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Student Fee Report',
+    'icon' => 'fas fa-file-invoice-dollar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Fee Report', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->	
     <section class="content">
       <div class="row">
         <div class="col-lg-12">
-		  <div class="card card-primary card-outline card-tabs">
+		  <div class="card sms-card card-primary card-outline card-tabs">
           	<div class="card-header p-0 pt-1 border-bottom-0">
           	<div class="card-body">	
 			<div class="tab-content">

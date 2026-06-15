@@ -75,7 +75,7 @@
         }
         .filter-summary {
             background: #f8f9fa;
-            border-left: 4px solid #ffc107;
+            border-start: 4px solid #ffc107;
             padding: 15px;
             margin-top: 20px;
             text-align: left;
@@ -136,8 +136,8 @@
         <?php endif; ?>
         
         <div class="no-data-actions">
-            <a href="<?= base_url('admin/fee-chalan/generate') ?>" class="btn btn-primary">
-                ? Back to Filters
+            <a href="<?= base_url('admin/fee-chalan') ?>" class="btn btn-primary">
+                Back to filters
             </a>
             <a href="<?= base_url('admin/fee-chalan') ?>" class="btn btn-secondary">
                 Go to Fee Chalan List

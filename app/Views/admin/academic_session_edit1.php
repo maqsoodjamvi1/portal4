@@ -83,8 +83,8 @@
             <div class="border rounded p-3 h-100">
               <div class="text-muted small mb-1">Start Date</div>
               <div class="d-flex align-items-center">
-                <span id="startDateText" class="font-weight-bold mr-2">—</span>
-                <span id="startDayBadge" class="badge badge-info">—</span>
+                <span id="startDateText" class="fw-bold me-2">—</span>
+                <span id="startDayBadge" class="badge text-bg-info">—</span>
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@
             <div class="border rounded p-3 h-100">
               <div class="text-muted small mb-1">End Date</div>
               <div class="d-flex align-items-center">
-                <span id="endDateText" class="font-weight-bold mr-2">—</span>
-                <span id="endDayBadge" class="badge badge-info">—</span>
+                <span id="endDateText" class="fw-bold me-2">—</span>
+                <span id="endDayBadge" class="badge text-bg-info">—</span>
               </div>
             </div>
           </div>
@@ -101,13 +101,13 @@
             <div class="border rounded p-3 h-100 bg-light">
               <div class="text-muted small mb-1">Calculated Range</div>
               <div class="d-flex flex-wrap align-items-center">
-                <span class="mr-3">
+                <span class="me-3">
                   <span class="text-muted">Days:</span>
-                  <span id="totalDays" class="font-weight-bold">0</span>
+                  <span id="totalDays" class="fw-bold">0</span>
                 </span>
                 <span>
                   <span class="text-muted">Weeks (inclusive):</span>
-                  <span id="totalWeeks" class="font-weight-bold">0</span>
+                  <span id="totalWeeks" class="fw-bold">0</span>
                 </span>
               </div>
               <div id="rangeHint" class="small mt-1 text-muted">
@@ -143,14 +143,12 @@
       class="form-control datetimepicker-input"
       id="startdatepicker"
       name="start_date"
-      data-target="#sessionStartPicker"
+      data-bs-target="#sessionStartPicker"
       value="<?= esc($start_date); ?>"
       autocomplete="off"
       <?= $lockStartDate ? 'readonly tabindex="-1"' : '' ?>
     />
-    <div class="input-group-append" data-target="#sessionStartPicker" data-toggle="datetimepicker">
-      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-    </div>
+    <span class="input-group-text" data-bs-target="#sessionStartPicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
   </div>
 
   <?php if ($lockStartDate): ?>
@@ -173,12 +171,10 @@
          id="enddatepicker"
          name="end_date"
          value="<?= esc($end_date); ?>"
-         data-target="#reservationdate"
+         data-bs-target="#reservationdate"
          autocomplete="off"
          readonly />
-  <div class="input-group-append" data-target="#reservationdate" data-toggle="datetimepicker">
-    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-  </div>
+  <span class="input-group-text" data-bs-target="#reservationdate" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
 </div>
           </div>
           <small id="endHelp" class="form-text text-muted">End date must not be earlier than start date.</small>
@@ -186,8 +182,8 @@
 
         <div class="form-group d-flex flex-wrap gap-2">
           <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-          <button type="reset" class="btn btn-default">Reset</button>
-          <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+          <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
         </div>
 
         <?= form_close(); ?>
@@ -196,13 +192,7 @@
   </div>
 </section>
 
-<!-- Assets: Tempus Dominus v5 (Bootstrap 4) -->
-<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/en-gb.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js"></script> -->
- 
+<!-- Assets: Flatpickr datetimepicker compatibility is provided by the shared layout. -->
 <script>
 (function ($) {
   moment.locale('en-gb');
@@ -370,7 +360,7 @@ $('#reservationdate').datetimepicker({
 
   // ========== INIT DATE-ONLY PICKERS ==========
   if (!$.fn || !$.fn.datetimepicker) {
-    console.error('Tempus Dominus not loaded (missing or wrong order).');
+    console.error('Datetimepicker compatibility adapter not loaded (missing or wrong order).');
     return;
   }
 
@@ -426,7 +416,7 @@ $('#reservationdate').datetimepicker({
     e.preventDefault();
     $('#sessionStartPicker').datetimepicker('show');
   });
-  $('#sessionStartPicker .input-group-append').on('click', function (e) {
+  $('#sessionStartPicker .input-group-text').on('click', function (e) {
     e.preventDefault();
     $('#sessionStartPicker').datetimepicker('show');
   });
@@ -435,7 +425,7 @@ $('#reservationdate').datetimepicker({
     e.preventDefault();
     $('#reservationdate').datetimepicker('show');
   });
-  $('#reservationdate .input-group-append').on('click', function (e) {
+  $('#reservationdate .input-group-text').on('click', function (e) {
     e.preventDefault();
     $('#reservationdate').datetimepicker('show');
   });

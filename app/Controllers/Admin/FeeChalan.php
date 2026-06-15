@@ -22,9 +22,10 @@ class FeeChalan extends BaseController
     public function __construct()
     {
         
-        helper(['form', 'url']);
+        helper(['form', 'url', 'school']);
         $this->db = db_connect();
         $this->session = Services::session();
+        check_permission('admin-fee-chalan');
     }
 
       
@@ -71,8 +72,11 @@ class FeeChalan extends BaseController
         'show_line1' => $this->request->getGet('show_line1') ?? 0,
         'show_line2' => $this->request->getGet('show_line2') ?? 0,
         'fine_after_due_date' => $this->request->getGet('fine_after_due_date') ?? 0,
+        'message_position' => $this->request->getGet('message_position') ?? 'header',
+        'message_text' => $this->request->getGet('message_text') ?? '',
+        'show_payment_history' => ($this->request->getGet('show_payment_history') == 1 || $this->request->getGet('show_payment_history') === '1') ? 1 : 0,
     ];
-    
+
     return view('admin/chalanview/chalan_filter', $data);
 }
 
@@ -110,14 +114,38 @@ class FeeChalan extends BaseController
         $search = $selected_student_id;
     }
 
+    $rawClassId = $g('class_id');
+    $rawSectionId = $g('section_id');
+
+    $normalizeOptionalId = static function ($value): ?int {
+        if ($value === null) {
+            return null;
+        }
+        $v = strtolower(trim((string) $value));
+        if ($v === '' || $v === 'undefined' || $v === 'null' || $v === 'all' || $v === '0') {
+            return null;
+        }
+        return ctype_digit($v) ? (int) $v : null;
+    };
+
+    $classId = $normalizeOptionalId($rawClassId);
+    $sectionId = $normalizeOptionalId($rawSectionId);
+
+    // UI sometimes sends section_id=undefined with stale class_id in query string.
+    // In that case treat both as "no filter applied".
+    if (strtolower(trim((string) ($rawSectionId ?? ''))) === 'undefined') {
+        $classId = null;
+        $sectionId = null;
+    }
+
     $params = [
         'group_by' => $group_by,
         'layout' => $layout,
         'show_discount' => $show_discount,
         'show_payment_history' => $show_payment_history,
         'fee_month' => $fee_month,
-        'class_id' => $g('class_id') ? (int) $g('class_id') : null,
-        'section_id' => $g('section_id') ? (int) $g('section_id') : null,
+        'class_id' => $classId,
+        'section_id' => $sectionId,
         'search' => $search,
         'family_id' => $g('family_id') ? (int) $g('family_id') : null,
         'footer_line1' => (string) $g('footer_line1', ''),
@@ -147,9 +175,11 @@ class FeeChalan extends BaseController
         'show_discount' => $show_discount,
         'show_payment_history' => $show_payment_history,
         'fee_month' => $fee_month,
-        'is_family' => true,
+        'is_family' => ($params['group_by'] === 'family'),
         'message_text' => $message_text,
         'message_position' => $message_position,
+        // Do not show campus late-fine banner or payable-after-due on generated slips
+        'fine_after_due_date' => 0,
     ]);
     
     // If no data found, show message
@@ -160,6 +190,140 @@ class FeeChalan extends BaseController
     return view($viewName, $viewData);
 }
     /**
+     * Map fee-chalan filter class_id / section_id to class_section rows.
+     * The UI historically sent sections.section_id while queries use cs.cls_sec_id;
+     * URLs may also pass cls_sec_id as class_id when only one dimension is filtered.
+     */
+    private function applyClassSectionStudentJoinFilters(
+        \CodeIgniter\Database\BaseBuilder $builder,
+        int $campus_id,
+        ?int $classId,
+        ?int $sectionParam
+    ): void {
+        $classId = ($classId !== null && $classId > 0) ? $classId : null;
+        $sectionParam = ($sectionParam !== null && $sectionParam > 0) ? $sectionParam : null;
+
+        if ($classId === null && $sectionParam === null) {
+            return;
+        }
+
+        if ($classId !== null && $sectionParam !== null) {
+            $combo = $this->db->table('class_section')
+                ->select('cls_sec_id')
+                ->where('campus_id', $campus_id)
+                ->where('status', 1)
+                ->where('class_id', $classId)
+                ->where('section_id', $sectionParam)
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+            if ($combo) {
+                $builder->where('cs.cls_sec_id', (int) $combo['cls_sec_id']);
+
+                return;
+            }
+
+            $asClsSec = $this->db->table('class_section')
+                ->select('cls_sec_id, class_id')
+                ->where('campus_id', $campus_id)
+                ->where('status', 1)
+                ->where('cls_sec_id', $sectionParam)
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+            if ($asClsSec !== null && (int) $asClsSec['class_id'] === $classId) {
+                $builder->where('cs.cls_sec_id', $sectionParam);
+
+                return;
+            }
+
+            $builder->where('cs.class_id', $classId);
+
+            return;
+        }
+
+        if ($sectionParam !== null) {
+            $byClsSec = $this->db->table('class_section')
+                ->select('cls_sec_id')
+                ->where('campus_id', $campus_id)
+                ->where('status', 1)
+                ->where('cls_sec_id', $sectionParam)
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+            if ($byClsSec) {
+                $builder->where('cs.cls_sec_id', (int) $byClsSec['cls_sec_id']);
+
+                return;
+            }
+            $builder->where('cs.section_id', $sectionParam);
+
+            return;
+        }
+
+        $builder->where('cs.class_id', $classId);
+    }
+
+    /**
+     * Student IDs that have at least one payable fee_chalan line for this campus (fee-first; does not depend on student_class).
+     */
+    private function getStudentIdsWithPayableFeeLines(int $campus_id, ?string $fee_month): array
+    {
+        $builder = $this->db->table('fee_chalan fc');
+        $builder->distinct();
+        $builder->select('fc.student_id');
+        $builder->join(
+            'students s',
+            's.student_id = fc.student_id AND s.campus_id = ' . (int) $campus_id . ' AND s.status = 1',
+            'inner'
+        );
+        $builder->where($this->feeChalanOpenStatusSql('fc'), null, false);
+        $builder->where('(COALESCE(fc.amount, 0) - COALESCE(fc.discount, 0)) > 0', null, false);
+        if ($fee_month !== null && trim($fee_month) !== '') {
+            $this->applyFeeChalanMonthFilter($builder, trim($fee_month));
+        }
+        $builder->groupBy('fc.student_id');
+
+        $query = $builder->get();
+        if ($query === false) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($query->getResultArray() as $row) {
+            $sid = (int) ($row['student_id'] ?? 0);
+            if ($sid > 0) {
+                $ids[] = $sid;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Collapse duplicate rows when a student has multiple class_section rows.
+     *
+     * @param list<array<string,mixed>> $rows
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function dedupeStudentRowsByStudentId(array $rows): array
+    {
+        $out = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            $sid = (int) ($row['student_id'] ?? 0);
+            if ($sid <= 0 || isset($seen[$sid])) {
+                continue;
+            }
+            $seen[$sid] = true;
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
      * Fetch student-wise chalans with filters
      */
    /**
@@ -169,13 +333,22 @@ private function fetchStudentChalans(array $params): array
 {
     log_message('debug', '=== fetchStudentChalans called ===');
     log_message('debug', 'Params: ' . json_encode($params));
-    
+
     $campus_id = (int) session()->get('member_campusid');
     $session_id = (int) session()->get('member_sessionid');
-    
+
     log_message('debug', 'Campus ID: ' . $campus_id . ', Session ID: ' . $session_id);
 
-    // Build student query with all filters
+    $fee_month_raw = isset($params['fee_month']) ? trim((string) $params['fee_month']) : '';
+    $fee_month_for_ids = $fee_month_raw !== '' ? $fee_month_raw : null;
+
+    // Fee-first: students who actually have payable fee lines (matches printed totals).
+    $candidateIds = $this->getStudentIdsWithPayableFeeLines($campus_id, $fee_month_for_ids);
+    if ($candidateIds === []) {
+        return ['students' => [], 'group_by' => 'student'];
+    }
+
+    // Build student rows with optional class (LEFT join — enrollment gaps no longer hide students).
     $builder = $this->db->table('students s');
     $builder->select("
         s.student_id,
@@ -206,8 +379,12 @@ private function fetchStudentChalans(array $params): array
     ");
 
     $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
-    $builder->join('student_class sc', 'sc.student_id = s.student_id AND sc.session_id = ' . $session_id . ' AND sc.status = 1', 'inner');
-    $builder->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'inner');
+    $builder->join(
+        'student_class sc',
+        'sc.student_id = s.student_id AND sc.session_id = ' . $session_id . ' AND sc.status = 1',
+        'left'
+    );
+    $builder->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left');
     $builder->join('classes c', 'c.class_id = cs.class_id', 'left');
     $builder->join('sections sec', 'sec.section_id = cs.section_id', 'left');
     $builder->join('campus cm', 'cm.campus_id = s.campus_id', 'left');
@@ -215,26 +392,28 @@ private function fetchStudentChalans(array $params): array
 
     $builder->where('s.campus_id', $campus_id);
     $builder->where('s.status', 1);
+    $builder->whereIn('s.student_id', $candidateIds);
 
-    // Apply class filter (for student-wise view)
-    if (!empty($params['class_id'])) {
-        $builder->where('cs.class_id', $params['class_id']);
-    }
-    
-    // Apply section filter (value is class_section.cls_sec_id from dropdown — unique per class+section)
-    if (!empty($params['section_id'])) {
-        $builder->where('cs.cls_sec_id', (int) $params['section_id']);
-    }
+    $this->applyClassSectionStudentJoinFilters(
+        $builder,
+        $campus_id,
+        isset($params['class_id']) ? (int) $params['class_id'] : null,
+        isset($params['section_id']) ? (int) $params['section_id'] : null
+    );
 
     // Apply search filter
     $hasSpecificSearch = false;
     if (!empty($params['search'])) {
         $searchTerm = $params['search'];
         log_message('debug', 'Applying search filter with term: ' . $searchTerm);
-        
+
         if (is_numeric($searchTerm)) {
-            log_message('debug', 'Search term is numeric, treating as student ID: ' . $searchTerm);
-            $builder->where('s.student_id', (int)$searchTerm);
+            $intTerm = (int) $searchTerm;
+            $strTerm = trim((string) $searchTerm);
+            $builder->groupStart()
+                ->where('s.student_id', $intTerm)
+                ->orWhere('s.reg_no', $strTerm)
+                ->groupEnd();
             $hasSpecificSearch = true;
         } else {
             $builder->groupStart()
@@ -247,33 +426,35 @@ private function fetchStudentChalans(array $params): array
         }
     }
 
-    // Filter by specific family if provided
     if (!empty($params['family_id'])) {
         $builder->where('p.parent_id', $params['family_id']);
         $hasSpecificSearch = true;
     }
 
     $builder->orderBy('c.class_name, sec.section_name, s.first_name');
-    
-    // Apply limits to prevent memory issues
-    if (!$hasSpecificSearch) {
-        $builder->limit(500); // Increased limit
+
+    $narrowStudentFilter = !empty($params['class_id'])
+        || !empty($params['section_id'])
+        || !empty($params['family_id'])
+        || (isset($params['search']) && trim((string) $params['search']) !== '');
+
+    if (!$hasSpecificSearch && !$narrowStudentFilter) {
+        $builder->limit(20000);
+    } elseif (!$hasSpecificSearch && $narrowStudentFilter) {
+        $builder->limit(5000);
     } else {
-        if (is_numeric($params['search'] ?? '')) {
-            $builder->limit(1);
-        } else {
-            $builder->limit(50);
-        }
+        $builder->limit(is_numeric($params['search'] ?? '') ? 25 : 50);
     }
-    
+
     $query = $builder->get();
-    
+
     if (!$query) {
         log_message('error', 'Student query failed: ' . $this->db->getLastQuery());
-        return ['students' => []];
+
+        return ['students' => [], 'group_by' => 'student'];
     }
-    
-    $students = $query->getResultArray();
+
+    $students = $this->dedupeStudentRowsByStudentId($query->getResultArray());
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
         log_message('debug', 'Found ' . count($students) . ' students from query');
     }
@@ -290,6 +471,11 @@ private function fetchStudentChalans(array $params): array
 
     foreach ($students as &$studentData) {
         $student_id = (int) $studentData['student_id'];
+
+        $studentData['student_name'] = fee_chalan_student_display_name(
+            $studentData['student_name'] ?? '',
+            $studentData['reg_no'] ?? null
+        );
 
         $studentData['chalans'] = $chalansByStudent[$student_id] ?? [];
 
@@ -393,12 +579,13 @@ private function fetchFamilyChalans(array $params): array
         GROUP_CONCAT(DISTINCT s.student_id SEPARATOR ',') as student_ids,
         -- Include class information for each student (class_name, class_short_name, section, and class_id)
         GROUP_CONCAT(DISTINCT CONCAT(
-            s.first_name, ' ', COALESCE(s.last_name, ''), '~', 
-            s.reg_no, '~', 
-            c.class_name, '~', 
-            c.class_short_name, '~', 
-            sec.short_name, '~', 
-            c.class_id
+            COALESCE(s.student_id, 0), '~',
+            COALESCE(s.first_name, ''), ' ', COALESCE(s.last_name, ''), '~',
+            COALESCE(s.reg_no, ''), '~',
+            COALESCE(c.class_name, ''), '~',
+            COALESCE(c.class_short_name, ''), '~',
+            COALESCE(sec.short_name, ''), '~',
+            COALESCE(c.class_id, 0)
         ) SEPARATOR '|') as student_details,
         -- Get the maximum class_id for ordering (family head's class)
         MAX(c.class_id) as max_class_id
@@ -439,9 +626,9 @@ private function fetchFamilyChalans(array $params): array
     $builder->groupBy('p.parent_id');
     $builder->having('student_count > 0');
     
-    // Apply limits
+    // Apply limits (broad campus run: all families with unpaid lines, not only first 500)
     if (!$hasSpecificSearch) {
-        $builder->limit(500);
+        $builder->limit(10000);
     } else {
         if (is_numeric($params['search'] ?? '')) {
             $builder->limit(1);
@@ -449,7 +636,7 @@ private function fetchFamilyChalans(array $params): array
             $builder->limit(20);
         }
     }
-    
+
     // Order by the maximum class_id (family head's class) in descending order
     // This puts families with older/higher class students first
     $builder->orderBy('max_class_id', 'DESC');
@@ -494,14 +681,25 @@ private function fetchFamilyChalans(array $params): array
             $studentDetailStrings = explode('|', $family['student_details']);
             foreach ($studentDetailStrings as $detailString) {
                 $parts = explode('~', $detailString);
-                if (count($parts) >= 6) { // Now includes class_id and all class info
+                // New format: student_id~name~reg_no~class_name~class_short~section_short~class_id
+                if (count($parts) >= 7) {
                     $students[] = [
-                        'student_name' => $parts[0],
-                        'reg_no' => $parts[1],
-                        'class_name' => $parts[2],
-                        'class_short_name' => $parts[3],
-                        'section_short_name' => $parts[4],
-                        'class_id' => (int)$parts[5]
+                        'student_id' => (int) ($parts[0] ?? 0),
+                        'student_name' => trim((string) ($parts[1] ?? '')),
+                        'reg_no' => (string) ($parts[2] ?? ''),
+                        'class_name' => (string) ($parts[3] ?? ''),
+                        'class_short_name' => (string) ($parts[4] ?? ''),
+                        'section_short_name' => (string) ($parts[5] ?? ''),
+                        'class_id' => (int) ($parts[6] ?? 0),
+                    ];
+                } elseif (count($parts) >= 6) { // Backward compatibility for old format
+                    $students[] = [
+                        'student_name' => trim((string) ($parts[0] ?? '')),
+                        'reg_no' => (string) ($parts[1] ?? ''),
+                        'class_name' => (string) ($parts[2] ?? ''),
+                        'class_short_name' => (string) ($parts[3] ?? ''),
+                        'section_short_name' => (string) ($parts[4] ?? ''),
+                        'class_id' => (int) ($parts[5] ?? 0),
                     ];
                 }
             }
@@ -852,17 +1050,26 @@ private function getFamilyFeeByParticular(array $studentIds, ?string $fee_month)
                     ELSE DATE_FORMAT(STR_TO_DATE(CONCAT(SUBSTRING(fc.fee_month, 4, 4), '-', SUBSTRING(fc.fee_month, 1, 2), '-01'), '%Y-%m-%d'), '%m/%Y')
                 END as month_display
             FROM fee_chalan fc
-            INNER JOIN fee_type ft ON ft.fee_type_id = fc.fee_type_id
-            WHERE fc.student_id IN (" . $studentIdList . ")
-            AND fc.status = 'unpaid'";
-    
+            LEFT JOIN fee_type ft ON ft.fee_type_id = fc.fee_type_id
+            WHERE fc.student_id IN (" . $studentIdList . ')
+            AND (COALESCE(fc.amount, 0) - COALESCE(fc.discount, 0)) > 0
+            AND ' . $this->feeChalanOpenStatusSql('fc');
+
     $params = [];
-    
+
     if (!empty($fee_month)) {
-        $sql .= " AND fc.fee_month = ?";
-        $params[] = $fee_month;
+        $fm = trim((string) $fee_month);
+        if (preg_match('/^\d{4}-\d{2}$/', $fm)) {
+            $eYm = $this->db->escape($fm);
+            $eFirst = $this->db->escape($fm . '-01');
+            $eLike = $this->db->escape($fm . '%');
+            $sql .= " AND (fc.fee_month = {$eYm} OR fc.fee_month = {$eFirst} OR fc.fee_month LIKE {$eLike} OR DATE_FORMAT(fc.fee_month, '%Y-%m') = {$eYm})";
+        } else {
+            $sql .= ' AND fc.fee_month = ?';
+            $params[] = $fm;
+        }
     }
-    
+
     $sql .= " GROUP BY ft.fee_type_id, ft.fee_type_name, ft.is_monthly_fee, fc.fee_month
               ORDER BY 
                 CASE 
@@ -995,20 +1202,29 @@ private function getFamilyFeeByMonth(array $studentIds, ?string $fee_month): arr
                 fc.fee_month,
                 COUNT(DISTINCT fc.student_id) as student_count,
                 GROUP_CONCAT(DISTINCT CONCAT(s.first_name, ' ', COALESCE(s.last_name, '')) SEPARATOR ', ') as student_names,
-                SUM(fc.amount - fc.discount) as total_amount,
-                SUM(fc.discount) as total_discount
+                SUM(COALESCE(fc.amount, 0) - COALESCE(fc.discount, 0)) as total_amount,
+                SUM(COALESCE(fc.discount, 0)) as total_discount
             FROM fee_chalan fc
             INNER JOIN students s ON s.student_id = fc.student_id
-            WHERE fc.student_id IN (" . $studentIdList . ")
-            AND fc.status = 'unpaid'";
-    
+            WHERE fc.student_id IN (" . $studentIdList . ')
+            AND (COALESCE(fc.amount, 0) - COALESCE(fc.discount, 0)) > 0
+            AND ' . $this->feeChalanOpenStatusSql('fc');
+
     $params = [];
-    
+
     if (!empty($fee_month)) {
-        $sql .= " AND fc.fee_month = ?";
-        $params[] = $fee_month;
+        $fm = trim((string) $fee_month);
+        if (preg_match('/^\d{4}-\d{2}$/', $fm)) {
+            $eYm = $this->db->escape($fm);
+            $eFirst = $this->db->escape($fm . '-01');
+            $eLike = $this->db->escape($fm . '%');
+            $sql .= " AND (fc.fee_month = {$eYm} OR fc.fee_month = {$eFirst} OR fc.fee_month LIKE {$eLike} OR DATE_FORMAT(fc.fee_month, '%Y-%m') = {$eYm})";
+        } else {
+            $sql .= ' AND fc.fee_month = ?';
+            $params[] = $fm;
+        }
     }
-    
+
     $sql .= " GROUP BY fc.fee_month
               ORDER BY 
                 CASE 
@@ -1085,7 +1301,43 @@ private function getFamilyStudentsWithChalans(int $parent_id, int $campus_id, in
     /**
      * Get unpaid chalans for a student
      */
-   /**
+    /**
+     * Only unpaid rows should print on challan generate.
+     */
+    private function feeChalanOpenStatusSql(string $tableAlias = 'fc'): string
+    {
+        // Match FeeChalanPay: only unpaid lines are payable / printable (not "discounted").
+        $norm = 'REPLACE(REPLACE(LOWER(TRIM(COALESCE(' . $tableAlias . ".status,''))), ' ', ''), '-', '')";
+
+        return '(' . $norm . " = 'unpaid'"
+            . " OR {$tableAlias}.status IN ('unpaid','UnPaid','UNPAID','UNPaid'))";
+    }
+
+    /**
+     * Match fee_month from UI (YYYY-MM) to common DB shapes: YYYY-MM, YYYY-MM-DD, or date column.
+     */
+    private function applyFeeChalanMonthFilter(\CodeIgniter\Database\BaseBuilder $builder, string $feeMonth): void
+    {
+        $fm = trim($feeMonth);
+        if ($fm === '') {
+            return;
+        }
+        if (preg_match('/^\d{4}-\d{2}$/', $fm)) {
+            $eYm = $this->db->escape($fm);
+            $eFirst = $this->db->escape($fm . '-01');
+            $eLike = $this->db->escape($fm . '%');
+            $builder->where(
+                "(fc.fee_month = {$eYm} OR fc.fee_month = {$eFirst} OR fc.fee_month LIKE {$eLike} OR DATE_FORMAT(fc.fee_month, '%Y-%m') = {$eYm})",
+                null,
+                false
+            );
+
+            return;
+        }
+        $builder->where('fc.fee_month', $fm);
+    }
+
+/**
  * Unpaid chalans for many students in one (chunked) query; keys are student_id.
  */
 private function getStudentUnpaidChalansBatch(array $studentIds, ?string $fee_month, bool $show_discount): array
@@ -1103,22 +1355,23 @@ private function getStudentUnpaidChalansBatch(array $studentIds, ?string $fee_mo
         $builder->select("
             fc.student_id,
             fc.chalan_id,
+            fc.fee_type_id,
             fc.fee_month,
             fc.issue_date,
             fc.due_date,
             fc.amount,
             fc.discount,
-            (fc.amount - fc.discount) as net_amount,
+            (COALESCE(fc.amount, 0) - COALESCE(fc.discount, 0)) AS net_amount,
             ft.fee_type_name as particulars_label,
             ft.is_monthly_fee,
             fc.status
         ");
         $builder->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left');
         $builder->whereIn('fc.student_id', $chunk);
-        $builder->where('fc.status', 'unpaid');
+        $builder->where($this->feeChalanOpenStatusSql('fc'), null, false);
 
         if ($fee_month !== null && $fee_month !== '') {
-            $builder->where('fc.fee_month', $fee_month);
+            $this->applyFeeChalanMonthFilter($builder, (string) $fee_month);
         }
 
         $builder->orderBy('fc.student_id', 'ASC');
@@ -1137,6 +1390,15 @@ private function getStudentUnpaidChalansBatch(array $studentIds, ?string $fee_mo
             }
             unset($row['student_id']);
             $this->decorateChalanRow($row, $show_discount);
+            $labelNorm = strtolower(trim((string) ($row['particulars_label'] ?? '')));
+            // Hide fine / late-fee lines (legacy rows may have fee_type_id 0 — still show if not a fine label).
+            if (strpos($labelNorm, 'fine') !== false || strpos($labelNorm, 'late fee') !== false) {
+                continue;
+            }
+            // Only lines that still owe (amount minus discount > 0) belong on a payable challan
+            if ((float) ($row['net_amount'] ?? 0) <= 0) {
+                continue;
+            }
             $out[$sid][] = $row;
         }
     }
@@ -1146,7 +1408,15 @@ private function getStudentUnpaidChalansBatch(array $studentIds, ?string $fee_mo
 
 private function decorateChalanRow(array &$chalan, bool $show_discount): void
 {
-    $chalan['net_amount'] = (float) ($chalan['amount'] ?? 0) - (float) ($chalan['discount'] ?? 0);
+    $amt  = (float) ($chalan['amount'] ?? 0);
+    $disc = $chalan['discount'] ?? 0;
+    if ($disc === '' || $disc === null) {
+        $disc = 0.0;
+    }
+    $disc = (float) $disc;
+    $chalan['amount']     = $amt;
+    $chalan['discount']   = $disc;
+    $chalan['net_amount'] = $amt - $disc;
 
     $chalan['issue_date_label'] = !empty($chalan['issue_date'])
         ? date('d-m-y', strtotime((string) $chalan['issue_date']))
@@ -1158,7 +1428,7 @@ private function decorateChalanRow(array &$chalan, bool $show_discount): void
     $chalan['fee_month_label'] = $this->formatFeeMonthLabel($chalan['fee_month'] ?? '');
 
     $chalan['amount_formatted'] = number_format((float) ($chalan['amount'] ?? 0), 0);
-    $chalan['discount_formatted'] = $show_discount && !empty($chalan['discount'])
+    $chalan['discount_formatted'] = $show_discount
         ? number_format((float) $chalan['discount'], 0)
         : '';
     $chalan['net_amount_formatted'] = number_format($chalan['net_amount'], 0);
@@ -1193,11 +1463,12 @@ private function getStudentPaymentHistoryBatch(array $studentIds): array
         $placeholders = implode(',', array_fill(0, count($chunk), '?'));
         $sql          = "SELECT fc.student_id,
                 DATE_FORMAT(fc.paid_date, '%Y-%m') AS month_key,
-                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 1 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS monthly_fee_total,
-                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 0 THEN fc.amount - fc.discount ELSE 0 END), 0), 0) AS other_fee_total
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 1 THEN COALESCE(fc.amount,0) - COALESCE(fc.discount,0) ELSE 0 END), 0), 0) AS monthly_fee_total,
+                COALESCE(ROUND(SUM(CASE WHEN COALESCE(ft.is_monthly_fee, 0) = 0 THEN COALESCE(fc.amount,0) - COALESCE(fc.discount,0) ELSE 0 END), 0), 0) AS other_fee_total
             FROM fee_chalan fc
             LEFT JOIN fee_type ft ON ft.fee_type_id = fc.fee_type_id
             WHERE fc.student_id IN ({$placeholders})
+                AND fc.fee_type_id > 0
                 AND fc.status = 'paid'
                 AND fc.paid_date IS NOT NULL
             GROUP BY fc.student_id, DATE_FORMAT(fc.paid_date, '%Y-%m')";
@@ -1447,12 +1718,7 @@ public function searchStudents()
             sec.section_name,
             p.parent_id,
             p.father_cnic,
-            CONCAT(
-                s.first_name, ' ', COALESCE(s.last_name, ''), 
-                ' (', s.reg_no, ') - ', 
-                COALESCE(c.class_name, ''), ' ', COALESCE(sec.section_name, ''),
-                ' | Father: ', COALESCE(p.f_name, '')
-            ) as text
+            CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''), ' (', s.reg_no, ')') as text
         ");
 
         $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
@@ -1464,25 +1730,49 @@ public function searchStudents()
         $builder->where('s.campus_id', $campus_id);
         $builder->where('s.status', 1);
 
+        // Apply class and section filters
+        if (!empty($class_id)) {
+            $builder->where('c.class_id', $class_id);
+        }
+        if (!empty($section_id)) {
+            $builder->where('sec.section_id', $section_id);
+        }
+
         // Search by name, reg no, or CNIC
         if (!empty($term)) {
-            $builder->groupStart()
-                ->like('s.first_name', $term)
-                ->orLike('s.last_name', $term)
-                ->orLike('CONCAT(s.first_name, " ", s.last_name)', $term)
-                ->orLike('s.reg_no', $term)
-                ->orLike('p.f_name', $term)
-                ->orLike('p.father_cnic', $term)
-                ->orLike('p.father_contact', $term)
-                ->groupEnd();
-        }
-
-        if (!empty($class_id)) {
-            $builder->where('cs.class_id', $class_id);
-        }
-
-        if (!empty($section_id)) {
-            $builder->where('cs.cls_sec_id', (int) $section_id);
+            $builder->groupStart();
+            
+            // Search in first_name
+            $builder->orGroupStart();
+            $builder->like('s.first_name', $term);
+            $builder->groupEnd();
+            
+            // Search in last_name
+            $builder->orGroupStart();
+            $builder->like('s.last_name', $term);
+            $builder->groupEnd();
+            
+            // Search in full name (concatenated)
+            $builder->orGroupStart();
+            $builder->like('CONCAT(s.first_name, " ", s.last_name)', $term);
+            $builder->groupEnd();
+            
+            // Search in registration number
+            $builder->orGroupStart();
+            $builder->like('s.reg_no', $term);
+            $builder->groupEnd();
+            
+            // Search in father's name
+            $builder->orGroupStart();
+            $builder->like('p.f_name', $term);
+            $builder->groupEnd();
+            
+            // Search in father's CNIC
+            $builder->orGroupStart();
+            $builder->like('p.father_cnic', $term);
+            $builder->groupEnd();
+            
+            $builder->groupEnd();
         }
 
         $builder->limit(20);
@@ -1496,13 +1786,20 @@ public function searchStudents()
         
         $results = $query->getResultArray();
         log_message('debug', 'Found ' . count($results) . ' results');
+        log_message('debug', 'Last query: ' . $this->db->getLastQuery());
         
+        // Format results for Select2
         $formatted = array_map(function($r) {
             return [
                 'id' => $r['id'],
                 'text' => $r['text'],
+                'student_name' => $r['student_name'],
+                'father_name' => $r['father_name'],
+                'reg_no' => $r['reg_no'],
+                'class_name' => $r['class_name'] ?? '',
+                'section_name' => $r['section_name'] ?? '',
                 'parent_id' => $r['parent_id'] ?? 0,
-                'student_id' => $r['id']
+                'father_cnic' => $r['father_cnic'] ?? ''
             ];
         }, $results);
 
@@ -1639,17 +1936,12 @@ public function searchFamilies()
         return $this->renderChalan('admin/chalanview/fee_chalan_familywise_single', true);
     }
 
-    public function hostel()
-    {
-        return $this->renderChalan('admin/chalanview/fee_chalan_hostel', false, true);
-    }
-
     public function withHeader()
     {
         return $this->renderChalan('admin/chalanview/fee_chalan_with_header');
     }
 
-    private function renderChalan(string $viewName, bool $isFamilywise = false, bool $isHostel = false)
+    private function renderChalan(string $viewName, bool $isFamilywise = false)
     {
         $request = service('request');
 
@@ -1677,7 +1969,7 @@ public function searchFamilies()
             'sectionsclassinfo' => $sectionsclassinfo,
             'data' => $isFamilywise
                 ? $this->fetchFamilywiseChalanData()
-                : ($isHostel ? $this->fetchHostelChalanData() : $this->fetchChalanData(false, false, $cls_sec_id, $fee_month))
+                : $this->fetchChalanData(false, $cls_sec_id, $fee_month)
         ];
 
         echo view($viewName, $data);
@@ -1687,13 +1979,11 @@ public function searchFamilies()
     // Add these methods if they don't exist (from your original code)
     private function fetchChalanData(
         bool $isFamilywise = false,
-        bool $isHostel = false,
         ?int $cls_sec_id = null,
         ?string $fee_month = null
     ): array
     {
         if ($isFamilywise) return $this->fetchFamilywiseChalanData();
-        if ($isHostel)     return $this->fetchHostelChalanData();
 
         $campus_id  = (int) session()->get('member_campusid');
         $session_id = (int) session()->get('member_sessionid');
@@ -1781,6 +2071,11 @@ public function searchFamilies()
 
         // For each student, attach ALL unpaid records (body) and pretty labels for header
         foreach ($students as $k => &$row) {
+            $row['student_name'] = fee_chalan_student_display_name(
+                $row['student_name'] ?? '',
+                $row['reg_no'] ?? null
+            );
+
             // Header labels (last entry — regardless of status)
             $row['last_fee_month_label']  = !empty($row['last_fee_month'])
                 ? $this->formatFeeMonthLabel($row['last_fee_month'])
@@ -1846,14 +2141,6 @@ public function searchFamilies()
         return [];
     }
 
-    private function fetchHostelChalanData()
-    {
-        // Implement if needed
-        return [];
-    }
-
-
-
 public function add()
 {
     $db = \Config\Database::connect();
@@ -1892,27 +2179,6 @@ public function add()
         ->get()
         ->getResult();
         
-    $a_fee_type_info = $db->table('fee_type')
-        ->where('a_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
-        
-    $t_fee_type_info = $db->table('fee_type')
-        ->where('t_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
-        
-    $h_fee_type_info = $db->table('fee_type')
-        ->where('h_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
-
     // Get classes for dropdown
     $classes = [];
     try {
@@ -1974,9 +2240,8 @@ public function add()
         'pageTitle'             => 'Generate Fee Chalan',
         'campusInfo'            => $campusInfo,
         'fee_type_info'         => $fee_type_info,
-        'a_fee_type_info'       => $a_fee_type_info,
-        't_fee_type_info'       => $t_fee_type_info,
-        'h_fee_type_info'       => $h_fee_type_info,
+        'a_fee_type_info'       => [],
+        't_fee_type_info'       => [],
         'fee_chalan'            => null,
         'selected_fee_type_ids' => [],
         'classes'               => $classes,
@@ -2034,6 +2299,7 @@ public function getTodayChalansWithAdmissionLogic()
                 fc.issue_date,
                 s.first_name,
                 s.last_name,
+                s.reg_no,
                 s.date_of_admission,
                 ft.fee_type_name,
                 c.class_name,
@@ -2132,13 +2398,14 @@ private function buildChalanObject($row)
     $chalan->days_since_admission = $row->days_since_admission ?? 0;
     $chalan->is_new_admission = $row->is_new_admission ?? 0;
     
-    // Build student name
+    // Build student name (with registration on challans)
     $firstName = $row->first_name ?? '';
     $lastName = $row->last_name ?? '';
-    $chalan->student_name = trim($firstName . ' ' . $lastName);
-    if (empty($chalan->student_name)) {
-        $chalan->student_name = 'Student #' . $row->student_id;
+    $baseName = trim($firstName . ' ' . $lastName);
+    if ($baseName === '') {
+        $baseName = 'Student #' . $row->student_id;
     }
+    $chalan->student_name = fee_chalan_student_display_name($baseName, $row->reg_no ?? null);
     
     // Fee type name
     $chalan->fee_type_name = $row->fee_type_name ?? 'Fee Type #' . $row->fee_type_id;
@@ -2497,7 +2764,7 @@ public function getEditForm()
             ->join('students s', 's.student_id = fc.student_id')
             ->where('s.parent_id', $parent_id)
             ->where('s.campus_id', $campus_id)
-            ->where('fc.status', 'unpaid')
+            ->where($this->feeChalanOpenStatusSql('fc'), null, false)
             ->orderBy('s.first_name', 'ASC')
             ->orderBy('fc.fee_month', 'DESC')
             ->orderBy('fc.issue_date', 'DESC')
@@ -2535,7 +2802,7 @@ public function getEditForm()
             ->join('students s', 's.student_id = fc.student_id')
             ->where('fc.student_id', $student_id)
             ->where('s.campus_id', $campus_id)
-            ->where('fc.status', 'unpaid')
+            ->where($this->feeChalanOpenStatusSql('fc'), null, false)
             ->orderBy('fc.fee_month', 'DESC')
             ->orderBy('fc.issue_date', 'DESC')
             ->get()
@@ -2764,7 +3031,10 @@ public function saveEdit()
             $data[] = [
                 'id'            => $row->chalan_id,
                 'reg_no'        => $row->reg_no,
-                'student_name'  => trim($row->first_name . ' ' . $row->last_name),
+                'student_name'  => fee_chalan_student_display_name(
+                    trim($row->first_name . ' ' . $row->last_name),
+                    $row->reg_no ?? null
+                ),
                 'fee_month'     => $row->fee_month,
                 'amount'        => $row->amount - $row->discount,
                 'status'        => $row->status,
@@ -3425,6 +3695,8 @@ private function handleInvoiceAndFee(
 
         if ($insertedCount > 0 && $db->transStatus() === true) {
             $db->transCommit();
+            $this->applyAdvanceToMonth($db, $student_id, $fee_month, $issue_date, $due_date, $user_id);
+
             return true;
         }
 
@@ -3473,114 +3745,119 @@ private function applyAdvanceToMonth(
     string $dueDateYmd,         // 'Y-m-d'
     int $userId
 ): void {
-    $ADVANCE_FEE_TYPE_ID = 194;
+    $advanceTypeId = advance_fee_type_id();
+    $balance       = get_student_advance_balance($db, $studentId);
 
-    // 1) Find latest advance row with a positive remaining amount
+    if ($balance <= 0) {
+        return;
+    }
+
     $adv = $db->table('fee_chalan')
-        ->select('chalan_id, amount, COALESCE(discount,0) AS discount, paid_date')
+        ->select('chalan_id, paid_date')
         ->where('student_id', $studentId)
-        ->where('fee_type_id', $ADVANCE_FEE_TYPE_ID)
-        ->where('status', 'paid')                 // adjust if you store 'Paid'
+        ->where('fee_type_id', $advanceTypeId)
+        ->where('status', 'paid')
         ->where('amount >', 0)
-        ->orderBy('paid_date', 'DESC')
         ->orderBy('chalan_id', 'DESC')
         ->get()
         ->getRow();
 
-    if (!$adv) {
-        return; // no advance to apply
+    if (! $adv) {
+        return;
     }
 
-    // NOTE: if you keep discount on advance rows, treat it as 0 here.
-    $advanceAvail = (float) $adv->amount;
+    $advancePaidDate = (string) ($adv->paid_date ?? '');
+    if ($advancePaidDate === '' || $advancePaidDate === '0000-00-00') {
+        $advancePaidDate = $issueDateYmd;
+    }
 
-    // 2) Fetch *unpaid* chalans of this month (all fee types you just generated)
+    $advanceAvail = $balance;
+
     $unpaidRows = $db->table('fee_chalan')
-        ->select('chalan_id, student_id, fee_type_id, invoice_no, amount, COALESCE(discount,0) AS discount')
+        ->select('chalan_id, student_id, fee_type_id, invoice_no, issue_date, amount, COALESCE(discount,0) AS discount')
         ->where('student_id', $studentId)
-        ->where('fee_month',  $feeMonth)
-        ->where('status',     'unpaid')          // adjust if you store 'Unpaid'
+        ->where('fee_month', $feeMonth)
+        ->where('status', 'unpaid')
+        ->where('fee_type_id !=', $advanceTypeId)
         ->orderBy('chalan_id', 'ASC')
         ->get()
         ->getResultArray();
 
-    if (!$unpaidRows || $advanceAvail <= 0) {
+    if ($unpaidRows === [] || $advanceAvail <= 0) {
         return;
     }
 
+    $now = date('Y-m-d H:i:s');
     $db->transStart();
 
     foreach ($unpaidRows as $row) {
-        if ($advanceAvail <= 0) break;
+        if ($advanceAvail <= 0) {
+            break;
+        }
 
-        $chalanId   = (int) $row['chalan_id'];
-        $discount   = (float) $row['discount'];              // usually 0
-        $payable    = max(0.0, (float) $row['amount'] - $discount);
+        $chalanId = (int) $row['chalan_id'];
+        $discount = (float) $row['discount'];
+        $payable  = max(0.0, (float) $row['amount'] - $discount);
 
         if ($payable <= 0) {
             continue;
         }
 
+        $rowIssueDate = ! empty($row['issue_date']) && $row['issue_date'] !== '0000-00-00'
+            ? $row['issue_date']
+            : $issueDateYmd;
+
         if ($advanceAvail >= $payable) {
-            // Fully cover this chalan
             $db->table('fee_chalan')->where('chalan_id', $chalanId)->update([
-                'status'         => 'paid',                  // adjust to your status text
+                'status'         => 'paid',
                 'payment_status' => 'completed',
-                'paid_date'      => $adv->paid_date,         // <-- REQUIRED: use advance paid_date
-                'updated_date'   => date('Y-m-d H:i:s'),
+                'paid_date'      => $advancePaidDate,
+                'updated_date'   => $now,
                 'user_id'        => $userId,
             ]);
             $advanceAvail -= $payable;
-
         } else {
-            // Partial cover: split the row into (paid part) + (unpaid remainder)
-            // Keep the *same discount* on the paid row (common case: 0)
             $paidPortionPayable = $advanceAvail;
-
-            // New amount for the PAID (updated) row = (paid payable + discount)
-            $newPaidAmount = round($paidPortionPayable + $discount, 2);
+            $newPaidAmount      = round($paidPortionPayable + $discount, 2);
 
             $db->table('fee_chalan')->where('chalan_id', $chalanId)->update([
                 'amount'         => $newPaidAmount,
                 'status'         => 'paid',
                 'payment_status' => 'completed',
-                'paid_date'      => $adv->paid_date,
-                'updated_date'   => date('Y-m-d H:i:s'),
+                'paid_date'      => $advancePaidDate,
+                'updated_date'   => $now,
                 'user_id'        => $userId,
             ]);
 
-            // Remainder as a new UNPAID row (discount 0 to keep accounting simple)
             $remainderPayable = round($payable - $paidPortionPayable, 2);
 
             $db->table('fee_chalan')->insert([
                 'student_id'     => $row['student_id'],
                 'due_date'       => $dueDateYmd,
-                'issue_date'     => $issueDateYmd,
-                'fee_month_old'  => $feeMonth,          // keep if you mirror it
+                'issue_date'     => $rowIssueDate,
+                'fee_month_old'  => date('F Y', strtotime($feeMonth . '-01')),
                 'fee_month'      => $feeMonth,
-                'amount'         => $remainderPayable,   // remainder payable (no discount)
+                'amount'         => $remainderPayable,
                 'discount'       => 0,
                 'status'         => 'unpaid',
                 'payment_status' => 'pending',
                 'fee_type_id'    => $row['fee_type_id'],
-                'paid_date'      => $issueDateYmd,       // required NOT NULL; keep consistent with your inserts
-                'created_date'   => date('Y-m-d H:i:s'),
-                'updated_date'   => date('Y-m-d H:i:s'),
+                'paid_date'      => '0000-00-00',
+                'created_date'   => $now,
+                'updated_date'   => $now,
                 'user_id'        => $userId,
-                'invoice_no'     => $row['invoice_no'],  // keep same invoice_no if you want them grouped
+                'invoice_no'     => $row['invoice_no'],
             ]);
 
-            // advance fully used
             $advanceAvail = 0;
             break;
         }
     }
 
-    // 3) Write the remaining advance back to the *same* advance row
-    //    (e.g. 5000 - 2800 = 2200 left)
     $db->table('fee_chalan')->where('chalan_id', (int) $adv->chalan_id)->update([
-        'amount'       => round($advanceAvail, 2),
-        'updated_date' => date('Y-m-d H:i:s'),
+        'amount'       => round(max(0.0, $advanceAvail), 2),
+        'fee_type_id'  => $advanceTypeId,
+        'updated_date' => $now,
         'user_id'      => $userId,
     ]);
 
@@ -3733,6 +4010,7 @@ public function get_studentinfo()
         ->select('
             s.student_id,
             s.parent_id,
+            s.reg_no,
             CONCAT(s.first_name, " ", COALESCE(s.last_name, "")) AS student_name,
             p.f_name AS father_name,
             CONCAT(c.class_name, " ", sec.section_name) AS section_name
@@ -3763,10 +4041,12 @@ public function get_studentinfo()
     $data = array_map(function ($r) {
         $father = $r['father_name'] ?: '';
         $sec    = $r['section_name'] ?: '';
+        $label  = fee_chalan_student_display_name($r['student_name'] ?? '', $r['reg_no'] ?? null);
+
         return [
             'id'         => (int)$r['student_id'],
             'parent_id'  => (int)$r['parent_id'],
-            'text'       => "{$r['student_name']} c/o {$father} {$sec}",
+            'text'       => "{$label} c/o {$father} {$sec}",
         ];
     }, $rows);
 
@@ -3792,7 +4072,7 @@ private function getUnpaidChalansByStudent(int $student_id): array
     $qb->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left');
 
     $qb->where('fc.student_id', $student_id);
-    $qb->where('fc.status', 'unpaid');
+    $qb->where($this->feeChalanOpenStatusSql('fc'), null, false);
 
     // Latest first
     $qb->orderBy("
@@ -3826,12 +4106,27 @@ private function getUnpaidChalansByStudent(int $student_id): array
         }
         $r['fee_month_compact'] = $compact ?: ($r['fee_month'] ?? '');
         $r['particulars_label'] = trim(($r['fee_type_name'] ?? 'Fee') . ' (' . $r['fee_month_compact'] . ')');
-        $r['net_amount']        = (float)($r['amount'] ?? 0) - (float)($r['discount'] ?? 0);
+        $rAmt = (float) ($r['amount'] ?? 0);
+        $rDisc = $r['discount'] ?? 0;
+        if ($rDisc === '' || $rDisc === null) {
+            $rDisc = 0.0;
+        }
+        $rDisc = (float) $rDisc;
+        $r['amount']     = $rAmt;
+        $r['discount']   = $rDisc;
+        $r['net_amount'] = $rAmt - $rDisc;
     }
     unset($r);
 
-    // Filter out zero or negative net rows here (so controller logic receives only non-zero)
+    // Filter out fine rows and zero/negative net rows.
     $rows = array_values(array_filter($rows, static function($r) {
+        $feeTypeId = (int) ($r['fee_type_id'] ?? 0);
+        $labelNorm = strtolower(trim((string) ($r['fee_type_name'] ?? '')));
+
+        if ($feeTypeId === 0 || strpos($labelNorm, 'fine') !== false || strpos($labelNorm, 'late fee') !== false) {
+            return false;
+        }
+
         return (float)($r['net_amount'] ?? 0) > 0;
     }));
 

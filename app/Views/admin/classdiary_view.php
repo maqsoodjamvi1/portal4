@@ -64,7 +64,7 @@
     /* Section Styles */
     .diary-section {
         margin-bottom: 25px;
-        border-left: 4px solid #e0e0e0;
+        border-start: 4px solid #e0e0e0;
         padding-left: 15px;
     }
     
@@ -276,29 +276,24 @@
     }
 </style>
 
-<!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-book-open"></i> Daily Diary</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Daily Diary</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- Content Header (screen only; weekly table prints from #termweekdates) -->
+<div class="no-print">
+<?= view('components/page_header', [
+    'title' => 'Daily Diary',
+    'icon' => 'fas fa-book-open',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Daily Diary', 'active' => true],
+    ],
+]) ?>
+</div>
 
 <!-- Main content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
       <div class="card card-primary card-outline card-tabs">
-        <div class="card-header p-0 pt-1 border-bottom-0">
+        <div class="card-header p-0 pt-1 border-bottom-0 no-print">
           <ul class="nav nav-tabs">
             <li class="nav-item">
               <a class="nav-link" href="<?= base_url('admin/classdiary/add') ?>">
@@ -315,7 +310,14 @@
 
         <div class="card-body">
           <div class="col-lg-12">
-            <form id="diaryFilterForm" method="post" action="<?= base_url('admin/classdiary-view/data') ?>">
+            <?php if (! empty($isTeacher) && empty($sections)): ?>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-1"></i>
+                You are not assigned to any class section yet. Please contact your administrator.
+              </div>
+            <?php endif; ?>
+
+            <form id="diaryFilterForm" class="no-print" method="post" action="<?= base_url('admin/classdiary-view/data') ?>">
               <div class="row">
                 <!-- Terms -->
                 <div class="col-lg-3">
@@ -348,7 +350,7 @@
                   <div class="form-group">
                     <label><i class="fas fa-users"></i> Section</label>
                     <select class="form-control select2" name="section_id" id="section_id">
-                      <option value="">-- All Sections --</option>
+                      <option value=""><?= ! empty($isTeacher) ? '-- All My Sections --' : '-- All Sections --' ?></option>
                       <?php if (isset($sections)): ?>
                         <?php foreach ($sections as $section): ?>
                           <option value="<?= $section['cls_sec_id'] ?>">
@@ -362,20 +364,20 @@
 
                 <!-- View Button -->
                 <div class="col-lg-3 d-flex align-items-end">
-                  <button type="submit" id="viewBtn" class="btn btn-primary btn-block" style="height:42px;">
+                  <button type="submit" id="viewBtn" class="btn btn-primary w-100" style="height:42px;">
                     <i class="fas fa-search"></i> View Diary
                   </button>
                 </div>
               </div>
 
               <!-- Enhanced Report Options -->
-              <div class="row mt-3 mb-3 print-hide">
+              <div class="row mt-3 mb-3 no-print">
                 <div class="col-md-12">
                   <div class="card">
                     <div class="card-header bg-light">
                       <h5 class="mb-0">
                         <i class="fas fa-sliders-h"></i> Report Options
-                        <button type="button" class="btn btn-sm btn-outline-secondary ml-2" id="toggleAllOptions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="toggleAllOptions">
                           <i class="fas fa-check-double"></i> Select All
                         </button>
                       </h5>
@@ -535,7 +537,7 @@ $(document).ready(function() {
             success: function(response) {
                 $('#termweekdates').html(response);
                 // Initialize any tooltips or popovers in the response
-                $('[data-toggle="tooltip"]').tooltip();
+                $('[data-bs-toggle="tooltip"]').tooltip();
             },
             error: function(xhr, status, error) {
                 $('#termweekdates').html(`

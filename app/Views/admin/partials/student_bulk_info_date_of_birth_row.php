@@ -31,12 +31,12 @@ $toggleCheckedAttr = $db_status === 1 ? 'checked' : '';
 
   <!-- DOB Status Toggle (db_status) -->
   <td data-col="db_status" class="text-center">
-    <div class="custom-control custom-switch">
+    <div class="form-check form-switch">
       <input type="checkbox"
-             class="custom-control-input dob-status-toggle"
+             class="form-check-input dob-status-toggle"
              id="dbs_<?= esc($student->student_id) ?>"
              <?= $toggleCheckedAttr ?>>
-      <label class="custom-control-label" for="dbs_<?= esc($student->student_id) ?>"></label>
+      <label class="form-check-label" for="dbs_<?= esc($student->student_id) ?>"></label>
     </div>
 
     <!-- hidden actual value sent to server -->
@@ -56,7 +56,7 @@ $toggleCheckedAttr = $db_status === 1 ? 'checked' : '';
   </td>
 
   <!-- Action -->
-  <td class="text-right">
+  <td class="text-end">
     <button type="button" class="btn btn-sm btn-success saveStudentBtn">
       Save
     </button>

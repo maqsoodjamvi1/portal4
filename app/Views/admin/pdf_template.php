@@ -6,7 +6,7 @@
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
         .student-photo { width: 150px; height: 180px; object-fit: cover; border: 1px solid #ddd; float: right; }
         .section { margin-bottom: 20px; page-break-inside: avoid; }
-        .section-title { background-color: #f5f5f5; padding: 5px 10px; font-weight: bold; border-left: 4px solid #333; }
+        .section-title { background-color: #f5f5f5; padding: 5px 10px; font-weight: bold; border-start: 4px solid #333; }
         .row { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
         .col { flex: 1; min-width: 200px; padding: 0 5px; }
         .label { font-weight: bold; color: #555; }

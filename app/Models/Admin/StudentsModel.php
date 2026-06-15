@@ -32,6 +32,7 @@ class StudentsModel extends Model
         return $this->where('campus_id', $campus_id)
                     ->where('parent_id', $parent_id)
                     ->where('status', 1)
+                    ->asObject()
                     ->findAll();
     }
 

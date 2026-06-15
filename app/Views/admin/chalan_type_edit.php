@@ -32,28 +32,14 @@
 	}
 
 ?>
+ <?= view('components/page_header', [
+    'title' => 'Chalan Type',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Chalan Type', 'active' => true],
+    ],
+]) ?>
 
- <!-- Content Header (Page header) -->
-
- <section class="content-header">
-
-      <h1>
-
-        Chalan Type 
-
-        <small></small>
-
-      </h1>
-
-      <ol class="breadcrumb">
-
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-        <li class="active">Chalan Type</li>
-
-      </ol>
-
-    </section>
 
    <!-- Main content -->
 
@@ -61,7 +47,7 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
 		  <div class="nav-tabs-custom">
 
@@ -125,9 +111,9 @@
 
         <button type="submit" class="btn btn-primary">Save</button>
 
-		<button type="reset" class="btn btn-default">Reset</button>
+		<button type="reset" class="btn btn-secondary">Reset</button>
 
-		<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+		<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 
       </div>
 

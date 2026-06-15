@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Attendance Report - <?= esc($student_name) ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
@@ -380,13 +380,14 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentStudentId = null;
-    let currentSessionId = <?= $session_id ?? 0 ?>;
+    const shareToken = <?= json_encode($share_token ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     
     // Sibling selection
     $('.sibling-card').on('click', function() {
@@ -409,8 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         $.post('<?= base_url("parent/attendance/getChildAttendance") ?>', {
             student_id: currentStudentId,
-            session_id: currentSessionId,
-            filter_type: 'current_session'
+            share_token: shareToken
         }, function(response) {
             $('#loading-spinner').hide();
             if (response.success) {
@@ -432,10 +432,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function formatYmdShort(ymd) {
+        if (!ymd) return '';
+        const dt = new Date(String(ymd).replace(/-/g, '/') + ' 12:00:00');
+        if (isNaN(dt.getTime())) return ymd;
+        return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function renderSummaryCards(summary, compact) {
+        const totalDays = summary.total_days || 0;
+        const presentCount = summary.present_count || 0;
+        const absentCount = summary.absent_count || 0;
+        const lateCount = summary.late_count || 0;
+        const lateComingCount = summary.late_coming_count || 0;
+        const earlyLeaveCount = summary.early_leave_count || 0;
+        const attendanceRate = summary.attendance_rate || 0;
+        const mb = compact ? 'mb-2' : 'mb-2';
+        const col = compact ? 'col-6 col-md-4 col-lg-2' : 'col-6 col-md-2';
+        let h = `<div class="row ${compact ? 'g-2' : ''}">`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-calendar-alt text-info"></i><h3>${totalDays}</h3><p>Total Days</p></div></div>`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-check-circle text-success"></i><h3>${presentCount}</h3><p>Present (P)</p></div></div>`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-times-circle text-danger"></i><h3>${absentCount}</h3><p>Absent (A)</p></div></div>`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-clock text-warning"></i><h3>${lateCount}</h3><p>Late (L)</p></div></div>`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-hourglass-half text-info"></i><h3>${lateComingCount}</h3><p>Late Coming (LC)</p></div></div>`;
+        h += `<div class="${col} ${mb}"><div class="stats-card"><i class="fas fa-chart-line text-primary"></i><h3>${attendanceRate}%</h3><p>Attendance Rate</p></div></div>`;
+        h += `</div>`;
+        if (earlyLeaveCount > 0) {
+            h += `<div class="row"><div class="col-6 col-md-4 mx-auto ${mb}"><div class="stats-card"><i class="fas fa-sign-out-alt text-secondary"></i><h3>${earlyLeaveCount}</h3><p>Early Leave (EL)</p></div></div></div>`;
+        }
+        return h;
+    }
+
     function displayAttendance(data) {
         const student = data.student;
         const attendance = data.attendance;
         const summary = data.summary;
+        const currentTerm = data.current_term || null;
+        const otherTerms = data.other_terms || [];
         const workingDays = data.working_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         
         // Map full day names to short names for display
@@ -456,82 +489,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const weeklyData = groupByWeek(attendance);
         
-        // Calculate counts from summary
-        const totalDays = summary.total_days || 0;
-        const presentCount = summary.present_count || 0;
-        const absentCount = summary.absent_count || 0;
-        const lateCount = summary.late_count || 0;
-        const lateComingCount = summary.late_coming_count || 0;
-        const earlyLeaveCount = summary.early_leave_count || 0;
-        const attendanceRate = summary.attendance_rate || 0;
-        
+        const periodLabel = currentTerm
+            ? `Current term: ${escapeHtml(currentTerm.term_name || '')} · ${escapeHtml(currentTerm.session_name || '')}<br><small class="text-muted">${formatYmdShort(currentTerm.start_date)} – ${formatYmdShort(currentTerm.end_date)}</small><br><small class="text-muted">Attendance counted through ${summary.end_date}</small>`
+            : `<small class="text-muted">Session summary: ${summary.start_date} - ${summary.end_date}</small>`;
+
         let html = `
             <div class="text-center mb-4">
                 <h3>${escapeHtml(student.first_name)} ${escapeHtml(student.last_name || '')}</h3>
                 <p class="text-muted">${escapeHtml(student.class_short_name || '')} ${student.section_name ? '- ' + escapeHtml(student.section_name) : ''}</p>
-                <p><small>Session Period: ${summary.start_date} - ${summary.end_date}</small></p>
+                <p class="mb-0">${periodLabel}</p>
             </div>
 
-            <div class="row mb-4">
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-calendar-alt text-info"></i>
-                        <h3>${totalDays}</h3>
-                        <p>Total Days</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-check-circle text-success"></i>
-                        <h3>${presentCount}</h3>
-                        <p>Present (P)</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-times-circle text-danger"></i>
-                        <h3>${absentCount}</h3>
-                        <p>Absent (A)</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-clock text-warning"></i>
-                        <h3>${lateCount}</h3>
-                        <p>Late (L)</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-hourglass-half text-info"></i>
-                        <h3>${lateComingCount}</h3>
-                        <p>Late Coming (LC)</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-2 mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-chart-line text-primary"></i>
-                        <h3>${attendanceRate}%</h3>
-                        <p>Attendance Rate</p>
-                    </div>
-                </div>
-            </div>
-            
-            ${earlyLeaveCount > 0 ? `
-            <div class="row mb-4">
-                <div class="col-6 col-md-3 mx-auto mb-2">
-                    <div class="stats-card">
-                        <i class="fas fa-sign-out-alt text-secondary"></i>
-                        <h3>${earlyLeaveCount}</h3>
-                        <p>Early Leave (EL)</p>
-                    </div>
-                </div>
-            </div>
-            ` : ''}
+            <h5 class="mb-3"><i class="fas fa-chart-bar"></i> Current term (detail)</h5>
+            ${renderSummaryCards(summary, false)}
         `;
 
         if (weeklyData.length === 0) {
-            html += `<div class="alert alert-info text-center">No attendance records found for the session period</div>`;
+            html += `<div class="alert alert-info text-center">No attendance records found for the current term period</div>`;
         } else {
             weeklyData.forEach(function(week, weekIndex) {
                 const weekNumber = weekIndex + 1;
@@ -600,6 +574,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             </table>
                         </div>
                     </div>`;
+            });
+        }
+
+        if (otherTerms.length > 0) {
+            html += `<hr class="my-4"><h5 class="mb-3"><i class="fas fa-layer-group"></i> Other terms &amp; sessions <small class="text-muted fw-normal">(summary only)</small></h5>`;
+            otherTerms.forEach(function(ot) {
+                const sn = escapeHtml(ot.session_name || '');
+                const tn = escapeHtml(ot.term_name || '');
+                const dr = formatYmdShort(ot.start_date) + ' – ' + formatYmdShort(ot.end_date);
+                html += `<div class="week-card mb-3"><div class="week-header"><span class="week-title">${sn}</span> · <span class="week-title">${tn}</span><div class="week-date">${dr}</div></div><div class="p-3">${renderSummaryCards(ot.summary || {}, true)}</div></div>`;
             });
         }
         

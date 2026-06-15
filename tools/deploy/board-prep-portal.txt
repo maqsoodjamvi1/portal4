@@ -1,0 +1,118 @@
+Board Prep Portal — prep.timesoftsol.com
+=========================================
+
+Overview
+--------
+Public board-exam preparation portal for SSC/HSSC students (not enrolled in a school).
+Signup: username, password, name, father name, class, board.
+Features: quiz catalog, attempts, results (overall + subject-wise).
+
+Database
+--------
+Run migration on the server:
+
+  cd /var/www/portal4/html
+  php spark migrate
+
+Migration file:
+  app/Database/Migrations/2026-06-15-120000_CreateBoardPrepTables.php
+
+Creates:
+  - board_prep_users
+  - board_prep_platform (stores platform campus + virtual class section IDs)
+  - quizzes.audience, prep_grade_level, prep_board_publisher_id
+  - students.account_type, students.board_prep_user_id (shadow student bridge)
+  - Seeds qb_board_publishers (FBISE, RBISE, LBISE, Sindh, KPK) when missing
+
+DNS + Apache vhost
+------------------
+1. DNS A record: prep.timesoftsol.com → same server as portal4
+
+2. Apache vhost (example):
+
+   <VirtualHost *:443>
+     ServerName prep.timesoftsol.com
+     DocumentRoot /var/www/portal4/html/public
+     <Directory /var/www/portal4/html/public>
+       AllowOverride All
+       Require all granted
+     </Directory>
+     SSLEngine on
+     SSLCertificateFile ...
+     SSLCertificateKeyFile ...
+   </VirtualHost>
+
+3. Same codebase as portal4 — no separate deploy tree required.
+
+Environment (.env)
+------------------
+# Hostnames for board prep routing (comma-separated)
+boardPrep.hosts = prep.timesoftsol.com
+
+# On portal4 (no prep subdomain yet): board prep is always at /prep/*
+#   https://portal4.timesoftsol.com/prep/signup
+#   https://portal4.timesoftsol.com/prep/login
+#
+# Local XAMPP:
+#   http://localhost/school-management-system/public/prep/signup
+
+Product name (optional):
+boardPrep.productName = "Board Exam Prep"
+
+IMPORTANT — route fix (404 on /prep/signup)
+--------------------------------------------
+CI4 route groups use the FIRST argument for the URL prefix (e.g. group('prep', ...)),
+NOT options['prefix']. Fixed in app/Config/Routes/BoardPrep.php — redeploy that file.
+
+Deploy files
+------------
+After migration, deploy at minimum:
+
+  app/Config/BoardPrep.php
+  app/Config/Routes/BoardPrep.php
+  app/Config/Routes.php
+  app/Config/Filters.php
+  app/Config/Autoload.php
+  app/Controllers/BoardPrep/*
+  app/Filters/BoardPrepAuthFilter.php
+  app/Libraries/BoardPrepPlatformService.php
+  app/Libraries/BoardPrepProvisioningService.php
+  app/Helpers/board_prep_helper.php
+  app/Views/board_prep/**
+  app/Views/admin/quizzes/partials/board_prep_targeting.php
+  app/Controllers/Admin/Quizzes.php (board prep targeting)
+  app/Controllers/Frontend/Quizzes.php (board prep URL + access checks)
+  app/Database/Migrations/2026-06-15-120000_CreateBoardPrepTables.php
+  public/resource/css/board_prep.css
+
+Admin: publishing prep quizzes
+------------------------------
+Admin → Quizzes → Create (or Edit)
+  Audience: "Board prep portal only" or "School + board prep"
+  Prep class: SSC-I / SSC-II / HSSC-I / HSSC-II
+  Board: optional (All boards = visible to all boards at that grade)
+
+First signup auto-creates platform system/campus and virtual class sections.
+
+Portal URLs
+-----------
+prep.timesoftsol.com (subdomain — no /prep prefix):
+  /signup        Registration
+  /login         Login
+
+portal4.timesoftsol.com (path prefix):
+  /prep/signup   Registration
+  /prep/login    Login
+  /prep/         Landing
+  /dashboard     Student dashboard
+  /quizzes       Quiz catalog
+  /quizzes/start/{id}
+  /results       Overall results
+  /results/subjects
+  /results/quiz/{attemptId}
+
+Notes
+-----
+- Board prep users are NOT mixed into school student lists (account_type = board_prep).
+- Shadow students rows exist only for quiz_attempts.student_id compatibility.
+- School reports should exclude account_type = board_prep if querying platform campus.

@@ -29,28 +29,23 @@
   .badge-counter { padding: .35rem .6rem; border-radius: 999px; }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Assign Students to Houses</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Sports Mapping</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Assign Students to Houses',
+    'icon' => 'fas fa-exchange-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Mapping', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card card-primary">
     <div class="card-body">
-      <div class="form-row align-items-end">
+      <div class="row align-items-end">
         <div class="form-group col-md-4">
           <label for="cls_sec_id">Class-Section</label>
           <select id="cls_sec_id" class="form-control">
-            <option value="">Select…</option>
+            <option value="">Selectï¿½</option>
             <?php
             // If you have a helper like userClassSections() return [ ['cls_sec_id'=>.., 'class_name'=>.., 'section_name'=>..], ... ]
             if (function_exists('userClassSections')) {
@@ -67,22 +62,22 @@
         <div class="form-group col-md-8">
           <div class="sticky-top-strip">
             <div id="topCounts" class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
-              <span class="mr-2">Counts:</span>
-              <span class="badge badge-secondary badge-counter" id="count-unassigned">Unassigned: 0</span>
+              <span class="me-2">Counts:</span>
+              <span class="badge text-bg-secondary badge-counter" id="count-unassigned">Unassigned: 0</span>
               <span id="houseCountPlace"></span>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="boardHint" class="text-muted mb-2">Select a class-section to load students & houses…</div>
+      <div id="boardHint" class="text-muted mb-2">Select a class-section to load students & housesï¿½</div>
 
       <div id="houseBoard" class="house-board">
         <!-- Left: Unassigned -->
         <div class="unassigned">
           <div class="lane-header">
             <span>Unassigned</span>
-            <span class="badge badge-secondary" id="badge-unassigned">0</span>
+            <span class="badge text-bg-secondary" id="badge-unassigned">0</span>
           </div>
           <div id="list-0" class="student-list" data-house="0"></div>
         </div>

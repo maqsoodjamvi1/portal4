@@ -23,14 +23,14 @@ if ($line_height > 3.0) $line_height = 3.0;
     <div class="page-actions no-print">
       <div class="card card-outline card-primary">
         <div class="card-body py-2">
-          <form action="<?= base_url('admin/datesheet') ?>" method="get" class="form-row align-items-end">
+          <form action="<?= base_url('admin/datesheet') ?>" method="get" class="row align-items-end">
             <?php helper('url'); ?>
             <ul class="nav nav-tabs w-100 px-2 mb-3">
-              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet') ?>"><i class="fas fa-id-card-alt mr-1"></i> Admit Card</a></li>
-              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet2') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet2') ?>"><i class="far fa-id-card mr-1"></i> Admit Card 2</a></li>
-              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/without-syllabus') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/without-syllabus') ?>"><i class="fas fa-table mr-1"></i> Admit Card Without Syllabus</a></li>
-              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/add-syllabus') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add-syllabus') ?>"><i class="fas fa-list-ul mr-1"></i> Add Syllabus</a></li>
-              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/add') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add') ?>"><i class="far fa-calendar-plus mr-1"></i> Add Datesheet</a></li>
+              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet') ?>"><i class="fas fa-id-card-alt me-1"></i> Admit Card</a></li>
+              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet2') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet2') ?>"><i class="far fa-id-card me-1"></i> Admit Card 2</a></li>
+              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/without-syllabus') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/without-syllabus') ?>"><i class="fas fa-table me-1"></i> Admit Card Without Syllabus</a></li>
+              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/add-syllabus') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add-syllabus') ?>"><i class="fas fa-list-ul me-1"></i> Add Syllabus</a></li>
+              <li class="nav-item"><a class="nav-link <?= url_is('admin/datesheet/add') ? 'active' : '' ?>" href="<?= base_url('admin/datesheet/add') ?>"><i class="far fa-calendar-plus me-1"></i> Add Datesheet</a></li>
             </ul>
 
             <div class="form-group col-md-4">
@@ -78,14 +78,14 @@ if ($line_height > 3.0) $line_height = 3.0;
                      name="line_height" value="<?= esc($_GET['line_height'] ?? '2.0') ?>">
             </div>
             <div class="form-group col-sm-2">
-              <button class="btn btn-primary btn-block" name="submit" value="view" type="submit">
-                <i class="fas fa-eye mr-1"></i> View
+              <button class="btn btn-primary w-100" name="submit" value="view" type="submit">
+                <i class="fas fa-eye me-1"></i> View
               </button>
             </div>
 
-            <div class="form-group col-sm-2 ml-auto">
-              <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-block">
-                <i class="fas fa-print mr-1"></i> Print
+            <div class="form-group col-sm-2 ms-auto">
+              <button type="button" onclick="window.print()" class="btn btn-outline-secondary w-100">
+                <i class="fas fa-print me-1"></i> Print
               </button>
             </div>
           </form>
@@ -149,7 +149,7 @@ if ($line_height > 3.0) $line_height = 3.0;
 
           <!-- Exam headline + dotted line -->
           <div class="headline">
-            <span class="ribbon"><i class="far fa-id-card mr-2"></i>Admit Card of <?= esc($examName) ?></span>
+            <span class="ribbon"><i class="far fa-id-card me-2"></i>Admit Card of <?= esc($examName) ?></span>
           </div>
           <hr class="header-sep">
 
@@ -178,7 +178,7 @@ if ($line_height > 3.0) $line_height = 3.0;
 
             <!-- Attendance Summary -->
             <div class="att-wrap">
-              <div class="att-title english-text"><i class="fas fa-clipboard-check mr-1"></i> Attendance Summary </div>
+              <div class="att-title english-text"><i class="fas fa-clipboard-check me-1"></i> Attendance Summary </div>
               <?php if ((float)$dues > 0): ?>
                 <div class="due-badge" title="Remaining dues">
                   <span><?= number_format((float)$dues) ?></span>
@@ -278,7 +278,7 @@ if ($line_height > 3.0) $line_height = 3.0;
       <?php endforeach; ?>
 
     <?php else: ?>
-      <div class="alert alert-info"><i class="fas fa-info-circle mr-1"></i> No records to display. Choose a class and click "View".</div>
+      <div class="alert alert-info"><i class="fas fa-info-circle me-1"></i> No records to display. Choose a class and click "View".</div>
     <?php endif; ?>
 
   </div>
@@ -936,7 +936,7 @@ html, body, .content-wrapper, .content, .container-fluid{
   .page-actions,
   .card.card-outline.card-primary,
   .nav.nav-tabs,
-  .form-row,
+  .row,
   .alert.alert-info {
     display: none !important;
     visibility: hidden !important;

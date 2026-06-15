@@ -13,10 +13,10 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 .review-card.pending {
-    border-left: 4px solid #ffc107;
+    border-start: 4px solid #ffc107;
 }
 .review-card.reviewed {
-    border-left: 4px solid #28a745;
+    border-start: 4px solid #28a745;
 }
 .review-header {
     background: #f8f9fa;
@@ -76,21 +76,14 @@
 }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Activity Review Dashboard</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Activity Reviews</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Activity Review Dashboard',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Activity Reviews', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
     <!-- Session Info Banner -->
@@ -129,7 +122,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label>&nbsp;</label>
-                    <button type="submit" class="btn btn-primary btn-block">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="fa fa-filter"></i> Apply Filters
                     </button>
                 </div>

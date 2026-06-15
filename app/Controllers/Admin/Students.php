@@ -38,6 +38,14 @@ class Students extends BaseController
     }
 
     /**
+     * Campus id from admin session (never trust client POST for scoping).
+     */
+    protected function sessionCampusId(): int
+    {
+        return (int) session()->get('member_campusid');
+    }
+
+    /**
      * Index Page for this controller.
      */
     public function index()
@@ -87,83 +95,81 @@ public function readmit()
  * Search for dropped students (status = 4)
  */
 
-
 public function search_drop_students()
 {
     $search = $this->request->getPost('search');
-    $campus_id = $this->request->getPost('campus_id');
+    $campus_id = $this->sessionCampusId();
     $search_type = $this->request->getPost('search_type');
-    
-    // Debug log
-    log_message('debug', 'Search term: ' . $search);
-    log_message('debug', 'Campus ID: ' . $campus_id);
-    log_message('debug', 'Search type: ' . $search_type);
     
     if (strlen($search) < 3) {
         return $this->response->setJSON(['success' => false, 'data' => []]);
     }
-    
-    // First, check if there are ANY dropped students in this campus
-    $totalDropped = $this->db->table('students')
-        ->where('campus_id', $campus_id)
-        ->whereIn('status', [0, 4])
-        ->countAllResults();
-    
-    log_message('debug', 'Total dropped students in campus: ' . $totalDropped);
     
     $query = $this->db->table('students s')
         ->select('s.student_id, s.first_name, s.last_name, s.reg_no, s.leaving_date, s.leaving_reason, 
                   p.f_name as father_name, p.father_cnic')
         ->join('parents p', 'p.parent_id = s.parent_id', 'left')
         ->where('s.campus_id', $campus_id)
-        ->whereIn('s.status', [0, 3,4,5]);
+        ->whereIn('s.status', [0, 3, 4, 5]);
     
-    // Convert search term to lowercase for case-insensitive search
     $search_lower = strtolower($search);
     
-    // Use LOWER() for case-insensitive matching
     if ($search_type == 'father') {
         $query->where("LOWER(p.f_name) LIKE '%" . $this->db->escapeLikeString($search_lower) . "%'", null, false);
-        log_message('debug', 'Searching father name: ' . $search);
     } else {
         $query->groupStart()
             ->where("LOWER(s.first_name) LIKE '%" . $this->db->escapeLikeString($search_lower) . "%'", null, false)
             ->orWhere("LOWER(s.last_name) LIKE '%" . $this->db->escapeLikeString($search_lower) . "%'", null, false)
             ->orWhere("LOWER(CONCAT(s.first_name, ' ', s.last_name)) LIKE '%" . $this->db->escapeLikeString($search_lower) . "%'", null, false)
         ->groupEnd();
-        log_message('debug', 'Searching student name: ' . $search);
     }
     
-    $results = $query->limit(15)->get()->getResult();
-    
-    // Get the SQL query for debugging
-    $sql = $this->db->getLastQuery();
-    log_message('debug', 'SQL: ' . $sql);
-    log_message('debug', 'Results found: ' . count($results));
+    $students = $query->limit(15)->get()->getResult();
     
     $data = [];
-    foreach ($results as $row) {
+    foreach ($students as $student) {
+        // Get the last class for this student from student_class table
+        $lastClass = $this->db->table('student_class sc')
+            ->select('c.class_name, sec.section_name, ac.session_name')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+            ->join('classes c', 'c.class_id = cs.class_id')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->join('academic_session ac', 'ac.session_id = sc.session_id')
+            ->where('sc.student_id', $student->student_id)
+            ->orderBy('sc.session_id', 'DESC')
+            ->orderBy('sc.created_date', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRow();
+        
+        // Build class display string
+        $classDisplay = 'No class record';
+        if ($lastClass && $lastClass->class_name) {
+            $classDisplay = $lastClass->class_name;
+            if (!empty($lastClass->section_name)) {
+                $classDisplay .= ' - ' . $lastClass->section_name;
+            }
+            if (!empty($lastClass->session_name)) {
+                $classDisplay .= ' (' . $lastClass->session_name . ')';
+            }
+        }
+        
         $data[] = [
-            'student_id' => $row->student_id,
-            'student_name' => trim($row->first_name . ' ' . $row->last_name),
-            'reg_no' => $row->reg_no,
-            'father_name' => $row->father_name,
-            'leaving_date' => $row->leaving_date ? date('d/m/Y', strtotime($row->leaving_date)) : 'N/A',
-            'leaving_reason' => $row->leaving_reason ?? 'N/A',
-            'previous_class' => 'N/A'
+            'student_id' => $student->student_id,
+            'student_name' => trim($student->first_name . ' ' . $student->last_name),
+            'reg_no' => $student->reg_no ?? 'N/A',
+            'father_name' => $student->father_name ?? 'N/A',
+            'leaving_date' => $student->leaving_date ? date('d/m/Y', strtotime($student->leaving_date)) : 'N/A',
+            'leaving_reason' => $student->leaving_reason ?? 'N/A',
+            'class_display' => $classDisplay  // <-- THIS IS THE NEW FIELD
         ];
     }
     
     return $this->response->setJSON([
         'success' => true, 
-        'data' => $data,
-        'debug_total' => $totalDropped,
-        'debug_search_term' => $search
+        'data' => $data
     ]);
 }
-
-
-
 /**
  * Get outstanding fee entries for a student
  */
@@ -370,14 +376,15 @@ public function process_fee_payment()
  */
 public function get_student_readmit_info()
 {
-    $student_id = $this->request->getPost('student_id');
-    $campus_id = $this->request->getPost('campus_id');
+    $student_id = (int) $this->request->getPost('student_id');
+    $campus_id  = $this->sessionCampusId();
     
     // Get student details
     $student = $this->db->table('students s')
         ->select('s.*, p.f_name as father_name, p.father_cnic, p.m_name, p.father_contact, p.address_line1')
         ->join('parents p', 'p.parent_id = s.parent_id')
         ->where('s.student_id', $student_id)
+        ->where('s.campus_id', $campus_id)
         ->get()
         ->getRow();
     
@@ -415,8 +422,16 @@ public function get_student_readmit_info()
 
 public function get_fee_history()
 {
-    $student_id = $this->request->getPost('student_id');
-    $campus_id = $this->request->getPost('campus_id');
+    $student_id = (int) $this->request->getPost('student_id');
+    $campus_id  = $this->sessionCampusId();
+
+    $ownsCampus = $this->db->table('students')
+        ->where('student_id', $student_id)
+        ->where('campus_id', $campus_id)
+        ->countAllResults() > 0;
+    if (! $ownsCampus) {
+        return $this->response->setJSON(['success' => false, 'msg' => 'Student not found'])->setStatusCode(403);
+    }
     
     // Get all academic sessions the student was enrolled in
     $student_sessions = $this->db->table('student_class sc')
@@ -551,39 +566,53 @@ public function get_fee_history()
  */
 public function process_readmission()
 {
-    // CSRF Check for JSON
-    $csrf_token = $this->request->getHeaderLine('X-CSRF-TOKEN');
-    if ($csrf_token && $csrf_token !== csrf_hash()) {
+    try {
+        return $this->processReadmissionInternal();
+    } catch (\Throwable $e) {
+        if ($this->db->transStatus() !== false) {
+            $this->db->transRollback();
+        }
+        log_message('error', 'Process Readmission Error: ' . $e->getMessage());
+        log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+
         return $this->response->setJSON([
             'success' => false,
-            'msg' => 'Invalid CSRF token'
-        ])->setStatusCode(403);
+            'msg' => 'Error: ' . $e->getMessage(),
+        ])->setStatusCode(500);
     }
+}
 
+private function processReadmissionInternal()
+{
     log_message('debug', '=== PROCESS_READMISSION START ===');
     
     $user_id = session('member_userid');
     $date = date('Y-m-d H:i:s');
-    $campus_id = session('member_campusid');
-    $session_id = session('member_sessionid');
+    $campus_id = (int) session('member_campusid');
+    $session_id = (int) session('member_sessionid');
     
-    // Handle JSON input
-    $json_input = $this->request->getJSON(true);
-    if ($json_input) {
-        $student_id = $json_input['student_id'] ?? null;
-        $cls_sec_id = $json_input['cls_sec_id'] ?? null;
-        $readmission_date = $json_input['readmission_date'] ?? null;
-        $fee_items = $json_input['fee_data'] ?? [];
-    } else {
-        $student_id = $this->request->getPost('student_id');
-        $cls_sec_id = $this->request->getPost('cls_sec_id');
-        $readmission_date = $this->request->getPost('readmission_date');
-        $fee_data = $this->request->getPost('fee_data');
-        $fee_items = json_decode($fee_data, true);
+    $payload = $this->parseReadmissionPayload();
+    $student_id = $payload['student_id'];
+    $cls_sec_id = $payload['cls_sec_id'];
+    $readmission_date = $payload['readmission_date'];
+    $fee_items = $payload['fee_items'];
+
+    $student_id = (int) $student_id;
+    $cls_sec_id = (int) $cls_sec_id;
+
+    if ($student_id <= 0 || $cls_sec_id <= 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg' => 'Student and class section are required.',
+        ])->setStatusCode(400);
+    }
+
+    if (!is_array($fee_items)) {
+        $fee_items = [];
     }
     
     log_message('debug', 'Student ID: ' . $student_id);
-    log_message('debug', 'Fee items count: ' . (is_array($fee_items) ? count($fee_items) : 0));
+    log_message('debug', 'Fee items count: ' . count($fee_items));
     
     // Parse readmission date
     $readmission_date_obj = !empty($readmission_date) ? 
@@ -613,14 +642,32 @@ public function process_readmission()
     $user_monthly_amount = 0;
     
     // Get the standard monthly fee for this class
+    $systemId = 0;
     $schoolinfo = getSchoolInfo();
-    $monthlyFeeType = $this->db->table('fee_type')
-        ->select('fee_type_id')
-        ->where('system_id', $schoolinfo->system_id)
-        ->where('is_monthly_fee', 1)
-        ->where('status', 1)
-        ->get()
-        ->getRow();
+    if ($schoolinfo && isset($schoolinfo->system_id)) {
+        $systemId = (int) $schoolinfo->system_id;
+    }
+    if ($systemId <= 0 && $campus_id > 0) {
+        $campusRow = $this->db->table('campus')
+            ->select('system_id')
+            ->where('campus_id', $campus_id)
+            ->limit(1)
+            ->get()
+            ->getRow();
+        $systemId = (int) ($campusRow->system_id ?? 0);
+    }
+
+    $monthlyFeeType = null;
+    if ($systemId > 0) {
+        $monthlyFeeType = $this->db->table('fee_type')
+            ->select('fee_type_id')
+            ->where('system_id', $systemId)
+            ->where('is_monthly_fee', 1)
+            ->where('status', 1)
+            ->limit(1)
+            ->get()
+            ->getRow();
+    }
     
     if ($monthlyFeeType && $class_id) {
         $stdMonthlyFee = $this->db->table('fee_amount')
@@ -661,49 +708,46 @@ public function process_readmission()
     log_message('debug', 'Calculated monthly discount: ' . $monthly_discount_amount);
     // ========== END MONTHLY DISCOUNT CALCULATION ==========
     
-    try {
-        $this->db->transBegin();
+    $this->db->transBegin();
         
         // Update student status to active AND store monthly discount
-        $studentUpdateData = [
-            'status' => 1,
-            'leaving_date' => null,
-            'leaving_reason' => null,
-            'updated_date' => $date,
-            'user_id' => $user_id
-        ];
-        
-        // Update discounted_amount if there's a monthly discount
-        if ($monthly_discount_amount > 0) {
-            $studentUpdateData['discounted_amount'] = $monthly_discount_amount;
-            log_message('debug', 'Setting discounted_amount to: ' . $monthly_discount_amount);
-        } else {
-            $studentUpdateData['discounted_amount'] = 0;
+        $studentUpdateData = ['status' => 1];
+        if ($this->db->fieldExists('leaving_date', 'students')) {
+            $studentUpdateData['leaving_date'] = null;
+        }
+        if ($this->db->fieldExists('leaving_reason', 'students')) {
+            $studentUpdateData['leaving_reason'] = null;
+        }
+        if ($this->db->fieldExists('updated_date', 'students')) {
+            $studentUpdateData['updated_date'] = $date;
+        }
+        if ($this->db->fieldExists('user_id', 'students')) {
+            $studentUpdateData['user_id'] = $user_id;
+        }
+        if ($this->db->fieldExists('discounted_amount', 'students')) {
+            $studentUpdateData['discounted_amount'] = $monthly_discount_amount > 0
+                ? $monthly_discount_amount
+                : 0;
         }
         
         $this->db->table('students')
             ->where('student_id', $student_id)
             ->update($studentUpdateData);
+        $this->assertDbOk('student_update');
         
         // ========== DELETE EXISTING SLC RECORDS FOR THIS STUDENT ==========
-        // Check if SLC exists for this student and delete it
-        $existingSlc = $this->db->table('school_leaving_certificates')
-            ->where('student_id', $student_id)
-            ->get()
-            ->getRow();
-
-        if ($existingSlc) {
-            $deleteResult = $this->db->table('school_leaving_certificates')
+        if ($this->db->tableExists('school_leaving_certificates')) {
+            $existingSlc = $this->db->table('school_leaving_certificates')
                 ->where('student_id', $student_id)
-                ->delete();
-            
-            if ($deleteResult) {
-                log_message('debug', 'Deleted existing SLC record for student ID: ' . $student_id . ' (SLC ID: ' . $existingSlc->id . ')');
-            } else {
-                log_message('debug', 'Failed to delete SLC record for student ID: ' . $student_id);
+                ->get()
+                ->getRow();
+
+            if ($existingSlc) {
+                $this->db->table('school_leaving_certificates')
+                    ->where('student_id', $student_id)
+                    ->delete();
+                log_message('debug', 'Deleted existing SLC record for student ID: ' . $student_id);
             }
-        } else {
-            log_message('debug', 'No existing SLC record found for student ID: ' . $student_id);
         }
         // ========== END SLC DELETION ==========
         
@@ -715,23 +759,35 @@ public function process_readmission()
             ->getRow();
         
         if ($existing) {
+            $scUpdate = [
+                'cls_sec_id' => $cls_sec_id,
+                'status' => 1,
+            ];
+            if ($this->db->fieldExists('updated_date', 'student_class')) {
+                $scUpdate['updated_date'] = $date;
+            }
+            if ($this->db->fieldExists('user_id', 'student_class')) {
+                $scUpdate['user_id'] = $user_id;
+            }
             $this->db->table('student_class')
                 ->where('sc_id', $existing->sc_id)
-                ->update([
-                    'cls_sec_id' => $cls_sec_id,
-                    'status' => 1,
-                    'updated_date' => $date,
-                    'user_id' => $user_id
-                ]);
+                ->update($scUpdate);
+            $this->assertDbOk('student_class_update');
         } else {
-            $this->db->table('student_class')->insert([
+            $scInsert = [
                 'student_id' => $student_id,
                 'session_id' => $session_id,
                 'cls_sec_id' => $cls_sec_id,
                 'status' => 1,
-                'created_date' => $date,
-                'user_id' => $user_id
-            ]);
+            ];
+            if ($this->db->fieldExists('created_date', 'student_class')) {
+                $scInsert['created_date'] = $date;
+            }
+            if ($this->db->fieldExists('user_id', 'student_class')) {
+                $scInsert['user_id'] = $user_id;
+            }
+            $this->db->table('student_class')->insert($scInsert);
+            $this->assertDbOk('student_class_insert');
         }
         
         // ========== INVOICE LOGIC ==========
@@ -746,20 +802,32 @@ public function process_readmission()
         $invoice_no = $existingInvoice ? $existingInvoice->invoice_no : $this->generateInvoiceNumber($fee_month);
         
         if (!$existingInvoice) {
-            $this->db->table('invoices')->insert([
+            $invoiceInsert = [
                 'student_id' => $student_id,
                 'issue_date' => $readmission_date_formatted,
                 'fee_month'  => $fee_month,
                 'yr'         => date('y', strtotime($fee_month . '-01')),
                 'invoice_no' => $invoice_no,
-                'currency_code' => 'PKR',
-                'exchange_rate' => 1.00000000,
-                'grand_total_base' => 0,
-                'grand_total_disp' => 0,
                 'created_date' => $date,
                 'updated_date' => $date,
-                'user_id' => $user_id
-            ]);
+            ];
+            if ($this->db->fieldExists('user_id', 'invoices')) {
+                $invoiceInsert['user_id'] = $user_id;
+            }
+            if ($this->db->fieldExists('currency_code', 'invoices')) {
+                $invoiceInsert['currency_code'] = 'PKR';
+            }
+            if ($this->db->fieldExists('exchange_rate', 'invoices')) {
+                $invoiceInsert['exchange_rate'] = 1.00000000;
+            }
+            if ($this->db->fieldExists('grand_total_base', 'invoices')) {
+                $invoiceInsert['grand_total_base'] = 0;
+            }
+            if ($this->db->fieldExists('grand_total_disp', 'invoices')) {
+                $invoiceInsert['grand_total_disp'] = 0;
+            }
+            $this->db->table('invoices')->insert($invoiceInsert);
+            $this->assertDbOk('invoice_insert');
             log_message('debug', 'Invoice created: ' . $invoice_no);
         } else {
             log_message('debug', 'Using existing invoice: ' . $invoice_no);
@@ -774,6 +842,8 @@ public function process_readmission()
                 $amount = floatval($item['amount'] ?? 0);
                 $discount = floatval($item['discount'] ?? 0);
                 $item_fee_month = $item['fee_month'] ?? $fee_month;
+                $is_monthly = $item['is_monthly'] ?? false;
+                $isMonthlyFee = $is_monthly || ($monthlyFeeType && $fee_type_id == $monthlyFeeType->fee_type_id);
                 
                 log_message('debug', 'Processing fee item - Type ID: ' . $fee_type_id . 
                            ', Amount: ' . $amount . 
@@ -782,6 +852,21 @@ public function process_readmission()
                 if (!$fee_type_id || $amount <= 0) {
                     log_message('debug', 'Skipping invalid fee item ' . ($index + 1));
                     continue;
+                }
+
+                // For monthly fee row, UI amount is treated as NET payable.
+                // Persist gross standard fee in amount and derived concession in discount.
+                if ($isMonthlyFee && $standard_monthly_fee > 0) {
+                    $enteredNet = $amount;
+                    $amount = $standard_monthly_fee;
+                    $discount = max(0, $standard_monthly_fee - $enteredNet);
+
+                    log_message(
+                        'debug',
+                        'Monthly fee normalized - Gross: ' . $amount .
+                        ', Entered Net: ' . $enteredNet .
+                        ', Discount: ' . $discount
+                    );
                 }
                 
                 // Check if already exists
@@ -807,8 +892,8 @@ public function process_readmission()
                 if (!$issue_date) $issue_date = $readmission_date_obj;
                 if (!$due_date) $due_date = (new DateTime())->modify('+10 days');
                 
-                // Insert fee chalan
-                $this->db->table('fee_chalan')->insert([
+                // Insert fee chalan (match FeeChalan / bulk import schema)
+                $chalanInsert = [
                     'student_id'     => $student_id,
                     'due_date'       => $due_date->format('Y-m-d'),
                     'issue_date'     => $issue_date->format('Y-m-d'),
@@ -816,27 +901,51 @@ public function process_readmission()
                     'fee_month_old'  => date('F Y', strtotime($item_fee_month . '-01')),
                     'amount'         => $amount,
                     'discount'       => $discount,
-                    'status'         => 'unpaid',
-                    'payment_status' => 'pending',
                     'fee_type_id'    => $fee_type_id,
-                    'paid_date'      => '0000-00-00',
-                    'created_date'   => $date,
-                    'updated_date'   => $date,
-                    'user_id'        => $user_id,
-                    'acc_id'         => 0,
-                    'currency_code'  => 'PKR',
-                    'exchange_rate'  => 1.00000000,
-                    'amount_base'    => $amount,
-                    'invoice_no'     => $invoice_no
-                ]);
+                    'invoice_no'     => $invoice_no,
+                ];
+                if ($this->db->fieldExists('status', 'fee_chalan')) {
+                    $chalanInsert['status'] = 'unpaid';
+                }
+                if ($this->db->fieldExists('payment_status', 'fee_chalan')) {
+                    $chalanInsert['payment_status'] = 'pending';
+                }
+                if ($this->db->fieldExists('paid_date', 'fee_chalan')) {
+                    $chalanInsert['paid_date'] = '0000-00-00';
+                }
+                if ($this->db->fieldExists('created_date', 'fee_chalan')) {
+                    $chalanInsert['created_date'] = $date;
+                }
+                if ($this->db->fieldExists('updated_date', 'fee_chalan')) {
+                    $chalanInsert['updated_date'] = $date;
+                }
+                if ($this->db->fieldExists('user_id', 'fee_chalan')) {
+                    $chalanInsert['user_id'] = $user_id;
+                }
+                if ($this->db->fieldExists('acc_id', 'fee_chalan')) {
+                    $chalanInsert['acc_id'] = 0;
+                }
+                if ($this->db->fieldExists('currency_code', 'fee_chalan')) {
+                    $chalanInsert['currency_code'] = 'PKR';
+                }
+                if ($this->db->fieldExists('exchange_rate', 'fee_chalan')) {
+                    $chalanInsert['exchange_rate'] = 1.00000000;
+                }
+                if ($this->db->fieldExists('amount_base', 'fee_chalan')) {
+                    $chalanInsert['amount_base'] = $amount;
+                }
+                $this->db->table('fee_chalan')->insert($chalanInsert);
+                $this->assertDbOk('fee_chalan_insert');
                 
                 $inserted_count++;
                 log_message('debug', 'Inserted fee chalan for fee_type_id: ' . $fee_type_id);
             }
         }
         
-        // Update invoice grand total
-        if ($inserted_count > 0) {
+        // Update invoice grand total (optional columns)
+        if ($inserted_count > 0
+            && ($this->db->fieldExists('grand_total_base', 'invoices')
+                || $this->db->fieldExists('grand_total_disp', 'invoices'))) {
             $totalAmount = $this->db->table('fee_chalan')
                 ->select('SUM(amount - discount) as total')
                 ->where('student_id', $student_id)
@@ -845,21 +954,33 @@ public function process_readmission()
                 ->getRow();
             
             if ($totalAmount && $totalAmount->total) {
-                $this->db->table('invoices')
-                    ->where('invoice_no', $invoice_no)
-                    ->update([
-                        'grand_total_base' => $totalAmount->total,
-                        'grand_total_disp' => $totalAmount->total,
-                        'updated_date' => $date
-                    ]);
+                $invUpdate = [];
+                if ($this->db->fieldExists('grand_total_base', 'invoices')) {
+                    $invUpdate['grand_total_base'] = $totalAmount->total;
+                }
+                if ($this->db->fieldExists('grand_total_disp', 'invoices')) {
+                    $invUpdate['grand_total_disp'] = $totalAmount->total;
+                }
+                if ($this->db->fieldExists('updated_date', 'invoices')) {
+                    $invUpdate['updated_date'] = $date;
+                }
+                if ($invUpdate !== []) {
+                    $this->db->table('invoices')
+                        ->where('invoice_no', $invoice_no)
+                        ->update($invUpdate);
+                }
             }
+        }
+
+        if ($this->db->transStatus() === false) {
+            throw new \RuntimeException('Database transaction failed during readmission.');
         }
         
         $this->db->transCommit();
         
         return $this->response->setJSON([
             'success' => true,
-            'msg' => 'Student readmitted successfully. ' . $inserted_count . ' fee entries created. Existing SLC has been removed.',
+            'msg' => 'Student readmitted successfully. ' . $inserted_count . ' fee entries created.' . ($this->db->tableExists('school_leaving_certificates') ? ' Existing SLC has been removed.' : ''),
             'inserted_count' => $inserted_count,
             'invoice_no' => $invoice_no,
             'monthly_discount' => $monthly_discount_amount,
@@ -867,16 +988,68 @@ public function process_readmission()
             'user_monthly_amount' => $user_monthly_amount,
             'redirect' => site_url('admin/profile-student?id=' . $student_id)
         ]);
-        
-    } catch (\Exception $e) {
-        $this->db->transRollback();
-        log_message('error', 'Process Readmission Error: ' . $e->getMessage());
-        log_message('error', 'Stack trace: ' . $e->getTraceAsString());
-        
-        return $this->response->setJSON([
-            'success' => false,
-            'msg' => 'Error: ' . $e->getMessage()
-        ])->setStatusCode(500);
+}
+
+/**
+ * Accept JSON (students_print modal) or form POST (readmit page).
+ *
+ * @return array{student_id:mixed,cls_sec_id:mixed,readmission_date:mixed,fee_items:array}
+ */
+private function parseReadmissionPayload(): array
+{
+    $contentType = strtolower($this->request->getHeaderLine('Content-Type'));
+    $rawBody     = trim((string) $this->request->getBody());
+
+    if (str_contains($contentType, 'application/json') || ($rawBody !== '' && $rawBody[0] === '{')) {
+        // Legacy clients appended CSRF to JSON string: {"...":...}&csrf_test_name=...
+        $jsonStr = $rawBody;
+        if (preg_match('/^(\{.*\})(?:&|$)/s', $rawBody, $m)) {
+            $jsonStr = $m[1];
+        }
+
+        $decoded = json_decode($jsonStr, true);
+        if (is_array($decoded)) {
+            $feeItems = $decoded['fee_data'] ?? [];
+            if (!is_array($feeItems)) {
+                $feeItems = [];
+            }
+
+            return [
+                'student_id'       => $decoded['student_id'] ?? null,
+                'cls_sec_id'       => $decoded['cls_sec_id'] ?? null,
+                'readmission_date' => $decoded['readmission_date'] ?? null,
+                'fee_items'        => $feeItems,
+            ];
+        }
+    }
+
+    $feeData = $this->request->getPost('fee_data');
+    $feeItems = [];
+    if (is_array($feeData)) {
+        $feeItems = $feeData;
+    } elseif (is_string($feeData) && $feeData !== '') {
+        $decoded = json_decode($feeData, true);
+        if (is_array($decoded)) {
+            $feeItems = $decoded;
+        }
+    }
+
+    return [
+        'student_id'       => $this->request->getPost('student_id'),
+        'cls_sec_id'       => $this->request->getPost('cls_sec_id'),
+        'readmission_date' => $this->request->getPost('readmission_date'),
+        'fee_items'        => $feeItems,
+    ];
+}
+
+/**
+ * @throws \RuntimeException
+ */
+private function assertDbOk(string $context): void
+{
+    $err = $this->db->error();
+    if (!empty($err['code'])) {
+        throw new \RuntimeException($context . ': ' . ($err['message'] ?? 'Database error'));
     }
 }
 /**
@@ -933,7 +1106,7 @@ private function generateInvoiceNumber($fee_month)
 public function search_siblings()
 {
     $search = $this->request->getPost('search');
-    $campus_id = $this->request->getPost('campus_id');
+    $campus_id = $this->sessionCampusId();
     
     if (strlen($search) < 3) {
         return $this->response->setJSON(['success' => false, 'data' => []]);
@@ -979,7 +1152,7 @@ public function get_parent_info()
 {
     $father_cnic = $this->request->getPost('father_cnic');
     $parent_id = $this->request->getPost('parent_id');
-    $campus_id = $this->request->getPost('campus_id');
+    $campus_id = $this->sessionCampusId();
     
     $query = $this->db->table('parents');
     
@@ -1055,15 +1228,22 @@ public function data()
         $sectionName = '';
         $class_fee = '';
 
-        $unpaid = $this->db->query('SELECT SUM(amount)-SUM(discount) as total FROM fee_chalan WHERE status = "UnPaid" AND student_id ='.$row->student_id)->getRow();
-        $discount = $this->db->query('SELECT SUM(discount) as total_discount FROM fee_chalan WHERE status = "UnPaid" AND student_id ='.$row->student_id)->getRow();
+        $studentId = (int) $row->student_id;
+        $unpaid = $this->db->query(
+            'SELECT SUM(amount)-SUM(discount) AS total FROM fee_chalan WHERE status = ? AND student_id = ?',
+            ['UnPaid', $studentId]
+        )->getRow();
+        $discount = $this->db->query(
+            'SELECT SUM(discount) AS total_discount FROM fee_chalan WHERE status = ? AND student_id = ?',
+            ['UnPaid', $studentId]
+        )->getRow();
 
         if ($discount) $total_discount = $discount->total_discount;
         if ($unpaid) $payable = $unpaid->total;
 
         $studentclassinfo = ($status == 3)
-            ? $this->db->query('SELECT * FROM student_class WHERE student_id = '.$row->student_id.' ORDER BY sc_id DESC')->getRow()
-            : $this->db->table('student_class')->where('student_id', $row->student_id)->where('session_id', $sessionid)->get()->getRow();
+            ? $this->db->table('student_class')->where('student_id', $studentId)->orderBy('sc_id', 'DESC')->get()->getRow()
+            : $this->db->table('student_class')->where('student_id', $studentId)->where('session_id', $sessionid)->get()->getRow();
 
         if ($studentclassinfo) {
             $classsectioninfo = $this->db->table('class_section')->where('cls_sec_id', $studentclassinfo->cls_sec_id)->get()->getRow();
@@ -1073,7 +1253,10 @@ public function data()
                 if ($sectioninfo) $sectionName = $sectioninfo->section_name;
                 if ($classinfo) $className = $classinfo->class_name;
 
-                $getclassfee = $this->db->query('SELECT * FROM fee_amount WHERE class_id='.$classsectioninfo->class_id.' AND fee_type_id IN (SELECT fee_type_id FROM fee_type WHERE is_monthly_fee=1 AND s_flag=1) AND session_id='.$sessionid.' AND campus_id='.$campusid)->getRow();
+                $getclassfee = $this->db->query(
+                    'SELECT * FROM fee_amount WHERE class_id = ? AND fee_type_id IN (SELECT fee_type_id FROM fee_type WHERE is_monthly_fee = 1 AND s_flag = 1) AND session_id = ? AND campus_id = ?',
+                    [(int) $classsectioninfo->class_id, (int) $sessionid, (int) $campusid]
+                )->getRow();
                 if ($getclassfee) {
                     $projectedfee = ($getclassfee->amount - $row->discounted_amount);
                     $class_fee = $getclassfee->amount;
@@ -1200,6 +1383,50 @@ public function save_admission_prefs()
 
     return $this->response->setJSON(['ok'=>true,'visible'=>$visible]);
 }
+
+    /**
+     * Next registration number for this campus/session: {sessionYear}-{reg_text}-{seq}.
+     * Seq is max existing numeric suffix (same prefix) + 1, not derived from latest student_id,
+     * so gaps, imports, and out-of-order rows cannot produce duplicates.
+     */
+    private function nextStudentRegNo(int $campusId, int $sessionId): string
+    {
+        $schoolinfo = getSchoolInfo();
+        if (empty($schoolinfo->reg_text)) {
+            throw new \RuntimeException('Enter School Short Name in system profile (reg_text).');
+        }
+
+        $academic_session = $this->db->table('academic_session')
+            ->where('session_id', $sessionId)
+            ->get()
+            ->getRow();
+        if (!$academic_session) {
+            throw new \RuntimeException('Academic session not found.');
+        }
+
+        $sessionName = explode('-', (string) $academic_session->session_name);
+        $sessionYear = ((int) ($sessionName[1] ?? 0)) - 1;
+        if ($sessionYear < 0) {
+            $sessionYear = (int) date('Y');
+        }
+
+        $prefix = $sessionYear . '-' . $schoolinfo->reg_text . '-';
+
+        // Same prefix implies same session-year + school code (from active session); scope by
+        // campus only so we never reuse a reg_no that still exists with another session_id.
+        $row = $this->db->table('students')
+            ->select('MAX(CAST(SUBSTRING_INDEX(reg_no, \'-\', -1) AS UNSIGNED)) AS max_seq', false)
+            ->where('campus_id', $campusId)
+            ->like('reg_no', $prefix, 'after')
+            ->get()
+            ->getRow();
+
+        $maxSeq = (int) ($row->max_seq ?? 0);
+        $next   = $maxSeq + 1;
+
+        return $prefix . $next;
+    }
+
     public function add()
     {
         check_permission('admin-add-student');
@@ -1207,10 +1434,15 @@ public function save_admission_prefs()
         $campusid = session('member_campusid');
         $sessionid = session('member_sessionid');
 
-        $campus_bill_info = $this->db->query('select * from campus_bills WHERE status=1 AND campus_id='.$campusid)->getRow();
-        $max_student_limit = $campus_bill_info->max_students;
+        $campus_bill_info = $this->db->table('campus_bills')->where(['status' => 1, 'campus_id' => (int) $campusid])->get()->getRow();
+        $max_student_limit = $campus_bill_info->max_students ?? 0;
 
-        $students_info = $this->db->query('select count(student_id) as studentTotal from students WHERE student_id IN(SELECT student_id from student_class WHERE status=1) AND campus_id='.$campusid)->getRow();
+        $students_info = $this->db->table('students')
+            ->selectCount('students.student_id', 'studentTotal')
+            ->join('student_class', 'student_class.student_id = students.student_id AND student_class.status = 1', 'inner')
+            ->where('students.campus_id', (int) $campusid)
+            ->get()
+            ->getRow();
         $noOfstudent = $students_info->studentTotal;
 
         if($noOfstudent >= $max_student_limit) {
@@ -1231,35 +1463,13 @@ public function save_admission_prefs()
         $fee_plans = $this->db->table('fee_plans')->get()->getResult();
         $data['fee_plans'] = $fee_plans;
         
-        $academic_session = $this->db->table('academic_session')
-            ->where('session_id', $sessionid)
-            ->get()
-            ->getRow();
-
-        $sessionName = explode('-', $academic_session->session_name);
-        $sessionYear = ($sessionName[1]-1);
-        
-        $last_row = $this->db->table('students')
-            ->where('session_id', $sessionid)
-            ->orderBy('student_id', 'desc')
-            ->get()
-            ->getRow();
-
-        if($last_row) {
-            $regArr = explode('-', $last_row->reg_no);
-            $last_id = end($regArr) + 1;
-        } else {
-            $last_id = 1;
-        }
-        
-        $reg_no = $sessionYear.'-'.$schoolinfo->reg_text.'-'.$last_id;
-        $data['reg_no'] = $reg_no;
-
         if(empty($schoolinfo->reg_text)) {
             echo '<div style="min-height: 150px;text-align: center;padding-top: 20px;font-size: 18px;text-decoration: blink;color: red;"><div class="col-lg-12">Enter School Short Name in system profile</div>';
             echo "<a href='admin.php#/profile_system'>Click Here</a></div>";
             exit;
         }
+
+        $data['reg_no'] = $this->nextStudentRegNo((int) $campusid, (int) $sessionid);
 
         $currentrole = currentUserRoles();
 
@@ -1378,26 +1588,10 @@ public function save_admission_prefs()
             if ($row) { $classesFee = (float) $row->amount; }
         }
 
-        // Transport fee type
-        $transportType = $this->db->table('fee_type')->select('fee_type_id')
-            ->where('system_id', $schoolinfo->system_id)
-            ->where('is_transport_fee', 1)
-            ->get()->getRow();
-
-        if ($transportType) {
-            $row = $this->db->table('fee_amount')->select('amount')
-                ->where([
-                    'campus_id'   => $campusid,
-                    'class_id'    => $classId,
-                    'session_id'  => $sessionid,
-                    'fee_type_id' => $transportType->fee_type_id,
-                ])->get()->getRow();
-            if ($row) { $transportAmount = (float) $row->amount; }
-        }
     }
 
     $data['classesfee']   = $classesFee;
-    $data['transportfee'] = $transportAmount;
+    $data['transportfee'] = 0;
 
     // ---- Lists for dropdowns etc.
     $data['sectionsclassinfo']    = userClassSections();
@@ -1647,20 +1841,17 @@ public function save_admission()
             $father_cnic, $campus_id, $user_id, $date
         );
 
-        // Student - NOW PASSING first_name and last_name
         $student_id = $this->handleStudentData(
-            $parent_id, 
-            $campus_id, 
-            $class_id, 
-            $cls_sec_id, 
+            $parent_id,
+            $campus_id,
+            $class_id,
+            $cls_sec_id,
             $sessionid,
-            $date_of_admission, 
-            $date_of_birth, 
-            $gr_date, 
-            $user_id, 
-            $date,
-            $first_name,   // Add this
-            $last_name     // Add this
+            $date_of_admission,
+            $date_of_birth,
+            $gr_date,
+            $user_id,
+            $date
         );
 
         // Default gr_no = 0 when hidden or empty
@@ -2576,10 +2767,12 @@ private function handleStudentData($parent_id, $campus_id, $class_id, $cls_sec_i
     // Handle profile photo
     $profile_photo = $this->request->getPost('image') ?? '';
     $image = $this->request->getFile('image');
-    if ($image && $image->isValid() && !$image->hasMoved()) {
-        $newName = $image->getRandomName();
-        $image->move('./uploads/', $newName);
-        $profile_photo = $newName;
+    if ($image && $image->isValid() && ! $image->hasMoved()) {
+        $uploadDir = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
+        $stored    = (new \App\Libraries\SecureUploadService())->storeImage($image, $uploadDir);
+        if ($stored !== null) {
+            $profile_photo = $stored;
+        }
     }
 
     // Get name data - your existing logic is already good
@@ -2601,9 +2794,13 @@ private function handleStudentData($parent_id, $campus_id, $class_id, $cls_sec_i
         $first_name = 'Unknown';
     }
     
+    // Registration number: always allocate at save time so stale form values and
+    // last-by-student_id logic cannot collide with existing rows.
+    $reg_no = $this->nextStudentRegNo($campus_id, $sessionid);
+
     // Student data
     $student_data = [
-        'reg_no' => trim($this->request->getPost('reg_no')),
+        'reg_no' => $reg_no,
         'first_name'        => $first_name,      // <- from above logic
         'last_name'         => $last_name,       // <- from above logic
         'std_cnic' => trim($this->request->getPost('student_cnic')) ?? '',
@@ -2621,9 +2818,6 @@ private function handleStudentData($parent_id, $campus_id, $class_id, $cls_sec_i
         'fee_plan' => (int) $this->request->getPost('fee_plan') ?? 1,
         'status' => 1, // Admission status
         's_flag' => 1,
-        'a_flag' => 0,
-        't_flag' => 0,
-        'h_flag' => 0,
         'profile_photo' => $profile_photo,
         'previous_school' => trim($this->request->getPost('previous_school')) ?? '',
         'ps_city' => trim($this->request->getPost('ps_city')) ?? '',
@@ -2667,17 +2861,16 @@ public function get_fee_amount()
         return $this->response->setJSON(['success' => false, 'msg' => 'Invalid section.']);
     }
 
-    $feeRow = $this->db->query("
-        SELECT amount FROM fee_amount 
-        WHERE class_id = {$classRow->class_id}
-        AND campus_id = {$campus_id}
-        AND session_id = {$session_id}
+    $feeRow = $this->db->query(
+        'SELECT amount FROM fee_amount
+        WHERE class_id = ? AND campus_id = ? AND session_id = ?
         AND fee_type_id = (
-            SELECT fee_type_id FROM fee_type 
-            WHERE is_monthly_fee = 1 AND s_flag = 1 and system_id = {$school_info->system_id}
+            SELECT fee_type_id FROM fee_type
+            WHERE is_monthly_fee = 1 AND s_flag = 1 AND system_id = ?
             LIMIT 1
-        )
-    ")->getRow();
+        )',
+        [(int) $classRow->class_id, (int) $campus_id, (int) $session_id, (int) $school_info->system_id]
+    )->getRow();
 
     if ($feeRow) {
         return $this->response->setJSON(['success' => true, 'monthly_fee' => $feeRow->amount]);

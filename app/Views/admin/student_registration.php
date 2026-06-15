@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Student Registration
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active"> Student Registration</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Registration',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Registration', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
     <div class="row">
@@ -37,7 +28,7 @@
         </div>
         <br>
         <div class="col-lg-12">
-            <div id="totalStudents" class="text-right" style="font-size: 12px;color: #000;font-weight: bold;"></div>
+            <div id="totalStudents" class="text-end" style="font-size: 12px;color: #000;font-weight: bold;"></div>
         <table  class="table table-striped table-bordered table-hover" id="students-datatable"  style="font-size:9px !important;width: 100%; color: #000;font-weight: normal;">
 			<thead>
 				<tr>
@@ -73,8 +64,8 @@
     <div class="modal fade" id="viewSibling" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Sibling</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Sibling</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <div id="SiblingInfo">
@@ -90,8 +81,8 @@
     <div class="modal fade" id="makeCurrent" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Status</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Update Status</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form>
@@ -105,7 +96,7 @@
  		 </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>

@@ -1,22 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Salary Reports</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/salary-settings') ?>">Salary Settings</a></li>
-                    <li class="breadcrumb-item active">Reports</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</div>
+<?= view('components/page_header', [
+    'title' => 'Salary Reports',
+    'icon' => 'fas fa-file-invoice-dollar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Salary Settings', 'url' => base_url('admin/salary-settings')],
+        ['label' => 'Reports', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
@@ -26,21 +19,21 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-calendar-alt mr-1"></i> Select Month
+                            <i class="fas fa-calendar-alt me-1"></i> Select Month
                         </h3>
                     </div>
                     <div class="card-body">
-                        <form method="get" action="<?= base_url('admin/salary-reports') ?>" class="form-inline">
-                            <div class="form-group mr-2">
-                                <label class="mr-2">Year:</label>
+                        <form method="get" action="<?= base_url('admin/salary-reports') ?>" class="d-flex flex-wrap align-items-center">
+                            <div class="form-group me-2">
+                                <label class="me-2">Year:</label>
                                 <select name="year" class="form-control">
                                     <?php for($y = date('Y')-2; $y <= date('Y'); $y++): ?>
                                         <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
                                     <?php endfor; ?>
                                 </select>
                             </div>
-                            <div class="form-group mr-2">
-                                <label class="mr-2">Month:</label>
+                            <div class="form-group me-2">
+                                <label class="me-2">Month:</label>
                                 <select name="month" class="form-control">
                                     <?php for($m = 1; $m <= 12; $m++): ?>
                                         <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>><?= date('F', strtotime("2024-$m-01")) ?></option>
@@ -48,7 +41,7 @@
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search mr-1"></i> View Report
+                                <i class="fas fa-search me-1"></i> View Report
                             </button>
                         </form>
                     </div>
@@ -110,15 +103,15 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-list mr-1"></i> 
+                            <i class="fas fa-list me-1"></i> 
                             Salary Details - <?= date('F Y', strtotime("$year-$month-01")) ?>
                         </h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-sm btn-success" id="exportExcel">
-                                <i class="fas fa-file-excel mr-1"></i> Export Excel
+                                <i class="fas fa-file-excel me-1"></i> Export Excel
                             </button>
                             <button type="button" class="btn btn-sm btn-danger" id="exportPDF">
-                                <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                                <i class="fas fa-file-pdf me-1"></i> Export PDF
                             </button>
                         </div>
                     </div>
@@ -150,23 +143,23 @@
                                         <small class="text-muted"><?= esc($slip->designation ?? 'N/A') ?></small>
                                     </td>
                                     <td><?= esc($slip->designation ?? 'N/A') ?></td>
-                                    <td class="text-right"><?= number_format($slip->basic_salary, 2) ?></td>
-                                    <td class="text-right">
+                                    <td class="text-end"><?= number_format($slip->basic_salary, 2) ?></td>
+                                    <td class="text-end">
                                         <?= number_format(($slip->attendance_bonus ?? 0) + ($slip->other_bonus ?? 0), 2) ?>
                                     </td>
-                                    <td class="text-right">
+                                    <td class="text-end">
                                         <?= number_format($slip->total_deductions ?? 0, 2) ?>
                                     </td>
-                                    <td class="text-right font-weight-bold">
+                                    <td class="text-end fw-bold">
                                         <?= number_format($slip->net_salary ?? 0, 2) ?>
                                     </td>
                                     <td>
                                         <?php if (($slip->payment_status ?? 'pending') == 'paid'): ?>
-                                            <span class="badge badge-success">
+                                            <span class="badge text-bg-success">
                                                 <i class="fas fa-check-circle"></i> Paid
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge badge-warning">
+                                            <span class="badge text-bg-warning">
                                                 <i class="fas fa-clock"></i> Pending
                                             </span>
                                         <?php endif; ?>
@@ -184,7 +177,7 @@
                                 ?>
                                 <tr>
                                     <td colspan="9" class="text-center text-muted">
-                                        <i class="fas fa-info-circle mr-1"></i> No salary records found for <?= date('F Y', strtotime("$year-$month-01")) ?>
+                                        <i class="fas fa-info-circle me-1"></i> No salary records found for <?= date('F Y', strtotime("$year-$month-01")) ?>
                                     </td>
                                 </tr>
                                 <?php endif; ?>
@@ -192,17 +185,17 @@
                             <?php if (!empty($slips)): ?>
                             <tfoot>
                                 <tr class="bg-light">
-                                    <th colspan="3" class="text-right">Total:</th>
-                                    <th class="text-right">
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'basic_salary')), 2) ?>
                                     </th>
-                                    <th class="text-right">
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'attendance_bonus')) + array_sum(array_column($slips, 'other_bonus')), 2) ?>
                                     </th>
-                                    <th class="text-right">
+                                    <th class="text-end">
                                         <?= number_format(array_sum(array_column($slips, 'total_deductions')), 2) ?>
                                     </th>
-                                    <th class="text-right font-weight-bold">
+                                    <th class="text-end fw-bold">
                                         <?= number_format(array_sum(array_column($slips, 'net_salary')), 2) ?>
                                     </th>
                                     <th colspan="2"></th>

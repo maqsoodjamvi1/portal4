@@ -21,7 +21,7 @@
     <div class="card-header"><h3 class="card-title">Choose an Event</h3></div>
     <div class="card-body">
       <form method="get" action="<?= base_url('admin/sports/entries/seats') ?>">
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-8">
             <label for="event_id">Event</label>
             <select id="event_id" class="form-control">
@@ -37,7 +37,7 @@
             </select>
           </div>
           <div class="form-group col-md-4" style="margin-top:32px">
-            <button type="button" id="goBtn" class="btn btn-primary btn-block">
+            <button type="button" id="goBtn" class="btn btn-primary w-100">
               Open Seats
             </button>
           </div>

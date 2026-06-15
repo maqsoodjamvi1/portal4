@@ -1,21 +1,14 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Inbox</h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Inbox</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+    <?= view('components/page_header', [
+    'title' => 'Inbox',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Inbox', 'active' => true],
+    ],
+]) ?>
+
 
     <!-- Main content -->
     <section class="content">
@@ -40,7 +33,7 @@
                 <li class="nav-item active">
                   <a href="#" class="nav-link">
                     <i class="fas fa-inbox"></i> Inbox
-                    <span class="badge bg-primary float-right">12</span>
+                    <span class="badge bg-primary float-end">12</span>
                   </a>
                 </li>
                 <li class="nav-item">
@@ -56,7 +49,7 @@
                 <li class="nav-item">
                   <a href="#" class="nav-link">
                     <i class="fas fa-filter"></i> Junk
-                    <span class="badge bg-warning float-right">65</span>
+                    <span class="badge bg-warning float-end">65</span>
                   </a>
                 </li>
                 <li class="nav-item">
@@ -113,11 +106,9 @@
               <div class="card-tools">
                 <div class="input-group input-group-sm">
                   <input type="text" class="form-control" placeholder="Search Mail">
-                  <div class="input-group-append">
-                    <div class="btn btn-primary">
+                  <div class="btn btn-primary">
                       <i class="fas fa-search"></i>
                     </div>
-                  </div>
                 </div>
               </div>
               <!-- /.card-tools -->
@@ -227,14 +218,14 @@ $(function(){
         render:function(data, type, row){
           var html = '';
           html += '<div class="btn-group">';
-              html += '<a href="<?php echo '#/users?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+              html += '<a href="<?php echo '#/users?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
              
-              //html += '<a href="<?php //echo '#/users?m=edit_password&user_id=';?>' + data + '" title="change password" class="btn btn-default btn-xs"><i class="fa fa-lock icon-pencil"></i></a>';
+              //html += '<a href="<?php //echo '#/users?m=edit_password&user_id=';?>' + data + '" title="change password" class="btn btn-secondary btn-sm"><i class="fa fa-lock icon-pencil"></i></a>';
              
               if(row.issys == '1'){
                 
               }else{
-               // html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo site_url('c=users&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+               // html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo site_url('c=users&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
               }
               
           html += '</div>';

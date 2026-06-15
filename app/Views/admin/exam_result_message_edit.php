@@ -91,7 +91,7 @@
 			<div class="form-group">
 				<?php
 				foreach ($detaulterArr as $key => $value) {
-						echo "<label class='col-lg-3 text-left'><input type='checkbox' name='student_id[]' checked value='".$value['student_id']."'  > ".$value['first_name']." ".$value['last_name']." c/o ".$value['f_name']." (Unpaid Fee: ".$value['unpaid_fee'].")</label>";
+						echo "<label class='col-lg-3 text-start'><input type='checkbox' name='student_id[]' checked value='".$value['student_id']."'  > ".$value['first_name']." ".$value['last_name']." c/o ".$value['f_name']." (Unpaid Fee: ".$value['unpaid_fee'].")</label>";
 				}
 				 ?>
 			</div>
@@ -99,8 +99,8 @@
 			
 			<div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-			<button type="reset" class="btn btn-default">Reset</button>
-			<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+			<button type="reset" class="btn btn-secondary">Reset</button>
+			<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
           <?php echo form_close();?> 
 		  </div>

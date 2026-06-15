@@ -22,6 +22,36 @@ class Nstrees
         $this->thandle = $options;
     }
 
+    private function tableName(): string
+    {
+        $table = (string) ($this->thandle['table'] ?? '');
+        if (! preg_match('/^[a-z][a-z0-9_]*$/', $table)) {
+            throw new \InvalidArgumentException('Invalid nested-set table name');
+        }
+
+        return $table;
+    }
+
+    private function columnName(string $key): string
+    {
+        $column = (string) ($this->thandle[$key] ?? '');
+        if (! preg_match('/^[a-z][a-z0-9_]*$/', $column)) {
+            throw new \InvalidArgumentException('Invalid nested-set column name');
+        }
+
+        return $column;
+    }
+
+    private function lockTableWrite(): void
+    {
+        $this->db->query('LOCK TABLE ' . $this->tableName() . ' WRITE');
+    }
+
+    private function unlockTables(): void
+    {
+        $this->unlockTables();
+    }
+
     /* ******************************************************************* */
     /* Tree Constructors */
     /* ******************************************************************* */
@@ -31,13 +61,13 @@ class Nstrees
         $newnode['l'] = 1;
         $newnode['r'] = 2;
         $newnode['root_id'] = 0;
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         $this->_insertNew($newnode, $othercols);
         $new_root_id = $this->db->insertID();
         $this->db->table($this->thandle['table'])
                  ->where('id', $new_root_id)
                  ->update(['root_id' => $new_root_id]);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         $newnode['root_id'] = $new_root_id;
         return $newnode;
     }
@@ -47,10 +77,10 @@ class Nstrees
         $newnode['l'] = $node['l'] + 1;
         $newnode['r'] = $node['l'] + 2;
         $newnode['root_id'] = $node['root_id'];
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         $this->_shiftRLValues($newnode['l'], 2, $newnode['root_id']);
         $this->_insertNew($newnode, $othercols);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         return $newnode;
     }
 
@@ -59,10 +89,10 @@ class Nstrees
         $newnode['l'] = $node['r'];
         $newnode['r'] = $node['r'] + 1;
         $newnode['root_id'] = $node['root_id'];
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         $this->_shiftRLValues($newnode['l'], 2, $newnode['root_id']);
         $this->_insertNew($newnode, $othercols);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         return $newnode;
     }
 
@@ -71,10 +101,10 @@ class Nstrees
         $newnode['l'] = $node['l'];
         $newnode['r'] = $node['l'] + 1;
         $newnode['root_id'] = $node['root_id'];
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         $this->_shiftRLValues($newnode['l'], 2, $newnode['root_id']);
         $this->_insertNew($newnode, $othercols);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         return $newnode;
     }
 
@@ -83,10 +113,10 @@ class Nstrees
         $newnode['l'] = $node['r'] + 1;
         $newnode['r'] = $node['r'] + 2;
         $newnode['root_id'] = $node['root_id'];
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         $this->_shiftRLValues($newnode['l'], 2, $newnode['root_id']);
         $this->_insertNew($newnode, $othercols);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         return $newnode;
     }
 
@@ -94,29 +124,44 @@ class Nstrees
 
     private function _shiftRLValues($first, $delta, $root_id)
     {
-        $this->db->query("UPDATE " . $this->thandle['table'] . " SET " . 
-            $this->thandle['lvalname'] . " = " . $this->thandle['lvalname'] . " + $delta 
-            WHERE " . $this->thandle['lvalname'] . " >= $first 
-            AND root_id = " . $root_id);
-            
-        $this->db->query("UPDATE " . $this->thandle['table'] . " SET " . 
-            $this->thandle['rvalname'] . " = " . $this->thandle['rvalname'] . " + $delta 
-            WHERE " . $this->thandle['rvalname'] . " >= $first 
-            AND root_id = " . $root_id);
+        $table = $this->tableName();
+        $lcol  = $this->columnName('lvalname');
+        $rcol  = $this->columnName('rvalname');
+        $first = (int) $first;
+        $delta = (int) $delta;
+        $root_id = (int) $root_id;
+
+        $this->db->query(
+            "UPDATE {$table} SET {$lcol} = {$lcol} + ? WHERE {$lcol} >= ? AND root_id = ?",
+            [$delta, $first, $root_id]
+        );
+
+        $this->db->query(
+            "UPDATE {$table} SET {$rcol} = {$rcol} + ? WHERE {$rcol} >= ? AND root_id = ?",
+            [$delta, $first, $root_id]
+        );
     }
 
     private function _shiftRLRange($first, $last, $delta, $root_id)
     {
-        $this->db->query("UPDATE " . $this->thandle['table'] . " SET " . 
-            $this->thandle['lvalname'] . " = " . $this->thandle['lvalname'] . " + $delta 
-            WHERE " . $this->thandle['lvalname'] . " BETWEEN $first AND $last 
-            AND root_id = " . $root_id);
-            
-        $this->db->query("UPDATE " . $this->thandle['table'] . " SET " . 
-            $this->thandle['rvalname'] . " = " . $this->thandle['rvalname'] . " + $delta 
-            WHERE " . $this->thandle['rvalname'] . " BETWEEN $first AND $last 
-            AND root_id = " . $root_id);
-            
+        $table = $this->tableName();
+        $lcol  = $this->columnName('lvalname');
+        $rcol  = $this->columnName('rvalname');
+        $first = (int) $first;
+        $last  = (int) $last;
+        $delta = (int) $delta;
+        $root_id = (int) $root_id;
+
+        $this->db->query(
+            "UPDATE {$table} SET {$lcol} = {$lcol} + ? WHERE {$lcol} BETWEEN ? AND ? AND root_id = ?",
+            [$delta, $first, $last, $root_id]
+        );
+
+        $this->db->query(
+            "UPDATE {$table} SET {$rcol} = {$rcol} + ? WHERE {$rcol} BETWEEN ? AND ? AND root_id = ?",
+            [$delta, $first, $last, $root_id]
+        );
+
         return ['l' => $first + $delta, 'r' => $last + $delta];
     }
 
@@ -131,11 +176,13 @@ class Nstrees
             $newdata = array_merge($newdata, $othercols);
             $this->db->table($this->thandle['table'])->insert($newdata);
         } else {
-            $this->db->query("INSERT INTO " . $this->thandle['table'] . " SET 
-                " . $othercols . "
-                " . $this->thandle['lvalname'] . " = " . $node['l'] . ",
-                " . $this->thandle['rvalname'] . " = " . $node['r'] . ",
-                root_id = " . $node['root_id']);
+            $table = $this->tableName();
+            $lcol  = $this->columnName('lvalname');
+            $rcol  = $this->columnName('rvalname');
+            $this->db->query(
+                "INSERT INTO {$table} SET {$othercols} {$lcol} = ?, {$rcol} = ?, root_id = ?",
+                [(int) $node['l'], (int) $node['r'], (int) $node['root_id']]
+            );
         }
     }
 
@@ -165,12 +212,12 @@ class Nstrees
 
     private function _moveSubtree($src, $to, $parent = 0)
     {
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         
         if ($parent != 0) {
-            $this->db->query('UPDATE ' . $this->thandle['table'] . ' 
-                SET parent_id = ' . $parent . ' 
-                WHERE id = ' . $src['id']);
+            $this->db->table($this->tableName())
+                ->where('id', (int) $src['id'])
+                ->update(['parent_id' => (int) $parent]);
         }
         
         $treesize = $src['r'] - $src['l'] + 1;
@@ -184,7 +231,7 @@ class Nstrees
         $newpos = $this->_shiftRLRange($src['l'], $src['r'], $to - $src['l'], $src['root_id']);
         $this->_shiftRLValues($src['r'] + 1, -$treesize, $src['root_id']);
         
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         
         if ($src['l'] <= $to) {
             $newpos['l'] -= $treesize;
@@ -208,7 +255,7 @@ class Nstrees
     function nstDelete($node)
     {
         $leftanchor = $node['l'];
-        $this->db->query('LOCK TABLE ' . $this->thandle['table'] . ' WRITE');
+        $this->lockTableWrite();
         
         $this->db->table($this->thandle['table'])
                  ->where($this->thandle['lvalname'] . ' >=', $node['l'])
@@ -217,12 +264,12 @@ class Nstrees
                  ->delete();
                  
         $this->_shiftRLValues($node['r'] + 1, $node['l'] - $node['r'] - 1, $node['root_id']);
-        $this->db->query('UNLOCK TABLES');
+        $this->unlockTables();
         
         return $this->nstGetNodeWhere(
-            $this->thandle['lvalname'] . " < $leftanchor
-            AND root_id = " . $node['root_id'] . "
-            ORDER BY " . $this->thandle['lvalname'] . " DESC"
+            $this->columnName('lvalname') . ' < ' . (int) $leftanchor
+            . ' AND root_id = ' . (int) $node['root_id']
+            . ' ORDER BY ' . $this->columnName('lvalname') . ' DESC'
         );
     }
 
@@ -383,11 +430,14 @@ class Nstrees
 
     function nstLevel($node)
     {
-        $query = $this->db->query("SELECT COUNT(*) AS level 
-            FROM " . $this->thandle['table'] . " 
-            WHERE " . $this->thandle['lvalname'] . " < " . $node['l'] . " 
-            AND " . $this->thandle['rvalname'] . " > " . $node['r'] . " 
-            AND root_id = " . $node['root_id']);
+        $table = $this->tableName();
+        $lcol  = $this->columnName('lvalname');
+        $rcol  = $this->columnName('rvalname');
+        $query = $this->db->query(
+            "SELECT COUNT(*) AS level FROM {$table}
+            WHERE {$lcol} < ? AND {$rcol} > ? AND root_id = ?",
+            [(int) $node['l'], (int) $node['r'], (int) $node['root_id']]
+        );
             
         $row = $query->getRowArray();
         return $row ? $row['level'] : 0;
@@ -399,32 +449,30 @@ class Nstrees
 
     function nstWalkPreorder($node, $root = false)
     {
+        $table = $this->tableName();
+        $lcol  = $this->columnName('lvalname');
+        $rcol  = $this->columnName('rvalname');
+        $rootId = (int) $node['root_id'];
+        $binds = [$rootId, $rootId];
+
         if ($root) {
-            $sql = "SELECT (COUNT(parent.id) - 1 AS depth, node.* 
-                FROM " . $this->thandle['table'] . " AS node,
-                " . $this->thandle['table'] . " AS parent 
-                WHERE node." . $this->thandle['lvalname'] . " 
-                BETWEEN parent." . $this->thandle['lvalname'] . " 
-                AND parent." . $this->thandle['rvalname'] . " 
-                AND parent.root_id = " . $node['root_id'] . " 
-                AND node.root_id = " . $node['root_id'] . " 
-                GROUP BY node.id 
-                ORDER BY node." . $this->thandle['lvalname'];
+            $sql = "SELECT (COUNT(parent.id) - 1) AS depth, node.*
+                FROM {$table} AS node, {$table} AS parent
+                WHERE node.{$lcol} BETWEEN parent.{$lcol} AND parent.{$rcol}
+                AND parent.root_id = ? AND node.root_id = ?
+                GROUP BY node.id
+                ORDER BY node.{$lcol}";
         } else {
-            $sql = "SELECT (COUNT(parent.id) - 1 AS depth, node.* 
-                FROM " . $this->thandle['table'] . " AS node,
-                " . $this->thandle['table'] . " AS parent 
-                WHERE node." . $this->thandle['lvalname'] . " 
-                BETWEEN parent." . $this->thandle['lvalname'] . " 
-                AND parent." . $this->thandle['rvalname'] . " 
-                AND parent.root_id = " . $node['root_id'] . " 
-                AND node.root_id = " . $node['root_id'] . " 
-                GROUP BY node.id 
-                HAVING node.parent_id <> 0 
-                ORDER BY node." . $this->thandle['lvalname'];
+            $sql = "SELECT (COUNT(parent.id) - 1) AS depth, node.*
+                FROM {$table} AS node, {$table} AS parent
+                WHERE node.{$lcol} BETWEEN parent.{$lcol} AND parent.{$rcol}
+                AND parent.root_id = ? AND node.root_id = ?
+                GROUP BY node.id
+                HAVING node.parent_id <> 0
+                ORDER BY node.{$lcol}";
         }
-        
-        $query = $this->db->query($sql);
+
+        $query = $this->db->query($sql, $binds);
         $resultArray = $query->getResultArray();
         
         return [

@@ -39,7 +39,7 @@
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">			
 				<li><a href="<?= base_url('admin/students/add') ?>">Add Student</a></li>
@@ -48,7 +48,7 @@
           		<li <?php if($status == 3){ ?>class="active" <?php } ?>><a href="<?php echo '#/students?status=3';?>">  Dropped</a></li>
           		<li <?php if($status == 4){ ?>class="active" <?php } ?>><a href="<?php echo '#/students?status=4';?>">  Pending</a></li>
 			</ul>
-<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+<div class="tab-content table-responsive no-padding"><div class="col-12">
 <div class="row">
   <?php //echo site_url('c=students&m=data&status='.$_GET['status']); ?>
                 <form id="form-filter" class="">
@@ -80,7 +80,7 @@
 					 
 				        <div class="col-sm-2">
                   <button type="button" id="btn-filter" style="float:left;line-height:12px;margin-top: 18px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;margin-top: 18px;height: 24px;" class="btn btn-default">Reset</button>
+                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;margin-top: 18px;height: 24px;" class="btn btn-secondary">Reset</button>
                 </div>
                 </form>
     </div>
@@ -116,8 +116,8 @@
     <div class="modal fade" id="makeCurrent" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Status</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Update Status</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form>
@@ -140,7 +140,7 @@
  		       </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -213,11 +213,11 @@ $(function(){
 					//console.log(row);
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/students?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fas fa-pencil-alt"></i> Edit</a>';
+						  html += '<a href="<?php echo '#/students?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-pencil-alt"></i> Edit</a>';
 					html += '</div>';
-					html += '<div><a href="<?php echo '#/leaving_certificate?m=edit&id=';?>' + data + '" title="School Leaving Certificate" class="btn btn-default btn-xs"><i class="fas fa-certificate"></i> SLC </a><br><a href="<?php echo '#/fee_chalan_single?m=add&id=';?>' + data + '" title="Fee Chalan" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Chalan</a></div>';
+					html += '<div><a href="<?php echo '#/leaving_certificate?m=edit&id=';?>' + data + '" title="School Leaving Certificate" class="btn btn-secondary btn-sm"><i class="fas fa-certificate"></i> SLC </a><br><a href="<?php echo '#/fee_chalan_single?m=add&id=';?>' + data + '" title="Fee Chalan" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Chalan</a></div>';
 		if(<?php echo $_GET['status']; ?> == 3){
-			html += '<button data-toggle="modal" class="makeCurrent" id="#makeCurrent' + data + '" data-target="#makeCurrent" data-discount="' + row.discounted_amount + '"  data-id="' + row.id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Make Current</button>';
+			html += '<button data-bs-toggle="modal" class="makeCurrent" id="#makeCurrent' + data + '" data-bs-target="#makeCurrent" data-discount="' + row.discounted_amount + '"  data-id="' + row.id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Make Current</button>';
 		}
 		html += '<div></div>';
 	 

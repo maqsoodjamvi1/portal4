@@ -1,29 +1,22 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>View Top Level Planning</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">View Top Level Planning</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Top Level Planning',
+    'icon' => 'fas fa-project-diagram',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
         <div class="col-md-12">
-            <div class="card card-primary card-outline">
+            <div class="card sms-card card-primary card-outline">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-eye mr-2"></i>
+                        <i class="fas fa-eye me-2"></i>
                         Top Level Planning
                     </h3>
                 </div>
@@ -45,8 +38,8 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="button" id="view_btn" class="btn btn-primary btn-block">
-                                    <i class="fas fa-search mr-1"></i> View
+                                <button type="button" id="view_btn" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> View
                                 </button>
                             </div>
                         </div>

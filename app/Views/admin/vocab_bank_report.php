@@ -25,7 +25,7 @@
     </div>
 
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-3">
           <label for="class_id">Class</label>
           <select id="class_id" class="form-control">
@@ -63,50 +63,50 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-2">
-        <div class="form-inline" style="flex-wrap: wrap; gap: 5px;">
-          <label class="mr-2 mb-0"><strong>Show/Hide:</strong></label>
+        <div class="d-flex flex-wrap align-items-center" style="flex-wrap: wrap; gap: 5px;">
+          <label class="me-2 mb-0"><strong>Show/Hide:</strong></label>
           
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_en" data-field="meaning_en" checked>
             <label class="form-check-label" for="toggle_en">EN</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_ur" data-field="meaning_ur" checked>
             <label class="form-check-label" for="toggle_ur">UR</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_example" data-field="example" checked>
             <label class="form-check-label" for="toggle_example">Ex</label>
           </div>
           
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_pos" data-field="pos" checked>
             <label class="form-check-label" for="toggle_pos">POS</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_syllables" data-field="syllables" checked>
             <label class="form-check-label" for="toggle_syllables">Syll</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_synonyms" data-field="synonyms" checked>
             <label class="form-check-label" for="toggle_synonyms">Syn</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_antonyms" data-field="antonyms" checked>
             <label class="form-check-label" for="toggle_antonyms">Ant</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_related" data-field="related" checked>
             <label class="form-check-label" for="toggle_related">Rel</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="toggle_confusing" data-field="confusing" checked>
             <label class="form-check-label" for="toggle_confusing">Con</label>
           </div>
@@ -165,7 +165,7 @@
     
     <div class="card-footer py-2 no-print mt-4">
       <small class="text-muted" id="cardCountText">0 words displayed</small>
-      <div class="float-right">
+      <div class="float-end">
         <button type="button" id="btnPrint" class="btn btn-dark btn-sm">
           <i class="fa fa-print"></i> Print Report
         </button>
@@ -593,8 +593,8 @@ body { font-family: "Times New Roman", serif; color: #000; background: #fff; }
     .main-sidebar, 
     .main-footer,
     .content {
-        border-right: none !important;
-        border-left: none !important;
+        border-end: none !important;
+        border-start: none !important;
         border-bottom: none !important;
     }
 

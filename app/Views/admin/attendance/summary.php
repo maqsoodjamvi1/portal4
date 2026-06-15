@@ -1,22 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Daily Attendance Summary</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/attendance/scan') ?>">QR Scanner</a></li>
-                    <li class="breadcrumb-item active">Summary</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Daily Attendance Summary',
+    'icon' => 'fas fa-calendar-day',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'QR Scanner', 'url' => base_url('admin/attendance/scan')],
+        ['label' => 'Summary', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
@@ -25,11 +18,9 @@
             <div class="col-md-4 offset-md-4">
                 <div class="input-group">
                     <input type="date" id="attendanceDate" class="form-control" value="<?= $date ?>">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" onclick="loadSummary()">
-                            <i class="fas fa-search mr-1"></i> View
+                    <button class="btn btn-primary" onclick="loadSummary()">
+                            <i class="fas fa-search me-1"></i> View
                         </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -88,7 +79,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-qrcode mr-2"></i>
+                            <i class="fas fa-qrcode me-2"></i>
                             Check-in Methods
                         </h3>
                     </div>
@@ -133,7 +124,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-chart-pie mr-2"></i>
+                            <i class="fas fa-chart-pie me-2"></i>
                             Check-out Status
                         </h3>
                     </div>
@@ -173,7 +164,7 @@
                 <div class="card card-success">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-user-check mr-2"></i>
+                            <i class="fas fa-user-check me-2"></i>
                             Present Employees (<?= count($present_teachers) ?>)
                         </h3>
                         <div class="card-tools">
@@ -202,8 +193,8 @@
                                         </td>
                                         <td>
                                             <?php if ($teacher->checkin): ?>
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-clock mr-1"></i>
+                                                <span class="badge text-bg-success">
+                                                    <i class="fas fa-clock me-1"></i>
                                                     <?= date('h:i A', strtotime($teacher->checkin)) ?>
                                                 </span>
                                                 <br><small><?= $teacher->check_in_method == 'qr' ? 'QR' : 'Manual' ?></small>
@@ -213,19 +204,19 @@
                                         </td>
                                         <td>
                                             <?php if ($teacher->checkout): ?>
-                                                <span class="badge badge-info">
-                                                    <i class="fas fa-clock mr-1"></i>
+                                                <span class="badge text-bg-info">
+                                                    <i class="fas fa-clock me-1"></i>
                                                     <?= date('h:i A', strtotime($teacher->checkout)) ?>
                                                 </span>
                                             <?php else: ?>
-                                                <span class="badge badge-warning">Still In</span>
+                                                <span class="badge text-bg-warning">Still In</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php if ($teacher->status == 'late'): ?>
-                                                <span class="badge badge-warning">Late</span>
+                                                <span class="badge text-bg-warning">Late</span>
                                             <?php else: ?>
-                                                <span class="badge badge-success">Present</span>
+                                                <span class="badge text-bg-success">Present</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -248,7 +239,7 @@
                 <div class="card card-danger">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-user-slash mr-2"></i>
+                            <i class="fas fa-user-slash me-2"></i>
                             Absent Employees (<?= count($absent_teachers) ?>)
                         </h3>
                         <div class="card-tools">
@@ -277,7 +268,7 @@
                                         <td>
                                             <a href="<?= base_url('admin/attendance/manual?teacher_id=' . $teacher->id . '&date=' . $date) ?>" 
                                                class="btn btn-sm btn-primary">
-                                                <i class="fas fa-pen mr-1"></i> Mark
+                                                <i class="fas fa-pen me-1"></i> Mark
                                             </a>
                                         </td>
                                     </tr>

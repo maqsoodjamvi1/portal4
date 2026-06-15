@@ -391,7 +391,7 @@ class Attendance_trigger extends BaseController {
     	}
     	   $studentsList .=  ' class="toggle_option" value="LC" id="'.$studentsinfo->student_id.'_late_comming_toggle" name="'.$studentsinfo->student_id.'_status"> 
     	<label for="'.$studentsinfo->student_id.'_late_comming_toggle">LC</label>
-   <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+   <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
     <input type="text" class="form-control" name="'.$studentsinfo->student_id.'_checkin_date" value="';
     if($attendance_info){
     	 $studentsList .= $attendance_info->checkin;
@@ -400,8 +400,8 @@ class Attendance_trigger extends BaseController {
     }
     
      $studentsList .=  '">
-    <span class="input-group-addon">
-        <span class="glyphicon glyphicon-time"></span>
+    <span class="input-group-text">
+        <span class="far fa-clock"></span>
     </span>
 </div>
     </div>
@@ -415,7 +415,7 @@ class Attendance_trigger extends BaseController {
     		}
     	}
     	   $studentsList .=  ' class="toggle_option" id="'.$studentsinfo->student_id.'_early_left_toggle" value="EL" name="'.$studentsinfo->student_id.'_status"> 
-    	<label for="'.$studentsinfo->student_id.'_early_left_toggle">EL</label> <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+    	<label for="'.$studentsinfo->student_id.'_early_left_toggle">EL</label> <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
     <input type="text" class="form-control"   name="'.$studentsinfo->student_id.'_checkout_date" value="';
     if($attendance_info){
     	 $studentsList .= $attendance_info->checkout;
@@ -424,8 +424,8 @@ class Attendance_trigger extends BaseController {
     }
     
      $studentsList .=  '">
-    <span class="input-group-addon">
-        <span class="glyphicon glyphicon-time"></span>
+    <span class="input-group-text">
+        <span class="far fa-clock"></span>
     </span>
 </div>
     </div>

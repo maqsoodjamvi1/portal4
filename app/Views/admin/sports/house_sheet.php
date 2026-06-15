@@ -1,20 +1,17 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>House Result Sheet</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/leaderboard') ?>">Leaderboard</a></li>
-          <li class="breadcrumb-item active">House Sheet</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<div class="no-print">
+<?= view('components/page_header', [
+    'title' => 'House Result Sheet',
+    'icon' => 'fas fa-file-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Leaderboard', 'url' => base_url('admin/sports/leaderboard')],
+        ['label' => 'House Sheet', 'active' => true],
+    ],
+]) ?>
+</div>
 
 <section class="content">
  <div class="row">

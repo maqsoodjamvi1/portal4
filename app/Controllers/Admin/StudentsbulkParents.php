@@ -424,19 +424,19 @@ public function data()
              data-new="' . (!$hasParent ? 'true' : 'false') . '">
             <div class="card-header card-header-collapsible py-2 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center flex-wrap">
-                    <i class="fas fa-chevron-down collapse-icon mr-2"></i>
+                    <i class="fas fa-chevron-down collapse-icon me-2"></i>
                     <strong>' . esc($student->first_name . ' ' . $student->last_name) . '</strong>
-                    <span class="badge badge-secondary ml-2">' . esc($student->reg_no ?? 'No Reg') . '</span>
-                    <span class="badge badge-info ml-2">' . esc($student->class_name ?? '') . ' - ' . esc($student->section_name ?? '') . '</span>
-                    <span class="relink-status ml-2">' . ($hasParent ? '<span class="badge badge-success">Linked</span>' : '<span class="badge badge-warning">No Parent</span>') . '</span>
+                    <span class="badge text-bg-secondary ms-2">' . esc($student->reg_no ?? 'No Reg') . '</span>
+                    <span class="badge text-bg-info ms-2">' . esc($student->class_name ?? '') . ' - ' . esc($student->section_name ?? '') . '</span>
+                    <span class="relink-status ms-2">' . ($hasParent ? '<span class="badge text-bg-success">Linked</span>' : '<span class="badge text-bg-warning">No Parent</span>') . '</span>
                 </div>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-info show-siblings mr-1" 
+                    <button type="button" class="btn btn-sm btn-outline-info show-siblings me-1" 
                             data-student-id="' . $studentId . '" data-parent-id="' . ($student->parent_id ?? 0) . '"
                             ' . (!$hasParent ? 'disabled' : '') . '>
                         <i class="fas fa-users"></i> Siblings
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning relink-parent mr-1" 
+                    <button type="button" class="btn btn-sm btn-outline-warning relink-parent me-1" 
                             data-student-id="' . $studentId . '" data-student-name="' . esc($student->first_name . ' ' . $student->last_name) . '">
                         <i class="fas fa-link"></i> Relink
                     </button>
@@ -528,7 +528,7 @@ public function data()
    data-student-id="' . $studentId . '" 
    style="cursor:pointer;"
    title="Copy from Father Contact"></i>
-                   <i class="fas fa-copy whatsapp-copy-btn copy-mother-to-whatsapp ml-2" 
+                   <i class="fas fa-copy whatsapp-copy-btn copy-mother-to-whatsapp ms-2" 
    data-student-id="' . $studentId . '" 
    style="cursor:pointer;"
    title="Copy from Mother Contact"></i>

@@ -112,8 +112,8 @@ class StudentsBulkMakeCurrent extends BaseController
             $html .= '<td class="sticky-col" style="width:70px;">'.($i++).'</td>';
             $html .= '<td class="sticky-col-2">'.esc($name ?: 'Student').'</td>';
             $html .= '<td>'.esc($r->reg_no ?? '').'</td>';
-            $html .= '<td><span class="badge badge-secondary">'.esc($r->status ?? '').'</span></td>';
-            $html .= '<td class="text-right">
+            $html .= '<td><span class="badge text-bg-secondary">'.esc($r->status ?? '').'</span></td>';
+            $html .= '<td class="text-end">
                         <button type="button" class="btn btn-sm btn-success makeCurrentBtn"
                                 data-student-id="'.(int)$r->student_id.'"
                                 data-student-name="'.esc($name, 'attr').'">

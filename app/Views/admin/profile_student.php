@@ -8,28 +8,21 @@
 
 <?php
 if (! isset($student_id) || $student_id === '' || $student_id === null) {
-    echo '<div class="alert alert-danger m-5"><i class="fas fa-exclamation-circle mr-2"></i>Open this profile from the student list, or use <code>?id=STUDENT_ID</code> in the URL.</div>';
+    echo '<div class="alert alert-danger m-5"><i class="fas fa-exclamation-circle me-2"></i>Open this profile from the student list, or use <code>?id=STUDENT_ID</code> in the URL.</div>';
 
     return;
 }
 ?>
 
 <!-- Content Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-user-graduate"></i> Student Profile</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Student Profile</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Profile',
+    'icon' => 'fas fa-user-graduate',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Profile', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main content -->
 <section class="content">
@@ -39,30 +32,30 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                 <div class="card-header p-2 bg-white border-bottom">
                     <ul class="nav nav-pills flex-nowrap sp-tab-nav">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#profile" data-toggle="tab"><i class="fas fa-user d-none d-sm-inline mr-1"></i>Profile</a>
+                            <a class="nav-link active" href="#profile" data-bs-toggle="tab"><i class="fas fa-user d-none d-sm-inline me-1"></i>Profile</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#fee" data-toggle="tab"><i class="fas fa-money-check-alt d-none d-sm-inline mr-1"></i>Fee</a>
+                            <a class="nav-link" href="#fee" data-bs-toggle="tab"><i class="fas fa-money-check-alt d-none d-sm-inline me-1"></i>Fee</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#result" data-toggle="tab"><i class="fas fa-chart-line d-none d-sm-inline mr-1"></i>Results</a>
+                            <a class="nav-link" href="#result" data-bs-toggle="tab"><i class="fas fa-chart-line d-none d-sm-inline me-1"></i>Results</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#attendance" data-toggle="tab"><i class="fas fa-calendar-check d-none d-sm-inline mr-1"></i>Attendance</a>
+                            <a class="nav-link" href="#attendance" data-bs-toggle="tab"><i class="fas fa-calendar-check d-none d-sm-inline me-1"></i>Attendance</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#health" data-toggle="tab">
-                                <i class="fas fa-heartbeat mr-1"></i><span class="d-md-none">Health</span><span class="d-none d-md-inline">Health &amp; BMI</span>
+                            <a class="nav-link" href="#health" data-bs-toggle="tab">
+                                <i class="fas fa-heartbeat me-1"></i><span class="d-md-none">Health</span><span class="d-none d-md-inline">Health &amp; BMI</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#chalan" data-toggle="tab">
-                                <i class="fas fa-file-invoice mr-1"></i><span class="d-none d-md-inline">Challan</span>
+                            <a class="nav-link" href="#chalan" data-bs-toggle="tab">
+                                <i class="fas fa-file-invoice me-1"></i><span class="d-none d-md-inline">Challan</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" target="_blank" rel="noopener" href="<?= base_url('admin/leaving-certificate/edit?id='.$student_id) ?>" title="Leaving certificate">
-                                <i class="fas fa-certificate mr-1"></i><span class="d-none d-lg-inline">Certificate</span>
+                                <i class="fas fa-certificate me-1"></i><span class="d-none d-lg-inline">Certificate</span>
                             </a>
                         </li>
                     </ul>
@@ -73,7 +66,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div id="studentInfo">
                                 <div class="text-center p-5">
                                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading...</span>
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2 text-muted">Loading profile data...</p>
                                 </div>
@@ -84,7 +77,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div id="feeInfo">
                                 <div class="text-center p-5">
                                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading...</span>
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2 text-muted">Loading fee data...</p>
                                 </div>
@@ -95,7 +88,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div id="resultInfo">
                                 <div class="text-center p-5">
                                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading...</span>
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2 text-muted">Loading result data...</p>
                                 </div>
@@ -106,7 +99,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div id="attendanceInfo">
                                 <div class="text-center p-5">
                                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading...</span>
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2 text-muted">Loading attendance data...</p>
                                 </div>
@@ -118,7 +111,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div id="healthInfo">
                                 <div class="text-center p-5">
                                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading...</span>
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2 text-muted">Loading health data...</p>
                                 </div>
@@ -131,7 +124,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div class="card card-primary card-outline">
                                 <div class="card-header">
                                     <h3 class="card-title">
-                                        <i class="fas fa-sliders-h mr-2"></i>Fee Challan Options
+                                        <i class="fas fa-sliders-h me-2"></i>Fee Challan Options
                                     </h3>
                                     <div class="card-tools">
                                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -148,7 +141,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-layer-group mr-1"></i>View Type</label>
+                                                    <label><i class="fas fa-layer-group me-1"></i>View Type</label>
                                                     <select class="form-control select2" name="view_type" id="view_type">
                                                         <option value="student_three_copy">Student Wise - 3 Copies (Bank, School, Student)</option>
                                                         <option value="student_single_page">Student Wise - Single Page (3 Students per Page)</option>
@@ -160,7 +153,7 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                             
                                             <div class="col-md-3">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-calendar-alt mr-1"></i>Fee Month</label>
+                                                    <label><i class="fas fa-calendar-alt me-1"></i>Fee Month</label>
                                                     <input type="month" class="form-control" name="fee_month" id="fee_month" 
                                                            value="<?= date('Y-m') ?>">
                                                     <small class="text-muted">Leave empty for all unpaid</small>
@@ -169,11 +162,11 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                             
                                             <div class="col-md-3">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-percentage mr-1"></i>Discount Column</label>
-                                                    <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" 
+                                                    <label><i class="fas fa-percentage me-1"></i>Discount Column</label>
+                                                    <div class="form-check form-switch">
+                                                        <input type="checkbox" class="form-check-input" 
                                                                name="show_discount" id="show_discount" value="yes" checked>
-                                                        <label class="custom-control-label" for="show_discount">Show Discount Column</label>
+                                                        <label class="form-check-label" for="show_discount">Show Discount Column</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -183,29 +176,29 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                         <div class="row">
                                             <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-history mr-1"></i>Payment History</label>
-                                                    <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" 
+                                                    <label><i class="fas fa-history me-1"></i>Payment History</label>
+                                                    <div class="form-check form-switch">
+                                                        <input type="checkbox" class="form-check-input" 
                                                                name="show_payment_history" id="show_payment_history" value="1" checked>
-                                                        <label class="custom-control-label" for="show_payment_history">Show Payment History (12 months)</label>
+                                                        <label class="form-check-label" for="show_payment_history">Show Payment History (12 months)</label>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-exclamation-triangle mr-1"></i>Display Fine</label>
-                                                    <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" 
+                                                    <label><i class="fas fa-exclamation-triangle me-1"></i>Display Fine</label>
+                                                    <div class="form-check form-switch">
+                                                        <input type="checkbox" class="form-check-input" 
                                                                name="fine_after_due_date" id="fine_after_due_date" value="1">
-                                                        <label class="custom-control-label" for="fine_after_due_date">Show Late Fee Calculation</label>
+                                                        <label class="form-check-label" for="fine_after_due_date">Show Late Fee Calculation</label>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-envelope mr-1"></i>Message Position</label>
+                                                    <label><i class="fas fa-envelope me-1"></i>Message Position</label>
                                                     <select class="form-control" name="message_position" id="message_position">
                                                         <option value="header">Header</option>
                                                         <option value="footer">Footer</option>
@@ -219,10 +212,10 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                         <div class="row">
                                             <div class="col-md-12">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-comment mr-1"></i>Message Text</label>
+                                                    <label><i class="fas fa-comment me-1"></i>Message Text</label>
                                                     <textarea class="form-control" name="message_text" id="message_text" 
                                                               rows="2" maxlength="200" placeholder="Enter custom message..."></textarea>
-                                                    <small class="text-muted float-right"><span id="charCount">0</span>/200 characters</small>
+                                                    <small class="text-muted float-end"><span id="charCount">0</span>/200 characters</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -230,16 +223,16 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                                 </div>
                                 <div class="card-footer">
                                     <button type="button" class="btn btn-primary" onclick="loadChalanData()">
-                                        <i class="fas fa-file-invoice mr-2"></i> Generate Challan
+                                        <i class="fas fa-file-invoice me-2"></i> Generate Challan
                                     </button>
                                     <button type="button" class="btn btn-success" id="printChalanBtn" onclick="printChalan()" style="display: none;">
-                                        <i class="fas fa-print mr-2"></i> Print Challan
+                                        <i class="fas fa-print me-2"></i> Print Challan
                                     </button>
                                     <button type="button" class="btn btn-info" id="downloadChalanBtn" onclick="downloadChalan()" style="display: none;">
-                                        <i class="fas fa-download mr-2"></i> Download PDF
+                                        <i class="fas fa-download me-2"></i> Download PDF
                                     </button>
                                     <button type="button" class="btn btn-secondary" onclick="resetChalanOptions()">
-                                        <i class="fas fa-undo mr-2"></i> Reset Options
+                                        <i class="fas fa-undo me-2"></i> Reset Options
                                     </button>
                                 </div>
                             </div>
@@ -248,14 +241,14 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                             <div class="card card-primary card-outline mt-3">
                                 <div class="card-header">
                                     <h3 class="card-title">
-                                        <i class="fas fa-file-pdf mr-2"></i>Fee Challan Preview
+                                        <i class="fas fa-file-pdf me-2"></i>Fee Challan Preview
                                     </h3>
                                 </div>
                                 <div class="card-body p-0">
                                     <div id="chalanInfo" class="chalan-container">
                                         <div class="text-center text-muted p-5 border rounded bg-light">
                                             <i class="fas fa-file-invoice fa-3x mb-3 text-secondary"></i>
-                                            <p class="mb-1 font-weight-bold text-dark">No preview yet</p>
+                                            <p class="mb-1 fw-bold text-dark">No preview yet</p>
                                             <p class="mb-0 small">Set options above, then click <strong>Generate Challan</strong> — the preview appears here.</p>
                                         </div>
                                     </div>
@@ -275,9 +268,9 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-heartbeat mr-2"></i> Record Height & Weight
+                    <i class="fas fa-heartbeat me-2"></i> Record Height & Weight
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
             </div>
             <form id="bmiForm">
                 <?= csrf_field() ?>
@@ -306,12 +299,12 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
                     </div>
                     
                     <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle mr-2"></i>
+                        <i class="fas fa-info-circle me-2"></i>
                         BMI will be automatically calculated using the formula: weight (kg) / (height in meters)²
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save & Calculate BMI</button>
                 </div>
             </form>
@@ -325,30 +318,30 @@ if (! isset($student_id) || $student_id === '' || $student_id === null) {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="feeChalanModalLabel">
-                    <i class="fas fa-file-invoice mr-2"></i> Fee Challan - <span id="modalStudentName"></span>
+                    <i class="fas fa-file-invoice me-2"></i> Fee Challan - <span id="modalStudentName"></span>
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <div id="chalanLoading" class="text-center py-5">
                     <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="sr-only">Loading...</span>
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                     <p class="text-muted">Loading fee challan...</p>
                 </div>
                 <div id="chalanContent" style="display: none;"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-2"></i>Close
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
                 </button>
                 <button type="button" class="btn btn-primary" onclick="printModalChalan()">
-                    <i class="fas fa-print mr-2"></i>Print
+                    <i class="fas fa-print me-2"></i>Print
                 </button>
                 <a href="#" id="downloadChalanBtn" class="btn btn-success" target="_blank">
-                    <i class="fas fa-download mr-2"></i>Download PDF
+                    <i class="fas fa-download me-2"></i>Download PDF
                 </a>
             </div>
         </div>
@@ -491,7 +484,7 @@ $(document).ready(function() {
         });
     });
 
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
         var target = $(e.target).attr('href');
 
         if (target === '#profile') {
@@ -589,7 +582,7 @@ function loadFeeChalan(chalanId, studentName) {
             } else {
                 $('#chalanContent').html(`
                     <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <i class="fas fa-exclamation-circle me-2"></i>
                         ${response.message || 'Failed to load challan details'}
                     </div>
                 `).show();
@@ -599,7 +592,7 @@ function loadFeeChalan(chalanId, studentName) {
             $('#chalanLoading').hide();
             $('#chalanContent').html(`
                 <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <i class="fas fa-exclamation-circle me-2"></i>
                     Error loading challan. Please try again.
                 </div>
             `).show();
@@ -624,7 +617,7 @@ function displayChalan(data) {
                     <p><strong>Reg:</strong> ${data.reg_no || data.registration || ''}</p>
                     <p><strong>Family ID:</strong> ${data.family_id || ''}</p>
                 </div>
-                <div class="col-md-6 text-right">
+                <div class="col-md-6 text-end">
                     <p><strong>Issue Date:</strong> ${data.issue_date || data.created_date || ''}</p>
                     <p><strong>Due Date:</strong> ${data.due_date || ''}</p>
                     <p><strong>Fee Month:</strong> ${data.fee_month || ''}</p>
@@ -643,9 +636,9 @@ function displayChalan(data) {
                 <thead>
                     <tr>
                         <th>Particulars</th>
-                        <th class="text-right">Amount</th>
-                        ${data.show_discount ? '<th class="text-right">Discount</th>' : ''}
-                        <th class="text-right">Payable</th>
+                        <th class="text-end">Amount</th>
+                        ${data.show_discount ? '<th class="text-end">Discount</th>' : ''}
+                        <th class="text-end">Payable</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -656,9 +649,9 @@ function displayChalan(data) {
             html += `
                 <tr>
                     <td>${item.description || 'Fee'}</td>
-                    <td class="text-right">${formatCurrency(item.amount)}</td>
-                    ${data.show_discount ? `<td class="text-right">${formatCurrency(item.discount || 0)}</td>` : ''}
-                    <td class="text-right">${formatCurrency(item.payable || item.amount)}</td>
+                    <td class="text-end">${formatCurrency(item.amount)}</td>
+                    ${data.show_discount ? `<td class="text-end">${formatCurrency(item.discount || 0)}</td>` : ''}
+                    <td class="text-end">${formatCurrency(item.payable || item.amount)}</td>
                 </tr>
             `;
         });
@@ -666,9 +659,9 @@ function displayChalan(data) {
         html += `
             <tr>
                 <td>Fee Amount</td>
-                <td class="text-right">${formatCurrency(data.amount || 0)}</td>
-                ${data.show_discount ? '<td class="text-right">' + formatCurrency(data.discount || 0) + '</td>' : ''}
-                <td class="text-right">${formatCurrency(data.payable || data.amount || 0)}</td>
+                <td class="text-end">${formatCurrency(data.amount || 0)}</td>
+                ${data.show_discount ? '<td class="text-end">' + formatCurrency(data.discount || 0) + '</td>' : ''}
+                <td class="text-end">${formatCurrency(data.payable || data.amount || 0)}</td>
             </tr>
         `;
     }
@@ -676,11 +669,11 @@ function displayChalan(data) {
     html += `
                 </tbody>
                 <tfoot>
-                    <tr class="font-weight-bold">
+                    <tr class="fw-bold">
                         <td>Total Payable</td>
-                        <td class="text-right">${formatCurrency(data.total_amount || data.amount || 0)}</td>
-                        ${data.show_discount ? '<td class="text-right">' + formatCurrency(data.total_discount || 0) + '</td>' : ''}
-                        <td class="text-right">${formatCurrency(data.total_payable || data.payable || data.amount || 0)}</td>
+                        <td class="text-end">${formatCurrency(data.total_amount || data.amount || 0)}</td>
+                        ${data.show_discount ? '<td class="text-end">' + formatCurrency(data.total_discount || 0) + '</td>' : ''}
+                        <td class="text-end">${formatCurrency(data.total_payable || data.payable || data.amount || 0)}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -701,7 +694,7 @@ function displayPaymentHistory(history) {
     
     let html = `
         <div class="payment-history-section mt-4">
-            <h6 class="font-weight-bold">PAYMENT HISTORY (Last 6 Months)</h6>
+            <h6 class="fw-bold">PAYMENT HISTORY (Last 6 Months)</h6>
             <table class="table table-sm table-bordered">
                 <thead>
                     <tr>
@@ -719,7 +712,7 @@ function displayPaymentHistory(history) {
         student.payments.forEach(payment => {
             html += `<td class="text-center">${payment || '-'}</td>`;
         });
-        html += `<td class="text-center font-weight-bold">${student.total}</td></tr>`;
+        html += `<td class="text-center fw-bold">${student.total}</td></tr>`;
     });
     
     html += `</tbody></table></div>`;
@@ -741,12 +734,12 @@ function printModalChalan() {
         <html>
             <head>
                 <title>Fee Challan</title>
-                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
                 <style>
                     body { padding: 20px; }
                     .table { width: 100%; margin-bottom: 1rem; }
-                    .text-right { text-align: right; }
-                    .font-weight-bold { font-weight: bold; }
+                    .text-end { text-align: right; }
+                    .fw-bold { font-weight: bold; }
                 </style>
             </head>
             <body>${printContent}</body>
@@ -789,6 +782,9 @@ function loadResultData(done) {
         data: studentPost(),
         success: function(res) {
             $('#resultInfo').html(res);
+            $('#resultInfo .collapse').on('shown.bs.collapse hidden.bs.collapse', function () {
+                $(this).prev('.sp-results-session-head').toggleClass('collapsed', !$(this).hasClass('show'));
+            });
             if (typeof done === 'function') done();
         },
         error: function() {
@@ -806,7 +802,7 @@ function loadChalanData() {
     $('#chalanInfo').html(`
         <div class="text-center p-5">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2 text-muted">Generating challan preview…</p>
         </div>
@@ -836,11 +832,11 @@ function loadChalanData() {
             }
             $('#chalanInfo').html(
                 '<div class="alert alert-danger m-3">' +
-                '<i class="fas fa-exclamation-circle mr-2"></i>' +
+                '<i class="fas fa-exclamation-circle me-2"></i>' +
                 '<strong>Could not load challan preview.</strong> ' + (xhr.responseText ? '' : '') + hint +
                 '<div class="mt-3">' +
                 '<button type="button" class="btn btn-primary" onclick="loadChalanData()">' +
-                '<i class="fas fa-sync mr-1"></i> Retry</button></div></div>'
+                '<i class="fas fa-sync me-1"></i> Retry</button></div></div>'
             );
         }
     });
@@ -854,7 +850,7 @@ function printChalan() {
         <html>
             <head>
                 <title>Fee Challan</title>
-                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
                 <style>
                     body { padding: 20px; background: white; }
                     .slip-row {
@@ -913,7 +909,7 @@ function resetChalanOptions() {
     $('#chalanInfo').html(`
         <div class="text-center text-muted p-5 border rounded bg-light">
             <i class="fas fa-file-invoice fa-3x mb-3 text-secondary"></i>
-            <p class="mb-1 font-weight-bold text-dark">No preview yet</p>
+            <p class="mb-1 fw-bold text-dark">No preview yet</p>
             <p class="mb-0 small">Set options above, then click <strong>Generate Challan</strong>.</p>
         </div>
     `);
@@ -1014,7 +1010,7 @@ function resetChalanOptions() {
 
 .health-tip-card {
     background: #f8f9fa;
-    border-left: 4px solid #3498db;
+    border-start: 4px solid #3498db;
     transition: all 0.2s ease;
 }
 
@@ -1061,12 +1057,12 @@ function resetChalanOptions() {
 
 .alert-health-warning {
     background: #fff3cd;
-    border-left: 4px solid #ffc107;
+    border-start: 4px solid #ffc107;
 }
 
 .alert-health-critical {
     background: #f8d7da;
-    border-left: 4px solid #dc3545;
+    border-start: 4px solid #dc3545;
 }
 </style>
 

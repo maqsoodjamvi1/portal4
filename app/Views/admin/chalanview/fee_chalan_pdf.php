@@ -2,17 +2,8 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
+<?= view('admin/chalanview/partials/chalan_print_styles') ?>
 <style>
-  :root{
-    --row-h: 26px;
-    --row-h-header: 28px;
-    --pad-x: 4px;
-    --font-main: 11px;
-    --font-small: 10px;
-    --border: 1px solid #000;
-  }
-
   @media print {
     .pagebreak { page-break-before: always; }
     #user-edit-form { display: none; }
@@ -36,7 +27,7 @@
   }
   .header-logo {
     display: flex; align-items: center; justify-content: center;
-    padding: 0 6px; border-right: 0;    /* no vertical divider */
+    padding: 0 6px; border-end: 0;    /* no vertical divider */
   }
   .header-logo img { max-width: 64px; height: auto; }
 
@@ -98,7 +89,7 @@
     padding: 0 var(--pad-x);
     display: flex; align-items: center;
     min-height: var(--row-h); line-height: var(--row-h);
-    border-right: 0;                      /* no vertical line */
+    border-end: 0;                      /* no vertical line */
   }
 
   /* Force left alignment (inside RTL page) where needed */
@@ -139,9 +130,9 @@
   .feetable thead tr th{ border-top: 0; }
   .feetable tbody tr:last-child td{ border-bottom: 0; }
   .feetable tr th:first-child,
-  .feetable tr td:first-child{ border-left: 0; }
+  .feetable tr td:first-child{ border-start: 0; }
   .feetable tr th:last-child,
-  .feetable tr td:last-child{ border-right: 0; }
+  .feetable tr td:last-child{ border-end: 0; }
 
   .feetable thead th{ font-weight: 600; }
 
@@ -180,19 +171,17 @@ $footer_line2 = $footer_line2 ?? '';
 $show_line2 = $show_line2 ?? '';
 ?>
 
-<section class="content-header no-print">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Fee Chalan</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Fee Chalan</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<div class="no-print">
+<?= view('components/page_header', [
+    'title' => 'Fee Chalan PDF',
+    'icon' => 'fas fa-file-pdf',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Print Fee Chalan', 'url' => base_url('admin/print-fee-chalan')],
+        ['label' => 'PDF', 'active' => true],
+    ],
+]) ?>
+</div>
 
 <section class="content">
   <!-- Filters (screen only) -->
@@ -336,7 +325,6 @@ $show_line2 = $show_line2 ?? '';
                       <div class="info-row left-ltr meta-row">
                         <div>Ch: <?= esc($hdr_chalan_id) ?></div>
                         <div class="meta-inline">
-                          <span>Reg: <?= esc($student_info['reg_no'] ?? '') ?></span>
                           <span>F. id: <?= esc($student_info['parent_id'] ?? '') ?></span>
                         </div>
                       </div>

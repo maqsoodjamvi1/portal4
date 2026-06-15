@@ -228,18 +228,38 @@ if (!function_exists('userClassSections')) {
 }
 
 if (!function_exists('currentUserRoles')) {
+    /**
+     * @return list<int> role_name_id values for all assigned roles (plan-aware)
+     */
     function currentUserRoles()
     {
-        $db = db_connect();
-        $session = session();
-        $userid = $session->get('member_userid');
-
-        if ($userid) {
-            $data = $db->query("SELECT roleID FROM user_roles WHERE userID = {$userid}")->getResultArray();
-            return array_column($data, 'roleID');
+        $userid = (int) (session()->get('member_userid') ?? 0);
+        if ($userid <= 0) {
+            return [];
         }
 
-        return [];
+        $acl     = new \App\Libraries\MemberAcl($userid);
+        $roleIds = $acl->getUserRoles();
+        if ($roleIds === []) {
+            return [];
+        }
+
+        $rows = db_connect()
+            ->table('roles')
+            ->select('role_name_id')
+            ->whereIn('id', $roleIds)
+            ->get()
+            ->getResultArray();
+
+        $nameIds = [];
+        foreach ($rows as $row) {
+            $nid = (int) ($row['role_name_id'] ?? 0);
+            if ($nid > 0) {
+                $nameIds[$nid] = $nid;
+            }
+        }
+
+        return array_values($nameIds);
     }
 }
 

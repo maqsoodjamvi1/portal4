@@ -1,21 +1,16 @@
+<?php $uiNeedsSummernote = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Top Level Planning</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Top Level Planning</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Add Top Level Planning',
+    'icon' => 'fas fa-plus',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'url' => base_url('admin/top_level_planning')],
+        ['label' => 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -23,7 +18,7 @@
             <div class="card card-primary card-outline">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-layer-group mr-2"></i>
+                        <i class="fas fa-layer-group me-2"></i>
                         Enter Top Level Planning
                     </h3>
                     <div class="card-tools">
@@ -89,28 +84,45 @@
                             <div class="form-group">
                                 <label for="subject_id">Select Subject <span class="text-danger">*</span></label>
                                 <select class="form-control select2" name="subject_id" id="subject_id">
-                                    <option value="">Select Subject</option>
-                                    <?php if (isset($subjects) && !empty($subjects)): ?>
-                                        <?php foreach ($subjects as $subject): ?>
-                                            <option value="<?= $subject->sid ?? $subject->subject_id ?>">
-                                                <?= esc($subject->subject_name) ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                    <?php if ($isTeacher): ?>
+                                        <option value="">Select class first</option>
                                     <?php else: ?>
-                                        <option value="" disabled>No subjects available</option>
+                                        <option value="">Select Subject</option>
+                                        <?php if (isset($subjects) && !empty($subjects)): ?>
+                                            <?php foreach ($subjects as $subject): ?>
+                                                <option value="<?= $subject->sid ?? $subject->subject_id ?>">
+                                                    <?= esc($subject->subject_name) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="" disabled>No subjects available</option>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </select>
                                 <?php if ($isTeacher && empty($subjects)): ?>
                                     <small class="text-muted">You are not assigned to any subject.</small>
+                                <?php elseif ($isTeacher): ?>
+                                    <small class="text-muted">Subjects are filtered by the selected class.</small>
                                 <?php endif; ?>
                             </div>
                         </div>
+
+                        <?php if ($isTeacher && !empty($subjects)): ?>
+                        <template id="teacher-all-subjects-options">
+                            <option value="">Select Subject</option>
+                            <?php foreach ($subjects as $subject): ?>
+                                <option value="<?= $subject->sid ?? $subject->subject_id ?>">
+                                    <?= esc($subject->subject_name) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </template>
+                        <?php endif; ?>
                         
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="button" id="load_planning_btn" class="btn btn-primary btn-block">
-                                    <i class="fas fa-search mr-1"></i> Load Planning
+                                <button type="button" id="load_planning_btn" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> Load Planning
                                 </button>
                             </div>
                         </div>
@@ -157,7 +169,7 @@ function getCurrentFormData() {
         let $editor = $card.find('.summernote');
         let objective = '';
         
-        if ($editor.length && $editor.hasClass('summernote')) {
+        if ($editor.length && $.fn.summernote && $editor.next('.note-editor').length) {
             objective = $editor.summernote('code');
         } else {
             objective = $card.find('textarea').val() || '';
@@ -223,7 +235,7 @@ function autoSave() {
     if ($('#autoSaveIndicator').length === 0) {
         $('body').append(
             '<div id="autoSaveIndicator" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: none;">' +
-                '<div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px 15px; border-left: 4px solid #17a2b8;">' +
+                '<div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px 15px; border-start: 4px solid #17a2b8;">' +
                     '<span id="autoSaveStatus"><i class="fas fa-spinner fa-spin"></i> Saving...</span>' +
                 '</div>' +
             '</div>'
@@ -285,6 +297,43 @@ function triggerAutoSave() {
 
 // Define baseUrl
 var baseUrl = '<?= base_url() ?>';
+var isTeacher = <?= !empty($isTeacher) ? 'true' : 'false' ?>;
+
+function resetTeacherSubjectDropdown(mode) {
+    if (!isTeacher) {
+        return;
+    }
+
+    if (mode === 'subject_wise') {
+        var template = document.getElementById('teacher-all-subjects-options');
+        if (template) {
+            $('#subject_id').html(template.innerHTML).trigger('change.select2');
+        }
+        return;
+    }
+
+    $('#subject_id').html('<option value="">Select class first</option>').trigger('change.select2');
+}
+
+function loadSubjectsForClass(classId) {
+    if (!classId) {
+        resetTeacherSubjectDropdown('term_wise');
+        return;
+    }
+
+    $.ajax({
+        url: baseUrl + '/admin/top_level_planning/getSubjectsByClass',
+        type: 'POST',
+        data: { class_id: classId },
+        dataType: 'json',
+        success: function(res) {
+            $('#subject_id').html(res.html).trigger('change.select2');
+        },
+        error: function() {
+            toastr.error('Could not load subjects for the selected class');
+        }
+    });
+}
 
 $(document).ready(function() {
     // Initialize select2
@@ -308,10 +357,25 @@ $(document).ready(function() {
             $('#term_container').show();
             $('#class_container').hide();
             $('#subject_container').show();
+            resetTeacherSubjectDropdown('subject_wise');
         } else if (type == 'term_wise') {
             $('#term_container').hide();
             $('#class_container').show();
             $('#subject_container').show();
+            resetTeacherSubjectDropdown('term_wise');
+            if ($('#class_id').val()) {
+                loadSubjectsForClass($('#class_id').val());
+            }
+        }
+    });
+
+    $('#class_id').on('change', function() {
+        if (!$('#subject_container').is(':visible')) {
+            return;
+        }
+
+        if (isTeacher || $('#entry_type').val() === 'term_wise') {
+            loadSubjectsForClass($(this).val());
         }
     });
     
@@ -361,30 +425,32 @@ $(document).ready(function() {
     $('#save_button').show();
     $('#loader').hide();
     
-    // Initialize Summernote for all editors
-    $('.summernote').each(function() {
-        $(this).summernote({
-            height: 200,
-            toolbar: [
-                ['style', ['bold', 'italic', 'underline', 'clear']],
-                ['font', ['strikethrough', 'superscript', 'subscript']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['link']],
-                ['view', ['fullscreen', 'codeview', 'help']]
-            ]
+    // Initialize Summernote for all editors (skip if already initialized)
+    if ($.fn.summernote) {
+        $('.summernote').each(function() {
+            if ($(this).next('.note-editor').length) {
+                return;
+            }
+            $(this).summernote({
+                height: 200,
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline', 'clear']],
+                    ['font', ['strikethrough', 'superscript', 'subscript']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
+            
+            $(this).on('summernote.change', function() {
+                triggerAutoSave();
+            });
         });
-        
-        // Add change event listener for auto-save
-        $(this).on('summernote.change', function() {
-            console.log('Summernote content changed');
-            triggerAutoSave();
-        });
-    });
+    }
     
-    // Also listen for regular textarea changes
-    $('textarea:not(.summernote)').on('input', function() {
-        console.log('Textarea content changed');
+    // Auto-save when typing in plain textareas (or if Summernote is unavailable)
+    $('#planning_container').find('textarea').on('input', function() {
         triggerAutoSave();
     });
     
@@ -409,11 +475,14 @@ $(document).ready(function() {
     $('#planning-form').submit(function(e) {
         e.preventDefault();
         
-        // Sync Summernote content
-        $('.summernote').each(function() {
-            var content = $(this).summernote('code');
-            $(this).val(content);
-        });
+        // Sync Summernote content back to textareas before submit
+        if ($.fn.summernote) {
+            $('.summernote').each(function() {
+                if ($(this).next('.note-editor').length) {
+                    $(this).val($(this).summernote('code'));
+                }
+            });
+        }
         
         var formData = $(this).serialize();
         

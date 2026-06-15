@@ -1,17 +1,13 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
+    <?= view('components/page_header', [
+    'title' => '提示信息',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => '提示信息', 'active' => true],
+    ],
+]) ?>
 
-<!-- Content Header (Page header) -->
-    <section class="content-header">
-      <h1>
-        提示信息
-        <small></small>
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> 首页</a></li>
-        <li class="active">提示信息</li>
-      </ol>
-    </section>
 
     <!-- Main content -->
     <section class="content">

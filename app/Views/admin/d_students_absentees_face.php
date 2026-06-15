@@ -118,10 +118,10 @@ $date_value = $sessionData['date'];
     margin-left: 10px;
 }
 
-.badge-success { background: #28a745; color: white; }
-.badge-danger { background: #dc3545; color: white; }
-.badge-warning { background: #ffc107; color: #856404; }
-.badge-info { background: #17a2b8; color: white; }
+.text-bg-success { background: #28a745; color: white; }
+.text-bg-danger { background: #dc3545; color: white; }
+.text-bg-warning { background: #ffc107; color: #856404; }
+.text-bg-info { background: #17a2b8; color: white; }
 
 /* Face Recognition Styles */
 .face-container {
@@ -327,17 +327,17 @@ $date_value = $sessionData['date'];
             <div class="card-header p-0 pt-1 border-bottom-0">
                 <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="class-section-tab" data-toggle="pill" href="#class-section-view" role="tab">
+                        <a class="nav-link active" id="class-section-tab" data-bs-toggle="pill" href="#class-section-view" role="tab">
                             <i class="fas fa-chalkboard"></i> By Class/Section
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="search-tab" data-toggle="pill" href="#search-view" role="tab">
+                        <a class="nav-link" id="search-tab" data-bs-toggle="pill" href="#search-view" role="tab">
                             <i class="fas fa-search"></i> Search by Name
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="face-tab" data-toggle="pill" href="#face-view" role="tab">
+                        <a class="nav-link" id="face-tab" data-bs-toggle="pill" href="#face-view" role="tab">
                             <i class="fas fa-camera"></i> Face Recognition
                         </a>
                     </li>
@@ -396,7 +396,7 @@ $date_value = $sessionData['date'];
                             
                             <div class="filter-group">
                                 <label>&nbsp;</label>
-                                <button type="button" onclick="loadAttendanceByClass();" class="btn btn-primary btn-block">
+                                <button type="button" onclick="loadAttendanceByClass();" class="btn btn-primary w-100">
                                     <i class="fas fa-users"></i> Load Students
                                 </button>
                             </div>
@@ -478,7 +478,7 @@ $date_value = $sessionData['date'];
                                 <button id="capture_btn" class="btn btn-primary btn-lg" disabled>
                                     <i class="fas fa-camera"></i> Capture & Recognize
                                 </button>
-                                <button id="register_mode_btn" class="btn btn-info btn-lg" data-toggle="modal" data-target="#registerModal">
+                                <button id="register_mode_btn" class="btn btn-info btn-lg" data-bs-toggle="modal" data-bs-target="#registerModal">
                                     <i class="fas fa-user-plus"></i> Register New Face
                                 </button>
                                 <button id="reset_camera_btn" class="btn btn-secondary btn-lg" style="display: none;">
@@ -523,7 +523,7 @@ $date_value = $sessionData['date'];
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Register Student Face</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -541,7 +541,7 @@ $date_value = $sessionData['date'];
                             <div class="video-wrapper-small">
                                 <video id="register_video" autoplay playsinline style="width:100%; border-radius:8px;"></video>
                             </div>
-                            <button id="capture_register_btn" class="btn btn-success btn-block mt-2">
+                            <button id="capture_register_btn" class="btn btn-success w-100 mt-2">
                                 <i class="fas fa-camera"></i> Capture Photo
                             </button>
                         </div>
@@ -556,7 +556,7 @@ $date_value = $sessionData['date'];
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" id="save_registration_btn" class="btn btn-primary">Save Registration</button>
             </div>
         </div>
@@ -777,7 +777,7 @@ function renderSearchResults(families, date) {
         html += `<div class="family-card">
             <div class="family-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div><i class="fas fa-family text-primary"></i> <strong>${escapeHtml(family.family_name)}</strong> <span class="badge badge-secondary ml-2">${family.sibling_count} children</span></div>
+                    <div><i class="fas fa-family text-primary"></i> <strong>${escapeHtml(family.family_name)}</strong> <span class="badge text-bg-secondary ms-2">${family.sibling_count} children</span></div>
                     <div>
                         <button class="btn btn-sm btn-outline-success bulk-family-mark" data-parent-id="${family.parent_id}" data-status="P"><i class="fas fa-check-circle"></i> All Present</button>
                         <button class="btn btn-sm btn-outline-danger bulk-family-mark" data-parent-id="${family.parent_id}" data-status="A"><i class="fas fa-times-circle"></i> All Absent</button>
@@ -790,16 +790,16 @@ function renderSearchResults(families, date) {
             html += `<div class="sibling-row" data-student-id="${student.student_id}">
                 <div class="sibling-info">
                     <div class="sibling-photo"><i class="fas fa-user"></i></div>
-                    <div><div class="font-weight-bold">${escapeHtml(student.name)}</div><div class="small text-muted">Reg: ${escapeHtml(student.reg_no || 'N/A')} | Class: ${escapeHtml(student.class_name)}</div></div>
+                    <div><div class="fw-bold">${escapeHtml(student.name)}</div><div class="small text-muted">Reg: ${escapeHtml(student.reg_no || 'N/A')} | Class: ${escapeHtml(student.class_name)}</div></div>
                 </div>
                 <div class="sibling-status">
-                    <div class="status-buttons btn-group btn-group-toggle" data-toggle="buttons">
+                    <div class="status-buttons btn-group btn-group-toggle" data-bs-toggle="buttons">
                         <label class="btn btn-sm btn-outline-success ${student.status === 'P' ? 'active' : ''}" data-status="P"><input type="radio" name="status_${student.student_id}" value="P" ${student.status === 'P' ? 'checked' : ''}> P</label>
                         <label class="btn btn-sm btn-outline-danger ${student.status === 'A' ? 'active' : ''}" data-status="A"><input type="radio" name="status_${student.student_id}" value="A" ${student.status === 'A' ? 'checked' : ''}> A</label>
                         <label class="btn btn-sm btn-outline-warning ${student.status === 'L' ? 'active' : ''}" data-status="L"><input type="radio" name="status_${student.student_id}" value="L" ${student.status === 'L' ? 'checked' : ''}> L</label>
                         <label class="btn btn-sm btn-outline-info ${student.status === 'LC' ? 'active' : ''}" data-status="LC"><input type="radio" name="status_${student.student_id}" value="LC" ${student.status === 'LC' ? 'checked' : ''}> LC</label>
                     </div>
-                    <span class="status-badge badge-${student.status_class}">${student.status_label}</span>
+                    <span class="status-badge text-bg-${student.status_class}">${student.status_label}</span>
                 </div>
             </div>`;
         });
@@ -824,7 +824,7 @@ function attachSearchEventHandlers(date) {
         
         let statusText = getStatusText(newStatus);
         let statusClass = getStatusClass(newStatus);
-        $row.find('.status-badge').removeClass('badge-success badge-danger badge-warning badge-info').addClass(`badge-${statusClass}`).text(statusText);
+        $row.find('.status-badge').removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info').addClass(`badge-${statusClass}`).text(statusText);
         
         $.ajax({
             url: '/admin/students_absentees/update_attendance_status_single',
@@ -855,7 +855,7 @@ function attachSearchEventHandlers(date) {
             
             let statusText = getStatusText(newStatus);
             let statusClass = getStatusClass(newStatus);
-            $row.find('.status-badge').removeClass('badge-success badge-danger badge-warning badge-info').addClass(`badge-${statusClass}`).text(statusText);
+            $row.find('.status-badge').removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info').addClass(`badge-${statusClass}`).text(statusText);
             
             $.ajax({
                 url: '/admin/students_absentees/update_attendance_status_single',

@@ -8,8 +8,8 @@
 	  	width: 33% !important;
 	    float: left !important;
 	    padding: 1px 10px !important;
-	    border-right: 0 none;
-	    border-left: 0 none;
+	    border-end: 0 none;
+	    border-start: 0 none;
 	}
 	table{
 	background-color: transparent;
@@ -247,7 +247,7 @@
 				<input type="checkbox" class="form-control" id="previous_session" name="previous_session" value="1">
 		</div>
 		</div>
-		<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary pull-right" value="View Result Card " name="View" id="ViewResutlt"></div>
+		<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary float-end" value="View Result Card " name="View" id="ViewResutlt"></div>
 	</div>
 		<div id="loader-1" class="overlay col-md-12 text-center" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 	<div id="resultContainer"></div>

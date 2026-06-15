@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Subjects Categories Topic
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Subjects Categories Topic</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Subject Category Topics',
+    'icon' => 'fas fa-tags',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Category Topics', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -103,17 +94,17 @@ $(function(){
 				sortable:false,
 				render:function(data, type, row){
 					var html = '';
-					html += '<div class="btn-group"><button type="button" class="btn btn-default btn-sm">Action</button><button type="button" class="btn btn-default dropdown-toggle dropdown-icon" data-toggle="dropdown"><span class="sr-only">Toggle Dropdown</span></button><div style="padding:10px;" class="dropdown-menu" role="menu">';
-					html += '<a href="<?php echo '#/subject_cat_topic?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"><i class="fa fa-edit icon-pencil"></i></a>';
+					html += '<div class="btn-group"><button type="button" class="btn btn-secondary btn-sm">Action</button><button type="button" class="btn btn-secondary dropdown-toggle dropdown-icon" data-bs-toggle="dropdown"><span class="visually-hidden">Toggle Dropdown</span></button><div style="padding:10px;" class="dropdown-menu" role="menu">';
+					html += '<a href="<?php echo '#/subject_cat_topic?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"><i class="fa fa-edit icon-pencil"></i></a>';
 
-					html += ' <a target="_blank" href="<?php echo '#/question_text_mcqs?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"> View/Add Questions </a>'; 
-					html += ' <a target="_blank" href="<?php echo '#/worksheet?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"> Add worksheet </a>'; 
-					html += ' <a target="_blank" href="<?php echo '#/worksheet_info?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"> Add Worksheet Info </a>'; 
-					html += ' <a target="_blank" href="<?php echo '#/worksheet_meta_info?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"> Add Worksheet Meta Info </a>'; 
+					html += ' <a target="_blank" href="<?php echo '#/question_text_mcqs?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"> View/Add Questions </a>'; 
+					html += ' <a target="_blank" href="<?php echo '#/worksheet?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"> Add worksheet </a>'; 
+					html += ' <a target="_blank" href="<?php echo '#/worksheet_info?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"> Add Worksheet Info </a>'; 
+					html += ' <a target="_blank" href="<?php echo '#/worksheet_meta_info?m=add&topic_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"> Add Worksheet Meta Info </a>'; 
 						  if(row.issys == '1'){
 
 						  }else{
-							 // html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php //echo site_url('c=subject_cat&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs dropdown-item"><i class="fa fa-trash icon-trash"></i></a>';
+							 // html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php //echo site_url('c=subject_cat&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm dropdown-item"><i class="fa fa-trash icon-trash"></i></a>';
 
 						  }
 					html += '</div></div>'; 	    

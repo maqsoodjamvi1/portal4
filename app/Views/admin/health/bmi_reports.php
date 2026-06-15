@@ -1,22 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-file-alt mr-2"></i>BMI Reports</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/health/bmi-dashboard') ?>">BMI</a></li>
-                    <li class="breadcrumb-item active">Reports</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'BMI Reports',
+    'icon' => 'fas fa-file-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'url' => base_url('admin/health/bmi-dashboard')],
+        ['label' => 'Reports', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="card">
@@ -63,20 +56,20 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-chart-bar mr-1"></i> Generate
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-chart-bar me-1"></i> Generate
                             </button>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <div class="btn-group btn-block">
+                            <div class="btn-group w-100">
                                 <button type="button" class="btn btn-success" id="exportExcel">
-                                    <i class="fas fa-file-excel mr-1"></i> Excel
+                                    <i class="fas fa-file-excel me-1"></i> Excel
                                 </button>
                                 <button type="button" class="btn btn-danger" id="exportPdf">
-                                    <i class="fas fa-file-pdf mr-1"></i> PDF
+                                    <i class="fas fa-file-pdf me-1"></i> PDF
                                 </button>
                             </div>
                         </div>

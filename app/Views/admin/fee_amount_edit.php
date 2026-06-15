@@ -6,10 +6,10 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1>
-                        <i class="fas fa-money-bill-wave mr-2"></i>
+                        <i class="fas fa-money-bill-wave me-2"></i>
                         Configure Fee Amount
                         <?php if (!empty($is_first_time)): ?>
-                            <span class="badge badge-success ml-2">System Setup Step 10/10</span>
+                            <span class="badge text-bg-success ms-2">System Setup Step 10/10</span>
                         <?php endif; ?>
                     </h1>
                 </div>
@@ -29,13 +29,13 @@
                 <div class="card-header p-0 border-bottom-0">
                     <ul class="nav nav-tabs" id="fee-tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="fee-config-tab" data-toggle="pill" href="#fee-config" role="tab">
-                                <i class="fas fa-cog mr-1"></i> Fee Configuration
+                            <a class="nav-link active" id="fee-config-tab" data-bs-toggle="pill" href="#fee-config" role="tab">
+                                <i class="fas fa-cog me-1"></i> Fee Configuration
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="info-tab" data-toggle="pill" href="#info" role="tab">
-                                <i class="fas fa-info-circle mr-1"></i> Information
+                            <a class="nav-link" id="info-tab" data-bs-toggle="pill" href="#info" role="tab">
+                                <i class="fas fa-info-circle me-1"></i> Information
                             </a>
                         </li>
                     </ul>
@@ -123,7 +123,7 @@
 
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped table-hover">
-                                    <thead class="thead-dark">
+                                    <thead class="table-dark">
                                         <tr>
                                             <th width="20%" class="align-middle">Class</th>
                                             <?php foreach ($fee_type_info as $fee): ?>
@@ -131,7 +131,7 @@
         <div class="d-flex flex-column align-items-center">
             <span><?= esc($fee->fee_type_name) ?></span>
             <?php if ($fee->is_monthly_fee): ?>
-                <small class="badge badge-pill badge-warning">Monthly Fee</small>
+                <small class="badge rounded-pill text-bg-warning">Monthly Fee</small>
             <?php endif; ?>
 
             <input 
@@ -150,8 +150,8 @@
                                     <tbody>
                                         <?php foreach ($classesinfo as $class): ?>
                                             <tr>
-                                                <th class="font-weight-bold">
-                                                    <i class="fas fa-graduation-cap mr-2 text-primary"></i>
+                                                <th class="fw-bold">
+                                                    <i class="fas fa-graduation-cap me-2 text-primary"></i>
                                                     <?= esc($class->class_name) ?>
                                                 </th>
                                                 <?php foreach ($fee_type_info as $fee): 
@@ -176,14 +176,12 @@
                                                     
                                                     <div class="form-group mb-1">
                                                         <div class="input-group">
-                                                            <div class="input-group-prepend">
-                                                                <span class="input-group-text">
+                                                            <span class="input-group-text">
                                                                     <i class="fas fa-rupee-sign"></i>
                                                                 </span>
-                                                            </div>
                                                             <input 
     type="number" 
-    class="form-control text-right <?= $fee->is_monthly_fee ? 'monthly-fee' : '' ?>"
+    class="form-control text-end <?= $fee->is_monthly_fee ? 'monthly-fee' : '' ?>"
     name="ftv<?= $fee->fee_type_id ?>_ci<?= $class->class_id ?>_amount"
     value="<?= esc((string)$current_amount) ?>"
     min="0"
@@ -196,7 +194,7 @@
                                                    
         <?php if (isset($prev_fees[$fee->fee_type_id][$class->class_id])): ?>
             <div class="text-center small text-muted">
-                <i class="fas fa-history mr-1"></i> 
+                <i class="fas fa-history me-1"></i> 
                 Previous: <?= number_format($prev_fees[$fee->fee_type_id][$class->class_id]) ?>
             </div>
         <?php endif; ?>
@@ -227,9 +225,9 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="<?= count($fee_type_info) + 1 ?>" class="text-right">
+                                            <td colspan="<?= count($fee_type_info) + 1 ?>" class="text-end">
                                                 <button type="submit" class="btn btn-success">
-                                                    <i class="fas fa-save mr-1"></i> Save All Fee Amounts
+                                                    <i class="fas fa-save me-1"></i> Save All Fee Amounts
                                                 </button>
                                             </td>
                                         </tr>
@@ -241,26 +239,26 @@
                         
                         <div class="tab-pane fade" id="info" role="tabpanel">
                             <div class="callout callout-info">
-                                <h5><i class="fas fa-info-circle mr-2"></i> Fee Configuration Information</h5>
+                                <h5><i class="fas fa-info-circle me-2"></i> Fee Configuration Information</h5>
                                 <p>
                                     This page allows you to configure the fee amounts for each class and fee type. 
                                     Please note the following:
                                 </p>
                                 <ul>
                                     <li>
-                                        <i class="fas fa-circle text-primary mr-1"></i> 
+                                        <i class="fas fa-circle text-primary me-1"></i> 
                                         <strong>Monthly Fees</strong> (highlighted in blue) have special constraints
                                     </li>
                                     <li>
-                                        <i class="fas fa-exclamation-triangle text-warning mr-1"></i> 
+                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i> 
                                         Monthly fees cannot exceed the maximum fee limit set for your campus
                                     </li>
                                     <li>
-                                        <i class="fas fa-history text-secondary mr-1"></i> 
+                                        <i class="fas fa-history text-secondary me-1"></i> 
                                         Previous session amounts are shown for reference
                                     </li>
                                     <li>
-                                        <i class="fas fa-chart-bar text-success mr-1"></i> 
+                                        <i class="fas fa-chart-bar text-success me-1"></i> 
                                         Progress bars indicate how close monthly fees are to the maximum limit
                                     </li>
                                 </ul>
@@ -271,7 +269,7 @@
                                     <div class="card">
                                         <div class="card-header bg-primary">
                                             <h3 class="card-title">
-                                                <i class="fas fa-lightbulb mr-2"></i> Tips & Best Practices
+                                                <i class="fas fa-lightbulb me-2"></i> Tips & Best Practices
                                             </h3>
                                         </div>
                                         <div class="card-body">
@@ -300,7 +298,7 @@
                                     <div class="card">
                                         <div class="card-header bg-success">
                                             <h3 class="card-title">
-                                                <i class="fas fa-exclamation-triangle mr-2"></i> Important Notes
+                                                <i class="fas fa-exclamation-triangle me-2"></i> Important Notes
                                             </h3>
                                         </div>
                                         <div class="card-body">
@@ -333,16 +331,16 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="alert alert-warning mb-0">
-                                <i class="fas fa-clock mr-2"></i>
+                                <i class="fas fa-clock me-2"></i>
                                 
                             </div>
                         </div>
-                        <div class="col-md-6 text-right">
-                            <button type="button" class="btn btn-default mr-2">
-                                <i class="fas fa-download mr-1"></i> Export
+                        <div class="col-md-6 text-end">
+                            <button type="button" class="btn btn-secondary me-2">
+                                <i class="fas fa-download me-1"></i> Export
                             </button>
                             <button type="button" class="btn btn-primary">
-                                <i class="fas fa-print mr-1"></i> Print Preview
+                                <i class="fas fa-print me-1"></i> Print Preview
                             </button>
                         </div>
                     </div>
@@ -416,7 +414,7 @@ $(document).ready(function () {
             return;
         }
 
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
 
         $.ajax({
             url: form.attr('action'),
@@ -458,7 +456,7 @@ $(document).ready(function () {
     <style>
       .table td:first-child,
     .table th:first-child {
-        border-left: 3px solid #007bff;
+        border-start: 3px solid #007bff;
     }
         .bg-primary-light {
             background-color: #e3f2fd !important;
@@ -476,7 +474,7 @@ $(document).ready(function () {
             margin-left: 1.5rem;
         }
         .callout-info {
-            border-left-color: #117a8b;
+            border-start-color: #117a8b;
         }
         .input-group-text {
             background-color: #e9ecef;

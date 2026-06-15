@@ -340,7 +340,7 @@ class Parents_balancefee extends MY_Controller {
 
         // Grand Total Row
         if ($show_grand_total) {
-            $output .= '<tr class="total-row"><td colspan="3" class="text-right font-weight-bold">Grand Total</td>';
+            $output .= '<tr class="total-row"><td colspan="3" class="text-end fw-bold">Grand Total</td>';
             
             if ($show_monthly_balance) $output .= '<td>'.number_format($total_monthly_balance).'</td>';
             if ($show_other_balance) $output .= '<td>'.number_format($total_other_balance).'</td>';

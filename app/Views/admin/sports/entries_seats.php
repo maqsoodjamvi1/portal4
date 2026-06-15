@@ -68,25 +68,18 @@ if (!function_exists('student_photo_url')) {
 .small-muted{ font-size:12px; color:#64748b; }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Assign Participants — <?= esc($event['event_name'] ?? 'Event') ?></h1>
-        <div class="small-muted">
-          Gender: <b><?= esc(ucfirst($event['gender'] ?? '-')) ?></b> • Seats/House: <b><?= (int)$event['per_house_count'] ?></b>
-        </div>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active">Assign</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Assign Participants',
+    'icon' => 'fas fa-chair',
+    'subtitle' => ($event['event_name'] ?? 'Event')
+        . ' ï¿½ Gender: ' . ucfirst($event['gender'] ?? '-')
+        . ' ï¿½ Seats/house: ' . (int)($event['per_house_count'] ?? 0),
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Assign', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card card-outline card-primary">
@@ -122,10 +115,10 @@ if (!function_exists('student_photo_url')) {
               if ($cls!=='') $metaBits[] = $cls;
               $age = age_years_round($row['date_of_birth'] ?? null);
               if ($age!=='') $metaBits[] = $age;
-              $meta = implode(' • ', $metaBits);
+              $meta = implode(' ï¿½ ', $metaBits);
             ?>
             <div class="cart-item" data-entry="<?= (int)$row['entry_id'] ?>">
-              <button class="cart-del" title="Remove" data-entry="<?= (int)$row['entry_id'] ?>">×</button>
+              <button class="cart-del" title="Remove" data-entry="<?= (int)$row['entry_id'] ?>">ï¿½</button>
               <img src="<?= esc(student_photo_url($row['profile_photo'] ?? null)) ?>" alt="">
               <div>
                 <div class="cart-name"><?= esc($name) ?></div>
@@ -138,7 +131,7 @@ if (!function_exists('student_photo_url')) {
           <!-- Tools -->
           <div class="tools">
             <div class="search">
-              <input type="text" class="q" placeholder="Search by name…">
+              <input type="text" class="q" placeholder="Search by nameï¿½">
             </div>
             <button class="btn btn-sm btn-outline-secondary reload">Reload</button>
           </div>
@@ -182,7 +175,7 @@ function memberCard(houseId, r, disabled){
   if (cls) bits.push(cls);
   if (age) bits.push(age);
   bits.push(String(cnt));                                   // always show count
-  const meta = bits.join(' • ');
+  const meta = bits.join(' ï¿½ ');
 
   const img  = esc(r.profile_photo ? '<?= base_url('uploads/') ?>'+String(r.profile_photo).replace(/^\/+/,'') : '<?= base_url('resource/img/avatar-student.png') ?>');
 
@@ -197,7 +190,7 @@ function memberCard(houseId, r, disabled){
 function loadMembers($house, q=''){
   const houseId = Number($house.data('house'));
   const $box = $house.find('.members');
-  $box.html('<div class="small-muted">Loading…</div>');
+  $box.html('<div class="small-muted">Loadingï¿½</div>');
   $.post('<?= base_url('admin/sports/entries/seats/members') ?>', {
     [CSRF_NAME]: CSRF_HASH,
     event_id: EVENT_ID,
@@ -228,11 +221,11 @@ function refreshCart(){
         const name = esc((row.first_name||'')+' '+(row.last_name||'')).trim() || ('ID '+row.student_id);
         const cls  = esc(row.class_short||'');
         const age  = ageYearsRounded(row.date_of_birth||'');
-        const meta = [cls, age].filter(Boolean).join(' • ');
+        const meta = [cls, age].filter(Boolean).join(' ï¿½ ');
         const img  = esc(row.profile_photo ? '<?= base_url('uploads/') ?>'+String(row.profile_photo).replace(/^\/+/,'') : '<?= base_url('resource/img/avatar-student.png') ?>');
         return `
           <div class="cart-item" data-entry="${row.entry_id}">
-            <button class="cart-del" title="Remove" data-entry="${row.entry_id}">×</button>
+            <button class="cart-del" title="Remove" data-entry="${row.entry_id}">ï¿½</button>
             <img src="${img}" alt="">
             <div>
               <div class="cart-name">${name}</div>

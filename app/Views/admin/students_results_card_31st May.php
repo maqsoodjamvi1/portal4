@@ -154,7 +154,7 @@
               </div>
             </div>
 
-            <div class="form-group text-right">
+            <div class="form-group text-end">
               <button type="button" class="btn btn-primary" id="ViewResult">View Result Card</button>
               <button onclick="window.print();" class="btn btn-success">Export to PDF</button>
             </div>

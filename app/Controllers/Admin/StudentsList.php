@@ -84,7 +84,7 @@ class StudentsList extends BaseController
                 'name' => $row->first_name . " " . $row->last_name,
                 'f_name' => $parentInfo->f_name ?? '',
                 'class' => $className . "(" . $sectionName . ")",
-                'w_contacts' => '<a target="_blank" class="btn btn-success btn-xs" href="https://wa.me/' . ($parentInfo->whatsapp ?? '') . '?text=' . $url . '"><i class="fab fa-whatsapp"></i> Send</a>'
+                'w_contacts' => '<a target="_blank" class="btn btn-success btn-sm" href="https://wa.me/' . ($parentInfo->whatsapp ?? '') . '?text=' . $url . '"><i class="fab fa-whatsapp"></i> Send</a>'
             ];
         }
 
@@ -98,10 +98,13 @@ class StudentsList extends BaseController
 
     public function get_parentinfo()
     {
-        $campusId = session('member_campusid');
-        $term = $this->request->getPost('term')['term'] ?? '';
+        $campusId = (int) session('member_campusid');
+        $term     = trim((string) ($this->request->getPost('term')['term'] ?? ''));
 
-        $parents = $this->db->query("SELECT * FROM parents WHERE (f_name LIKE '%$term%') AND campus_id = $campusId")
+        $parents = $this->db->table('parents')
+            ->like('f_name', $term)
+            ->where('campus_id', $campusId)
+            ->get()
             ->getResultArray();
 
         $data = [];
@@ -119,13 +122,19 @@ class StudentsList extends BaseController
 
     public function get_studentinfo()
     {
-        $campusId = session('member_campusid');
-        $term = $this->request->getPost('term')['term'] ?? '';
-        $status = $this->request->getPost('status');
+        $campusId = (int) session('member_campusid');
+        $term     = trim((string) ($this->request->getPost('term')['term'] ?? ''));
+        $status   = (int) $this->request->getPost('status');
 
-        $students = $this->db->query(
-            "SELECT * FROM students WHERE (first_name LIKE '%$term%' OR last_name LIKE '%$term%') AND status = $status AND campus_id = $campusId"
-        )->getResultArray();
+        $students = $this->db->table('students')
+            ->groupStart()
+                ->like('first_name', $term)
+                ->orLike('last_name', $term)
+            ->groupEnd()
+            ->where('status', $status)
+            ->where('campus_id', $campusId)
+            ->get()
+            ->getResultArray();
 
         $data = [];
         foreach ($students as $student) {

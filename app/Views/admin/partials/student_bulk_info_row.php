@@ -84,7 +84,7 @@ $f_name            = $f_name            ?? ($parent_name ?: '');
     <?php $fixedFlag = (!empty($campus_flags) && $campus_flags->daycare_flag == 1) ? 1 : ((!empty($campus_flags) && $campus_flags->boarding_flag == 1) ? 2 : null); ?>
     <td data-col="flag">
       <input type="hidden" name="flag" value="<?= esc($fixedFlag) ?>">
-      <span class="badge badge-info">
+      <span class="badge text-bg-info">
         <?= $fixedFlag == 1 ? 'DayCare' : ($fixedFlag == 2 ? 'Boarding' : '—') ?>
       </span>
     </td>
@@ -93,7 +93,7 @@ $f_name            = $f_name            ?? ($parent_name ?: '');
   <!-- Photo -->
   <td data-col="profile_photo">
     <div class="d-flex align-items-center">
-      <div class="mr-2">
+      <div class="me-2">
         <?php if (!empty($profile_photo)): ?>
           <img class="photoPreview"
                src="<?= base_url('uploads/' . $profile_photo) ?>"
@@ -345,7 +345,7 @@ $f_name            = $f_name            ?? ($parent_name ?: '');
   <input type="hidden" name="months[<?= esc($nextKey) ?>][orig_net]"    value="<?= esc(nf($nNet)) ?>">
 </td>
   <!-- Action -->
-  <td class="text-right">
+  <td class="text-end">
     <button type="button" class="btn btn-sm btn-success saveStudentBtn">Save</button>
   </td>
 </tr>

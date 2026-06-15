@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?= base_url('resource/datatables/dataTables.bootstrap4.min.css') ?>">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
 
 <section class="content-header">
   <div class="container-fluid">
@@ -33,7 +33,7 @@
                 <td><?= esc($name) ?></td>
                 <td><?= esc($e['house_id']) ?></td>
                 <td>
-                  <button class="btn btn-xs btn-outline-primary pick" 
+                  <button class="btn btn-sm btn-outline-primary pick" 
                           data-student="<?= (int)$e['student_id'] ?>" 
                           data-team="<?= esc($e['team_name']) ?>" 
                           data-house="<?= (int)$e['house_id'] ?>">Pick</button>
@@ -63,16 +63,16 @@
             ?>
               <div class="border rounded p-2 mb-2 position-row" data-pos="<?= $p ?>">
                 <div class="d-flex align-items-center">
-                  <span class="badge badge-secondary mr-2" style="min-width:34px">#<?= $p ?></span>
+                  <span class="badge text-bg-secondary me-2" style="min-width:34px">#<?= $p ?></span>
                   <input type="hidden" name="positions[<?= $p ?>][position]" value="<?= $p ?>">
                   <input type="hidden" class="house_id" name="positions[<?= $p ?>][house_id]" value="<?= esc($row['house_id'] ?? '') ?>">
                   <input type="hidden" class="student_id" name="positions[<?= $p ?>][student_id]" value="<?= esc($row['student_id'] ?? '') ?>">
-                  <input type="text" class="form-control form-control-sm mr-2 winner_text" placeholder="Student/Team" 
+                  <input type="text" class="form-control form-control-sm me-2 winner_text" placeholder="Student/Team" 
                          value="<?= esc($row['student_id'] ? '' : ($row['team_name'] ?? '')) ?>" 
                          name="positions[<?= $p ?>][team_name]">
-                  <label class="mb-0 mr-2">Tie</label>
+                  <label class="mb-0 me-2">Tie</label>
                   <input type="checkbox" name="positions[<?= $p ?>][rank_shared]" value="1" <?= !empty($row['rank_shared'])?'checked':'' ?>>
-                  <button type="button" class="btn btn-sm btn-outline-danger ml-2 clear">Clear</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 clear">Clear</button>
                 </div>
                 <small class="text-muted pick-hint">Tip: click “Pick” on the left to fill this row.</small>
               </div>

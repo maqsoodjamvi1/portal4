@@ -51,9 +51,9 @@
             <div class="form-group">
               <label>&nbsp;</label>
               <div>
-                <div class="custom-control custom-switch">
-                  <input type="checkbox" class="custom-control-input" id="editModeToggle">
-                  <label class="custom-control-label" for="editModeToggle">Edit Mode</label>
+                <div class="form-check form-switch">
+                  <input type="checkbox" class="form-check-input" id="editModeToggle">
+                  <label class="form-check-label" for="editModeToggle">Edit Mode</label>
                 </div>
               </div>
             </div>
@@ -91,19 +91,19 @@
     <div class="modal-content">
       <div class="modal-header bg-warning">
         <h5 class="modal-title" id="deleteModalLabel">Drop Student: <span id="studentNameDisplay"></span></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <div class="custom-control custom-radio">
-            <input type="radio" id="dropOnly" name="dropOption" value="drop_only" class="custom-control-input" checked>
-            <label class="custom-control-label" for="dropOnly">Drop Only (Mark as Dropped)</label>
+          <div class="form-check form-check">
+            <input type="radio" id="dropOnly" name="dropOption" value="drop_only" class="form-check-input" checked>
+            <label class="form-check-label" for="dropOnly">Drop Only (Mark as Dropped)</label>
           </div>
-          <div class="custom-control custom-radio mt-2">
-            <input type="radio" id="dropWithSLC" name="dropOption" value="drop_with_slc" class="custom-control-input">
-            <label class="custom-control-label" for="dropWithSLC">Drop & Generate School Leaving Certificate</label>
+          <div class="form-check form-check mt-2">
+            <input type="radio" id="dropWithSLC" name="dropOption" value="drop_with_slc" class="form-check-input">
+            <label class="form-check-label" for="dropWithSLC">Drop & Generate School Leaving Certificate</label>
           </div>
         </div>
         
@@ -140,7 +140,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-danger" id="confirmDelete">Drop Student</button>
       </div>
     </div>
@@ -153,7 +153,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">Edit Student Name</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
+                <button type="button" class="close text-white" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -177,7 +177,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveNameChanges">Save Changes</button>
             </div>
         </div>
@@ -190,7 +190,7 @@
     <div class="modal-content">
       <div class="modal-header bg-info">
         <h5 class="modal-title" id="slcUpdateModalLabel">Update Student Information for SLC</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -280,7 +280,7 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-primary" id="saveAndGenerateSLC">Save & Generate SLC</button>
       </div>
     </div>
@@ -288,7 +288,7 @@
 </div>
 
 <div id="loader" class="text-center d-none">
-  <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+  <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -445,8 +445,8 @@ $(function () {
                         <input type="hidden" name="reg_no[]" value="">
                     </td>
                     <td class="text-center align-middle">
-                        <button type="button" class="btn btn-xs btn-link text-danger btn-remove-new-row"><i class="fas fa-times"></i></button>
-                        <button type="button" class="btn btn-xs btn-link text-primary btn-edit-student" 
+                        <button type="button" class="btn btn-sm btn-link text-danger btn-remove-new-row"><i class="fas fa-times"></i></button>
+                        <button type="button" class="btn btn-sm btn-link text-primary btn-edit-student" 
                                 data-student-id="0" data-student-name="" style="display:none;">
                             <i class="fas fa-edit"></i>
                         </button>

@@ -94,8 +94,11 @@ class Quizzes extends BaseController
     // helper inside the controller (top of class) or make it private method
 private function columnExists(string $table, string $column): bool
 {
-    $q = $this->db->query("SHOW COLUMNS FROM `$table` LIKE ?", [$column]);
-    return $q && $q->getNumRows() > 0;
+    if (! preg_match('/^[a-z][a-z0-9_]*$/', $table) || ! preg_match('/^[a-z][a-z0-9_]*$/', $column)) {
+        return false;
+    }
+
+    return $this->db->fieldExists($column, $table);
 }
 public function practice($quizId)
 {

@@ -50,22 +50,14 @@
 			}
 
 ?>
+<?= view('components/page_header', [
+    'title' => 'Video Lecture',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Video Lecture', 'active' => true],
+    ],
+]) ?>
 
-<!-- Content Header (Page header) -->
-
-<section class="content-header">
-
-  <h1>  Video Lecture  <small></small> </h1>
-
-  <ol class="breadcrumb">
-
-    <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-    <li class="active"> Video Lecture </li>
-
-  </ol>
-
-</section>
 
 <!-- Main content -->
 
@@ -73,7 +65,7 @@
 
   <div class="row">
 
-    <div class="col-xs-12">
+    <div class="col-12">
 
       <div class="nav-tabs-custom">
 
@@ -281,7 +273,7 @@
 
         <td colspan="5" style="text-align: left;">
 
-              <input type="button" class="btn btn-lg btn-block btn-primary"  id="addrow" value="Add Question" />
+              <input type="button" class="btn btn-lg w-100 btn-primary"  id="addrow" value="Add Question" />
 
          </td>
 
@@ -305,9 +297,9 @@
 
            <button type="submit" class="btn btn-primary">Save</button>
 
-           <button type="reset" class="btn btn-default">Reset</button>
+           <button type="reset" class="btn btn-secondary">Reset</button>
 
-           <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+           <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 
          </div>
 
@@ -347,11 +339,11 @@ $(document).ready(function () {
 
         var cols = "";
 
-        cols += '<td style="border: 4px solid blue; border-right: 0 none !important;"><input type="hidden" name="questioncount[]" value="1" />  <input type="input" name="document_url'+ counter +'" class="form-control"><small>Insert Video URL</small></td>';
+        cols += '<td style="border: 4px solid blue; border-end: 0 none !important;"><input type="hidden" name="questioncount[]" value="1" />  <input type="input" name="document_url'+ counter +'" class="form-control"><small>Insert Video URL</small></td>';
 
 	   
 
-        cols += '<td style="border: 4px solid blue; border-left: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
+        cols += '<td style="border: 4px solid blue; border-start: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
 
         newRow.append(cols);
 

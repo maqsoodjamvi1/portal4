@@ -7,7 +7,7 @@
 <div class="container-fluid px-3">
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i> Student Admission Registration</h5>
+            <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Admission Registration</h5>
             <button type="button" class="btn btn-light btn-sm" onclick="window.print();">
                 <i class="fas fa-print"></i> Print / Save PDF
             </button>
@@ -36,12 +36,12 @@
                 <div class="card mb-3 border-primary">
                     <div class="card-header bg-light-primary" id="headingStudent">
                         <h6 class="mb-0">
-                            <button class="accordion-button fw-bold text-primary" type="button" data-toggle="collapse" data-target="#collapseStudent" aria-expanded="true">
+                            <button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStudent" aria-expanded="true">
                                 <i class="fas fa-user-graduate me-2"></i> Student Personal Details
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseStudent" class="collapse show" aria-labelledby="headingStudent" data-parent="#admissionAccordion">
+                    <div id="collapseStudent" class="collapse show" aria-labelledby="headingStudent" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -163,12 +163,12 @@
                 <div class="card mb-3 border-success">
                     <div class="card-header bg-light-success" id="headingFee">
                         <h6 class="mb-0">
-                            <button class="accordion-button fw-bold text-success collapsed" type="button" data-toggle="collapse" data-target="#collapseFee">
+                            <button class="accordion-button fw-bold text-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFee">
                                 <i class="fas fa-money-bill-wave me-2"></i> Fee Structure & Financial Details
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseFee" class="collapse" aria-labelledby="headingFee" data-parent="#admissionAccordion">
+                    <div id="collapseFee" class="collapse" aria-labelledby="headingFee" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -270,13 +270,13 @@
                 <div class="card mb-3 border-info">
                     <div class="card-header bg-light-info" id="headingParent">
                         <h6 class="mb-0">
-                            <button class="accordion-button fw-bold text-info collapsed" type="button" data-toggle="collapse" data-target="#collapseParent">
+                            <button class="accordion-button fw-bold text-info collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseParent">
                                 <i class="fas fa-users me-2"></i> Parent/Guardian Information
                             </button>
                         </h6>
                     </div>
                   
-                    <div id="collapseParent" class="collapse" aria-labelledby="headingParent" data-parent="#admissionAccordion">
+                    <div id="collapseParent" class="collapse" aria-labelledby="headingParent" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="alert alert-primary">
                                 <i class="fas fa-lightbulb me-2"></i>
@@ -400,12 +400,12 @@
                 <div class="card border-warning">
                     <div class="card-header bg-light-warning" id="headingAttachments">
                         <h6 class="mb-0">
-                            <button class="accordion-button fw-bold text-warning collapsed" type="button" data-toggle="collapse" data-target="#collapseAttachments">
+                            <button class="accordion-button fw-bold text-warning collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAttachments">
                                 <i class="fas fa-file-upload me-2"></i> Required Documents
                             </button>
                         </h6>
                     </div>
-                    <div id="collapseAttachments" class="collapse" aria-labelledby="headingAttachments" data-parent="#admissionAccordion">
+                    <div id="collapseAttachments" class="collapse" aria-labelledby="headingAttachments" data-bs-parent="#admissionAccordion">
                         <div class="card-body">
                             <div class="alert alert-warning">
                                 <div class="d-flex">
@@ -553,7 +553,7 @@
 }
 
 .children-info {
-    border-left: 3px solid #0dcaf0;
+    border-start: 3px solid #0dcaf0;
     font-size: 0.85rem;
     padding: 0.75rem;
     background-color: #f8f9fa;
@@ -1111,7 +1111,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 beforeSend: function() {
                     $('button[type="submit"]').prop('disabled', true)
-                        .html('<i class="fas fa-spinner fa-spin mr-2"></i> Processing Admission...');
+                        .html('<i class="fas fa-spinner fa-spin me-2"></i> Processing Admission...');
                 },
                 success: function(response) {
                     if (response.success) {
@@ -1125,7 +1125,7 @@ $(document).ready(function() {
                     } else {
                         toastr.error(response.msg);
                         $('button[type="submit"]').prop('disabled', false)
-                            .html('<i class="fas fa-save mr-2"></i> Submit Admission');
+                            .html('<i class="fas fa-save me-2"></i> Submit Admission');
                     }
                 },
                 error: function(xhr) {
@@ -1136,7 +1136,7 @@ $(document).ready(function() {
                         toastr.error('An error occurred. Please try again.');
                     }
                     $('button[type="submit"]').prop('disabled', false)
-                        .html('<i class="fas fa-save mr-2"></i> Submit Admission');
+                        .html('<i class="fas fa-save me-2"></i> Submit Admission');
                 }
             });
         }

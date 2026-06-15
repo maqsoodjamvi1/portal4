@@ -19,14 +19,17 @@ $password = $request->getGet('pass') ?? '';
   <title>School | Login</title>
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
-  <!-- Bootstrap 4 -->
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/bootstrap/css/bootstrap.min.css') ?>">
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
   <!-- Ionicons -->
   <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
   <!-- AdminLTE -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/dist/css/adminlte.min.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260604') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260614b') ?>">
   <!-- Toastr -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.css') ?>">
 
@@ -48,7 +51,7 @@ $password = $request->getGet('pass') ?? '';
 
   <script src="https://www.google.com/recaptcha/api.js"></script>
 </head>
-<body class="hold-transition login-page">
+<body class="hold-transition login-page login-page-refined">
 <div class="container">
 
   <?= form_open(base_url('admin/login/submit'), ['id' => 'loginform', 'autocomplete' => 'off']) ?>
@@ -67,12 +70,36 @@ $password = $request->getGet('pass') ?? '';
       <div class="card-body">
         <p class="login-box-msg">Sign in</p>
 
+        <?php
+        $sessionExpired = $request->getGet('reason') === 'session_expired'
+            || $session->getFlashdata('session_expired');
+        $loginRequired = $request->getGet('reason') === 'login_required'
+            || $session->getFlashdata('login_required');
+        ?>
+        <?php if ($sessionExpired): ?>
+          <div class="alert alert-info alert-dismissible fade show">
+            <i class="fas fa-info-circle me-2"></i>
+            <?= esc($session->getFlashdata('session_expired') ?: 'Your session has expired. Please sign in again to continue.') ?>
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        <?php elseif ($loginRequired): ?>
+          <div class="alert alert-info alert-dismissible fade show">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            <?= esc($session->getFlashdata('login_required') ?: 'Please sign in to continue.') ?>
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        <?php endif; ?>
+
         <!-- Flash error (non-AJAX fallback) -->
         <?php if ($session->getFlashdata('perr')): ?>
           <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <i class="fas fa-exclamation-triangle me-2"></i>
             <?= esc($session->getFlashdata('perr')) ?>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -88,11 +115,9 @@ $password = $request->getGet('pass') ?? '';
                    id="username"
                    placeholder="Email / Username"
                    value="<?= esc($username) ?>">
-            <div class="input-group-append">
-              <div class="input-group-text">
+            <span class="input-group-text">
                 <span class="fas fa-user"></span>
-              </div>
-            </div>
+              </span>
           </div>
           <div class="text-danger" id="usernameerror"></div>
         </div>
@@ -107,11 +132,9 @@ $password = $request->getGet('pass') ?? '';
                    id="password"
                    placeholder="Password"
                    value="<?= esc($password) ?>">
-            <div class="input-group-append">
-              <div class="input-group-text">
+            <span class="input-group-text">
                 <span class="fas fa-lock"></span>
-              </div>
-            </div>
+              </span>
           </div>
           <div class="text-danger" id="passworderror"></div>
         </div>
@@ -119,7 +142,7 @@ $password = $request->getGet('pass') ?? '';
         <div class="row">
           <div class="col-8"></div>
           <div class="col-4">
-            <button type="submit" class="btn btn-primary btn-block btn-flat signin">
+            <button type="submit" class="btn btn-primary w-100 btn-flat signin">
               Sign in
             </button>
           </div>
@@ -171,16 +194,14 @@ $password = $request->getGet('pass') ?? '';
   <!-- (Optional) Signup block for non-portal4 -->
   <?php if (! $isPortal4): ?>
     <br><br>
-    <!--
     <section class="signupbtnsection">
       <center>
         <h3>Create School With Blank Database</h3><br>
-        <a href="https://timesoftsol.com/signup/" class="btn btn-lg btn-danger btn-block">
+        <a href="<?= base_url('signup') ?>" class="btn btn-lg btn-danger w-100">
           Signup For 1 Month Free Trial
         </a>
       </center>
     </section>
-    -->
   <?php endif; ?>
 
   <?= form_close(); ?>
@@ -188,7 +209,7 @@ $password = $request->getGet('pass') ?? '';
 
 <!-- Scripts -->
 <script src="<?= base_url('resource/adminlte/plugins/jquery/jquery.min.js') ?>"></script>
-<script src="<?= base_url('resource/adminlte/bootstrap/js/bootstrap.min.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= base_url('resource/js/jquery.form.js') ?>"></script>
 <script src="<?= base_url('resource/js/jquery.validate.min.js') ?>"></script>
 <script src="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.js') ?>"></script>

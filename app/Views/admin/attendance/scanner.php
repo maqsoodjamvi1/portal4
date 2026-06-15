@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Teacher Attendance Scanner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -65,9 +65,9 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             animation: slideIn 0.3s ease;
         }
-        .toast-success { border-left: 5px solid #28a745; }
-        .toast-error { border-left: 5px solid #dc3545; }
-        .toast-warning { border-left: 5px solid #ffc107; }
+        .toast-success { border-start: 5px solid #28a745; }
+        .toast-error { border-start: 5px solid #dc3545; }
+        .toast-warning { border-start: 5px solid #ffc107; }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -101,7 +101,7 @@
         }
         .camera-tips {
             background: #e7f3ff;
-            border-left: 4px solid #007bff;
+            border-start: 4px solid #007bff;
             padding: 10px;
             margin: 15px 0;
             font-size: 13px;

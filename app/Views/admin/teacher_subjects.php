@@ -5,33 +5,33 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <style>
 
 /* Teacher item badges */
-.filter-item .badge-info {
+.filter-item .text-bg-info {
     background-color: #17a2b8;
     color: white;
     padding: 3px 6px;
     font-size: 0.7rem;
 }
 
-.filter-item .badge-success {
+.filter-item .text-bg-success {
     background-color: #28a745;
     color: white;
     padding: 3px 6px;
     font-size: 0.7rem;
 }
 
-.filter-item .badge-warning {
+.filter-item .text-bg-warning {
     background-color: #ffc107;
     color: #212529;
     padding: 3px 6px;
     font-size: 0.7rem;
 }
 
-.filter-item .badge-primary {
+.filter-item .text-bg-primary {
     background-color: var(--primary);
     color: white;
     padding: 4px 8px;
@@ -181,18 +181,25 @@
     font-size: 1rem;
 }
 
-/* Subject Grid - 2 Column Layout */
-.subject-grid-2col {
+/* Subject grid — 4 columns (fewer vertical scroll); responsive fallbacks */
+.subject-grid-4col {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
     margin-top: 10px;
+    align-items: start;
 }
 
-.subject-column {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+@media (max-width: 1400px) {
+    .subject-grid-4col {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1100px) {
+    .subject-grid-4col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 /* Compact Subject Items */
@@ -241,27 +248,27 @@
 }
 
 /* Select2 customization for compact view */
-.select2-container--bootstrap4 {
+.select2-container--bootstrap-5 {
     width: 120px !important;
 }
 
-.select2-container--bootstrap4 .select2-selection--single {
+.select2-container--bootstrap-5 .select2-selection--single {
     height: 28px !important;
     padding: 2px 8px !important;
     font-size: 0.8rem !important;
 }
 
-.select2-container--bootstrap4 .select2-selection__arrow {
+.select2-container--bootstrap-5 .select2-selection__arrow {
     height: 26px !important;
 }
 
-.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
     line-height: 22px !important;
     font-size: 0.8rem !important;
 }
 
 /* Compact Badge */
-.badge-warning {
+.text-bg-warning {
     background: #ffc107;
     color: #000;
     font-size: 0.65rem;
@@ -271,12 +278,13 @@
     text-align: center;
 }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .subject-grid-2col {
+@media (max-width: 576px) {
+    .subject-grid-4col {
         grid-template-columns: 1fr;
     }
-    
+}
+
+@media (max-width: 992px) {
     .subject-item {
         flex-wrap: wrap;
     }
@@ -286,7 +294,7 @@
         justify-content: space-between;
     }
     
-    .select2-container--bootstrap4 {
+    .select2-container--bootstrap-5 {
         width: 100% !important;
     }
     
@@ -295,11 +303,17 @@
     }
 }
 
-/* Adjust section card width for better 2-column fit */
+/* One section card per row — full width (auto-fill caused narrow cards when only one section) */
 .sections-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    grid-template-columns: 1fr;
     gap: 15px;
+    width: 100%;
+}
+
+#sectionsContainer {
+    width: 100%;
+    max-width: 100%;
 }
 
 :root {
@@ -394,6 +408,8 @@
     overflow: hidden;
     transition: all 0.3s ease;
     border: 1px solid #e9ecef;
+    width: 100%;
+    max-width: 100%;
 }
 
 .class-card:hover {
@@ -430,13 +446,6 @@
     padding: 20px;
 }
 
-/* Sections Grid */
-.sections-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 15px;
-}
-
 .section-card {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -444,6 +453,9 @@
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .section-card:hover {
@@ -607,32 +619,14 @@
     color: #adb5bd;
 }
 
-/* Save Bar */
-.save-bar {
-    position: sticky;
-    bottom: 20px;
-    background: white;
-    border-radius: 50px;
-    padding: 15px 25px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    border: 1px solid #e9ecef;
-    z-index: 1000;
-}
-
-.save-bar .changes-count {
-    background: var(--primary);
-    color: white;
-    padding: 5px 15px;
-    border-radius: 25px;
-    font-size: 0.9rem;
+.subject-item.opacity-60,
+.section-incharge-inline.opacity-60 {
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
 }
 
 /* Badge styling */
-.badge-warning {
+.text-bg-warning {
     background: #ffc107;
     color: #000;
     font-size: 0.7rem;
@@ -642,15 +636,6 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .filter-list {
-        max-height: 300px;
-        margin-bottom: 20px;
-    }
-    
-    .sections-grid {
-        grid-template-columns: 1fr;
-    }
-    
     .filter-bar {
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -660,31 +645,18 @@
     .stats-grid {
         grid-template-columns: 1fr 1fr;
     }
-    
-    .save-bar {
-        flex-direction: column;
-        gap: 10px;
-        border-radius: 15px;
-    }
 }
 </style>
 
 <!-- Page Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-chalkboard-teacher mr-2"></i> Teacher & Class Incharge Assignment</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= site_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Teacher Assignments</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Teacher & Class Incharge Assignment',
+    'icon' => 'fas fa-chalkboard-teacher',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Teacher Assignments', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -692,7 +664,7 @@
         <!-- Loading State -->
         <div id="loader" class="text-center py-5">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2 text-muted">Loading assignments...</p>
         </div>
@@ -709,7 +681,7 @@
             <div class="filter-bar">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="searchFilter" placeholder="Search subjects or teachers...">
+                    <input type="text" id="searchFilter" placeholder="Search by subject name…">
                 </div>
                 <button class="filter-btn active" onclick="filterBy('all')" id="filterAll">
                     <i class="fas fa-list"></i> All
@@ -725,38 +697,12 @@
                 </button>
             </div>
 
-            <div class="row">
-                <!-- Teachers Sidebar -->
-                <div class="col-md-3">
-                    <div class="sidebar-gradient">
-                        <h5>
-                            <i class="fas fa-users mr-2"></i> Teachers
-                            <span class="badge badge-light float-right" id="totalTeachers">0</span>
-                        </h5>
-                        <div class="filter-list" id="teacherList"></div>
-                    </div>
-                </div>
+            <p class="text-muted mb-3 small">
+                <i class="fas fa-cloud-upload-alt me-1"></i>
+                Assignments save automatically when you change a teacher. Use filters and search to narrow the list.
+            </p>
 
-                <!-- Subjects & Sections Content -->
-                <div class="col-md-9">
-                    <div id="selectedTeacherInfo" class="mb-3">
-                        <h3 id="selectedTeacherName" class="d-inline-block"></h3>
-                        <span class="badge badge-info ml-2" id="teacherStats"></span>
-                    </div>
-                    <div id="sectionsContainer"></div>
-                </div>
-            </div>
-
-            <!-- Save Bar -->
-            <div class="save-bar" id="saveBar" style="display: none;">
-                <div class="changes-count" id="changesCount">0 changes pending</div>
-                <div>
-                    <button class="btn btn-secondary mr-2" onclick="resetChanges()">Reset</button>
-                    <button class="btn btn-primary" onclick="saveAssignments()">
-                        <i class="fas fa-save mr-1"></i> Save All Changes
-                    </button>
-                </div>
-            </div>
+            <div id="sectionsContainer"></div>
         </div>
     </div>
 </section>
@@ -781,10 +727,7 @@ let appData = {
     classSections: [],
     sectionSubjectMap: {},
     teacherSubjectMap: {},
-    sectionTeacherMap: {}, // Add section teacher map
-    currentTeacherId: null,
-    changes: {},
-    sectionChanges: {}, // Separate changes for section teachers
+    sectionTeacherMap: {},
     searchTerm: '',
     filterType: 'all',
     currentOpenClass: null
@@ -794,10 +737,13 @@ $(document).ready(function() {
     loadData();
 });
 
-function loadData() {
-    $('#loader').show();
-    $('#mainContent').hide();
-    
+function loadData(opts) {
+    const silent = !!(opts && opts.silent);
+    if (!silent) {
+        $('#loader').show();
+        $('#mainContent').hide();
+    }
+
     $.ajax({
         url: '<?= base_url('admin/teacher_subjects/getData') ?>',
         type: 'GET',
@@ -809,26 +755,24 @@ function loadData() {
                 appData.classSections = response.data.classSections || [];
                 appData.sectionSubjectMap = response.data.sectionSubjectMap || {};
                 appData.teacherSubjectMap = response.data.teacherSubjectMap || {};
-                
-                // Load section teacher data
+
                 loadSectionTeacherData();
-                
-                renderTeacherList();
+
                 updateStats();
-                
-                if (appData.teachers.length > 0) {
-                    selectTeacher(appData.teachers[0].id);
+
+                if (!silent) {
+                    $('#loader').hide();
+                    $('#mainContent').fadeIn();
                 }
-                
-                $('#loader').hide();
-                $('#mainContent').fadeIn();
+
+                renderSections();
             } else {
-                showError('Failed to load data');
+                if (!silent) showError('Failed to load data');
             }
         },
         error: function(xhr) {
             console.error('AJAX Error:', xhr.responseText);
-            showError('Network error occurred');
+            if (!silent) showError('Network error occurred');
         }
     });
 }
@@ -847,74 +791,7 @@ function loadSectionTeacherData() {
     });
 }
 
-function renderTeacherList() {
-    let html = '';
-    
-    appData.teachers.forEach(teacher => {
-        // Count subject assignments for this teacher
-        let subjectAssignments = 0;
-        Object.keys(appData.teacherSubjectMap).forEach(clsSecId => {
-            Object.keys(appData.teacherSubjectMap[clsSecId] || {}).forEach(secSubId => {
-                if (appData.teacherSubjectMap[clsSecId][secSubId] == teacher.id) {
-                    subjectAssignments++;
-                }
-            });
-        });
-        
-        // Count section incharge assignments for this teacher
-        let sectionAssignments = 0;
-        Object.values(appData.sectionTeacherMap).forEach(tId => {
-            if (tId == teacher.id) sectionAssignments++;
-        });
-        
-        // Count pending changes for this teacher
-        let pendingChanges = 0;
-        Object.entries(appData.changes).forEach(([key, value]) => {
-            if (value == teacher.id) pendingChanges++;
-        });
-        Object.entries(appData.sectionChanges).forEach(([key, value]) => {
-            if (value == teacher.id) pendingChanges++;
-        });
-        
-        const totalAssignments = subjectAssignments + sectionAssignments;
-        
-        html += `
-            <div class="filter-item" onclick="selectTeacher(${teacher.id})" data-teacher-id="${teacher.id}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${escapeHtml(teacher.first_name)} ${escapeHtml(teacher.last_name || '')}</strong>
-                        <div class="small">
-                            <span class="badge badge-info mr-1" title="Subject Teachers">📚 ${subjectAssignments}</span>
-                            <span class="badge badge-success mr-1" title="Class Incharges">👥 ${sectionAssignments}</span>
-                            ${pendingChanges > 0 ? `<span class="badge badge-warning" title="Pending changes">✏️ ${pendingChanges}</span>` : ''}
-                        </div>
-                    </div>
-                    <span class="badge badge-primary">${totalAssignments}</span>
-                </div>
-            </div>
-        `;
-    });
-    
-    $('#teacherList').html(html);
-    $('#totalTeachers').text(appData.teachers.length);
-}
-
-function selectTeacher(teacherId) {
-    $('.filter-item').removeClass('active');
-    $(`.filter-item[data-teacher-id="${teacherId}"]`).addClass('active');
-    
-    appData.currentTeacherId = teacherId;
-    const teacher = appData.teachers.find(t => t.id == teacherId);
-    
-    if (teacher) {
-        $('#selectedTeacherName').text(`${teacher.first_name} ${teacher.last_name || ''}`);
-        renderSections();
-    }
-}
-
 function renderSections() {
-    if (!appData.currentTeacherId) return;
-    
     // Group class sections by class
     const classesMap = {};
     appData.classSections.forEach(cs => {
@@ -967,12 +844,23 @@ function renderSections() {
         sortedSections.forEach(section => {
             const sectionName = `${section.section_name || section.section_short_name || 'Section'}`;
             
+            // Get subjects for this section (used for "complete" filter)
+            const sectionSubjectsPreview = appData.sectionSubjectMap[section.cls_sec_id] || {};
+            const previewSubjectIds = Object.keys(sectionSubjectsPreview);
+            if (appData.filterType === 'complete' && previewSubjectIds.length > 0) {
+                const allSubjectsStaffed = previewSubjectIds.every(subId => {
+                    const ssid = sectionSubjectsPreview[subId];
+                    const tid = (appData.teacherSubjectMap[section.cls_sec_id] || {})[ssid];
+                    return !!tid;
+                });
+                if (!allSubjectsStaffed) {
+                    return;
+                }
+            }
+
             // Get current section incharge
             const currentSectionTeacherId = appData.sectionTeacherMap[section.cls_sec_id] || null;
-            const sectionChangeKey = `section_${section.cls_sec_id}`;
-            const selectedSectionTeacherId = appData.sectionChanges[sectionChangeKey] !== undefined ? 
-                                           appData.sectionChanges[sectionChangeKey] : currentSectionTeacherId;
-            const hasSectionChange = appData.sectionChanges[sectionChangeKey] !== undefined;
+            const selectedSectionTeacherId = currentSectionTeacherId;
             
             // Get subjects for this section
             const sectionSubjects = appData.sectionSubjectMap[section.cls_sec_id] || {};
@@ -988,7 +876,7 @@ function renderSections() {
                         </div>
                         
                         <!-- Section Incharge Selection Inline -->
-                        <div class="section-incharge-inline ${hasSectionChange ? 'border-primary' : ''}" 
+                        <div class="section-incharge-inline" 
                              style="display: flex; align-items: center; gap: 8px;">
                             <span class="incharge-label" style="font-size: 0.85rem; color: var(--primary);">
                                 <i class="fas fa-chalkboard-teacher"></i> Class Teacher:
@@ -1009,10 +897,6 @@ function renderSections() {
             
             html += `</select>`;
             
-            if (hasSectionChange) {
-                html += `<span class="badge badge-warning ml-2">Changed</span>`;
-            }
-            
             html += `</div></div></div>`; // Close section-header and incharge inline
             
             if (subjectIds.length === 0) {
@@ -1031,7 +915,7 @@ function renderSections() {
                     if (teacherId) assignedCount++;
                 });
                 
-                html += `<div class="subject-grid-2col">`;
+                html += `<div class="subject-grid-4col">`;
                 
                 // Get subjects for this section
                 const subjectsForSection = [];
@@ -1040,13 +924,12 @@ function renderSections() {
                     if (!secSubId) return;
                     
                     const currentTeacherId = (appData.teacherSubjectMap[section.cls_sec_id] || {})[secSubId];
-                    const changeKey = `${section.cls_sec_id}_${subject.sid}`;
-                    const selectedTeacherId = appData.changes[changeKey] !== undefined ? 
-                                              appData.changes[changeKey] : currentTeacherId;
+                    const selectedTeacherId = currentTeacherId;
                     
                     // Apply filters
                     if (appData.filterType === 'assigned' && !selectedTeacherId) return;
                     if (appData.filterType === 'unassigned' && selectedTeacherId) return;
+                    if (appData.filterType === 'complete' && !selectedTeacherId) return;
                     
                     // Apply search
                     if (appData.searchTerm) {
@@ -1060,9 +943,7 @@ function renderSections() {
                         subject: subject,
                         secSubId: secSubId,
                         currentTeacherId: currentTeacherId,
-                        changeKey: changeKey,
-                        selectedTeacherId: selectedTeacherId,
-                        hasChange: appData.changes[changeKey] !== undefined
+                        selectedTeacherId: selectedTeacherId
                     });
                 });
                 
@@ -1073,28 +954,11 @@ function renderSections() {
                     return nameA.localeCompare(nameB);
                 });
                 
-                // Split into two columns
-                const midIndex = Math.ceil(subjectsForSection.length / 2);
-                const leftColumn = subjectsForSection.slice(0, midIndex);
-                const rightColumn = subjectsForSection.slice(midIndex);
-                
-                // Render left column
-                html += `<div class="subject-column">`;
-                leftColumn.forEach(item => {
+                subjectsForSection.forEach(item => {
                     html += renderSubjectItem(item, section.cls_sec_id);
                 });
-                html += `</div>`;
                 
-                // Render right column
-                if (rightColumn.length > 0) {
-                    html += `<div class="subject-column">`;
-                    rightColumn.forEach(item => {
-                        html += renderSubjectItem(item, section.cls_sec_id);
-                    });
-                    html += `</div>`;
-                }
-                
-                html += `</div>`; // Close subject-grid-2col
+                html += `</div>`; // Close subject-grid-4col
             }
             
             html += `</div>`; // Close section-card
@@ -1103,11 +967,20 @@ function renderSections() {
         html += `</div></div></div>`;
     });
     
+    $('#sectionsContainer').find('.teacher-select, .section-teacher-select').each(function () {
+        const $el = $(this);
+        if ($el.hasClass('select2-hidden-accessible')) {
+            try {
+                $el.select2('destroy');
+            } catch (e) { /* ignore */ }
+        }
+    });
+
     $('#sectionsContainer').html(html);
     
     // Initialize Select2
     $('.teacher-select').select2({
-        theme: 'bootstrap4',
+        theme: 'bootstrap-5',
         width: '120px',
         placeholder: 'Select',
         allowClear: true,
@@ -1115,26 +988,22 @@ function renderSections() {
     });
     
     $('.section-teacher-select').select2({
-        theme: 'bootstrap4',
+        theme: 'bootstrap-5',
         width: '180px',
         placeholder: 'Select Class Teacher',
         allowClear: true,
         minimumResultsForSearch: 5
     });
-    
-    updateTeacherStats();
-    updateSaveBar();
 }
 
 
 function renderSubjectItem(item, clsSecId) {
     const subject = item.subject;
     const selectedTeacherId = item.selectedTeacherId;
-    const hasChange = item.hasChange;
     const displayName = subject.subject_short_name || subject.subject_name;
     
     let html = `
-        <div class="subject-item ${hasChange ? 'border-primary' : ''}">
+        <div class="subject-item" data-cls-sec="${clsSecId}" data-subject-id="${subject.sid}">
             <span class="subject-name" title="${escapeHtml(subject.subject_name)}">
                 ${escapeHtml(displayName)}
             </span>
@@ -1159,10 +1028,6 @@ function renderSubjectItem(item, clsSecId) {
     
     html += `</select>`;
     
-    if (hasChange) {
-        html += `<span class="badge badge-warning">!</span>`;
-    }
-    
     html += `</div></div>`;
     
     return html;
@@ -1177,173 +1042,116 @@ function toggleClass(className) {
     renderSections();
 }
 
+function csrfPostFields() {
+    const o = {};
+    <?php if (function_exists('csrf_token')): ?>
+    o['<?= csrf_token() ?>'] = '<?= csrf_hash() ?>';
+    <?php endif ?>
+    return o;
+}
+
 function handleTeacherChange(select, clsSecId, subjectId) {
-    const teacherId = $(select).val();
-    const changeKey = `${clsSecId}_${subjectId}`;
+    const raw = $(select).val();
+    const teacherId = raw ? parseInt(raw, 10) : null;
     const secSubId = (appData.sectionSubjectMap[clsSecId] || {})[subjectId];
-    const currentTeacherId = secSubId ? (appData.teacherSubjectMap[clsSecId] || {})[secSubId] : null;
-    
-    if (teacherId == currentTeacherId) {
-        delete appData.changes[changeKey];
-    } else {
-        appData.changes[changeKey] = teacherId || null;
-    }
-    
-    $(select).closest('.subject-item').toggleClass('border-primary', teacherId != currentTeacherId);
-    updateTeacherStats();
-    updateSaveBar();
-}
+    const prev = secSubId ? (appData.teacherSubjectMap[clsSecId] || {})[secSubId] : null;
 
-function handleSectionTeacherChange(select, clsSecId) {
-    const teacherId = $(select).val();
-    const changeKey = `section_${clsSecId}`;
-    const currentTeacherId = appData.sectionTeacherMap[clsSecId] || null;
-    
-    if (teacherId == currentTeacherId) {
-        delete appData.sectionChanges[changeKey];
-    } else {
-        appData.sectionChanges[changeKey] = teacherId || null;
-    }
-    
-    $(select).closest('.section-incharge-row').toggleClass('border-primary', teacherId != currentTeacherId);
-    updateSaveBar();
-}
-
-function updateTeacherStats() {
-    if (!appData.currentTeacherId) return;
-    
-    let subjectAssignments = 0;
-    let sectionAssignments = 0;
-    let pendingChanges = 0;
-    
-    // Count subject assignments for current teacher
-    Object.keys(appData.teacherSubjectMap).forEach(clsSecId => {
-        Object.keys(appData.teacherSubjectMap[clsSecId] || {}).forEach(secSubId => {
-            if (appData.teacherSubjectMap[clsSecId][secSubId] == appData.currentTeacherId) {
-                subjectAssignments++;
-            }
-        });
-    });
-    
-    // Count section assignments for current teacher
-    Object.values(appData.sectionTeacherMap).forEach(tId => {
-        if (tId == appData.currentTeacherId) sectionAssignments++;
-    });
-    
-    // Count pending changes for current teacher
-    Object.values(appData.changes).forEach(teacherId => {
-        if (teacherId == appData.currentTeacherId) pendingChanges++;
-    });
-    Object.values(appData.sectionChanges).forEach(teacherId => {
-        if (teacherId == appData.currentTeacherId) pendingChanges++;
-    });
-    
-    $('#teacherStats').html(`
-        <span class="badge badge-info">📚 Subjects: ${subjectAssignments}</span>
-        <span class="badge badge-success">👥 Classes: ${sectionAssignments}</span>
-        ${pendingChanges > 0 ? `<span class="badge badge-warning">✏️ Pending: ${pendingChanges}</span>` : ''}
-    `);
-}
-
-function updateSaveBar() {
-    const totalChanges = Object.keys(appData.changes).length + Object.keys(appData.sectionChanges).length;
-    
-    if (totalChanges > 0) {
-        $('#changesCount').text(`${totalChanges} change${totalChanges > 1 ? 's' : ''} pending`);
-        $('#saveBar').show();
-    } else {
-        $('#saveBar').hide();
-    }
-}
-
-function saveAssignments() {
-    const subjectChanges = Object.entries(appData.changes).map(([key, teacherId]) => {
-        const [clsSecId, subjectId] = key.split('_');
-        return {
-            type: 'subject',
-            cls_sec_id: parseInt(clsSecId),
-            subject_id: parseInt(subjectId),
-            teacher_id: teacherId ? parseInt(teacherId) : null
-        };
-    });
-    
-    const sectionChanges = Object.entries(appData.sectionChanges).map(([key, teacherId]) => {
-        const clsSecId = key.replace('section_', '');
-        return {
-            type: 'section',
-            cls_sec_id: parseInt(clsSecId),
-            teacher_id: teacherId ? parseInt(teacherId) : null
-        };
-    });
-    
-    const allChanges = [...subjectChanges, ...sectionChanges];
-    
-    if (allChanges.length === 0) {
-        toastr.info('No changes to save');
+    if (teacherId == prev) {
         return;
     }
-    
-    $('#saveBar .btn-primary').html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...').prop('disabled', true);
-    
+
+    const $item = $(select).closest('.subject-item');
+    $item.addClass('opacity-60');
+    $(select).prop('disabled', true);
+
     $.ajax({
         url: '<?= base_url('admin/teacher_subjects/saveAll') ?>',
         type: 'POST',
-        data: {
-            subject_assignments: JSON.stringify(subjectChanges),
-            section_assignments: JSON.stringify(sectionChanges)
-        },
         dataType: 'json',
+        data: $.extend({
+            subject_assignments: JSON.stringify([{
+                type: 'subject',
+                cls_sec_id: parseInt(clsSecId, 10),
+                subject_id: parseInt(subjectId, 10),
+                teacher_id: teacherId
+            }]),
+            section_assignments: JSON.stringify([])
+        }, csrfPostFields()),
         success: function(response) {
+            $item.removeClass('opacity-60');
+            $(select).prop('disabled', false);
             if (response.success) {
-                toastr.success(response.message);
-                
-                // Clear changes and reload
-                appData.changes = {};
-                appData.sectionChanges = {};
-                loadData();
+                loadData({ silent: true });
             } else {
-                toastr.error(response.message || 'Failed to save');
-                $('#saveBar .btn-primary').html('<i class="fas fa-save mr-1"></i> Save All Changes').prop('disabled', false);
+                toastr.error(response.message || 'Could not save');
+                loadData({ silent: true });
             }
         },
         error: function() {
-            toastr.error('Network error occurred');
-            $('#saveBar .btn-primary').html('<i class="fas fa-save mr-1"></i> Save All Changes').prop('disabled', false);
+            $item.removeClass('opacity-60');
+            $(select).prop('disabled', false);
+            toastr.error('Could not save assignment');
+            loadData({ silent: true });
         }
     });
 }
 
-function resetChanges() {
-    if (Object.keys(appData.changes).length === 0 && Object.keys(appData.sectionChanges).length === 0) {
-        $('#saveBar').hide();
+function handleSectionTeacherChange(select, clsSecId) {
+    const raw = $(select).val();
+    const teacherId = raw ? parseInt(raw, 10) : null;
+    const prev = appData.sectionTeacherMap[clsSecId] || null;
+
+    if (teacherId == prev) {
         return;
     }
-    
-    if (confirm('Discard all pending changes?')) {
-        appData.changes = {};
-        appData.sectionChanges = {};
-        renderSections();
-        updateSaveBar();
-        toastr.info('Changes discarded');
-    }
+
+    const $box = $(select).closest('.section-incharge-inline');
+    $box.addClass('opacity-60');
+    $(select).prop('disabled', true);
+
+    $.ajax({
+        url: '<?= base_url('admin/teacher_subjects/saveAll') ?>',
+        type: 'POST',
+        dataType: 'json',
+        data: $.extend({
+            subject_assignments: JSON.stringify([]),
+            section_assignments: JSON.stringify([{
+                type: 'section',
+                cls_sec_id: parseInt(clsSecId, 10),
+                teacher_id: teacherId
+            }])
+        }, csrfPostFields()),
+        success: function(response) {
+            $box.removeClass('opacity-60');
+            $(select).prop('disabled', false);
+            if (response.success) {
+                loadData({ silent: true });
+            } else {
+                toastr.error(response.message || 'Could not save');
+                loadData({ silent: true });
+            }
+        },
+        error: function() {
+            $box.removeClass('opacity-60');
+            $(select).prop('disabled', false);
+            toastr.error('Could not save class teacher');
+            loadData({ silent: true });
+        }
+    });
 }
 
 function filterBy(type) {
     appData.filterType = type;
-    
+
     $('.filter-btn').removeClass('active');
     $(`#filter${type.charAt(0).toUpperCase() + type.slice(1)}`).addClass('active');
-    
-    if (appData.currentTeacherId) {
-        renderSections();
-    }
+
+    renderSections();
 }
 
 $('#searchFilter').on('keyup', function() {
     appData.searchTerm = $(this).val();
-    if (appData.currentTeacherId) {
-        renderSections();
-    }
+    renderSections();
 });
 function updateStats() {
     let totalTeachers = appData.teachers.length;
@@ -1407,10 +1215,10 @@ function updateStats() {
 function showError(message) {
     $('#loader').hide();
     $('#errorMessage').show().html(`
-        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <i class="fas fa-exclamation-triangle me-2"></i>
         ${message}
-        <button class="btn btn-sm btn-outline-danger ml-3" onclick="location.reload()">
-            <i class="fas fa-redo mr-1"></i> Retry
+        <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">
+            <i class="fas fa-redo me-1"></i> Retry
         </button>
     `);
 }

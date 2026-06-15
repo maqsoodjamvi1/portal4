@@ -297,9 +297,9 @@ class ParentsBalancefee extends BaseController
                     $rowsHtml .= '<div class="d-flex flex-column align-items-center">';
                     $rowsHtml .= '<div class="mb-1">'.number_format($balance).'</div>';
                     if ($paidToday) {
-                        $rowsHtml .= '<button class="btn btn-sm btn-warning update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'"><i class="fas fa-undo mr-1"></i> Undo</button>';
+                        $rowsHtml .= '<button class="btn btn-sm btn-warning update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'"><i class="fas fa-undo me-1"></i> Undo</button>';
                     } else {
-                        $rowsHtml .= '<button class="btn btn-sm btn-success update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'" data-action="pay"><i class="fas fa-check-circle mr-1"></i> Mark Paid</button>';
+                        $rowsHtml .= '<button class="btn btn-sm btn-success update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'" data-action="pay"><i class="fas fa-check-circle me-1"></i> Mark Paid</button>';
                     }
                     $rowsHtml .= '</div></td>';
                 } else {
@@ -328,7 +328,7 @@ class ParentsBalancefee extends BaseController
 
         // Grand Total Row
         if ($show_grand_total) {
-            $tableHtml .= '<tr class="total-row"><td colspan="3" class="text-right font-weight-bold">Grand Total</td>';
+            $tableHtml .= '<tr class="total-row"><td colspan="3" class="text-end fw-bold">Grand Total</td>';
             if ($show_monthly_balance) $tableHtml .= '<td>'.number_format($total_monthly_balance).'</td>';
             if ($show_other_balance) $tableHtml .= '<td>'.number_format($total_other_balance).'</td>';
             if ($show_balance) $tableHtml .= '<td>'.number_format($grand_total_balance).'</td>';
@@ -374,9 +374,9 @@ class ParentsBalancefee extends BaseController
             $cardHtml .= '<div class="balance-card" data-search="'.strtolower(htmlspecialchars($p->f_name.' '.$p->students.' '.$p->parent_id)).'">';
             $cardHtml .= '<div class="balance-card-head">';
             $cardHtml .= '<div><strong>'.htmlspecialchars($p->f_name).'</strong><div class="small text-muted">F-ID: '.$p->parent_id.'</div></div>';
-            $cardHtml .= '<div class="text-right">';
+            $cardHtml .= '<div class="text-end">';
             if ($show_balance) {
-                $cardHtml .= '<div class="badge badge-light border">Total: '.number_format($total_balance).'</div>';
+                $cardHtml .= '<div class="badge text-bg-light border">Total: '.number_format($total_balance).'</div>';
             }
             $cardHtml .= '</div></div>';
             $cardHtml .= '<div class="small text-muted mb-2">'.htmlspecialchars($p->students).'</div>';
@@ -398,9 +398,9 @@ class ParentsBalancefee extends BaseController
                 $cardHtml .= '<div class="month-amount">'.number_format($balance).'</div>';
                 if ($balance > 0) {
                     if ($paidToday) {
-                        $cardHtml .= '<button class="btn btn-xs btn-warning update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'"><i class="fas fa-undo mr-1"></i>Undo</button>';
+                        $cardHtml .= '<button class="btn btn-sm btn-warning update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'"><i class="fas fa-undo me-1"></i>Undo</button>';
                     } else {
-                        $cardHtml .= '<button class="btn btn-xs btn-success update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'" data-action="pay"><i class="fas fa-check-circle mr-1"></i>Paid</button>';
+                        $cardHtml .= '<button class="btn btn-sm btn-success update-fee-btn" data-parent="'.$p->parent_id.'" data-month="'.$m.'" data-balance="'.number_format($balance).'" data-action="pay"><i class="fas fa-check-circle me-1"></i>Paid</button>';
                     }
                 }
                 $cardHtml .= '</div>';

@@ -137,7 +137,7 @@ table {
               </div>
             </div>
 
-            <div class="form-group text-right">
+            <div class="form-group text-end">
               <button type="button" class="btn btn-primary" id="ViewResutlt">View Result Card</button>
             </div>
           </div>

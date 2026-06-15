@@ -98,7 +98,7 @@ $monthly_fee_type_id = isset($monthly_fee_type_id) ? (int)$monthly_fee_type_id :
 
   <!-- Student Fee (editable) -->
   <td data-col="student_fee" class="col-student_fee" style="min-width:160px;">
-  <input name="student_fee" class="form-control form-control-sm text-right"
+  <input name="student_fee" class="form-control form-control-sm text-end"
          value="<?= esc(nf($student_fee ?? 0)) ?>" inputmode="decimal" placeholder="0.00">
 </td>
 
@@ -113,7 +113,7 @@ $monthly_fee_type_id = isset($monthly_fee_type_id) ? (int)$monthly_fee_type_id :
   </td>
 
   <!-- Action -->
-  <td class="text-right action-cell" style="width:110px;">
+  <td class="text-end action-cell" style="width:110px;">
     <button type="button" class="btn btn-sm btn-success saveStudentBtn">
       <i class="fas fa-save"></i> Save
     </button>

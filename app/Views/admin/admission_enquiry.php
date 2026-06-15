@@ -1,23 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
-
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Admission Enquiry</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Admission Enquiry</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Admission Enquiry',
+    'icon' => 'fas fa-door-open',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Admission Enquiry', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
@@ -97,7 +90,7 @@ $(function() {
         render: function(data) {
           return `
             <div class="btn-group">
-              <a href="<?= base_url('admin/admission-enquiry/edit') ?>?id=${data}" title="Edit" class="btn btn-default btn-xs">
+              <a href="<?= base_url('admin/admission-enquiry/edit') ?>?id=${data}" title="Edit" class="btn btn-secondary btn-sm">
                 <i class="far fa-edit"></i>
               </a>
             </div>`;

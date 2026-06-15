@@ -59,7 +59,7 @@
         <div class="col-md-6 col-lg-3 mb-3">
           <label for="father_cnic">Father CNIC <span class="text-danger">*</span></label>
           <input type="text" class="form-control form-control-sm" required name="father_cnic" id="father_cnic" value="<?php echo $father_cnic; ?>" onkeyup="checkfathercnic()" data-inputmask='"mask": "99999-9999999-9"' data-mask>
-          <small><a href="#" data-toggle="modal" class="btn btn-link btn-sm p-0" data-target="#createParent" data-id="<?php echo $id; ?>">Update Parent Info</a></small>
+          <small><a href="#" data-bs-toggle="modal" class="btn btn-link btn-sm p-0" data-bs-target="#createParent" data-id="<?php echo $id; ?>">Update Parent Info</a></small>
         </div>
 
         <!-- Father Name -->
@@ -161,8 +161,8 @@
         <div class="modal-content">
         <form id="parentInfoUpdate">    
         <div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Parent Info</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Update Parent Info</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="studentID" name="student_id">

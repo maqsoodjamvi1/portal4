@@ -70,13 +70,13 @@ $showBagPack = $showBagPack ?? true;
           <div class="mb-1 d-flex justify-content-between align-items-center">
             <strong><i class="fas fa-chalkboard"></i> Classes</strong>
             <div>
-              <button type="button" class="btn btn-xs btn-link p-0 mr-2" onclick="checkAll('class-filter', true)">Select all</button>
-              <button type="button" class="btn btn-xs btn-link p-0" onclick="checkAll('class-filter', false)">Clear</button>
+              <button type="button" class="btn btn-sm btn-link p-0 me-2" onclick="checkAll('class-filter', true)">Select all</button>
+              <button type="button" class="btn btn-sm btn-link p-0" onclick="checkAll('class-filter', false)">Clear</button>
             </div>
           </div>
           <div class="filters-wrap" id="classFilters">
             <?php foreach ($allClasses as $cid => $cname): ?>
-              <label class="mr-3 mb-1">
+              <label class="me-3 mb-1">
                 <input type="checkbox" class="class-filter" value="<?= esc($cid) ?>" checked>
                 <span><?= esc($cname) ?></span>
               </label>
@@ -89,13 +89,13 @@ $showBagPack = $showBagPack ?? true;
           <div class="mb-1 d-flex justify-content-between align-items-center">
             <strong><i class="fas fa-book"></i> Subjects</strong>
             <div>
-              <button type="button" class="btn btn-xs btn-link p-0 mr-2" onclick="checkAll('subject-filter', true)">Select all</button>
-              <button type="button" class="btn btn-xs btn-link p-0" onclick="checkAll('subject-filter', false)">Clear</button>
+              <button type="button" class="btn btn-sm btn-link p-0 me-2" onclick="checkAll('subject-filter', true)">Select all</button>
+              <button type="button" class="btn btn-sm btn-link p-0" onclick="checkAll('subject-filter', false)">Clear</button>
             </div>
           </div>
           <div class="filters-wrap" id="subjectFilters">
             <?php foreach ($allSubjects as $s): ?>
-              <label class="mr-3 mb-1">
+              <label class="me-3 mb-1">
                 <input type="checkbox" class="subject-filter" value="<?= esc($s) ?>" checked>
                 <span><?= esc($s) ?></span>
               </label>
@@ -110,6 +110,7 @@ $showBagPack = $showBagPack ?? true;
 
     <?php 
     $classCounter = 0;
+    $renderedClassCount = 0;
     $totalClasses = count($data);
     foreach ($data as $i => $row): 
       $classCounter++;
@@ -143,6 +144,8 @@ $showBagPack = $showBagPack ?? true;
           continue;
       }
 
+      $renderedClassCount++;
+
       $weekStart   = reset($row['week_dates']);
       $weekEnd     = end($row['week_dates']);
       $classFull   = $row['class_full_name'] ?? $row['class'] ?? 'Class';
@@ -164,7 +167,7 @@ $showBagPack = $showBagPack ?? true;
               </th>
             </tr>
             <tr class="date-day-row">
-              <th class="subj-col text-left">Subject</th>
+              <th class="subj-col text-start">Subject</th>
               <?php foreach ($activeDates as $d): ?>
                 <th class="text-center dd-cell" style="min-width: 180px;">
                   <div style="font-size: 16px; font-weight: 700; text-transform: uppercase;">
@@ -220,12 +223,12 @@ $showBagPack = $showBagPack ?? true;
                       <div class="bagpack-section mb-2">
                         <strong>🎒 Bring:</strong><br>
                         <?php if ($hasBook): ?>
-                          <span class="badge badge-info" style="background-color: #17a2b8; color: white; padding: 2px 6px; margin: 2px; display: inline-block;">
+                          <span class="badge text-bg-info" style="background-color: #17a2b8; color: white; padding: 2px 6px; margin: 2px; display: inline-block;">
                             📖 Book
                           </span>
                         <?php endif; ?>
                         <?php if ($hasNotebook): ?>
-                          <span class="badge badge-success" style="background-color: #28a745; color: white; padding: 2px 6px; margin: 2px; display: inline-block;">
+                          <span class="badge text-bg-success" style="background-color: #28a745; color: white; padding: 2px 6px; margin: 2px; display: inline-block;">
                             📓 Notebook
                           </span>
                         <?php endif; ?>
@@ -325,10 +328,10 @@ $showBagPack = $showBagPack ?? true;
                               <li style="margin-bottom: 8px; font-size: 11px;">
                                 <strong>📌 <?= esc($activity['name'] ?? 'Activity') ?></strong>
                                 <?php if (!empty($activity['type'])): ?>
-                                  <span class="badge badge-secondary ml-1" style="font-size: 9px;"><?= esc($activity['type']) ?></span>
+                                  <span class="badge text-bg-secondary ms-1" style="font-size: 9px;"><?= esc($activity['type']) ?></span>
                                 <?php endif; ?>
                                 <?php if (!empty($activity['duration_minutes'])): ?>
-                                  <span class="badge badge-light ml-1" style="font-size: 9px;">⏱️ <?= $activity['duration_minutes'] ?> min</span>
+                                  <span class="badge text-bg-light ms-1" style="font-size: 9px;">⏱️ <?= $activity['duration_minutes'] ?> min</span>
                                 <?php endif; ?>
                                 <?php if (!empty($activity['description'])): ?>
                                   <br><small style="color: #666;"><?= esc(substr($activity['description'], 0, 80)) ?></small>
@@ -354,6 +357,31 @@ $showBagPack = $showBagPack ?? true;
       </div>
     <?php endforeach; ?>
 
+    <?php if ($renderedClassCount === 0): ?>
+      <?php
+        $weekLabel = '';
+        if (! empty($week_info)) {
+            $weekLabel = trim(
+                (string) ($week_info->week_no ?? '')
+                . ' ('
+                . (string) ($week_info->start_date ?? '')
+                . ' – '
+                . (string) ($week_info->end_date ?? '')
+                . ')'
+            );
+        }
+      ?>
+      <div class="alert alert-warning mb-0">
+        No diary content for this week<?= $weekLabel !== '' ? ': <strong>' . esc($weekLabel) . '</strong>' : '' ?>.
+        Common causes:
+        <ul class="mb-0 mt-2">
+          <li>No entries saved in Class Diary for this term week.</li>
+          <li>School timings not set for this campus (Admin → School Timings).</li>
+          <li>All report options are off, or entries have empty homework/classwork.</li>
+        </ul>
+      </div>
+    <?php endif; ?>
+
   </div>
 
 <?php endif; ?>
@@ -366,7 +394,7 @@ $showBagPack = $showBagPack ?? true;
     padding: .25rem .5rem;
   }
   .filters-wrap label { cursor: pointer; font-weight: 400; }
-  .btn-xs { font-size: .78rem; }
+  .btn-sm { font-size: .78rem; }
 
   .diary-table {
     border-collapse: collapse !important;

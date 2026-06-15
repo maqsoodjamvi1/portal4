@@ -6,13 +6,13 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-primary text-white">
-    <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i> Edit Student Information</h5>
+    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Edit Student Information</h5>
   </div>
   <div class="card-body">
 
     <!-- Student Information Section -->
-    <h6 class="mb-3 text-primary"><i class="fas fa-user mr-2"></i> Student Details</h6>
-    <div class="form-row">
+    <h6 class="mb-3 text-primary"><i class="fas fa-user me-2"></i> Student Details</h6>
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="reg_no">Registration No</label>
         <input type="text" readonly class="form-control" name="reg_no" id="reg_no" value="<?= $reg_no ?>">
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="gr_no">GR Number</label>
         <input type="text" class="form-control" name="gr_no" value="<?= $gr_no ?? '' ?>">
@@ -62,7 +62,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="cls_sec_id">Class Section <span class="text-danger">*</span></label>
         <select class="form-control" name="cls_sec_id" id="cls_sec_id" required>
@@ -88,9 +88,9 @@
     </div>
 
     <!-- Parent/Guardian Information Section -->
-    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-users mr-2"></i> Parent / Guardian Information</h6>
+    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-users me-2"></i> Parent / Guardian Information</h6>
     
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="father_cnic">Father's CNIC <span class="text-danger">*</span></label>
         <input type="text" class="form-control cnic-mask" name="father_cnic" id="father_cnic" 
@@ -115,7 +115,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="father_occupation">Father's Occupation</label>
         <input type="text" class="form-control" name="father_occupation" id="father_occupation" 
@@ -129,7 +129,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="m_name">Mother's Name</label>
         <input type="text" class="form-control" name="m_name" id="m_name" value="<?= $m_name ?? '' ?>">
@@ -153,7 +153,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-6">
         <label for="address_line1">Residential Address</label>
         <input type="text" class="form-control" name="address_line1" id="address_line1" 
@@ -173,9 +173,9 @@
     </div>
 
     <!-- Emergency Contact Section -->
-    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-phone-alt mr-2"></i> Emergency Contact</h6>
+    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-phone-alt me-2"></i> Emergency Contact</h6>
     
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-4">
         <label for="emergency_contact_person">Emergency Contact Person</label>
         <input type="text" class="form-control" name="emergency_contact_person" id="emergency_contact_person" 
@@ -195,7 +195,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-12">
         <label for="a_address">Emergency Contact Address</label>
         <input type="text" class="form-control" name="a_address" id="a_address" 
@@ -204,9 +204,9 @@
     </div>
 
     <!-- Previous School & Health -->
-    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-school mr-2"></i> Previous School & Health</h6>
+    <h6 class="mb-3 mt-4 text-primary"><i class="fas fa-school me-2"></i> Previous School & Health</h6>
     
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-6">
         <label for="previous_school">Previous School</label>
         <input type="text" class="form-control" name="previous_school" value="<?= $previous_school ?? '' ?>">
@@ -218,7 +218,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-6">
         <label for="health_conditions">Health Conditions</label>
         <textarea class="form-control" name="health_conditions" rows="2"><?= $health_conditions ?? '' ?></textarea>
@@ -230,8 +230,8 @@
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group col-md-12 text-right">
+    <div class="row">
+      <div class="form-group col-md-12 text-end">
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Student</button>
         <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
       </div>

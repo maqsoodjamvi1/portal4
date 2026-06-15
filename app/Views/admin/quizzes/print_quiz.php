@@ -41,7 +41,7 @@ body {
 /* Topic header styling */
 .topic-header {
     background: #f0f9ff;
-    border-left: 4px solid #3b82f6;
+    border-start: 4px solid #3b82f6;
     padding: 10px 15px;
     margin: 20px 0 15px 0;
     border-radius: 4px;

@@ -53,11 +53,11 @@
 .slip-col {
     flex: 1;
     position: relative;
-    border-right: 1px dotted #000;
+    border-end: 1px dotted #000;
 }
 
 .slip-col:last-child {
-    border-right: none;
+    border-end: none;
 }
 
 /* Chalan Wrapper — compact for A4 landscape + discount columns */
@@ -560,7 +560,7 @@
     background: #fff;
     padding: 0.02in 0.06in;
     margin-bottom: 0.04in;
-    border-left: 3px solid #000;
+    border-start: 3px solid #000;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #000;
@@ -750,7 +750,7 @@
     text-align: center;
 }
 
-.fee-table .text-right {
+.fee-table .text-end {
     text-align: right;
 }
 
@@ -827,14 +827,14 @@
 }
 
 .summary-col {
-    border-right: 1px dotted #ccc;
+    border-end: 1px dotted #ccc;
     padding: 0.02in 0.03in;
     text-align: center;
     min-width: 0;
 }
 
 .summary-col:last-child {
-    border-right: 0;
+    border-end: 0;
 }
 
 .summary-col-label {

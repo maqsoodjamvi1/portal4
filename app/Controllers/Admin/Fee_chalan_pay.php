@@ -118,28 +118,72 @@ class Fee_chalan_pay extends MY_Controller {
 		$reg_no = $this->input->post('reg_no');
 		
 
+	$campus_id = (int) $campus_id;
+	$session_id = (int) $session_id;
+	$parent_id = (int) ($parent_id ?? 0);
+
 	if($student_id){
-		$parentinfo = $this->db->query("SELECT parent_id from students WHERE student_id=".$student_id)->row();
-		$parent_id = $parentinfo->parent_id;
+		$parentinfo = $this->db->select('parent_id')->from('students')->where('student_id', (int) $student_id)->get()->row();
+		$parent_id = (int) ($parentinfo->parent_id ?? 0);
 	}else if($reg_no){
-		$parentinfo = $this->db->query("SELECT parent_id from students WHERE reg_no='".$reg_no."'")->row();
-		$parent_id = $parentinfo->parent_id;
+		$parentinfo = $this->db->select('parent_id')->from('students')->where('reg_no', $reg_no)->get()->row();
+		$parent_id = (int) ($parentinfo->parent_id ?? 0);
 	}else{
-		$parent_id = $this->input->post('parent_id');
+		$parent_id = (int) $this->input->post('parent_id');
 	}
 	
 
-	$studentslistinfo = $this->db->query("SELECT * from students WHERE campus_id=".$campus_id." AND status=1 AND parent_id=".$parent_id)->result();
+	$studentslistinfo = $this->db->from('students')->where('campus_id', $campus_id)->where('status', 1)->where('parent_id', $parent_id)->get()->result();
 
-	$unpaidsuminfo = $this->db->query("SELECT sum(amount-discount) as feeTotal from fee_chalan WHERE   status='unpaid' AND student_id IN(SELECT student_id from students WHERE campus_id=".$campus_id." AND status=1 AND parent_id=".$parent_id.")")->row();
+	$this->db->select('SUM(fc.amount - fc.discount) AS feeTotal', false);
+	$this->db->from('fee_chalan fc');
+	$this->db->join('students s', 's.student_id = fc.student_id');
+	$this->db->where('fc.status', 'unpaid');
+	$this->db->where('s.campus_id', $campus_id);
+	$this->db->where('s.status', 1);
+	$this->db->where('s.parent_id', $parent_id);
+	$unpaidsuminfo = $this->db->get()->row();
 
-	$paidsuminfo = $this->db->query("SELECT sum(amount-discount) as feeTotal from fee_chalan WHERE status='paid' AND paid_date='".date('Y-m-d')."' AND student_id IN(SELECT student_id from students WHERE  campus_id=".$campus_id." AND status=1 AND parent_id=".$parent_id.")")->row();
+	$this->db->select('SUM(fc.amount - fc.discount) AS feeTotal', false);
+	$this->db->from('fee_chalan fc');
+	$this->db->join('students s', 's.student_id = fc.student_id');
+	$this->db->where('fc.status', 'paid');
+	$this->db->where('fc.paid_date', date('Y-m-d'));
+	$this->db->where('s.campus_id', $campus_id);
+	$this->db->where('s.status', 1);
+	$this->db->where('s.parent_id', $parent_id);
+	$paidsuminfo = $this->db->get()->row();
 
-	$discountedsuminfo = $this->db->query("SELECT sum(amount-discount) as discountedTotal from fee_chalan WHERE status='discounted' AND paid_date='".date('Y-m-d')."' AND student_id IN(SELECT student_id from students WHERE campus_id=".$campus_id." AND status=1 AND  parent_id=".$parent_id.")")->row();
+	$this->db->select('SUM(fc.amount - fc.discount) AS discountedTotal', false);
+	$this->db->from('fee_chalan fc');
+	$this->db->join('students s', 's.student_id = fc.student_id');
+	$this->db->where('fc.status', 'discounted');
+	$this->db->where('fc.paid_date', date('Y-m-d'));
+	$this->db->where('s.campus_id', $campus_id);
+	$this->db->where('s.status', 1);
+	$this->db->where('s.parent_id', $parent_id);
+	$discountedsuminfo = $this->db->get()->row();
 	
-	$finesuminfo = $this->db->query("SELECT sum(amount) as finetotal from fee_chalan WHERE status='unpaid'AND fee_type_id=0 AND student_id IN(SELECT student_id from students WHERE campus_id=".$campus_id." AND status=1 AND  parent_id=".$parent_id.")")->row();
+	$this->db->select('SUM(fc.amount) AS finetotal', false);
+	$this->db->from('fee_chalan fc');
+	$this->db->join('students s', 's.student_id = fc.student_id');
+	$this->db->where('fc.status', 'unpaid');
+	$this->db->where('fc.fee_type_id', 0);
+	$this->db->where('s.campus_id', $campus_id);
+	$this->db->where('s.status', 1);
+	$this->db->where('s.parent_id', $parent_id);
+	$finesuminfo = $this->db->get()->row();
 
-	$paidfinesuminfo = $this->db->query("SELECT sum(amount) as finetotal from fee_chalan WHERE status='paid' AND fee_type_id=0  AND paid_date='".date('Y-m-d')."' AND student_id IN(SELECT student_id from students WHERE campus_id=".$campus_id." AND  status=1 AND parent_id=".$parent_id.")")->row();
+	$this->db->select('SUM(fc.amount) AS finetotal', false);
+	$this->db->from('fee_chalan fc');
+	$this->db->join('students s', 's.student_id = fc.student_id');
+	$this->db->where('fc.status', 'paid');
+	$this->db->where('fc.fee_type_id', 0);
+	$this->db->where('fc.paid_date', date('Y-m-d'));
+	$this->db->where('s.campus_id', $campus_id);
+	$this->db->where('s.status', 1);
+	$this->db->where('s.parent_id', $parent_id);
+	$paidfinesuminfo = $this->db->get()->row();
 
 		$totalpaidwithfine = 0;
 		$totalUnpaidfee = 0;
@@ -180,32 +224,38 @@ class Fee_chalan_pay extends MY_Controller {
 	if(isset($studentslistinfo)){
 
 		//$this->db->where('parent_id', $parent_id);
-		$parentinfo = $this->db->query('select * from parents where parent_id IN(SELECT parent_id from students WHERE campus_id='.$campus_id.' AND parent_id='.$parent_id.')')->row();
+		$parentinfo = $this->db->from('parents')->where('parent_id', $parent_id)->get()->row();
 		
 		if(empty($parentinfo)){
 			echo "Family information not found";
 			exit;
 		}
 
-		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' class='btn btn-primary pull-right' target='_blank' href='admin.php#/fee_history_report?parent_id=".$parentinfo->parent_id."'> Fee History of: ".$parentinfo->f_name."</a> &nbsp;<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-toggle='modal' data-target='#updatediscount'  class='btn btn-primary pull-right'  href='#'>Update Student Fee</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary pull-right' id='payAllFee' data-parentID=".$parentinfo->parent_id."  href='#'>Pay All</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary pull-right' id='sendSms' data-parentID=".$parentinfo->parent_id."  href='#'>Send SMS</a>";
+		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' class='btn btn-primary float-end' target='_blank' href='admin.php#/fee_history_report?parent_id=".$parentinfo->parent_id."'> Fee History of: ".$parentinfo->f_name."</a> &nbsp;<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-bs-toggle='modal' data-bs-target='#updatediscount'  class='btn btn-primary float-end'  href='#'>Update Student Fee</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary float-end' id='payAllFee' data-parentID=".$parentinfo->parent_id."  href='#'>Pay All</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary float-end' id='sendSms' data-parentID=".$parentinfo->parent_id."  href='#'>Send SMS</a>";
 		
-		$studentAmountInfo = $this->db->query('SELECT SUM(amount) AS total FROM fee_chalan WHERE `status`="unpaid" AND student_id IN(select student_id from students where campus_id=".$campus_id." AND parent_id='.$parentinfo->parent_id.')')->row();
+		$this->db->select('SUM(fc.amount) AS total', false);
+		$this->db->from('fee_chalan fc');
+		$this->db->join('students s', 's.student_id = fc.student_id');
+		$this->db->where('fc.status', 'unpaid');
+		$this->db->where('s.campus_id', $campus_id);
+		$this->db->where('s.parent_id', (int) $parentinfo->parent_id);
+		$studentAmountInfo = $this->db->get()->row();
 		
 		if(empty($studentAmountInfo->total)){
-			$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-toggle='modal' data-target='#payAdvanceFee'  class='btn btn-primary pull-right'  href='#'>Pay Advance Fee</a>";
+			$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-bs-toggle='modal' data-bs-target='#payAdvanceFee'  class='btn btn-primary float-end'  href='#'>Pay Advance Fee</a>";
 		}
 		$feeList .= '<div id="payAdvanceFee" class="modal fade" role="dialog">
 		  <div class="modal-dialog">
 		    <div class="modal-content">
 		      <div class="modal-header">   
 		        <h5 class="modal-title">Student Advance Fee</h5>
-		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 		      </div>
 		      <div class="modal-body"><form id="AdvanceFee"><div class="row">';
 		    $totalFee = 0;
 		    foreach ($studentslistinfo as $key => $value) {
 		     	
-		     	$studentFeeInfo = $this->db->query('select * from fee_chalan WHERE student_id='.$value->student_id.' AND fee_type_id=(select fee_type_id from fee_type WHERE s_flag = 1 and fee_type_id=194)')->row();
+		     	$studentFeeInfo = $this->db->from('fee_chalan')->where('student_id', (int) $value->student_id)->where('fee_type_id', 194)->get()->row();
 		     	$advanceFeeAmount = 0;
 		     	if($studentFeeInfo){
 		     		if($studentFeeInfo->amount > 0){
@@ -213,18 +263,19 @@ class Fee_chalan_pay extends MY_Controller {
 		     		}
 		     	}
 
-		     	$studentsClassInfo = $this->db->query('select * from class_section where cls_sec_id=(select cls_sec_id from student_class where student_id='.$value->student_id.' AND session_id = '.$session_id.')')->row();
+		     	$studentClassRow = $this->db->select('cls_sec_id')->from('student_class')->where('student_id', (int) $value->student_id)->where('session_id', $session_id)->get()->row();
+		     	$studentsClassInfo = $studentClassRow ? $this->db->from('class_section')->where('cls_sec_id', (int) $studentClassRow->cls_sec_id)->get()->row() : null;
 		     
 		     if($studentsClassInfo){
 		     	
-		     	$ClassesInfo = $this->db->query('select * from classes where  class_id = '.$studentsClassInfo->class_id)->row();
+		     	$ClassesInfo = $this->db->from('classes')->where('class_id', (int) $studentsClassInfo->class_id)->get()->row();
 
-		     	$SectionInfo = $this->db->query('select * from sections where section_id = '.$studentsClassInfo->section_id)->row();
+		     	$SectionInfo = $this->db->from('sections')->where('section_id', (int) $studentsClassInfo->section_id)->get()->row();
 
 
 		       $feeList .= '<div class="col-lg-6 mb-2">'.$value->first_name." ".$value->last_name." ".$ClassesInfo->class_name."</div>";
 		       
-		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="text" class="form-control discounts" value="'.($advanceFeeAmount).'" name="advance_amount[]"></div><div class="col-lg-6 text-left mb-2"></div><div class="col-lg-6 text-left mb-2"></div>';
+		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="text" class="form-control discounts" value="'.($advanceFeeAmount).'" name="advance_amount[]"></div><div class="col-lg-6 text-start mb-2"></div><div class="col-lg-6 text-start mb-2"></div>';
 		       //$totalFee = $totalFee + ($studentClassInfo->amount-$value->discounted_amount);
 		       //$feeList .= '<div class="col-lg-6">Total Fee</div><div class="col-lg-6">'.$totalFee.'</div>';
 		      
@@ -232,7 +283,7 @@ class Fee_chalan_pay extends MY_Controller {
 		   }
 		    $feeList .= '</div></form></div>
 		      <div class="modal-footer">
-		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 		         <button type="button" id="advFeePay" class="btn btn-primary">Pay Advance Fee</button>
 		      </div>
 		    </div>
@@ -244,26 +295,35 @@ class Fee_chalan_pay extends MY_Controller {
 		    <div class="modal-content">
 		      <div class="modal-header">   
 		        <h5 class="modal-title">Update Student Fee</h5>
-		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 		      </div>
 		      <div class="modal-body"><form id="discountUpdate"><div class="row">';
 		    $totalFee = 0;
 		    foreach ($studentslistinfo as $key => $value) {
 		     	
-		     	$studentClassInfo = $this->db->query('select * from fee_amount WHERE campus_id='.$campus_id.' AND session_id = '.$session_id.' AND fee_type_id=(select fee_type_id from fee_type WHERE is_monthly_fee=1 AND s_flag = 1 and system_id='.$schoolinfo->system_id.') AND class_id=(select class_id from class_section where cls_sec_id=(select cls_sec_id from student_class where student_id='.$value->student_id.' AND session_id = '.$session_id.'))')->row();
+		     	$studentClassRow = $this->db->select('cls_sec_id')->from('student_class')->where('student_id', (int) $value->student_id)->where('session_id', $session_id)->get()->row();
+		     	$classSectionRow = $studentClassRow ? $this->db->select('class_id')->from('class_section')->where('cls_sec_id', (int) $studentClassRow->cls_sec_id)->get()->row() : null;
+		     	$monthlyFeeType = $this->db->select('fee_type_id')->from('fee_type')->where('is_monthly_fee', 1)->where('s_flag', 1)->where('system_id', (int) $schoolinfo->system_id)->get()->row();
+		     	$studentClassInfo = ($classSectionRow && $monthlyFeeType) ? $this->db->from('fee_amount')
+		     		->where('campus_id', $campus_id)
+		     		->where('session_id', $session_id)
+		     		->where('fee_type_id', (int) $monthlyFeeType->fee_type_id)
+		     		->where('class_id', (int) $classSectionRow->class_id)
+		     		->get()->row() : null;
 
-		     	$studentsClassInfo = $this->db->query('select * from class_section where cls_sec_id=(select cls_sec_id from student_class where student_id='.$value->student_id.' AND session_id = '.$session_id.')')->row();
+		     	$studentClassRow = $this->db->select('cls_sec_id')->from('student_class')->where('student_id', (int) $value->student_id)->where('session_id', $session_id)->get()->row();
+		     	$studentsClassInfo = $studentClassRow ? $this->db->from('class_section')->where('cls_sec_id', (int) $studentClassRow->cls_sec_id)->get()->row() : null;
 		     
 		     if($studentsClassInfo){
 		     	
-		     	$ClassesInfo = $this->db->query('select * from classes where  class_id = '.$studentsClassInfo->class_id)->row();
+		     	$ClassesInfo = $this->db->from('classes')->where('class_id', (int) $studentsClassInfo->class_id)->get()->row();
 
-		     	$SectionInfo = $this->db->query('select * from sections where section_id = '.$studentsClassInfo->section_id)->row();
+		     	$SectionInfo = $this->db->from('sections')->where('section_id', (int) $studentsClassInfo->section_id)->get()->row();
 
 
 		       $feeList .= '<div class="col-lg-6 mb-2">'.$value->first_name." ".$value->last_name." ".$ClassesInfo->class_name."</div>";
 		       
-		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="hidden" class="form-control studentClassFee" value="'.$studentClassInfo->amount.'" name="student_class_fee[]"><input type="text" class="form-control discounts" value="'.($studentClassInfo->amount-$value->discounted_amount).'" name="discounted_amount[]"></div><div class="col-lg-6 text-left mb-2"></div><div class="col-lg-6 text-left mb-2"></div>';
+		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="hidden" class="form-control studentClassFee" value="'.$studentClassInfo->amount.'" name="student_class_fee[]"><input type="text" class="form-control discounts" value="'.($studentClassInfo->amount-$value->discounted_amount).'" name="discounted_amount[]"></div><div class="col-lg-6 text-start mb-2"></div><div class="col-lg-6 text-start mb-2"></div>';
 		       $totalFee = $totalFee + ($studentClassInfo->amount-$value->discounted_amount);
 		       $feeList .= '<div class="col-lg-6">Total Fee</div><div class="col-lg-6">'.$totalFee.'</div>';
 		      
@@ -271,7 +331,7 @@ class Fee_chalan_pay extends MY_Controller {
 		   }
 		    $feeList .= '</div></form></div>
 		      <div class="modal-footer">
-		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 		         <button type="button" id="discUpdate" class="btn btn-primary">Update</button>
 		      </div>
 		    </div>
@@ -359,15 +419,16 @@ class Fee_chalan_pay extends MY_Controller {
 
 	foreach ($studentslistinfo as $key => $students_info) { 
 
-		$stdClassInfo = $this->db->query('select * from class_section where cls_sec_id=(select cls_sec_id from student_class where student_id='.$students_info->student_id.' AND session_id = '.$session_id.')')->row();
+		$studentClassRow = $this->db->select('cls_sec_id')->from('student_class')->where('student_id', (int) $students_info->student_id)->where('session_id', $session_id)->get()->row();
+		$stdClassInfo = $studentClassRow ? $this->db->from('class_section')->where('cls_sec_id', (int) $studentClassRow->cls_sec_id)->get()->row() : null;
 
 		$class_name = '';
 
 		if($stdClassInfo){
 		     	
-	     	$ClsInfo = $this->db->query('select * from classes where  class_id = '.$stdClassInfo->class_id)->row();
+	     	$ClsInfo = $this->db->from('classes')->where('class_id', (int) $stdClassInfo->class_id)->get()->row();
 
-	     	$SecInfo = $this->db->query('select * from sections where section_id = '.$stdClassInfo->section_id)->row();
+	     	$SecInfo = $this->db->from('sections')->where('section_id', (int) $stdClassInfo->section_id)->get()->row();
 
 	     	$class_name = $ClsInfo->class_name;
 		}
@@ -440,7 +501,7 @@ class Fee_chalan_pay extends MY_Controller {
 					
 		$feeList .= "<tr id='feepaid'><th class='leftdate'>".$profile_photo."</th><th class='leftdate'>".$students_info->first_name." ".$students_info->last_name."<br> ".$class_name."<br> ".$fee_type->fee_type_name." of ".$feeMonth."<br>Due Date: ".$nmonth."</th><th class='rightdata'><input type='hidden' id='student_id".$i."' name='student_id' value='".$students_info->student_id."' />".($row->amount-$row->discount)."/-</th>";
 		
-		$feeList .= '<td><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#payfee" data-feeamount="'.($row->amount-$row->discount).'" data-whatever="'.$row->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Pay</button> <a class="btn btn-primary" href="/admin.php#/fee_chalan_single?m=add&id='.$students_info->student_id.'">Generate Chalan</a></td>';
+		$feeList .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payfee" data-feeamount="'.($row->amount-$row->discount).'" data-whatever="'.$row->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Pay</button> <a class="btn btn-primary" href="/admin.php#/fee_chalan_single?m=add&id='.$students_info->student_id.'">Generate Chalan</a></td>';
 
 		
 		$feeList .= '</tr>';
@@ -452,7 +513,10 @@ class Fee_chalan_pay extends MY_Controller {
 	$month = date('m');
 	$FeeMonth = '';
 		
-	$paidfee = $this->db->query("SELECT * from fee_chalan where student_id=".$students_info->student_id." AND status != 'unpaid' AND Year(updated_date)=".$Year." and month(updated_date)=".$month)->result();
+	$paidfee = $this->db->query(
+		'SELECT * FROM fee_chalan WHERE student_id = ? AND status != ? AND YEAR(updated_date) = ? AND MONTH(updated_date) = ?',
+		[(int) $students_info->student_id, 'unpaid', (int) $Year, (int) $month]
+	)->result();
 			
 	foreach ($paidfee as $key => $value) {
 
@@ -501,7 +565,7 @@ class Fee_chalan_pay extends MY_Controller {
 		$timestamp = strtotime($value->updated_date);
 		$new_date_format = date('Y-m-d', $timestamp);
 		if($new_date_format == date('Y-m-d')){
-			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-toggle="modal" id="unpayfee'.$value->chalan_id.'" data-feeamount="'.($value->amount-$value->discount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Make UnPaid</button></td>';
+			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-bs-toggle="modal" id="unpayfee'.$value->chalan_id.'" data-feeamount="'.($value->amount-$value->discount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Make UnPaid</button></td>';
 			$feeList .= "<script>
 				$('#unpayfee".$value->chalan_id."').click(function(){		
 				    if(confirm('Are you sure you want to update this?')){
@@ -545,7 +609,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Pay Fee</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -584,7 +648,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         <button type="button" id="payFee" class="btn btn-primary">Submit</button>
       </div>
     </div>
@@ -742,23 +806,32 @@ function updatePaidFee(){
 function get_studentinfo(){
 
 	
-	$campusid = $this->session->userdata('member_campusid');
+	$campusid = (int) $this->session->userdata('member_campusid');
 	$term = $this->input->post('term');
-	$cls_sec_id = $this->input->post('flag');	
-	if($cls_sec_id){
-		$where = " AND student_id IN(select student_id from student_class where status=1 and cls_sec_id =".$cls_sec_id.")";
-	}else{
-		$where = '';
+	$cls_sec_id = (int) $this->input->post('flag');
+	$searchTerm = trim((string) ($term['term'] ?? ''));
+
+	$this->db->from('students');
+	$this->db->where('status', 1);
+	$this->db->where('campus_id', $campusid);
+	if ($searchTerm !== '') {
+		$this->db->group_start();
+		$this->db->like('first_name', $searchTerm);
+		$this->db->or_like('last_name', $searchTerm);
+		$this->db->group_end();
 	}
-	
-	$studentsinfo = $this->db->query("select * from students where (first_name like '%".$term['term']."%' OR last_name like '%".$term['term']."%') AND status=1 AND campus_id=".$campusid." ".$where)->result_array();
+	if ($cls_sec_id > 0) {
+		$sub = $this->db->select('student_id')->from('student_class')->where('status', 1)->where('cls_sec_id', $cls_sec_id)->get_compiled_select();
+		$this->db->where("student_id IN ($sub)", null, false);
+	}
+	$studentsinfo = $this->db->get()->result_array();
 
 	 // Initialize Array with fetched data
      $data = array();
      foreach($studentsinfo as $student){
      	$fatherName = '';
-     	$classstudents = $this->db->query("SELECT * from student_class where  status=1 and student_id = ".$student['student_id'])->row();
-     	$studentsParents = $this->db->query("SELECT * from parents where parent_id = ".$student['parent_id'])->row();
+     	$classstudents = $this->db->from('student_class')->where('status', 1)->where('student_id', (int) $student['student_id'])->get()->row();
+     	$studentsParents = $this->db->from('parents')->where('parent_id', (int) $student['parent_id'])->get()->row();
      	if($studentsParents){
      		$fatherName = $studentsParents->f_name;
      	}
@@ -777,14 +850,21 @@ function get_studentinfo(){
 }
 
 function get_parentinfo(){
-		$campusid = $this->session->userdata('member_campusid');
-		$term = $this->input->post('term');		
-		$parentssinfo = $this->db->query("select * from parents where (f_name like '%".$term['term']."%' ) AND campus_id= ".$campusid)->result_array();
+		$campusid = (int) $this->session->userdata('member_campusid');
+		$term = $this->input->post('term');
+		$searchTerm = trim((string) ($term['term'] ?? ''));
+
+		$this->db->from('parents');
+		$this->db->where('campus_id', $campusid);
+		if ($searchTerm !== '') {
+			$this->db->like('f_name', $searchTerm);
+		}
+		$parentssinfo = $this->db->get()->result_array();
 		 // Initialize Array with fetched data
 
      $data = array();
      foreach($parentssinfo as $parent){
-     	$classstudents = $this->db->query("select * from students where parent_id = ".$parent['parent_id'].' AND campus_id= '.$campusid)->row();
+     	$classstudents = $this->db->from('students')->where('parent_id', (int) $parent['parent_id'])->where('campus_id', $campusid)->get()->row();
      	if($classstudents){
      		 $data[] = array("id" => $parent['parent_id'], "text" => $parent['f_name']);
      	}

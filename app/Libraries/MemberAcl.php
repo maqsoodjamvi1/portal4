@@ -56,10 +56,11 @@ class MemberAcl
 
         $perms = [];
 
-        if (!empty($this->userRoles)) {
-            $perms = $this->mergePermSets($perms, $this->getRolePerms($this->userRoles));
+        if (! empty($this->userRoles)) {
+            $perms = $this->mergeRolePermSetsUnion($perms, $this->getRolePerms($this->userRoles));
         }
 
+        // User-specific overrides win over inherited role permissions.
         $perms = $this->mergePermSets($perms, $this->getUserPerms($this->userID));
 
         $this->perms = $perms;
@@ -72,6 +73,25 @@ class MemberAcl
         foreach ($b as $k => $v) {
             $a[$k] = $v;
         }
+        return $a;
+    }
+
+    /**
+     * Union role permissions: granted in ANY role stays granted.
+     */
+    private function mergeRolePermSetsUnion(array $a, array $b): array
+    {
+        foreach ($b as $k => $v) {
+            if (! isset($a[$k])) {
+                $a[$k] = $v;
+                continue;
+            }
+
+            if (! empty($v['value'])) {
+                $a[$k]['value'] = true;
+            }
+        }
+
         return $a;
     }
 
@@ -104,13 +124,21 @@ class MemberAcl
         if (!$userID) return [];
 
         $builder = $this->db->table('user_roles ur')
-            ->select('cs.id as cls_sec_id, c.class_name, s.section_name, CONCAT(c.class_name, " - ", s.section_name) as sectionclassname')
-            ->join('roles r', 'r.id = ur.roleid')
+            ->select(
+                'cs.cls_sec_id,
+                 cs.section_id,
+                 c.class_id,
+                 c.class_name,
+                 s.section_name,
+                 CONCAT(c.class_name, " - ", s.section_name) AS sectionclassname'
+            )
+            ->join('roles r', 'r.id = ur.roleID')
             ->join('role_classes rc', 'rc.role_id = r.id')
-            ->join('class_section cs', 'cs.id = rc.class_section_id')
-            ->join('classes c', 'c.id = cs.class_id')
-            ->join('sections s', 's.id = cs.section_id')
-            ->where('ur.userID', (int) $userID);
+            ->join('class_section cs', 'cs.cls_sec_id = rc.class_section_id')
+            ->join('classes c', 'c.class_id = cs.class_id')
+            ->join('sections s', 's.section_id = cs.section_id')
+            ->where('ur.userID', (int) $userID)
+            ->where('cs.status', 1);
 
         return $builder->get()->getResultArray();
     }
@@ -122,7 +150,12 @@ class MemberAcl
         if ( $userId <= 0 ) return [];
 
         $cacheKey = self::key('user_roles', (string) $userId);
-        $cached   = $this->cache->get($cacheKey);
+        try {
+            $cached = $this->cache->get($cacheKey);
+        } catch (\Throwable $e) {
+            $this->cache->delete($cacheKey);
+            $cached = null;
+        }
         if (is_array($cached)) {
             return $cached;
         }
@@ -138,26 +171,58 @@ class MemberAcl
             ->limit(1)->get()->getRow();
         if (!$campusBill) return [];
 
-        // role_name_id from user_roles, then map to roles.id for same plan
-        $roleNameIds = $this->db->table('user_roles')
-            ->select('roleid')
-            ->where('userID', $userId)
-            ->get()->getResultArray();
+        helper('role');
+        $planId = getRolePlanId();
 
-        if (empty($roleNameIds)) {
-            $this->cache->save($cacheKey, [], self::TTL);
-            return [];
+        // Primary mapping: user_roles.roleID stores roles.id
+        $primary = $this->db->table('user_roles ur')
+            ->distinct()
+            ->select('r.id')
+            ->join('roles r', 'r.id = ur.roleID AND r.plan_id = ' . $planId, 'inner')
+            ->where('ur.userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        // Legacy mapping: user_roles.roleID stores roles.role_name_id
+        $legacy = $this->db->table('user_roles ur')
+            ->distinct()
+            ->select('r.id')
+            ->join('roles r', 'r.role_name_id = ur.roleID AND r.plan_id = ' . $planId, 'inner')
+            ->where('ur.userID', $userId)
+            ->get()
+            ->getResultArray();
+
+        // Merge both mappings because some users have mixed historical data.
+        $resp = [];
+        foreach (array_merge($primary, $legacy) as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid > 0) {
+                $resp[$rid] = $rid;
+            }
         }
 
-        $ids = array_map(static fn ($r) => (int) $r['roleid'], $roleNameIds);
+        // Remap legacy plan 1/2 role ids to the active plan (e.g. CEO + Teacher on plan 3).
+        $rawRows = $this->db->table('user_roles')
+            ->select('roleID')
+            ->where('userID', $userId)
+            ->get()
+            ->getResultArray();
 
-        $roles = $this->db->table('roles')
-            ->select('id')
-            ->whereIn('role_name_id', $ids)
-            ->where('plan_id', (int) $campusBill->plan_id)
-            ->get()->getResultArray();
+        $rawIds = [];
+        foreach ($rawRows as $row) {
+            $rid = (int) ($row['roleID'] ?? 0);
+            if ($rid > 0) {
+                $rawIds[] = $rid;
+            }
+        }
 
-        $resp = array_map(static fn ($r) => (int) $r['id'], $roles);
+        if ($rawIds !== []) {
+            foreach (normalizeRoleIdsForPlan($rawIds, $planId) as $rid) {
+                $resp[(int) $rid] = (int) $rid;
+            }
+        }
+
+        $resp = array_values($resp);
 
         $this->cache->save($cacheKey, $resp, self::TTL);
         return $resp;
@@ -236,17 +301,29 @@ class MemberAcl
         foreach ($rows as $row) {
             $permId = (int) $row['permID'];
             $perm   = $this->getPermFromID($permId);
-            if (!$perm || empty($perm['Key'])) continue;
+            if (! $perm || empty($perm['Key'])) {
+                continue;
+            }
 
-            $key = strtolower($perm['Key']);
+            $key     = strtolower($perm['Key']);
+            $granted = (string) $row['value'] === '1';
+
+            if (isset($perms[$key])) {
+                if ($granted) {
+                    $perms[$key]['value'] = true;
+                }
+                continue;
+            }
+
             $perms[$key] = [
                 'perm'       => $key,
                 'inheritted' => true,
-                'value'      => (string) $row['value'] === '1',
+                'value'      => $granted,
                 'Name'       => $perm['Name'],
                 'id'         => $permId,
             ];
         }
+
         return $perms;
     }
 
@@ -341,5 +418,18 @@ class MemberAcl
         $this->cache->delete(self::key('allroles', 'full'));
         $this->cache->delete(self::key('allperms', 'ids'));
         $this->cache->delete(self::key('allperms', 'full'));
+    }
+
+    /** Static helper for seeders and admin permission edits. */
+    public static function clearDictionaryCaches(): void
+    {
+        $cache = \Config\Services::cache();
+        $sep   = self::SEP;
+
+        foreach (['allroles', 'allperms'] as $base) {
+            foreach (['ids', 'full'] as $format) {
+                $cache->delete($base . $sep . $format);
+            }
+        }
     }
 }

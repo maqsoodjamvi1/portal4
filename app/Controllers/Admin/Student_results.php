@@ -155,10 +155,10 @@ foreach($academicSession as $sessionInfo){
 			$strResultCard .= '<div style="width:33%;float:left;">Marks</div>';
 		}
 		if(in_array('percentage', $academic_result)){
-			$strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Per</div>';
+			$strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Per</div>';
 		}
 		if(in_array('grade', $academic_result)){
-			$strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Grade</div></th>';
+			$strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Grade</div></th>';
 		}
 	} 
 
@@ -167,10 +167,10 @@ foreach($academicSession as $sessionInfo){
 			$strResultCard .= '<div style="width:33%;float:left;">Marks</div>';
 		}
 		if(in_array('percentage', $academic_result)){
-			$strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Per</div>';
+			$strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Per</div>';
 		}
 		if(in_array('grade', $academic_result)){
-			$strResultCard .= '<div style="width:33%;float:left;border-left:1px solid #000;">Grade</div>';
+			$strResultCard .= '<div style="width:33%;float:left;border-start:1px solid #000;">Grade</div>';
 		}
 }
 
@@ -303,18 +303,18 @@ foreach ($student_class as $studentinfo) {
 		
 		if(in_array('percentage', $academic_result)){
 			if($datesheetinfo->total_marks > 0){
-				$strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">'.$subjectPercentage.'% </div>';
+				$strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">'.$subjectPercentage.'% </div>';
 			}else{
-				$strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+				$strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
 			}
 		}
 
 		if(in_array('grade', $academic_result)){
 			if($subjectgrade){
 				if($datesheetinfo->total_marks > 0){
-					$strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">'.$subjectgradeName.'</div>';
+					$strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">'.$subjectgradeName.'</div>';
   			}else{
-  				$strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+  				$strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
   			}
 			}
 		}
@@ -349,18 +349,18 @@ $strResultCard .= '</td><td style="padding: 0 8px;line-height:30px;text-align:ce
 
 		if(in_array('percentage', $academic_result)){
 				if($allsubjectsTotal > 0){
-				$strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">'.$allsubjectPercentage.'% </div>';
+				$strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">'.$allsubjectPercentage.'% </div>';
 			}else{
-				$strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+				$strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
 			}
 		}
 
 		if(in_array('grade', $academic_result)){
 			if($allgradeinfo){
 				if($allsubjectsTotal > 0){
-					$strResultCard .= '<div style="border-left:1px solid #000;width: 33%;float: left;">'.$allgradeinfo->name.'</div>';
+					$strResultCard .= '<div style="border-start:1px solid #000;width: 33%;float: left;">'.$allgradeinfo->name.'</div>';
   			}else{
-  				$strResultCard .= "<div style='border-left:1px solid #000;width: 33%;float: left;'>-</div>";
+  				$strResultCard .= "<div style='border-start:1px solid #000;width: 33%;float: left;'>-</div>";
   			}
 			}
 		}	
@@ -418,12 +418,12 @@ $emptycol1 = '';//(count($exams)-count($value['resulttotalpercentage']));
 		$strResultCard .= $result->exam_total_mark." </div>"; 
 	}
 	if(in_array('percentage', $academic_result)){
-		$strResultCard .= '<div  style="border-left:1px solid #000;width: 33%;
+		$strResultCard .= '<div  style="border-start:1px solid #000;width: 33%;
     float: left;font-size:13px;">&nbsp;&nbsp;<b>('.round($exampercentage).'%)</b> </div>';
 	}
 	if(in_array('grade', $academic_result)){
 		if($examgradeinfo){
-			$strResultCard .= '<div  style="border-left:1px solid #000;width: 33%;
+			$strResultCard .= '<div  style="border-start:1px solid #000;width: 33%;
     float: left;font-size:13px;">'.$examgradeinfo->name.'</div>';
 		}
 	}
@@ -448,12 +448,12 @@ $emptycol1 = '';//(count($exams)-count($value['resulttotalpercentage']));
 		$strResultCard .= $allExamMarks." </div>"; 
 	}
 	if(in_array('percentage', $academic_result)){
-		$strResultCard .= '<div  style="border-left:1px solid #000;width: 33%;
+		$strResultCard .= '<div  style="border-start:1px solid #000;width: 33%;
     float: left;">&nbsp;&nbsp;<b>('.round($allExamPercentage).'%)</b> </div>';
 	}
 	if(in_array('grade', $academic_result)){
 	if($allexamgradeinfo){
-		$strResultCard .= '<div  style="border-left:1px solid #000;width: 33%;
+		$strResultCard .= '<div  style="border-start:1px solid #000;width: 33%;
   float: left;">'.$allexamgradeinfo->name.'</div>';
 	}
 

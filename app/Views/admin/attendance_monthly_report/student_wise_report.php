@@ -127,7 +127,7 @@
     
     .summary-card {
         background: #f8f9fa;
-        border-left: 4px solid #3498db;
+        border-start: 4px solid #3498db;
         padding: 15px;
         margin-top: 20px;
         border-radius: 5px;
@@ -380,15 +380,15 @@
 <!-- Legend -->
 <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
     <strong>Legend:</strong>
-    <span class="badge badge-success ml-2">P = Present</span>
-    <span class="badge badge-danger ml-2">A = Absent</span>
-    <span class="badge badge-warning ml-2">L = Leave</span>
-    <span class="badge badge-info ml-2">LC = Late Coming</span>
-    <span class="badge badge-info ml-2">EL = Early Leave</span>
-    <span class="badge badge-info ml-2">LE = Late & Early Leave</span>
-    <span class="badge badge-secondary ml-2">W = Weekend</span>
-    <span class="badge badge-dark ml-2">H = Holiday</span>
-    <span class="badge badge-light ml-2">- = Not in Session</span>
+    <span class="badge text-bg-success ms-2">P = Present</span>
+    <span class="badge text-bg-danger ms-2">A = Absent</span>
+    <span class="badge text-bg-warning ms-2">L = Leave</span>
+    <span class="badge text-bg-info ms-2">LC = Late Coming</span>
+    <span class="badge text-bg-info ms-2">EL = Early Leave</span>
+    <span class="badge text-bg-info ms-2">LE = Late & Early Leave</span>
+    <span class="badge text-bg-secondary ms-2">W = Weekend</span>
+    <span class="badge text-bg-dark ms-2">H = Holiday</span>
+    <span class="badge text-bg-light ms-2">- = Not in Session</span>
 </div>
    
     <!-- Footer -->

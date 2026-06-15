@@ -74,22 +74,22 @@
 /* Color variations */
 .calendar-day-working {
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    border-left: 3px solid #28a745;
+    border-start: 3px solid #28a745;
 }
 
 .calendar-day-off-schedule {
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-    border-left: 3px solid #dc3545;
+    border-start: 3px solid #dc3545;
 }
 
 .calendar-day-off-no-record {
     background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-    border-left: 3px solid #ff9800;
+    border-start: 3px solid #ff9800;
 }
 
 .calendar-day-future {
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    border-left: 3px solid #6c757d;
+    border-start: 3px solid #6c757d;
     opacity: 0.8;
 }
 
@@ -278,21 +278,14 @@
     </div>
 </div>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Working Days & Attendance Report</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Working Days Report</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Working Days & Attendance Report',
+    'icon' => 'fas fa-business-time',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Working Days Report', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
@@ -444,16 +437,16 @@ function renderReport(data) {
         <div class="card no-print">
             <div class="card-body">
                 <div class="legend">
-                    <div class="legend-item"><span class="legend-color" style="background: #d4edda; border-left: 3px solid #28a745;"></span> Working Day</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #f8d7da; border-left: 3px solid #dc3545;"></span> OFF (Schedule)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #fff3cd; border-left: 3px solid #ff9800;"></span> OFF (No Record)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #e9ecef; border-left: 3px solid #6c757d;"></span> Future Date</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #d4edda; border-start: 3px solid #28a745;"></span> Working Day</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #f8d7da; border-start: 3px solid #dc3545;"></span> OFF (Schedule)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #fff3cd; border-start: 3px solid #ff9800;"></span> OFF (No Record)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #e9ecef; border-start: 3px solid #6c757d;"></span> Future Date</div>
                 </div>
             </div>
         </div>
         
         <div class="row mb-3 no-print">
-            <div class="col-12 text-right">
+            <div class="col-12 text-end">
                 <button onclick="exportReport()" class="btn btn-success btn-sm">
                     <i class="fas fa-file-excel"></i> Export to Excel
                 </button>

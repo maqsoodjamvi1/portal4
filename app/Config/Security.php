@@ -71,7 +71,11 @@ class Security extends BaseConfig
      *
      * Regenerate CSRF Token on every submission.
      */
-    public bool $regenerate = true;
+    /**
+     * Regenerating on every POST breaks admin Select2/DataTables/autocomplete chains
+     * (httponly CSRF cookie cannot be read by JavaScript). Token still validated each request.
+     */
+    public bool $regenerate = false;
 
     /**
      * --------------------------------------------------------------------------

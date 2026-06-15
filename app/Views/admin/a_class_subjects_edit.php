@@ -14,38 +14,14 @@
 		$subject_id = '';
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Section Subjects
-           <?php 
-            	$schoolinfo = getSchoolInfo();
-            	$SectionsSubject_info = $this->db->query('SELECT * FROM section_subjects WHERE subject_id IN (SELECT sid FROM allsubject WHERE system_id ='.$schoolinfo->system_id.')')->row();
-				
-				if(empty($SectionsSubject_info->sec_sub_id)){ ?>
-					<span style='background: green;color: #fff !important;float: right;padding: 5px 10px;margin-top: 0px;
-    font-size: 16px;'>Step 8 Of 10 To Complete System Configuration</span>
-    				<audio autoplay  controls>
-						 <source src="audio/Step10SectionSubject.m4a" type="audio/ogg">
-						  <source src="audio/Step10SectionSubject.m4a" type="audio/mpeg">
-						Your browser does not support the audio element.
-						</audio>	
-						<a class="btn btn-primary" href="<?php echo base_url() . $this->config->item('index_page');?>#/fee_type?m=add">Click here for next Step</a>
-				<?php } ?> 
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Section Subjects</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Section Subjects db->query(\'SELECT * FROM section_subjects WHERE subject_id IN (SELECT sid FROM allsubject WHERE system_id =\'.$schoolinfo->system_id.\')\')->row(); if(empty($SectionsSubject_info->sec_sub_id)){ ?> Step 8 Of 10 To Complete System Configuration Your browser does not support the audio element. config->item(\'index_page\');?>#/fee_type?m=add">Click here for next Step',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Section Subjects', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -64,8 +40,8 @@
 				<?php } ?> 
           <!-- <div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-            <button type="reset" class="btn btn-default">Reset</button>
-            <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+            <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div> -->
           <?php //echo form_close();?> </div>
       </div>

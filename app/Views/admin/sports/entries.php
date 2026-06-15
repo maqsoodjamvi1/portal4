@@ -140,20 +140,16 @@ if (!function_exists('student_photo_url')) {
 }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Event Entries (<?= esc($event['event_name']) ?>)</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active">Entries</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Event Entries',
+    'icon' => 'fas fa-list-ol',
+    'subtitle' => $event['event_name'] ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Entries', 'active' => true],
+    ],
+]) ?>
 
 <?php $isTeam = (strtolower($event['event_type'] ?? '') === 'team'); ?>
 
@@ -167,7 +163,7 @@ if (!function_exists('student_photo_url')) {
         </div>
         <div class="card-body">
           <?php if ($isTeam): ?>
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-6">
                 <label>Team</label>
                 <select id="team_id" class="form-control select2" style="width:100%">
@@ -183,7 +179,7 @@ if (!function_exists('student_photo_url')) {
             </div>
           <?php else: ?>
             <!-- INDIVIDUAL MODE filters: Event -> House -> Student -->
-            <div class="form-row">
+            <div class="row">
               <div class="form-group col-md-4">
                 <label>Event</label>
                 <select id="event_id" class="form-control select2" style="width:100%">
@@ -295,7 +291,7 @@ if (!function_exists('student_photo_url')) {
 ?>
   <div class="student-card">
     <div class="card-actions">
-      <button class="btn btn-xs btn-danger del" title="Remove" data-id="<?= (int)$e['entry_id'] ?>">
+      <button class="btn btn-sm btn-danger del" title="Remove" data-id="<?= (int)$e['entry_id'] ?>">
         <i class="fas fa-trash"></i>
       </button>
     </div>

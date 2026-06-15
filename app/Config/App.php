@@ -165,6 +165,7 @@ class App extends BaseConfig
      * How often (seconds) to regenerate the session ID.
      * Higher value reduces cookie churn for “always logged-in”.
      */
+    /** @deprecated Use Config\Session::$timeToUpdate (kept in sync for reference). */
     public int $sessionTimeToUpdate = 1800; // 30 minutes
 
     /**

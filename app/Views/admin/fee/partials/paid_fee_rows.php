@@ -38,7 +38,7 @@
         <button class="btn btn-primary" onclick="payAll()">
             <i class="fas fa-money-bill-wave"></i> Pay All
         </button>
-        <button class="btn btn-secondary" data-toggle="modal" data-target="#discountModal">
+        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#discountModal">
             <i class="fas fa-percentage"></i> Apply Discount
         </button>
         <button class="btn btn-info" onclick="sendReminders()">

@@ -17,7 +17,7 @@ class Studentsbulk extends BaseController
         $this->db = \Config\Database::connect();
         $this->session = session();
         check_permission('admin-students');
-        helper(['form', 'url']);
+        helper(['form', 'url', 'hifz']);
     }
 
     public function index()
@@ -34,10 +34,19 @@ class Studentsbulk extends BaseController
             $sectionsclassinfo = $this->userClassSections();
         }
 
-        $this->template_data['sectionsclassinfo'] = $sectionsclassinfo;
-
         $campus_info = $this->db->table('campus')->where('campus_id', $campus_id)->get()->getRow();
-        $this->template_data['campus_info'] = $campus_info;
+        $hifzEnabled   = campusHifzEnabled($campus_info);
+
+        $this->template_data['sectionsclassinfo'] = $sectionsclassinfo;
+        $this->template_data['campus_info']       = $campus_info;
+        $this->template_data['hifz_enabled']      = $hifzEnabled;
+        $this->template_data['hifz_sections']     = $hifzEnabled ? activeHifzSections((int) $campus_id, (int) $sessionid) : [];
+        $this->template_data['hifz_class_sections'] = $hifzEnabled ? hifzClassSections($campus_info) : [];
+        $this->template_data['hifz_defaults'] = [
+            'sabaq_lines'   => (int) ($campus_info->default_sabaq_lines ?? 5),
+            'mutalia_lines' => (int) ($campus_info->default_mutalia_lines ?? 3),
+        ];
+        $this->template_data['hifz_sequences'] = hifzParaOnlySequenceOptions();
 
         return view('admin/studentsbulk', $this->template_data);
     }
@@ -294,7 +303,22 @@ public function process_readmission()
 
 public function data()
 {
-    // Read the filter robustly (accept either name)
+    try {
+        return $this->renderDataResponse();
+    } catch (\Throwable $e) {
+        log_message('error', '[Studentsbulk::data] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+
+        $this->response->setStatusCode(500);
+        echo '<div class="alert alert-danger mb-0">Could not load students. '
+            . esc($e->getMessage())
+            . '</div>';
+        exit;
+    }
+}
+
+protected function renderDataResponse(): void
+{
+    // Read the filter robustly (accept either name); -1 = no class in current session
     $cls_sec_id = (int) ($this->request->getVar('cls_sec_id')
                  ?? $this->request->getVar('section_id')  // backward compat
                  ?? 0);
@@ -308,93 +332,259 @@ public function data()
         ? teacherSubjectSections()
         : userClassSections();
 
-    // --- Query students filtered by cls_sec_id when provided ---
-    $params = [$campusid, $sessionid];
-    $sql = 'SELECT sc.student_id, sc.cls_sec_id, s.first_name, s.last_name
-              FROM student_class sc
-              JOIN students s
-                ON s.student_id = sc.student_id
-               AND s.status = 1
-               AND s.campus_id = ?
-             WHERE sc.session_id = ?';
+    $showUnassigned = ($cls_sec_id === -1);
 
-    if ($cls_sec_id > 0) {
-        $sql .= ' AND sc.cls_sec_id = ?';
-        $params[] = $cls_sec_id;
+    if ($showUnassigned) {
+        // Same rule as students_print contact-list (mode=class): active enrollment in
+        // current session must resolve to a class. Inactive/old rows are ignored.
+        $rows = $this->db->query(
+            'SELECT DISTINCT s.student_id,
+                    0 AS cls_sec_id,
+                    s.first_name, s.last_name, s.reg_no
+               FROM students s
+               LEFT JOIN student_class sc
+                 ON sc.student_id = s.student_id
+                AND sc.session_id = ?
+                AND sc.status = 1
+               LEFT JOIN class_section cs ON cs.cls_sec_id = sc.cls_sec_id
+               LEFT JOIN classes c ON c.class_id = cs.class_id
+              WHERE s.status = 1
+                AND s.campus_id = ?
+                AND (
+                    IFNULL(c.class_id, 0) = 0
+                    OR TRIM(COALESCE(c.class_name, \'\')) = \'\'
+                )
+              ORDER BY s.first_name, s.last_name',
+            [$sessionid, $campusid]
+        )->getResult();
+    } else {
+        // --- Query students filtered by cls_sec_id when provided ---
+        $params = [$campusid, $sessionid];
+        $sql = 'SELECT sc.student_id, sc.cls_sec_id, s.first_name, s.last_name, s.reg_no
+                  FROM student_class sc
+                  JOIN students s
+                    ON s.student_id = sc.student_id
+                   AND s.status = 1
+                   AND s.campus_id = ?
+                 WHERE sc.session_id = ?
+                   AND sc.status = 1
+                   AND sc.cls_sec_id > 0';
+
+        if ($cls_sec_id > 0) {
+            $sql .= ' AND sc.cls_sec_id = ?';
+            $params[] = $cls_sec_id;
+        }
+
+        $sql .= ' ORDER BY s.first_name, s.last_name';
+
+        $rows = $this->db->query($sql, $params)->getResult();
     }
 
-    $sql .= ' ORDER BY s.first_name, s.last_name';
+    $campusRow   = $this->db->table('campus')->where('campus_id', $campusid)->get()->getRow();
+    $hifzEnabled = $campusRow ? campusHifzEnabled($campusRow) : false;
+    $hifzDefaults = [
+        'sabaq'   => $campusRow ? (int) ($campusRow->default_sabaq_lines ?? 5) : 5,
+        'mutalia' => $campusRow ? (int) ($campusRow->default_mutalia_lines ?? 3) : 3,
+    ];
 
-    $rows = $this->db->query($sql, $params)->getResult();
+    if ($hifzEnabled) {
+        hifz_ensure_database_schema();
+    }
 
-    // ---- render minimal table: Student | Class Section | Action ----
-    $opt = function(array $sections, int $selected): string {
+    $hifzSections = $hifzEnabled ? activeHifzSections($campusid, $sessionid) : [];
+    $juzCatalog   = $hifzEnabled ? hifzJuzCatalog() : [];
+
+    $enrollmentMap = [];
+    if ($hifzEnabled && $rows && $this->db->tableExists('hifz_students')) {
+        $studentIds = array_map(static fn ($r) => (int) $r->student_id, $rows);
+        $enrollmentMap = (new \App\Libraries\HifzEnrollmentService())
+            ->getActiveEnrollmentsForStudents($studentIds, $sessionid);
+    }
+
+    $hifzClassSecIds = [];
+    if ($hifzEnabled) {
+        foreach (hifzClassSections($campusRow) as $hs) {
+            $hifzClassSecIds[] = (int) ($hs['cls_sec_id'] ?? 0);
+        }
+    }
+
+    // ---- render table ----
+    $opt = function (array $sections, int $selected): string {
         $out = '';
         foreach ($sections as $sec) {
-            $val = (int)($sec['cls_sec_id'] ?? $sec['section_id'] ?? 0);   // prefer cls_sec_id
+            $val = (int) ($sec['cls_sec_id'] ?? $sec['section_id'] ?? 0);
             $text = $sec['sectionclassname']
                  ?? (($sec['class_name'] ?? '') . ' (' . ($sec['section_name'] ?? '') . ')');
-            if (!$val || !$text) continue;
-            $out .= '<option value="'.esc($val).'"'.($selected===$val?' selected':'').'>'.esc($text).'</option>';
+            if (! $val || ! $text) {
+                continue;
+            }
+            $out .= '<option value="' . esc($val) . '"' . ($selected === $val ? ' selected' : '') . '>' . esc($text) . '</option>';
         }
+
         return $out;
     };
 
-    $html  = '<table class="table table-striped table-bordered table-hover" id="students-datatable" style="font-size:12px;width:100%">';
-    $html .= '  <thead><tr><th>Student</th><th style="min-width:260px;">Class Section</th><th style="width:120px;">Action</th></tr></thead><tbody>';
+    $colspan = $hifzEnabled ? 4 : 3;
+    $html    = '<div class="sb-bulk-responsive"><table class="table table-striped table-bordered table-hover sb-bulk-table" id="students-datatable">';
+    $html   .= '<thead><tr><th style="min-width:180px;">Student</th><th style="min-width:220px;">Class Section</th>';
+    if ($hifzEnabled) {
+        $html .= '<th>Hifz Program</th>';
+    }
+    $html .= '<th style="width:110px;">Action</th></tr></thead><tbody>';
+
+    $saveLabel = $showUnassigned ? 'Assign' : 'Move';
 
     if ($rows) {
         foreach ($rows as $r) {
-            $sid   = (int)$r->student_id;
-            $csid  = (int)$r->cls_sec_id;
-            $name  = trim(($r->first_name ?? '').' '.($r->last_name ?? ''));
+            $sid   = (int) $r->student_id;
+            $csid  = (int) $r->cls_sec_id;
+            $name  = trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? ''));
+            $regNo = trim((string) ($r->reg_no ?? ''));
+            $nameCell = esc($name ?: 'Unnamed');
+            if ($regNo !== '') {
+                $nameCell .= '<br><small class="text-muted">Reg: ' . esc($regNo) . '</small>';
+            }
 
-            $html .= '<tr>';
-            $html .= '  <td class="align-middle">'.esc($name ?: 'Unnamed').'</td>';
-            $html .= '  <td class="align-middle">
-                          <input type="hidden" name="student_id" value="'.$sid.'">
-                          <select class="form-control form-control-sm" id="cls_sec_'.$sid.'">'.
-                          $opt($sectionsclassinfo, $csid).
-                         '</select>
-                        </td>';
-            $html .= '  <td class="align-middle">
-                          <button type="button" class="btn btn-primary btn-sm js-save" data-id="'.$sid.'">Move</button>
-                        </td>';
+            $enroll   = $enrollmentMap[$sid] ?? null;
+            $isHifz   = $enroll !== null;
+            $hifzSec  = $isHifz ? (int) ($enroll->hifz_sec_id ?? 0) : 0;
+            $currentPara = $isHifz
+                ? (int) ($enroll->current_para_no ?? $enroll->current_juz ?? 1)
+                : 1;
+            $manzilPerDay = $isHifz
+                ? (int) ($enroll->manzil_paras_per_day ?? 1)
+                : 1;
+            $linesDone = $isHifz
+                ? (int) ($enroll->current_juz_memorized_lines ?? 0)
+                : 0;
+            $memSequence = $isHifz
+                ? hifzNormalizeMemorizationSequence((string) ($enroll->memorization_sequence ?? 'para_forward'))
+                : 'para_forward';
+            $manzilPool = $isHifz
+                ? (string) ($enroll->manzil_pool_paras ?? $enroll->completed_juz_list ?? '')
+                : '';
+            $sabqiList = $isHifz
+                ? (string) ($enroll->sabqi_active_paras ?? '')
+                : '';
+
+            $html .= '<tr class="sb-bulk-student-row" data-student-id="' . $sid . '">';
+            $html .= '<td class="align-middle sb-bulk-card-head">'
+                . '<div class="d-flex align-items-center justify-content-between w-100">'
+                . '<div class="sb-bulk-card-head-text">' . $nameCell . '</div>'
+                . '<button type="button" class="sb-bulk-card-toggle" aria-expanded="false" aria-label="Expand student">'
+                . '<i class="fas fa-chevron-down sb-bulk-card-chevron"></i></button></div></td>';
+            $html .= '<td class="align-middle" data-sb-bulk-detail="1" data-label="Class Section">'
+                . '<select class="form-control form-control-sm js-cls-sec" id="cls_sec_' . $sid . '">' . $opt($sectionsclassinfo, $csid) . '</select></td>';
+
+            if ($hifzEnabled) {
+                $html .= '<td class="align-middle p-2" data-sb-bulk-detail="1" data-label="Hifz Program">' . view('admin/partials/studentsbulk_hifz_fields', [
+                    'sid'                  => $sid,
+                    'isHifz'               => $isHifz,
+                    'hifzSec'              => $hifzSec,
+                    'currentPara'          => $currentPara,
+                    'linesDoneInPara'      => $linesDone,
+                    'manzilParasPerDay'    => $manzilPerDay,
+                    'memorizationSequence' => $memSequence,
+                    'manzilPoolList'       => $manzilPool,
+                    'sabqiList'            => $sabqiList,
+                    'hifzSections'         => $hifzSections,
+                    'juzCatalog'           => $juzCatalog,
+                    'sequenceOptions'      => hifzParaOnlySequenceOptions(),
+                ]) . '</td>';
+            }
+
+            $html .= '<td class="align-middle"><button type="button" class="btn btn-primary btn-sm js-save" data-id="' . $sid . '" data-label="' . esc($saveLabel, 'attr') . '">' . esc($saveLabel) . '</button></td>';
             $html .= '</tr>';
         }
     } else {
-        $html .= '<tr><td colspan="3" class="text-center text-muted">No students found for the selected filter.</td></tr>';
+        $emptyMsg = $showUnassigned
+            ? 'No active students without a class in the current session.'
+            : 'No students found for the selected filter.';
+        $html .= '<tr><td colspan="' . $colspan . '" class="text-center text-muted">' . esc($emptyMsg) . '</td></tr>';
     }
 
-    $html .= '</tbody></table>
+    $hifzClassJson = json_encode(array_values(array_filter($hifzClassSecIds)));
+
+    $html .= '</tbody></table></div>
 <script>
 (function(){
-  $("#students-datatable").off("click", ".js-save").on("click", ".js-save", function(){
+  var HIFZ_CLASS_SEC_IDS = ' . $hifzClassJson . ';
+  var HIFZ_ENABLED = ' . ($hifzEnabled ? 'true' : 'false') . ';
+
+  function setHifzRowState(sid, on){
+    if(!HIFZ_ENABLED) return;
+    var $panel = $("#hifz_panel_"+sid);
+    $panel.toggleClass("sb-hifz-panel-off", !on);
+    $panel.find("select, input, button").not("#hifz_toggle_"+sid).prop("disabled", !on);
+    if(on && HIFZ_CLASS_SEC_IDS.length){
+      var $cls = $("#cls_sec_"+sid);
+      var cur = parseInt($cls.val(),10)||0;
+      if(HIFZ_CLASS_SEC_IDS.indexOf(cur) === -1){
+        $cls.val(String(HIFZ_CLASS_SEC_IDS[0]));
+      }
+    }
+  }
+
+  $("#studentsList").off("change", ".js-hifz-toggle").on("change", ".js-hifz-toggle", function(){
+    setHifzRowState($(this).data("id"), $(this).is(":checked"));
+  });
+
+  $("#studentsList").off("click", ".js-save").on("click", ".js-save", function(){
     var $btn = $(this);
     var sid  = $btn.data("id");
     var csid = $("#cls_sec_"+sid).val();
     if(!csid){ toastr.warning("Please select a class section."); return; }
+    var payload = {
+      student_id: sid,
+      cls_sec_id: csid,
+      section_id: csid,
+      "' . csrf_token() . '": "' . csrf_hash() . '"
+    };
+    if(HIFZ_ENABLED){
+      var isHifz = $("#hifz_toggle_"+sid).is(":checked") ? 1 : 0;
+      payload.is_hifz = isHifz;
+      if(isHifz){
+        payload.hifz_sec_id = $("#hifz_sec_"+sid).val();
+        payload.memorization_sequence = $("#hifz_sequence_"+sid).val();
+        payload.current_para_no = $("#hifz_current_para_"+sid).val();
+        payload.current_juz_memorized_lines = $("#hifz_lines_done_"+sid).val();
+        payload.manzil_paras_per_day = $("#hifz_manzil_per_day_"+sid).val();
+        payload.manzil_pool_paras = $("#hifz_manzil_pool_"+sid).val();
+        payload.sabqi_active_paras = $("#hifz_sabqi_list_"+sid).val();
+        if(!payload.hifz_sec_id){ toastr.warning("Select a Hifz section."); return; }
+        if(!payload.current_para_no){ toastr.warning("Select current para."); return; }
+      }
+    }
     $.ajax({
-      url: "'.base_url('admin/studentsbulk/savestudent').'",
+      url: "' . base_url('admin/studentsbulk/savestudent') . '",
       type: "POST",
-      data: {
-        student_id: sid,
-        cls_sec_id: csid,
-        section_id: csid, // backward compat if server still reads section_id
-        "'.csrf_token().'": "'.csrf_hash().'"
-      },
+      data: payload,
       beforeSend: function(){ $btn.prop("disabled", true).text("Saving..."); },
       success: function(res){
         var json = res; try{ if(typeof res==="string") json = JSON.parse(res); }catch(e){}
-        if(json && json.success){ toastr.success(json.msg || "Updated class section."); }
+        if(json && json.success){ toastr.success(json.msg || "Updated."); }
         else { toastr.error((json && json.msg) || "Failed to update."); }
       },
       error: function(){ toastr.error("Server error."); },
-      complete: function(){ $btn.prop("disabled", false).text("Save"); }
+      complete: function(){ $btn.prop("disabled", false).text($btn.data("label") || "Move"); }
     });
   });
+
+  if(HIFZ_ENABLED){
+    $(".js-hifz-toggle").each(function(){
+      setHifzRowState($(this).data("id"), $(this).is(":checked"));
+    });
+    if(typeof window.initHifzBulkEnrollmentRows === "function"){
+      window.initHifzBulkEnrollmentRows();
+    }
+  }
 })();
 </script>';
+
+    if ($hifzEnabled && $hifzSections === []) {
+        $html = '<div class="alert alert-warning small">No Hifz sections defined for this session. '
+            . '<a href="' . base_url('admin/hifz/sections') . '">Add Hifz sections</a> before enrolling students.</div>' . $html;
+    }
 
     echo $html;
     exit;
@@ -402,7 +592,7 @@ public function data()
 
     public function selectClassFee()
     {
-        $campusid = $this->session->get('member_campusid');
+        $campusid   = $this->session->get('member_campusid');
         $section_id = $this->request->getPost('section_id');
         $schoolinfo = getSchoolInfo();
         $session_id = $this->session->get('member_sessionid');
@@ -538,17 +728,32 @@ public function saveStudent()
 
     $this->db->table('students')->where('student_id', $studentsInfo)->update($data);
 
-    // Update student_class table
+    // Update or create student_class row for current session
     $dataClass = [
         'cls_sec_id' => trim($newClassSectioninfo->cls_sec_id),
+        'status' => 1,
         'updated_date' => $date,
         'user_id' => $user_id
     ];
 
-    $this->db->table('student_class')
+    $existingClass = $this->db->table('student_class')
         ->where('student_id', $studentsInfo)
         ->where('session_id', $sessionid)
-        ->update($dataClass);
+        ->get()
+        ->getRow();
+
+    if ($existingClass) {
+        $this->db->table('student_class')
+            ->where('student_id', $studentsInfo)
+            ->where('session_id', $sessionid)
+            ->update($dataClass);
+    } else {
+        $this->db->table('student_class')->insert(array_merge($dataClass, [
+            'student_id' => $studentsInfo,
+            'session_id' => $sessionid,
+            'created_date' => $date,
+        ]));
+    }
 
     // Handle fee chalan updates
     $fee_month = date("m/Y");
@@ -628,9 +833,45 @@ public function saveStudent()
             ->update($feeData);
     }
 
+    $msg = 'Student updated successfully';
+
+    if (campusHifzEnabled() && $this->request->getPost('is_hifz') !== null) {
+        helper('hifz');
+        hifz_ensure_database_schema();
+        $campusRow = $this->db->table('campus')->where('campus_id', $campusid)->get()->getRow();
+        $isHifz    = (int) $this->request->getPost('is_hifz') === 1;
+        $enrollSvc = new \App\Libraries\HifzEnrollmentService();
+
+        if ($isHifz && ! $enrollSvc->validateHifzAcademicSection((int) $sectionID, $campusRow)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg'     => 'This student\'s class section does not match the campus dedicated Hifz class.',
+            ]);
+        }
+
+        $hifzResult = $enrollSvc->sync((int) $studentsInfo, (int) $campusid, (int) $sessionid, (int) $user_id, [
+            'is_hifz'                     => $isHifz,
+            'hifz_sec_id'                 => $this->request->getPost('hifz_sec_id'),
+            'memorization_sequence'       => $this->request->getPost('memorization_sequence'),
+            'manzil_pool_paras'           => $this->request->getPost('manzil_pool_paras'),
+            'sabqi_active_paras'          => $this->request->getPost('sabqi_active_paras'),
+            'current_para_no'             => $this->request->getPost('current_para_no'),
+            'current_juz_memorized_lines' => $this->request->getPost('current_juz_memorized_lines'),
+            'manzil_paras_per_day'        => $this->request->getPost('manzil_paras_per_day'),
+        ]);
+
+        if (! $hifzResult['success']) {
+            return $this->response->setJSON($hifzResult);
+        }
+
+        if ($isHifz) {
+            $msg .= ' ' . $hifzResult['msg'];
+        }
+    }
+
     return $this->response->setJSON([
-        'success' => true, 
-        'msg' => 'Student updated successfully',
+        'success' => true,
+        'msg' => $msg,
         'old_class_fee' => $oldClassFee,
         'old_discount' => $studentDiscount,
         'old_payable' => $studentPayableAmount,

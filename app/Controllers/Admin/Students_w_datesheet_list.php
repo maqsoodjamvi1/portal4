@@ -160,7 +160,7 @@ class Students_w_datesheet_list extends MY_Controller {
 			$data['class'] = $className."-".$sectionName;
 			$data['section'] = $sectionName;
 			
-			$data['w_contacts'] = '<a target="_blank" class="btn btn-success btn-xs" href="https://wa.me/'.$whatsapp_contact.'?text='.$url.'"><i class="fab fa-whatsapp"></i> Send</a>';
+			$data['w_contacts'] = '<a target="_blank" class="btn btn-success btn-sm" href="https://wa.me/'.$whatsapp_contact.'?text='.$url.'"><i class="fab fa-whatsapp"></i> Send</a>';
 
 			$response[] = $data;
 		  }

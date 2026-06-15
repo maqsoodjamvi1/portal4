@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Student Fee Challan - 3 Copies (A4 Landscape)</title>
     <meta name="<?= esc(csrf_token()) ?>" content="<?= esc(csrf_hash()) ?>" id="csrf-meta-print-chalan">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     <?php include 'chalan_print_styles.php'; ?>
     <style>
         /* Any view-specific styles can go here */

@@ -104,12 +104,12 @@ public function getStudentCardAjax()
     <div class="parent-header bg-light p-2 mb-2 rounded">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-                <h5 class="mb-1" data-toggle="tooltip" title="Family head"><i class="fas fa-user-friends text-primary"></i> ' . esc($parent->f_name ?? 'N/A') . '</h5>
+                <h5 class="mb-1" data-bs-toggle="tooltip" title="Family head"><i class="fas fa-user-friends text-primary"></i> ' . esc($parent->f_name ?? 'N/A') . '</h5>
                 <div class="d-flex">
-                    <span class="badge badge-danger mr-2" data-toggle="tooltip" title="Total family dues">
+                    <span class="badge text-bg-danger me-2" data-bs-toggle="tooltip" title="Total family dues">
                         <i class="fas fa-exclamation-circle"></i> Rs ' . number_format($familyTotalDue, 0) . '
                     </span>
-                    <span class="badge badge-info" data-toggle="tooltip" title="Monthly family fee">
+                    <span class="badge text-bg-info" data-bs-toggle="tooltip" title="Monthly family fee">
                         <i class="fas fa-calendar-alt"></i> Rs ' . number_format($totalStudentMonthlyFee, 0) . '
                     </span>
                 </div>
@@ -118,15 +118,15 @@ public function getStudentCardAjax()
             <div class="mt-2 mt-md-0">
                 <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary" onclick="showEditStudentFeeModal(' . $student->student_id . ')" 
-                        data-toggle="tooltip" title="Edit monthly fees">
+                        data-bs-toggle="tooltip" title="Edit monthly fees">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-outline-info" onclick="showAdvanceFeeStudentModal(' . $student->student_id . ')" 
-                        data-toggle="tooltip" title="Pay advance fees">
+                        data-bs-toggle="tooltip" title="Pay advance fees">
                         <i class="fas fa-forward"></i>
                     </button>
                     <button class="btn btn-outline-warning" onclick="addFamilyUnpaidFeesToPool(' . $student->parent_id . ')" 
-                        data-toggle="tooltip" title="Add all family fees to cart">
+                        data-bs-toggle="tooltip" title="Add all family fees to cart">
                         <i class="fas fa-users"></i>
                     </button>
 
@@ -136,9 +136,9 @@ public function getStudentCardAjax()
                 
                 </div>
                 
-                <div class="custom-control custom-switch d-inline-block ml-2" data-toggle="tooltip" title="Toggle partial payment mode">
-                    <input type="checkbox" class="custom-control-input" id="partialToggle">
-                    <label class="custom-control-label" for="partialToggle"></label>
+                <div class="form-check form-switch d-inline-block ms-2" data-bs-toggle="tooltip" title="Toggle partial payment mode">
+                    <input type="checkbox" class="form-check-input" id="partialToggle">
+                    <label class="form-check-label" for="partialToggle"></label>
                 </div>
             </div>
         </div>
@@ -326,7 +326,7 @@ protected function generateStudentFeeCard($student, $campus_info, $session_id)
             <strong class="d-block">' . esc($row->fee_type_name) . '</strong>
             <small class="text-muted d-block">' . esc($feeMonth) . '</small>
         </div>
-        <span class="badge badge-light">Rs ' . number_format($net_amount, 0) . '</span>
+        <span class="badge text-bg-light">Rs ' . number_format($net_amount, 0) . '</span>
     </button>
 </div>';
 
@@ -339,15 +339,15 @@ protected function generateStudentFeeCard($student, $campus_info, $session_id)
         <!-- Header -->
         <div class="card-header bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-                <div class="mr-3">' . $profile_photo . '</div>
+                <div class="me-3">' . $profile_photo . '</div>
                 <div>
                     <h5 class="mb-0">' . esc($student->first_name) . ' ' . esc($student->last_name) . '</h5>
                     <small class="text-muted">' . esc($class_info->class_name ?? '') . ' - Monthly Fee: Rs ' . number_format($monthlyFee, 0) . '</small>
                 </div>
             </div>
-            <div class="text-right mt-2 mt-md-0">
+            <div class="text-end mt-2 mt-md-0">
                 <div class="mb-2">
-                    <span class="badge badge-warning p-2">
+                    <span class="badge text-bg-warning p-2">
                         Total Due: Rs <span id="student-dues-' . esc($student->student_id) . '">' . number_format($student_total, 0) . '</span>
                     </span>
                 </div>
@@ -861,7 +861,7 @@ return $this->response->setJSON([
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Pay Fee</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
@@ -900,7 +900,7 @@ return $this->response->setJSON([
                 </form>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" id="payFee" class="btn btn-primary">Submit</button>
               </div>
             </div>

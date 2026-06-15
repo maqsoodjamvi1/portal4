@@ -10,6 +10,7 @@
  */
 
 use CodeIgniter\Config\Services;
+use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Database;
 
@@ -120,8 +121,12 @@ if (!function_exists('maybe_serialize')) {
 if (!function_exists('json_response')) {
     /**
      * Send JSON response
+     *
+     * @param array|object $obj      Payload
+     * @param string       $callback Optional JSONP callback name
+     * @param int          $status   HTTP status code (default 200)
      */
-    function json_response($obj, $callback = '')
+    function json_response($obj, $callback = '', $status = 200)
     {
         $response = Services::response();
         $json = json_encode($obj);
@@ -132,10 +137,159 @@ if (!function_exists('json_response')) {
             $output = $json;
         }
 
+        $response->setStatusCode((int) $status);
         $response->setBody($output);
         $response->setContentType('application/json');
         $response->send();
         exit;
+    }
+}
+
+if (! function_exists('admin_login_required_url')) {
+    function admin_login_required_url(): string
+    {
+        return base_url('admin/login?reason=login_required');
+    }
+}
+
+if (! function_exists('admin_session_expired_login_url')) {
+    function admin_session_expired_login_url(): string
+    {
+        return base_url('admin/login?reason=session_expired');
+    }
+}
+
+if (! function_exists('admin_client_has_session_cookie')) {
+    function admin_client_has_session_cookie(?RequestInterface $request = null): bool
+    {
+        $request    = $request ?? service('request');
+        $cookieName = config('Session')->cookieName ?? 'ci_session';
+
+        return $request->getCookie($cookieName) !== null;
+    }
+}
+
+if (! function_exists('admin_request_from_admin_area')) {
+    /**
+     * True when the client was likely already using the admin panel (link click / form / AJAX).
+     */
+    function admin_request_from_admin_area(?RequestInterface $request = null): bool
+    {
+        $request = $request ?? service('request');
+        $referer = (string) $request->getHeaderLine('Referer');
+        if ($referer === '') {
+            return false;
+        }
+
+        $adminBase = rtrim(base_url('admin'), '/');
+
+        return str_contains($referer, $adminBase);
+    }
+}
+
+if (! function_exists('admin_request_wants_json')) {
+    function admin_request_wants_json(?RequestInterface $request = null): bool
+    {
+        $request = $request ?? service('request');
+
+        if ($request->isAJAX()) {
+            return true;
+        }
+
+        $accept = strtolower($request->getHeaderLine('Accept'));
+        if ($accept === '') {
+            return false;
+        }
+
+        // Full-page navigation sends text/html first — do not treat as JSON API.
+        if (str_contains($accept, 'text/html')) {
+            return false;
+        }
+
+        return str_contains($accept, 'application/json') || str_contains($accept, '+json');
+    }
+}
+
+if (! function_exists('admin_login_required_payload')) {
+    /**
+     * @return array{success: bool, code: string, msg: string, redirect: string}
+     */
+    function admin_login_required_payload(): array
+    {
+        return [
+            'success'  => false,
+            'code'     => 'auth_required',
+            'msg'      => 'Please sign in to continue.',
+            'redirect' => admin_login_required_url(),
+        ];
+    }
+}
+
+if (! function_exists('admin_session_expired_payload')) {
+    /**
+     * @return array{success: bool, code: string, msg: string, redirect: string}
+     */
+    function admin_session_expired_payload(): array
+    {
+        return [
+            'success'  => false,
+            'code'     => 'session_expired',
+            'msg'      => 'Your session has expired. Please sign in again.',
+            'redirect' => admin_session_expired_login_url(),
+        ];
+    }
+}
+
+if (! function_exists('admin_login_required_response')) {
+    function admin_login_required_response(?RequestInterface $request = null): ResponseInterface
+    {
+        $request = $request ?? service('request');
+        $payload = admin_login_required_payload();
+
+        if (admin_request_wants_json($request)) {
+            return service('response')
+                ->setStatusCode(401)
+                ->setJSON($payload);
+        }
+
+        return redirect()->to($payload['redirect'])
+            ->with('login_required', $payload['msg']);
+    }
+}
+
+if (! function_exists('admin_session_expired_response')) {
+    /**
+     * Return 401 JSON for AJAX/JSON clients, or redirect to login for full-page requests.
+     */
+    function admin_session_expired_response(?RequestInterface $request = null): ResponseInterface
+    {
+        $request = $request ?? service('request');
+        $payload = admin_session_expired_payload();
+
+        if (admin_request_wants_json($request)) {
+            return service('response')
+                ->setStatusCode(401)
+                ->setJSON($payload);
+        }
+
+        return redirect()->to($payload['redirect'])
+            ->with('session_expired', $payload['msg']);
+    }
+}
+
+if (! function_exists('admin_auth_failure_response')) {
+    /**
+     * Pick login-required vs session-expired based on whether the user was already in admin.
+     */
+    function admin_auth_failure_response(?RequestInterface $request = null): ResponseInterface
+    {
+        $request = $request ?? service('request');
+
+        if (admin_request_from_admin_area($request) || admin_client_has_session_cookie($request)) {
+            return admin_session_expired_response($request);
+        }
+
+        return admin_login_required_response($request);
     }
 }
 
@@ -149,9 +303,16 @@ if (!function_exists('getSchoolInfo')) {
      */
     function getSchoolInfo()
     {
+        static $cached = null;
+        static $campusKey = null;
+
         $campusid = session()->get('member_campusid');
         if (!$campusid) {
             return null;
+        }
+
+        if ($campusKey === $campusid && $cached !== null) {
+            return $cached;
         }
 
         $db = \Config\Database::connect();
@@ -159,7 +320,182 @@ if (!function_exists('getSchoolInfo')) {
             'SELECT * FROM `system` WHERE system_id IN (SELECT system_id FROM campus WHERE campus_id = ?)',
             [$campusid]
         );
-        return $query->getRow();
+        $cached = $query->getRow();
+        $campusKey = $campusid;
+
+        return $cached;
+    }
+}
+
+if (!function_exists('getMonthlyFeeStudentCounts')) {
+    /**
+     * Count students with non-zero monthly fee for a given month.
+     * Paid = any payment (full paid/discounted status, partial split, or ledger receipt).
+     *
+     * @return array{fee_month: string, total_students: int, paid_students: int, unpaid_students: int}
+     */
+    function getMonthlyFeeStudentCounts(int $campusId, ?string $feeMonth = null): array
+    {
+        $feeMonth = $feeMonth ?: date('Y-m');
+        $defaults = [
+            'fee_month'       => $feeMonth,
+            'total_students'  => 0,
+            'paid_students'   => 0,
+            'unpaid_students' => 0,
+        ];
+
+        if ($campusId <= 0) {
+            return $defaults;
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            $campus = $db->table('campus')
+                ->select('system_id')
+                ->where('campus_id', $campusId)
+                ->get()
+                ->getRow();
+            $systemId = (int) ($campus->system_id ?? 0);
+            if ($systemId <= 0) {
+                return $defaults;
+            }
+
+            $feeTypeRows = $db->table('fee_type')
+                ->select('fee_type_id')
+                ->where('system_id', $systemId)
+                ->where('is_monthly_fee', 1)
+                ->get()
+                ->getResultArray();
+
+            $feeTypeIds = array_values(array_filter(array_map('intval', array_column($feeTypeRows, 'fee_type_id'))));
+            if ($feeTypeIds === []) {
+                return $defaults;
+            }
+
+            $feeTypeIn  = implode(',', $feeTypeIds);
+            $hasFti     = $db->tableExists('finance_transaction_items');
+            $paidExtra  = $hasFti
+                ? ', MAX(CASE WHEN EXISTS (
+                        SELECT 1 FROM finance_transaction_items fti
+                        WHERE fti.chalan_id = fc.chalan_id
+                   ) THEN 1 ELSE 0 END) AS has_payment_record'
+                : ', 0 AS has_payment_record';
+
+            $sql = "
+                SELECT
+                    fc.student_id,
+                    SUM(fc.amount - fc.discount) AS total_net,
+                    MAX(CASE WHEN fc.status IN ('paid', 'discounted') THEN 1 ELSE 0 END) AS has_paid_status,
+                    COUNT(*) AS chalan_count
+                    {$paidExtra}
+                FROM fee_chalan fc
+                INNER JOIN students s ON s.student_id = fc.student_id
+                WHERE fc.fee_month = ?
+                  AND s.campus_id = ?
+                  AND s.status = 1
+                  AND fc.fee_type_id IN ({$feeTypeIn})
+                GROUP BY fc.student_id
+                HAVING total_net > 0
+            ";
+
+            $rows  = $db->query($sql, [$feeMonth, $campusId])->getResultArray();
+            $total = count($rows);
+            $paid  = 0;
+
+            foreach ($rows as $row) {
+                $isPaid = (int) ($row['has_paid_status'] ?? 0) === 1
+                    || (int) ($row['chalan_count'] ?? 0) > 1
+                    || (int) ($row['has_payment_record'] ?? 0) === 1;
+                if ($isPaid) {
+                    $paid++;
+                }
+            }
+
+            return [
+                'fee_month'       => $feeMonth,
+                'total_students'  => $total,
+                'paid_students'   => $paid,
+                'unpaid_students' => max(0, $total - $paid),
+            ];
+        } catch (\Throwable $e) {
+            return $defaults;
+        }
+    }
+}
+
+if (!function_exists('getAdminHeaderMetrics')) {
+    /**
+     * Sidebar/header badge counts (cached per campus to avoid repeated queries every page).
+     *
+     * @return array{unread_messages:int,pending_emp_leaves:int,pending_std_leaves:int,unpaid_fee_chalans:int,monthly_fee_total_students:int,monthly_fee_paid_students:int,monthly_fee_month:string}
+     */
+    function getAdminHeaderMetrics(int $campusId): array
+    {
+        $defaults = [
+            'unread_messages'           => 0,
+            'pending_emp_leaves'        => 0,
+            'pending_std_leaves'        => 0,
+            'unpaid_fee_chalans'        => 0,
+            'monthly_fee_total_students'=> 0,
+            'monthly_fee_paid_students' => 0,
+            'monthly_fee_month'         => date('Y-m'),
+        ];
+
+        if ($campusId <= 0) {
+            return $defaults;
+        }
+
+        $cache = \Config\Services::cache();
+        $key   = 'admin_header_metrics_' . $campusId;
+        $hit   = $cache->get($key);
+
+        if (is_array($hit)) {
+            return array_merge($defaults, $hit);
+        }
+
+        $safeCount = static function (string $sql, array $binds = []): int {
+            try {
+                $db  = \Config\Database::connect();
+                $q   = $db->query($sql, $binds);
+                $row = $q ? $q->getRow() : null;
+
+                return (int) ($row->c ?? 0);
+            } catch (\Throwable $e) {
+                return 0;
+            }
+        };
+
+        $metrics = [
+            'unread_messages' => $safeCount(
+                "SELECT COUNT(*) c FROM messages
+                 WHERE (is_read = 0 OR is_read IS NULL)
+                   AND (? = 0 OR campus_id = ?)",
+                [$campusId, $campusId]
+            ),
+            'pending_emp_leaves' => $safeCount(
+                "SELECT COUNT(*) c FROM employee_leaves
+                 WHERE (status = 'Pending' OR status = 0 OR approved = 0 OR COALESCE(approved,0) = 0)
+                   AND (? = 0 OR campus_id = ?)",
+                [$campusId, $campusId]
+            ),
+            'pending_std_leaves' => $safeCount(
+                "SELECT COUNT(*) c FROM students_leaves
+                 WHERE (status = 'Pending' OR status = 0 OR approved = 0 OR COALESCE(approved,0) = 0)
+                   AND (? = 0 OR campus_id = ?)",
+                [$campusId, $campusId]
+            ),
+        ];
+
+        $monthlyFeeCounts = getMonthlyFeeStudentCounts($campusId);
+        $metrics['unpaid_fee_chalans']         = (int) ($monthlyFeeCounts['unpaid_students'] ?? 0);
+        $metrics['monthly_fee_total_students'] = (int) ($monthlyFeeCounts['total_students'] ?? 0);
+        $metrics['monthly_fee_paid_students']  = (int) ($monthlyFeeCounts['paid_students'] ?? 0);
+        $metrics['monthly_fee_month']          = (string) ($monthlyFeeCounts['fee_month'] ?? date('Y-m'));
+
+        $cache->save($key, $metrics, 60);
+
+        return $metrics;
     }
 }
 
@@ -192,13 +528,21 @@ if (!function_exists('reportHeader')) {
     {
         $db = Database::connect();
         $session = session();
-        $campusid = $session->get('member_campusid');
-        $schoolinfo = $db->query("SELECT * FROM `system` WHERE system_id IN (SELECT system_id FROM campus WHERE campus_id = $campusid)")->getRow();
+        $campusid = (int) $session->get('member_campusid');
+        $campusRow = $db->table('campus')->select('system_id')->where('campus_id', $campusid)->get()->getRow();
+        $systemId  = (int) ($campusRow->system_id ?? 0);
+        $schoolinfo = $systemId > 0
+            ? $db->table('system')->where('system_id', $systemId)->get()->getRow()
+            : null;
+        if ($schoolinfo === null) {
+            return '';
+        }
+
         $html = '';
 
         $html .= '<div class="row"><div style="border: 1px dashed;margin: 9px;width: 100%;padding: 16px;border-radius: 10px;text-align: center;"><div class="row">';
-        $html .= '<div class="col-lg-3"><img style="max-height:150px;max-width:100%;" src="' . base_url('system-logo/' . $schoolinfo->logo) . '"></div>';
-        $html .= '<div class="col-lg-9"><h1>' . $schoolinfo->system_name . '</h1></div>';
+        $html .= '<div class="col-lg-3"><img style="max-height:150px;max-width:100%;" src="' . base_url('system-logo/' . ($schoolinfo->logo ?? '')) . '"></div>';
+        $html .= '<div class="col-lg-9"><h1>' . esc($schoolinfo->system_name ?? '') . '</h1></div>';
         $html .= '</div></div></div>';
 
         return $html;
@@ -211,23 +555,40 @@ if (!function_exists('reportHeader')) {
 
 if (!function_exists('currentUserRoles')) {
     /**
-     * Get current user role IDs
+     * Role name IDs for all roles assigned to the current user (plan-aware).
+     * Used across the app for checks like in_array(5, currentUserRoles()) (Teacher).
+     *
+     * @return list<int>
      */
     function currentUserRoles()
     {
-        $db = Database::connect();
-        $session = session();
-        $userid = $session->get('member_userid');
-        $resp = [];
+        $userid = (int) (session()->get('member_userid') ?? 0);
+        if ($userid <= 0) {
+            return [];
+        }
 
-        if ($userid) {
-            $rows = $db->query("SELECT * FROM user_roles WHERE userID = $userid")->getResultArray();
-            foreach ($rows as $row) {
-                $resp[] = $row['roleID'];
+        $acl     = new \App\Libraries\MemberAcl($userid);
+        $roleIds = $acl->getUserRoles();
+        if ($roleIds === []) {
+            return [];
+        }
+
+        $rows = Database::connect()
+            ->table('roles')
+            ->select('role_name_id')
+            ->whereIn('id', $roleIds)
+            ->get()
+            ->getResultArray();
+
+        $nameIds = [];
+        foreach ($rows as $row) {
+            $nid = (int) ($row['role_name_id'] ?? 0);
+            if ($nid > 0) {
+                $nameIds[$nid] = $nid;
             }
         }
 
-        return $resp;
+        return array_values($nameIds);
     }
 }
 
@@ -261,12 +622,18 @@ if (!function_exists('roles_list')) {
         $db = Database::connect();
         $session = session();
         $user = service('userdata')['user'];
-        $userroleids = implode(', ', $user->userRoles);
+        $roleIds = array_values(array_filter(array_map('intval', (array) ($user->userRoles ?? []))));
         $results = [];
 
-        $currentuserroles = $db->query("SELECT * FROM roles WHERE id IN($userroleids)")->getResult();
+        $currentuserroles = $roleIds === []
+            ? []
+            : $db->table('roles')->whereIn('id', $roleIds)->get()->getResult();
 
-        $campusBill = $db->query("SELECT * FROM campus_bills WHERE status=1 AND campus_id={$user->campus_id}")->getRow();
+        $campusBill = $db->table('campus_bills')
+            ->where('status', 1)
+            ->where('campus_id', (int) $user->campus_id)
+            ->get()
+            ->getRow();
         $plan_id = $campusBill->plan_id;
 
         foreach ($currentuserroles as $value) {
@@ -290,29 +657,46 @@ if (!function_exists('getStudentPhotoUrl')) {
      */
     function getStudentPhotoUrl($photoFile)
     {
+        $fallback = base_url('resource/img/avatar-student.png');
+
         if (empty($photoFile)) {
-            return base_url('assets/img/avatar-student.png');
+            return $fallback;
         }
-        
-        $photoFile = ltrim($photoFile, '/');
-        
-        // Check different possible directories
-        $directories = ['uploads/', 'student_photos/', 'system-logo/'];
-        
-        foreach ($directories as $dir) {
-            $fullPath = FCPATH . $dir . $photoFile;
-            if (file_exists($fullPath)) {
-                return base_url($dir . $photoFile);
+
+        $photoFile = trim((string) $photoFile);
+
+        // Fix legacy/wrong URLs like https://site.com/WhatsApp_Image.jpeg (missing uploads/)
+        if (preg_match('#^https?://#i', $photoFile)) {
+            $path = parse_url($photoFile, PHP_URL_PATH) ?? '';
+            if ($path !== '' && preg_match('#^/[^/]+$#', $path)) {
+                $photoFile = 'uploads/' . basename($path);
+            } else {
+                return $photoFile;
             }
         }
-        
-        // Also check if the file path itself is complete
-        $fullPath = FCPATH . $photoFile;
-        if (file_exists($fullPath)) {
-            return base_url($photoFile);
+
+        $photoFile = ltrim($photoFile, '/');
+
+        if (! str_contains($photoFile, '/')) {
+            $photoFile = 'uploads/' . $photoFile;
+        } elseif (! str_starts_with($photoFile, 'uploads/')) {
+            $photoFile = 'uploads/' . basename($photoFile);
         }
-        
-        return base_url('assets/img/avatar-student.png');
+
+        $basename = basename($photoFile);
+        $paths    = [
+            rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $basename,
+            rtrim(WRITEPATH, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'student_profiles' . DIRECTORY_SEPARATOR . $basename,
+            rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'student_photos' . DIRECTORY_SEPARATOR . $basename,
+        ];
+
+        foreach ($paths as $fullPath) {
+            if (is_file($fullPath)) {
+                return base_url('uploads/' . $basename);
+            }
+        }
+
+        return base_url('uploads/' . $basename);
     }
 }
 
@@ -419,10 +803,15 @@ if (!function_exists('getAllClassSection')) {
 
 if (!function_exists('userClassSections')) {
     /**
-     * Get all class sections (for dropdowns)
+     * Class sections visible to the user (campus-wide or role-scoped).
      */
     function userClassSections($user_id = null)
     {
+        $scoped = roleClassSections($user_id);
+        if ($scoped !== []) {
+            return $scoped;
+        }
+
         $db = \Config\Database::connect();
         $session = session();
 
@@ -453,6 +842,79 @@ if (!function_exists('userClassSections')) {
 // ============================================
 // SECTION 6: TEACHER FUNCTIONS
 // ============================================
+
+if (!function_exists('teacherSubjectSections')) {
+    /**
+     * Class sections assigned to the current (or given) teacher.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    function teacherSubjectSections(?int $user_id = null): array
+    {
+        $db      = \Config\Database::connect();
+        $session = session();
+
+        $campus_id = (int) $session->get('member_campusid');
+        $user_id   = $user_id ?? (int) $session->get('member_userid');
+
+        if ($user_id <= 0) {
+            return [];
+        }
+
+        $builder = $db->table('teacher_section ts');
+        $builder->select(
+            'cs.cls_sec_id,
+             cs.section_id,
+             c.class_id,
+             c.class_name,
+             s.section_name,
+             CONCAT(c.class_name, " - ", s.section_name) AS sectionclassname'
+        );
+        $builder->join('class_section cs', 'cs.cls_sec_id = ts.cls_sec_id');
+        $builder->join('classes c', 'c.class_id = cs.class_id');
+        $builder->join('sections s', 's.section_id = cs.section_id');
+        $builder->where('ts.tid', $user_id);
+        $builder->where('ts.status', 1);
+        $builder->where('cs.status', 1);
+
+        if ($campus_id > 0) {
+            $builder->where('cs.campus_id', $campus_id);
+        }
+
+        $builder->groupBy('cs.cls_sec_id');
+        $builder->orderBy('c.class_id, s.section_id');
+
+        $teacherSections = $builder->get()->getResultArray();
+        $roleSections    = roleClassSections($user_id);
+
+        if ($roleSections === []) {
+            return $teacherSections;
+        }
+
+        return mergeClassSectionRows($teacherSections, $roleSections);
+    }
+}
+
+if (!function_exists('mergeClassSectionRows')) {
+    /**
+     * @param array<int, array<string, mixed>> $a
+     * @param array<int, array<string, mixed>> $b
+     * @return array<int, array<string, mixed>>
+     */
+    function mergeClassSectionRows(array $a, array $b): array
+    {
+        $merged = [];
+
+        foreach (array_merge($a, $b) as $row) {
+            $id = (int) ($row['cls_sec_id'] ?? 0);
+            if ($id > 0) {
+                $merged[$id] = $row;
+            }
+        }
+
+        return array_values($merged);
+    }
+}
 
 if (!function_exists('getTeacherSubjectsInClass')) {
     /**
@@ -628,6 +1090,48 @@ if (!function_exists('getTeacherSubjectSections')) {
                 ORDER BY c.class_id ASC, s.section_id ASC";
         
         return $db->query($sql, [$teacher_id, $campus_id])->getResultArray();
+    }
+}
+
+if (! function_exists('getTeacherAllowedClassSectionIds')) {
+    /**
+     * @return list<int>
+     */
+    function getTeacherAllowedClassSectionIds(): array
+    {
+        $sections = getTeacherSubjectSections();
+        $ids      = [];
+
+        foreach ($sections as $row) {
+            $id = (int) ($row['cls_sec_id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+}
+
+if (! function_exists('teacherCanViewClassSection')) {
+    function teacherCanViewClassSection(int $clsSecId, ?int $teacherId = null): bool
+    {
+        if ($clsSecId <= 0) {
+            return false;
+        }
+
+        $teacherId = $teacherId ?? (int) (session()->get('member_userid') ?? 0);
+        if ($teacherId <= 0) {
+            return false;
+        }
+
+        $db = \Config\Database::connect();
+
+        return $db->table('teacher_subjects')
+            ->where('tid', $teacherId)
+            ->where('cls_sec_id', $clsSecId)
+            ->where('status', 1)
+            ->countAllResults() > 0;
     }
 }
 
@@ -836,10 +1340,13 @@ if (!function_exists('termSessions')) {
     {
         $db = Database::connect();
         $session = session();
-        $sessionid = $session->get('member_sessionid');
-        $campusid = $session->get('member_campusid');
+        $sessionid = (int) $session->get('member_sessionid');
+        $campusid  = (int) $session->get('member_campusid');
 
-        $schoolinfo = $db->query("SELECT * FROM `system` WHERE system_id IN (SELECT system_id FROM campus WHERE campus_id = $campusid)")->getRow();
+        $schoolinfo = \App\Libraries\SafeQuery::systemForCampus($db, $campusid);
+        if ($schoolinfo === null) {
+            return [];
+        }
 
         $builder = $db->table('terms_session')->where('session_id', $sessionid)->where('system_id', $schoolinfo->system_id);
         $terms_session_info = $builder->get()->getResult();
@@ -885,7 +1392,23 @@ if (!function_exists('check_permission')) {
     function check_permission($permKey, $json = true)
     {
         $user = \App\Libraries\MemberCurrentUser::user();
-        $perms = (is_object($user) && isset($user->userPerms)) ? $user->userPerms : [];
+
+        if (! $user) {
+            $request = service('request');
+
+            if ($json && admin_request_wants_json($request)) {
+                $payload = admin_request_from_admin_area($request) || admin_client_has_session_cookie($request)
+                    ? admin_session_expired_payload()
+                    : admin_login_required_payload();
+                json_response($payload, '', 401);
+            }
+
+            admin_auth_failure_response($request)->send();
+            exit;
+        }
+
+        $perms = isset($user->userPerms) ? $user->userPerms : [];
+        $permKey = strtolower((string) $permKey);
 
         if (isset($perms[$permKey]) && $perms[$permKey]) {
             return;
@@ -893,14 +1416,54 @@ if (!function_exists('check_permission')) {
 
         if ($json) {
             json_response([
-                'success' => false,
-                'msg' => 'You do not have permission to operate: ' . $permKey
-            ]);
-        } else {
-            $themePath = config('View')->admin_theme ?? 'admin/';
-            echo view($themePath . 'member/500', ['errorString' => '500']);
-            exit;
+                'success'  => false,
+                'code'     => 'forbidden',
+                'perm_key' => $permKey,
+                'msg'      => 'You do not have permission to operate: ' . $permKey,
+            ], '', 403);
         }
+
+        echo view('admin/errors/html/error_403', [
+            'permKey'  => $permKey,
+            'permKeys' => [$permKey],
+        ]);
+        exit;
+    }
+}
+
+if (! function_exists('check_any_permission')) {
+    function check_any_permission(array $permKeys, $json = true)
+    {
+        $user = \App\Libraries\MemberCurrentUser::user();
+
+        if (! $user) {
+            check_permission('', $json);
+
+            return;
+        }
+
+        $perms = isset($user->userPerms) ? $user->userPerms : [];
+        foreach ($permKeys as $permKey) {
+            $permKey = strtolower((string) $permKey);
+            if (isset($perms[$permKey]) && $perms[$permKey]) {
+                return;
+            }
+        }
+
+        if ($json) {
+            json_response([
+                'success'   => false,
+                'code'      => 'forbidden',
+                'perm_keys' => array_map('strtolower', $permKeys),
+                'msg'       => 'You do not have permission for this action.',
+            ], '', 403);
+        }
+
+        echo view('admin/errors/html/error_403', [
+            'permKey'  => $permKeys[0] ?? '',
+            'permKeys' => array_map('strtolower', $permKeys),
+        ]);
+        exit;
     }
 }
 
@@ -912,7 +1475,24 @@ if (!function_exists('hasPermission')) {
     {
         $user = \App\Libraries\MemberCurrentUser::user();
         $perms = $user->userPerms ?? [];
+        $permKey = strtolower((string) $permKey);
         return isset($perms[$permKey]) && $perms[$permKey];
+    }
+}
+
+if (!function_exists('hasAnyPermission')) {
+    /**
+     * @param list<string> $permKeys
+     */
+    function hasAnyPermission(array $permKeys): bool
+    {
+        foreach ($permKeys as $permKey) {
+            if (hasPermission($permKey)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

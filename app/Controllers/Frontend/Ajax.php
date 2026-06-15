@@ -43,8 +43,8 @@ class Ajax extends BaseController{
 		$strDate = '<div class="form-group">
             <div class="input-group date" id="datetimepicker3">
                <input name="dob" type="text" class="form-control" required />
-               <span class="input-group-addon">
-               <span class="glyphicon glyphicon-calendar"></span>
+               <span class="input-group-text">
+               <span class="fas fa-calendar-alt"></span>
                </span>
             </div>
          </div>

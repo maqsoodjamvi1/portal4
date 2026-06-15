@@ -40,7 +40,7 @@
     <script>
         function loadTimetable() {
             const teacherId = document.getElementById('teacherSelect').value;
-            fetch(`/timetable/teacher?teacher_id=${teacherId}`)
+            fetch(`<?= base_url('admin/timetable/teacher') ?>?teacher_id=${teacherId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

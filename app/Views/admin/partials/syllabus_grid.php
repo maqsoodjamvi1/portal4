@@ -21,132 +21,207 @@ if (!function_exists('normalize_syllabus_for_textarea')) {
 }
 ?>
 <style>
-  /* Let columns size to content, keep Subject minimal */
-  #syllabusTbl { table-layout: auto !important; width: 100%; }
-  #syllabusTbl.table-sm td, #syllabusTbl.table-sm th { padding: .38rem .42rem; font-size: 12.5px; }
-
-  /* Column widths (Subject tries to stay as small as possible) */
-  #syllabusTbl col.col-idx      { width: 44px; }
-  #syllabusTbl col.col-subject  { width: 1%; }    /* 1% trick → shrink to content */
-  #syllabusTbl col.col-syllabus { width: auto; }
-
-  /* Subject cell layout */
-  .subject-cell { min-width: 160px; } /* safety floor on very narrow screens */
-  .subject-top {
-    display:flex; align-items:center; gap:.35rem; min-width: 0; /* allow ellipsis */
+  /* Same visual language as admin/top_level_planning/add.php (.planning-card grid) */
+  /* One card per row, full width (matches full-width planning rows) */
+  #syllabusTbl.syllabus-planning-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
   }
-  .subject-name {
-    font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    max-width: 100%;
-  }
-  .row-actions { margin-left:auto; display:flex; gap:.25rem; }
-  .btn-tiny {
-    border:1px solid #e1e5ee; background:#fff; font-size:11px; padding:.15rem .35rem; line-height:1.1;
-    border-radius:6px; cursor:pointer;
-  }
-  .btn-tiny:hover { background:#f7f9ff; }
 
-  /* Second line — date/day + marks chips (compact) */
-  .subject-meta { margin-top:.2rem; display:flex; flex-wrap:wrap; gap:.25rem; }
-  .chip {
-    display:inline-flex; align-items:center; border:1px solid #e7eaf3; border-radius:999px;
-    padding:1px 6px; background:#f7f9ff; font-weight:600; font-size:10.5px; color:#364fc7;
-    line-height:1.3;
+  #syllabusTbl .planning-card {
+    background: #fff;
+    border: 1px solid #e0e7ef;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
-  .chip.marks { color:#0b7285; }
+  #syllabusTbl .planning-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  #syllabusTbl .planning-card-header {
+    background: #2c3e66;
+    color: white;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e7ef;
+  }
+  #syllabusTbl .planning-card-header h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    line-height: 1.3;
+  }
+  #syllabusTbl .planning-card-header h5 i {
+    font-size: 14px;
+    opacity: 0.95;
+  }
+  #syllabusTbl .planning-card-header .term-date {
+    display: block;
+    font-size: 12px;
+    opacity: 0.88;
+    margin-top: 6px;
+    font-weight: normal;
+  }
+  #syllabusTbl .planning-card-body {
+    padding: 20px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #syllabusTbl .planning-card-body .form-group {
+    margin-bottom: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #syllabusTbl .planning-card-body label.syll-field-label {
+    font-weight: 600;
+    color: #1e4663;
+    margin-bottom: 10px;
+    display: block;
+    font-size: 14px;
+  }
+  /* Same editor height as Top Level Planning Summernote (height: 200) — keeps every card equal */
+  #syllabusTbl .planning-card-body textarea.form-control.syll-input {
+    width: 100%;
+    border: 1px solid #cfdfed;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    height: 200px !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
+    resize: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    line-height: 1.45;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  #syllabusTbl .planning-card-body textarea.form-control.syll-input:focus {
+    border-color: #2c7da0;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(44,125,160,0.12);
+  }
 
-  .syll-cell textarea { width: 100%; min-height: 56px; resize: vertical; }
-  .badge-lite { background:#eef3ff; color:#3857d8; border:1px solid #dbe4ff; border-radius:999px; padding:2px 6px; font-size:11px; font-weight:600; }
+  .syllabus-toolbar-hint.alert-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    margin-bottom: 1rem;
+  }
+  .syllabus-toolbar-hint.alert-info i { margin-right: 10px; }
 
-  /* Responsive tweaks */
   @media (max-width: 768px) {
-    .subject-cell { min-width: 140px; }
+    #syllabusTbl .planning-card-header { padding: 12px 15px; }
+    #syllabusTbl .planning-card-header h5 { font-size: 14px; }
+    #syllabusTbl .planning-card-body { padding: 15px; }
+    #syllabusTbl .planning-card-body label.syll-field-label { font-size: 13px; }
   }
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
-  <div class="small text-muted">
-    <i class="far fa-info-circle mr-1"></i>
-    Type syllabus and it auto-saves on blur. Use “Load TLP” to prefill. “Save All” commits everything.
+  <div class="alert alert-info syllabus-toolbar-hint mb-0 py-2 px-3 flex-grow-1 me-md-2">
+    <i class="fas fa-info-circle"></i>
+    Type syllabus — it auto-saves on blur. Use “Load TLP” to prefill. “Save All” saves everything.
   </div>
-  <div class="d-flex align-items-center">
-    <button id="loadTlpAll" class="btn btn-outline-secondary btn-sm mr-2">
-      <i class="fas fa-cloud-download-alt mr-1"></i> Load TLP
+  <div class="d-flex align-items-center mt-2 mt-md-0 flex-shrink-0">
+    <button type="button" id="loadTlpAll" class="btn btn-outline-primary btn-sm me-2">
+      <i class="fas fa-cloud-download-alt me-1"></i> Load TLP
     </button>
-    <button id="saveAllBtn" class="btn btn-primary btn-sm">
-      <i class="fas fa-save mr-1"></i> Save All
+    <button type="button" id="saveAllBtn" class="btn btn-primary btn-sm">
+      <i class="fas fa-save me-1"></i> Save All
     </button>
   </div>
 </div>
 
-<div class="table-responsive">
-  <table class="table table-sm table-bordered mb-0" id="syllabusTbl"
-         data-eid="<?= $eid ?>" data-cls-sec-id="<?= $cls_sec_id ?>">
-    <colgroup>
-      <col class="col-idx">
-      <col class="col-subject">
-      <col class="col-syllabus">
-    </colgroup>
-    <thead class="thead-light">
-      <tr>
-        <th>#</th>
-        <th>Subject · Date/Day · Marks</th>
-        <th>Syllabus</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (!empty($subjects)): $i = 1; foreach ($subjects as $sub):
-        $sec_sub_id = (int)$sub->sec_sub_id;
-        $rawSyl     = $existingMap[$sec_sub_id] ?? '';
-        $syllabus   = normalize_syllabus_for_textarea($rawSyl);
-        $loaded     = ($syllabus !== '');
+<div id="syllabusTbl"
+     data-eid="<?= $eid ?>" data-cls-sec-id="<?= $cls_sec_id ?>"
+     class="syllabus-planning-grid">
+  <?php if (!empty($subjects)): foreach ($subjects as $sub):
+    $sec_sub_id = (int)$sub->sec_sub_id;
+    $rawSyl     = $existingMap[$sec_sub_id] ?? '';
+    $syllabus   = normalize_syllabus_for_textarea($rawSyl);
+    $loaded     = ($syllabus !== '');
 
-        $ds        = $dsMap[$sec_sub_id] ?? null; // ['exam_date','total_marks']
-        $dateChip  = '';
-        $marksChip = '';
-        if ($ds && !empty($ds['exam_date'])) {
-          $ts = strtotime((string)$ds['exam_date']);
-          if ($ts) {
-            $dateChip  = date('D', $ts) . ' ' . date('j M', $ts);
-          }
-          $m = (int)($ds['total_marks'] ?? 0);
-          if ($m > 0) $marksChip = (string)$m;
-        }
-      ?>
-      <tr data-sec-sub-id="<?= $sec_sub_id ?>" data-subject-id="<?= (int)($sub->subject_id ?? 0) ?>">
-        <td class="text-center align-middle"><?= $i++ ?></td>
+    $fullName   = (string) ($sub->subject_name ?? '');
+    $shortName  = trim((string) ($sub->subject_short_name ?? ''));
+    $labelName  = $shortName !== '' ? $shortName : $fullName;
 
-        <td class="align-middle subject-cell" title="<?= esc($sub->subject_name) ?>">
-          <!-- Row 1: Subject (ellipsis) + actions -->
-          <div class="subject-top">
-            <span class="subject-name"><?= esc($sub->subject_name) ?></span>
-            <span class="row-actions">
-              <button class="btn-tiny tlp-one" title="Load TLP for this subject"><i class="fas fa-download"></i></button>
-            </span>
-          </div>
-          <!-- Row 2: Date/Day + Marks (if any) -->
-          <?php if ($dateChip || $marksChip): ?>
-            <div class="subject-meta">
-              <?php if ($dateChip):  ?><span class="chip"><?= esc($dateChip) ?></span><?php endif; ?>
-              <?php if ($marksChip): ?><span class="chip marks">M <?= esc($marksChip) ?></span><?php endif; ?>
-            </div>
+    $ds          = $dsMap[$sec_sub_id] ?? null;
+    $monthDay    = '';
+    $marksChip   = '';
+    if ($ds && !empty($ds['exam_date'])) {
+      $ts = strtotime((string)$ds['exam_date']);
+      if ($ts) {
+        $monthDay = date('M j', $ts);
+      }
+      $m = (int)($ds['total_marks'] ?? 0);
+      if ($m > 0) {
+        $marksChip = (string)$m;
+      }
+    }
+
+    $metaLine = '';
+    if ($monthDay !== '' || $marksChip !== '') {
+      $parts = [];
+      if ($monthDay !== '') {
+        $parts[] = $monthDay;
+      }
+      if ($marksChip !== '') {
+        $parts[] = 'M ' . $marksChip;
+      }
+      $metaLine = implode(' · ', $parts);
+    }
+  ?>
+  <div class="planning-card syllabus-subject-card"
+       data-sec-sub-id="<?= $sec_sub_id ?>"
+       data-subject-id="<?= (int)($sub->subject_id ?? 0) ?>">
+    <div class="planning-card-header">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="flex-grow-1 min-w-0 pe-2">
+          <h5 title="<?= esc($fullName !== '' ? $fullName : $labelName) ?>">
+            <i class="fas fa-book"></i>
+            <span><?= esc($labelName) ?></span>
+          </h5>
+          <?php if ($metaLine !== ''): ?>
+            <span class="term-date"><?= esc($metaLine) ?></span>
+          <?php else: ?>
+            <span class="term-date"><em>No exam date / marks on datesheet</em></span>
           <?php endif; ?>
-        </td>
-
-        <td class="syll-cell">
-          <textarea class="form-control form-control-sm syll-input"
-                    placeholder="Enter syllabus…"
-                    data-loaded="<?= $loaded ? '1':'0' ?>"><?= esc($syllabus) ?></textarea>
-          <?php if ($loaded): ?>
-            <div class="mt-1"><span class="badge-lite">loaded</span></div>
-          <?php endif; ?>
-        </td>
-      </tr>
-      <?php endforeach; else: ?>
-      <tr><td colspan="3" class="text-center text-muted">No subjects in this section.</td></tr>
-      <?php endif; ?>
-    </tbody>
-  </table>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-light tlp-one flex-shrink-0"
+                title="Load TLP for this subject">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+    </div>
+    <div class="planning-card-body">
+      <div class="form-group">
+        <label class="syll-field-label">Exam syllabus</label>
+        <textarea class="form-control syll-input" rows="8"
+                  placeholder="Enter syllabus…"
+                  data-loaded="<?= $loaded ? '1':'0' ?>"><?= esc($syllabus) ?></textarea>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; else: ?>
+  <div class="text-center text-muted py-4" style="grid-column: 1 / -1;">No subjects in this section.</div>
+  <?php endif; ?>
 </div>
 
 <script>
@@ -155,20 +230,47 @@ if (!function_exists('normalize_syllabus_for_textarea')) {
   const eid  = Number($tbl.data('eid') || 0);
   const cls  = Number($tbl.data('cls-sec-id') || 0);
 
+  /** Match card outer heights when headers wrap differently (fixed textarea already aligns bodies). */
+  function equalizeCardHeights() {
+    const $cards = $tbl.find('.syllabus-subject-card');
+    if (!$cards.length) return;
+    $cards.css('min-height', '');
+    let maxH = 0;
+    $cards.each(function () {
+      maxH = Math.max(maxH, $(this).outerHeight());
+    });
+    if (maxH > 0) {
+      $cards.css('min-height', maxH + 'px');
+    }
+  }
+
+  let eqTimer = null;
+  function scheduleEqualize() {
+    if (eqTimer) clearTimeout(eqTimer);
+    eqTimer = setTimeout(function () {
+      eqTimer = null;
+      equalizeCardHeights();
+    }, 50);
+  }
+
   toastr.options = { positionClass:'toast-bottom-right', newestOnTop:false, preventDuplicates:true,
     closeButton:false, progressBar:true, timeOut:1200, extendedTimeOut:600 };
   let lastToast=null; function toastOnce(t,m){ if(lastToast) toastr.clear(lastToast); lastToast=toastr[t](m); }
   function addCsrf(d){ const n='<?= csrf_token() ?>', h='<?= csrf_hash() ?>'; if(n && h) d[n]=h; return d; }
 
-  // Autosave on blur
+  requestAnimationFrame(function () {
+    scheduleEqualize();
+  });
+  $(window).off('resize.syllabusCardsEq').on('resize.syllabusCardsEq', scheduleEqualize);
+
   let blurTimer=null;
   $tbl.on('blur','.syll-input',function(){
     const $ta=$(this); clearTimeout(blurTimer); blurTimer=setTimeout(()=>saveOne($ta),60);
   });
 
   function saveOne($ta){
-    const $row=$ta.closest('tr');
-    const sec_sub_id=Number($row.data('sec-sub-id')||0);
+    const $row=$ta.closest('.syllabus-subject-card');
+    const sec_sub_id=Number($row.attr('data-sec-sub-id')||0);
     const syllabus=$ta.val();
     if(!eid || !cls || !sec_sub_id) return;
 
@@ -184,16 +286,12 @@ if (!function_exists('normalize_syllabus_for_textarea')) {
 
   function markLoaded($ta,loaded){
     $ta.attr('data-loaded',loaded?'1':'0');
-    const $badge=$ta.next('.mt-1');
-    if(loaded){ if($badge.length===0) $ta.after('<div class="mt-1"><span class="badge-lite">loaded</span></div>'); }
-    else{ $badge.remove(); }
   }
 
-  // Save all
   $('#saveAllBtn').on('click',function(){
     const rows=[];
-    $tbl.find('tbody tr').each(function(){
-      const sec_sub_id=Number($(this).data('sec-sub-id')||0);
+    $tbl.find('.syllabus-subject-card').each(function(){
+      const sec_sub_id=Number($(this).attr('data-sec-sub-id')||0);
       const syllabus=$(this).find('.syll-input').val();
       if(sec_sub_id) rows.push({sec_sub_id, syllabus});
     });
@@ -206,23 +304,24 @@ if (!function_exists('normalize_syllabus_for_textarea')) {
       if(res && res.success){ toastOnce('success','All entries saved.'); $tbl.find('.syll-input').each(function(){ markLoaded($(this),true); }); }
       else{ toastOnce('error',(res && res.message)||'Save failed.'); }
     }).fail(()=>toastOnce('error','Server error.'))
-      .always(()=> $btn.prop('disabled',false).html('<i class="fas fa-save mr-1"></i> Save All'));
+      .always(()=> {
+        $btn.prop('disabled',false).html('<i class="fas fa-save me-1"></i> Save All');
+        scheduleEqualize();
+      });
   });
 
-  // Load TLP per row
   $tbl.on('click','.tlp-one',function(e){
     e.preventDefault();
-    loadTlpForRow($(this).closest('tr'), { replace:false });
+    loadTlpForRow($(this).closest('.syllabus-subject-card'), { replace:false });
   });
 
-  // Load TLP all (fills only empty)
   $('#loadTlpAll').on('click',function(){
-    $tbl.find('tbody tr').each(function(){ loadTlpForRow($(this), { replace:false, quiet:true }); });
+    $tbl.find('.syllabus-subject-card').each(function(){ loadTlpForRow($(this), { replace:false, quiet:true }); });
   });
 
   function loadTlpForRow($row, opts){
     const replace=!!(opts && opts.replace), quiet=!!(opts && opts.quiet);
-    const subject_id=Number($row.data('subject-id')||0);
+    const subject_id=Number($row.attr('data-subject-id')||0);
     if(!cls || !subject_id) return;
 
     const $ta=$row.find('.syll-input');
@@ -237,6 +336,7 @@ if (!function_exists('normalize_syllabus_for_textarea')) {
         if (text) {
           $ta.val(text);
           markLoaded($ta, false);
+          scheduleEqualize();
           if (!quiet) toastOnce('success', (res && res.message) || 'Syllabus updated in datesheet.');
         } else if(!quiet){
           toastOnce('warning','No TLP found for this subject.');

@@ -159,15 +159,6 @@ function checkfathercnic() {
         <li class="nav-item"><a class="nav-link" href="<?php echo '#/students_enroll';?>"> Enroll Students</a>
         <li class="nav-item"><a href="<?php echo '#/students_bulk_cnic';?>" class="nav-link">Father Names</a></li>        
         <li class="nav-item"><a class="nav-link" href="<?php echo '#/studentsbulk';?>">Fee Detail</a></li>
-        <?php if($campus_info->a_flag == 1){ ?>
-        <li class="nav-item"><a class="nav-link"  href="#/students_bulk_academy_fee">Academy Fee Detail</a></li>
-        <?php } ?>
-        <?php if($campus_info->h_flag == 1){ ?>
-        <li class="nav-item"><a class="nav-link"  href="#/h_student_beds?m=add">Student Bed</a></li>
-        <?php } ?>
-        <?php if($campus_info->t_flag == 1){ ?>
-        <li class="nav-item"><a class="nav-link"  href="#/students_vehicle">Students Vehicle</a></li>
-        <?php } ?>
         <li class="nav-item"><a class="nav-link" href="<?php echo '#/students_bulk_contacts';?>"> Contact Numbers</a></li>
         <li class="nav-item"><a class="nav-link" href="<?php echo '#/students_bulk_info';?>"> Other Student Info</a>
         </li>
@@ -204,8 +195,8 @@ function checkfathercnic() {
   <div class="col-lg-12 noprint">
     <div class="form-group">
       <button type="submit" id="submitBtn" class="btn btn-primary studentsubmit">Save</button>
-      <button type="reset" class="btn btn-default">Reset</button>
-      <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+      <button type="reset" class="btn btn-secondary">Reset</button>
+      <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
     </div>
   </div>
 </div>

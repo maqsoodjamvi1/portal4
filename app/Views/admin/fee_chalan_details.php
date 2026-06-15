@@ -17,7 +17,7 @@
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 					<li class="active"><a href="<?= base_url('admin/fee_chalan') ?>">
@@ -26,16 +26,16 @@
 					<li><a href="<?= base_url('admin/fee_chalan_pdf') ?>">Print Fee Chalan </a></li>
 					<li><a href="<?= base_url('admin/fee_chalan_pay') ?>">Pay Fee Chalan </a></li>
 				</ul>
-				<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+				<div class="tab-content table-responsive no-padding"><div class="col-12">
 				<div class="row">
-				<div class="col-xs-12">
+				<div class="col-12">
 				<div class="form-group">
                 <label>Date range:</label>
                 <div class="input-group">
-                  <div class="input-group-addon">
+                  <div class="input-group-text">
                     <i class="fa fa-calendar"></i>
                   </div>
-                  <input type="text" class="form-control pull-right" id="reservation">
+                  <input type="text" class="form-control float-end" id="reservation">
                 </div>
                 <!-- /.input group -->
               </div>
@@ -113,11 +113,11 @@ $('#reservation').daterangepicker()
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/fee_chalan?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/fee_chalan?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 						  if(row.issys == '1'){
 
 						  }else{
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 
 						  }
 

@@ -8,7 +8,7 @@
       <div class="col-sm-6">
         <h1>Student Other Info</h1>
       </div>
-      <div class="col-sm-6 text-right">
+      <div class="col-sm-6 text-end">
         <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
           <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
           <li class="breadcrumb-item active">Other Student Info</li>
@@ -72,7 +72,7 @@
 <!-- Loader -->
 <div id="loader-1" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);">
   <div style="position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);">
-    <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
     <div>Loading...</div>
   </div>
 </div>

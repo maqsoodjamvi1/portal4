@@ -1,10 +1,10 @@
-<?= $this->extend('layouts/admin_template') ?>
+<?= $this->extend('frontend/layouts/master_portal') ?>
 <?= $this->section('content') ?>
 
 <section class="content">
   <div class="card card-outline card-primary">
     <div class="card-header">
-      <h3 class="card-title"><i class="fab fa-whatsapp mr-1"></i> Family Diary — WhatsApp</h3>
+      <h3 class="card-title"><i class="fab fa-whatsapp me-1"></i> Family Diary — WhatsApp</h3>
     </div>
     <div class="card-body">
       <?php helper('url'); ?>

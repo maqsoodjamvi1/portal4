@@ -109,7 +109,6 @@ class FeeManagement extends BaseController
                         'fee_type_name' => $feeType['name'],
                         'fee_type_detail' => $feeType['detail'] ?? '',
                         'is_monthly_fee' => $feeType['is_monthly'] ?? 0,
-                        'is_transport_fee' => $feeType['is_transport'] ?? 0,
                         'status' => 1,
                         'created_date' => $now,
                         'user_id' => $userId

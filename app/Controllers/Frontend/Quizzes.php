@@ -1,17 +1,190 @@
 <?php
 namespace App\Controllers\Frontend;
 use App\Controllers\BaseController;
+use App\Libraries\AdaptiveQuizService;
+use App\Libraries\ExamQuizService;
 use Config\Database;
 
 class Quizzes extends BaseController
 {
     protected $db; protected $session;
 
+    /** When true, URLs use /quizzes/* (board prep portal) instead of /student/quizzes/* */
+    protected bool $boardPrepPortal = false;
+
     public function __construct()
     {
         $this->db = db_connect();
         $this->session = session();
-        helper(['form','url','text', 'wifi']);
+        helper(['form','url','text', 'wifi', 'board_prep']);
+    }
+
+    protected function quizBasePath(): string
+    {
+        return $this->boardPrepPortal ? 'quizzes' : 'student/quizzes';
+    }
+
+    protected function quizCatalogPath(): string
+    {
+        return $this->boardPrepPortal ? 'quizzes' : 'student/quizzes/all';
+    }
+
+    protected function quizLoginPath(): string
+    {
+        return $this->boardPrepPortal ? 'login' : 'student/login';
+    }
+
+    protected function quizUrl(string $suffix = ''): string
+    {
+        $suffix = ltrim($suffix, '/');
+
+        if ($this->boardPrepPortal) {
+            if ($suffix === '' || $suffix === 'all') {
+                return board_prep_url('dashboard');
+            }
+
+            return board_prep_url('quizzes/' . $suffix);
+        }
+
+        $base = $this->quizBasePath();
+
+        return base_url($suffix === '' ? $base : $base . '/' . $suffix);
+    }
+
+    protected function adaptiveQuiz(): AdaptiveQuizService
+    {
+        return new AdaptiveQuizService($this->db);
+    }
+
+    protected function examQuiz(): ExamQuizService
+    {
+        return new ExamQuizService();
+    }
+
+    protected function adaptiveStartUrl(int $quizId, int $studentId): string
+    {
+        $url = $this->quizUrl('start/' . $quizId);
+        $sessionSid = (int) ($this->session->get('student_id') ?? 0);
+        if ($studentId > 0 && $studentId !== $sessionSid) {
+            $url .= '?sid=' . $studentId;
+        }
+
+        return $url;
+    }
+
+    protected function adaptiveCatalogUrl(int $studentId): string
+    {
+        $url = $this->quizUrl($this->boardPrepPortal ? '' : 'all');
+        $sessionSid = (int) ($this->session->get('student_id') ?? 0);
+        if ($studentId > 0 && $studentId !== $sessionSid) {
+            $url .= '?sid=' . $studentId;
+        }
+
+        return $url;
+    }
+
+    protected function isQuizImpersonation(): bool
+    {
+        return (bool) $this->session->get('impersonate')
+            && (int) $this->session->get('impersonated_student_id') > 0;
+    }
+
+    protected function quizReviewUrl(int $attemptId): string
+    {
+        if ($this->isQuizImpersonation()) {
+            return base_url('quiz/review/' . $attemptId);
+        }
+
+        return $this->quizUrl('review/' . $attemptId);
+    }
+
+    /** After submit: board prep shows score summary then returns to dashboard. */
+    protected function quizResultUrl(int $attemptId): string
+    {
+        if ($this->boardPrepPortal) {
+            return board_prep_url('quizzes/complete/' . $attemptId);
+        }
+
+        return $this->quizReviewUrl($attemptId);
+    }
+
+    /**
+     * @return array{submit:string,saveAnswer:string,review:string,submitLevel:string,nextLevel:string,retryLevel:string,completeQuiz:string,catalog:string}
+     */
+    protected function buildQuizUrls(int $attemptId, bool $isImpersonation): array
+    {
+        if ($isImpersonation) {
+            return [
+                'submit'       => base_url('quiz/submit'),
+                'saveAnswer'   => base_url('quiz/save-answer'),
+                'review'       => base_url('quiz/review/' . $attemptId),
+                'submitLevel'  => base_url('quiz/submit-level'),
+                'nextLevel'    => base_url('quiz/move-to-next-level'),
+                'retryLevel'   => base_url('quiz/retry-current-level'),
+                'completeQuiz' => base_url('quiz/complete-adaptive-quiz'),
+                'catalog'      => base_url('student/quizzes'),
+            ];
+        }
+
+        if ($this->boardPrepPortal) {
+            return [
+                'submit'       => $this->quizUrl('submit'),
+                'saveAnswer'   => $this->quizUrl('save-answer'),
+                'review'       => $this->quizUrl('review/' . $attemptId),
+                'submitLevel'  => $this->quizUrl('submit-level'),
+                'nextLevel'    => $this->quizUrl('move-to-next-level'),
+                'retryLevel'   => $this->quizUrl('retry-current-level'),
+                'completeQuiz' => $this->quizUrl('complete-adaptive-quiz'),
+                'catalog'      => board_prep_url('dashboard'),
+            ];
+        }
+
+        $prefix = $this->quizBasePath();
+
+        return [
+            'submit'       => base_url($prefix . '/submit'),
+            'saveAnswer'   => base_url($prefix . '/save-answer'),
+            'review'       => $this->quizUrl('review/' . $attemptId),
+            'submitLevel'  => base_url($prefix . '/submit-level'),
+            'nextLevel'    => base_url($prefix . '/move-to-next-level'),
+            'retryLevel'   => base_url($prefix . '/retry-current-level'),
+            'completeQuiz' => base_url($prefix . '/complete-adaptive-quiz'),
+            'catalog'      => $this->quizUrl(),
+        ];
+    }
+
+    protected function assertImpersonationAttempt(object $attempt): bool
+    {
+        if (! $this->isQuizImpersonation()) {
+            return true;
+        }
+
+        return (int) $attempt->student_id === (int) $this->session->get('impersonated_student_id');
+    }
+
+    /**
+     * Show a message page instead of redirecting (prevents ERR_TOO_MANY_REDIRECTS).
+     */
+    private function renderAdaptiveBlocked(object $quiz, int $studentId, string $reason)
+    {
+        $messages = [
+            'no_levels'    => 'This adaptive quiz has no levels configured. Please contact your teacher.',
+            'all_complete' => 'You have already completed all levels of this quiz. Great job!',
+            'level_error'  => 'Could not load the quiz level. Please try again from the quiz list.',
+        ];
+
+        $practiceUrl = $this->quizUrl('practice/' . (int) $quiz->quiz_id);
+        $sessionSid  = (int) ($this->session->get('student_id') ?? 0);
+        if ($studentId > 0 && $studentId !== $sessionSid) {
+            $practiceUrl .= '?sid=' . $studentId;
+        }
+
+        return view('frontend/quizzes/adaptive_blocked', [
+            'quiz'        => $quiz,
+            'message'     => $messages[$reason] ?? 'This quiz cannot be started right now.',
+            'catalogUrl'  => $this->adaptiveCatalogUrl($studentId),
+            'practiceUrl' => $practiceUrl,
+        ]);
     }
 
 
@@ -176,19 +349,51 @@ public function index()
    
 private function columnExists(string $table, string $column): bool
 {
-    $q = $this->db->query("SHOW COLUMNS FROM `$table` LIKE ?", [$column]);
-    return $q && $q->getNumRows() > 0;
+    if (! preg_match('/^[a-z][a-z0-9_]*$/', $table) || ! preg_match('/^[a-z][a-z0-9_]*$/', $column)) {
+        return false;
+    }
+
+    return $this->db->fieldExists($column, $table);
 }
 
 
 
 public function practice($quizId)
 {
-    $quizId    = (int) $quizId;
-    $studentId = (int) ($this->session->get('student_id') ?? 0);
+    $quizId  = (int) $quizId;
+    $session = $this->session;
+    $request = $this->request;
+    $auth    = $session->get('auth') ?? [];
+    $role    = (string) ($auth['role'] ?? '');
 
-    if ($quizId <= 0 || $studentId <= 0) {
-        return redirect()->to(base_url('student/quizzes'))
+    $sidParam = (int) $request->getGet('sid');
+    $effectiveStudentId = 0;
+
+    if ($role === 'parent') {
+        $parentId = (int) ($auth['user_id'] ?? 0);
+        $candidate = $sidParam > 0
+            ? $sidParam
+            : (int) ($session->get('active_student_id') ?? $session->get('student_id') ?? 0);
+        if ($candidate > 0 && $parentId > 0) {
+            $ok = $this->db->table('students')
+                ->where('student_id', $candidate)
+                ->where('parent_id', $parentId)
+                ->countAllResults() > 0;
+            $effectiveStudentId = $ok ? $candidate : 0;
+        }
+    } elseif ($role === 'student') {
+        $effectiveStudentId = (int) ($session->get('student_id') ?? 0);
+        if ($sidParam > 0 && $sidParam !== $effectiveStudentId) {
+            $effectiveStudentId = 0;
+        }
+    } else {
+        $effectiveStudentId = $sidParam > 0
+            ? $sidParam
+            : (int) ($session->get('student_id') ?? 0);
+    }
+
+    if ($quizId <= 0 || $effectiveStudentId <= 0) {
+        return redirect()->to($this->quizUrl('all'))
             ->with('error', 'Invalid quiz or student not logged in.');
     }
 
@@ -200,8 +405,28 @@ public function practice($quizId)
         ->getRow();
 
     if (! $quiz) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl('all'))
             ->with('error', 'Quiz not available.');
+    }
+
+    $examQuizSvc = $this->examQuiz();
+    if ($examQuizSvc->isPortalHidden($quiz)) {
+        return redirect()->to($this->quizUrl('all'))
+            ->with('error', 'Quiz not available.');
+    }
+
+    // Optional: ensure quiz matches student's current class section
+    $stuCls = $this->db->table('student_class')
+        ->select('cls_sec_id')
+        ->where('student_id', $effectiveStudentId)
+        ->where('status', 1)
+        ->orderBy('sc_id', 'DESC')
+        ->get()
+        ->getRow();
+    $stuClsSec = $stuCls ? (int) $stuCls->cls_sec_id : 0;
+    if ($stuClsSec > 0 && (int) ($quiz->cls_sec_id ?? 0) !== $stuClsSec) {
+        return redirect()->to($this->quizUrl('all'))
+            ->with('error', 'This quiz is not assigned to your class.');
     }
 
     // 2) Time rules (same as start)
@@ -216,11 +441,11 @@ $isForever = ($hasStart && $hasEnd && $startAt === $endAt);
 
 if (! $isForever) {
     if ($hasStart && $startAt > $now) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl('all'))
             ->with('error', 'Quiz has not started yet.');
     }
     if ($hasEnd && $endAt < $now) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl('all'))
             ->with('error', 'Quiz has ended.');
     }
 }
@@ -256,7 +481,7 @@ if (! $isForever) {
         ->getResult();
 
     if (empty($qq)) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl('all'))
             ->with('error', 'No questions found for this quiz.');
     }
 
@@ -311,31 +536,31 @@ public function start($quizId)
             ->getRowArray();
 
         if (! $row) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Invalid quiz link.');
         }
 
         // Check token expiry
         if (! empty($row['expires_at']) && strtotime($row['expires_at']) < time()) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz link has expired.');
         }
 
         // Optional: single-use check
         if (isset($row['used']) && (int) $row['used'] === 1) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz link has already been used.');
         }
 
         // Ensure the token belongs to this quiz (if quiz_id column exists)
         if (isset($row['quiz_id']) && (int) $row['quiz_id'] !== $quizId) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz link does not match this quiz.');
         }
 
         $effectiveStudentId = (int) ($row['student_id'] ?? 0);
         if ($effectiveStudentId <= 0) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz link is not attached to any student.');
         }
 
@@ -358,16 +583,18 @@ public function start($quizId)
         $sidParam = (int) $request->getGet('sid');
         log_message('debug', "sid parameter from URL: {$sidParam}");
         
+        $authRole = (string) (($session->get('auth') ?? [])['role'] ?? '');
         if ($sidParam > 0) {
             $effectiveStudentId = $sidParam;
+        } elseif ($authRole === 'parent') {
+            $effectiveStudentId = (int) ($session->get('active_student_id') ?? 0);
         } else {
-            // Fallback: student logged in as themselves
             $effectiveStudentId = (int) ($session->get('student_id') ?? 0);
         }
 
         if ($effectiveStudentId <= 0) {
-            return redirect()->to(base_url('student/login'))
-                ->with('error', 'Access denied (not logged in).');
+            return redirect()->to($this->quizUrl('all'))
+                ->with('error', 'Please select a student or sign in again.');
         }
         
         log_message('debug', "Effective student ID determined: {$effectiveStudentId}");
@@ -375,7 +602,7 @@ public function start($quizId)
     }
 
     if ($quizId <= 0) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Invalid quiz.');
     }
 
@@ -387,8 +614,25 @@ public function start($quizId)
         ->get()
         ->getRow();
 
-    if (! $quiz || ! $quiz->is_published) {
-        return redirect()->to(base_url('student/quizzes'))
+    if (! $quiz) {
+        return redirect()->to($this->quizUrl())
+            ->with('error', 'Quiz not available.');
+    }
+
+    if ($this->boardPrepPortal && ! $this->boardPrepQuizAllowed($quiz)) {
+        return redirect()->to($this->quizUrl())
+            ->with('error', 'This quiz is not available for your class or board.');
+    }
+
+    $examQuizSvc = $this->examQuiz();
+
+    if ($isImpersonation) {
+        if (! $examQuizSvc->adminImpersonationAllowed($quiz)) {
+            return redirect()->to($this->quizUrl())
+                ->with('error', 'Quiz not available for admin play.');
+        }
+    } elseif (! $quiz->is_published || $examQuizSvc->isPortalHidden($quiz)) {
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Quiz not available.');
     }
 
@@ -404,17 +648,25 @@ public function start($quizId)
     // ignore time constraints (quiz is always available).
     $isForever = $hasStart && $hasEnd && ($startAt === $endAt);
 
-    if (! $isForever) {
+    $skipSchedule = $isImpersonation && $examQuizSvc->adminBypassSchedule($quiz);
+
+    if (! $this->boardPrepPortal && ! $skipSchedule && ! $isForever) {
         if ($hasStart && $startAt > $now) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz has not started yet.');
         }
 
-        if ($hasEnd && $endAt < $now) {
-            return redirect()->to(base_url('student/quizzes'))
+        if ($hasEnd && $endAt < $now && (int) ($quiz->is_adaptive ?? 0) !== 1) {
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Quiz has ended.');
         }
     }
+
+    $isAdaptive   = $this->adaptiveQuiz()->isAdaptiveQuiz($quiz);
+    $levelInfo    = null;
+    $allLevels    = [];
+    $currentLevelNo = 1;
+    $totalLevels  = 0;
 
     // ==========================================
     // 3) Resolve campus
@@ -429,7 +681,7 @@ public function start($quizId)
         $campusId = $row ? (int) $row->campus_id : 0;
     }
     if ($campusId <= 0) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Campus not configured for your account.');
     }
 
@@ -437,9 +689,9 @@ public function start($quizId)
     // 4) Wi-Fi restriction
     // ==========================================
     $clientIp = (string) $request->getIPAddress();
-    if (! empty($quiz->wifi_only) && (int) $quiz->wifi_only === 1) {
+    if (! $this->boardPrepPortal && ! empty($quiz->wifi_only) && (int) $quiz->wifi_only === 1) {
         if (! $this->isIpAllowedForCampus($campusId, $clientIp)) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'You can only attempt this quiz from school Wi-Fi.');
         }
     }
@@ -457,8 +709,8 @@ public function start($quizId)
 
     $attemptNo = $prevCount + 1;
 
-    if ((int) $quiz->max_attempts > 0 && $attemptNo > (int) $quiz->max_attempts) {
-        return redirect()->to(base_url('student/quizzes'))
+    if (! $this->boardPrepPortal && ! $isAdaptive && (int) $quiz->max_attempts > 0 && $attemptNo > (int) $quiz->max_attempts) {
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Max attempts reached.');
     }
 
@@ -521,8 +773,8 @@ public function start($quizId)
 
         $attemptNo = $prevCount + 1;
 
-        if ((int) $quiz->max_attempts > 0 && $attemptNo > (int) $quiz->max_attempts) {
-            return redirect()->to(base_url('student/quizzes'))
+        if (! $this->boardPrepPortal && ! $isAdaptive && (int) $quiz->max_attempts > 0 && $attemptNo > (int) $quiz->max_attempts) {
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Max attempts reached.');
         }
 
@@ -593,7 +845,7 @@ public function start($quizId)
 
     // Double-check that attempt has a valid status
     if (!isset($attemptId)) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Failed to create or retrieve quiz attempt.');
     }
 
@@ -605,7 +857,7 @@ public function start($quizId)
         ->getRow();
     
     if (!$finalAttemptCheck) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Quiz attempt not found.');
     }
     
@@ -618,7 +870,33 @@ public function start($quizId)
     }
 
     // ==========================================
-    // 7) Check if this attempt already has questions assigned
+    // 7) Adaptive: resolve level (no redirect loops)
+    // ==========================================
+    if ($isAdaptive) {
+        $allLevels = $this->adaptiveQuiz()->getLevels($quizId);
+        if ($allLevels === []) {
+            return $this->renderAdaptiveBlocked($quiz, $effectiveStudentId, 'no_levels');
+        }
+
+        if (! $this->adaptiveQuiz()->hasNextLevel($quizId, $effectiveStudentId)) {
+            $this->db->table('quiz_attempts')
+                ->where('attempt_id', $attemptId)
+                ->update(['status' => 'submitted', 'active_attempt_key' => null]);
+
+            return $this->renderAdaptiveBlocked($quiz, $effectiveStudentId, 'all_complete');
+        }
+
+        $levelInfo = $this->adaptiveQuiz()->attachLevelToAttempt($quiz, $effectiveStudentId, $attemptId);
+        if (! $levelInfo) {
+            return $this->renderAdaptiveBlocked($quiz, $effectiveStudentId, 'level_error');
+        }
+
+        $totalLevels    = count($allLevels);
+        $currentLevelNo = (int) ($levelInfo->level_no ?? 1);
+    }
+
+    // ==========================================
+    // 8) Check if this attempt already has questions assigned
     // ==========================================
     $qq = []; // This will hold our questions
 
@@ -626,6 +904,52 @@ public function start($quizId)
     $existingQuestions = $this->db->table('quiz_attempt_questions')
         ->where('attempt_id', $attemptId)
         ->countAllResults();
+
+    if ($isAdaptive && $levelInfo && $existingQuestions > 0) {
+        $levelId = (int) $levelInfo->level_id;
+        $needsReset = false;
+
+        if ($this->columnExists('quiz_questions', 'level_id')) {
+            $expectedForLevel = $this->db->table('quiz_questions')
+                ->where(['quiz_id' => $quizId, 'level_id' => $levelId])
+                ->countAllResults();
+
+            if ($expectedForLevel > 0 && $existingQuestions > $expectedForLevel) {
+                $needsReset = true;
+            }
+
+            $wrongLevelCount = (int) $this->db->table('quiz_attempt_questions qa')
+                ->join('quiz_questions qq', 'qq.question_id = qa.question_id AND qq.quiz_id = ' . (int) $quizId, 'inner')
+                ->where('qa.attempt_id', $attemptId)
+                ->where('qq.level_id !=', $levelId)
+                ->countAllResults();
+
+            if ($wrongLevelCount > 0) {
+                $needsReset = true;
+            }
+        } elseif ((int) ($quiz->questions_count ?? 0) > 0 && $existingQuestions > (int) $quiz->questions_count) {
+            $needsReset = true;
+        }
+
+        if ($needsReset) {
+            $this->db->table('quiz_attempt_questions')->where('attempt_id', $attemptId)->delete();
+            $existingQuestions = 0;
+        }
+    }
+
+    if ($isAdaptive && $levelInfo && $existingQuestions === 0) {
+        $assigned = $this->adaptiveQuiz()->assignQuestionsForLevel(
+            $attemptId,
+            $quizId,
+            (int) $levelInfo->level_id,
+            $quiz
+        );
+        if ($assigned === 0) {
+            return redirect()->to($this->adaptiveCatalogUrl($effectiveStudentId))
+                ->with('error', 'No questions are assigned to ' . $this->adaptiveQuiz()->levelLabel($levelInfo) . '.');
+        }
+        $existingQuestions = $assigned;
+    }
 
     if ($existingQuestions > 0) {
         // ==========================================
@@ -655,18 +979,55 @@ public function start($quizId)
         $builder = $this->db->table("$qqTable qa")
             ->select(implode(', ', $sel))
             ->join("$qbTable q", 'q.id = qa.question_id', 'left')
-            ->where('qa.attempt_id', $attemptId)
-            ->orderBy('qa.display_order', 'ASC');
-        
+            ->where('qa.attempt_id', $attemptId);
+
+        if ($isAdaptive && $levelInfo && $this->columnExists('quiz_questions', 'level_id')) {
+            $builder->join(
+                'quiz_questions qq_lvl',
+                'qq_lvl.question_id = qa.question_id AND qq_lvl.quiz_id = ' . (int) $quizId,
+                'inner'
+            )->where('qq_lvl.level_id', (int) $levelInfo->level_id);
+        }
+
+        $builder->orderBy('qa.display_order', 'ASC');
+
         $res = $builder->get();
         if ($res !== false) {
             $qq = $res->getResult();
         }
+
+        if ($isAdaptive && $levelInfo && $qq === [] && $existingQuestions > 0) {
+            $this->db->table('quiz_attempt_questions')->where('attempt_id', $attemptId)->delete();
+            $this->adaptiveQuiz()->assignQuestionsForLevel(
+                $attemptId,
+                $quizId,
+                (int) $levelInfo->level_id,
+                $quiz
+            );
+            $res = $this->db->table("$qqTable qa")
+                ->select(implode(', ', $sel))
+                ->join("$qbTable q", 'q.id = qa.question_id', 'left')
+                ->join(
+                    'quiz_questions qq_lvl',
+                    'qq_lvl.question_id = qa.question_id AND qq_lvl.quiz_id = ' . (int) $quizId,
+                    'inner'
+                )
+                ->where('qa.attempt_id', $attemptId)
+                ->where('qq_lvl.level_id', (int) $levelInfo->level_id)
+                ->orderBy('qa.display_order', 'ASC')
+                ->get();
+            if ($res !== false) {
+                $qq = $res->getResult();
+            }
+        }
         
         log_message('debug', "Resuming attempt {$attemptId}: Found " . count($qq) . " existing questions");
+    } elseif ($isAdaptive) {
+        return redirect()->to($this->adaptiveCatalogUrl($effectiveStudentId))
+            ->with('error', 'Unable to load questions for this level.');
     } else {
         // ==========================================
-        // 7b) NEW ATTEMPT: Select random questions
+        // 8b) NEW ATTEMPT: Select random questions
         // ==========================================
         $qqTable = 'quiz_questions';
         $qbTable = 'qb_questions';
@@ -697,13 +1058,13 @@ public function start($quizId)
         
         $res = $builder->get();
         if ($res === false) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Unable to load quiz questions.');
         }
         
         $allQuestions = $res->getResult();
         if (empty($allQuestions)) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'No questions found for this quiz.');
         }
         
@@ -1024,19 +1385,35 @@ public function start($quizId)
     // ==========================================
     $actualTotalQuestions = count($qq);
     
-    $viewFile = (!empty($quiz->kids_mode) && (int)$quiz->kids_mode === 1)
+    $useKidsTemplate = (int) $request->getGet('kids') === 1;
+    $viewFile        = $useKidsTemplate
         ? 'frontend/quizzes/template1_kids'
         : 'frontend/quizzes/template1';
 
-    return view($viewFile, [
-        'quiz'           => $quiz,
-        'timeLimitSec'   => $timeLimitSec,
-        'attemptId'      => $attemptId,
-        'qq'             => $qq,
-        'totalQuestions' => count($qq),
-        'topicList'      => $topicList,
-        'savedAnswers'   => $savedAnswers,
-    ]);
+    $playData = [
+        'quiz'             => $quiz,
+        'timeLimitSec'     => $timeLimitSec,
+        'attemptId'        => $attemptId,
+        'qq'               => $qq,
+        'totalQuestions'   => count($qq),
+        'topicList'        => $topicList,
+        'savedAnswers'     => $savedAnswers,
+        'isAdaptive'       => $isAdaptive,
+        'levelInfo'        => $levelInfo,
+        'allLevels'        => $allLevels,
+        'currentLevelNo'   => $currentLevelNo,
+        'totalLevels'      => $totalLevels,
+        'studentIdForUrl'  => $effectiveStudentId,
+        'isImpersonation'  => $isImpersonation,
+        'quizUrls'         => $this->buildQuizUrls($attemptId, $isImpersonation),
+    ];
+
+    if ($this->boardPrepPortal) {
+        $playData['boardPrepPortal'] = true;
+        $playData['productName']     = config('BoardPrep')->productName;
+    }
+
+    return view($viewFile, $playData);
 }
 
 
@@ -1108,10 +1485,7 @@ public function start($quizId)
 
         if (!isset($studentsMatrix[$sid])) {
             // normalise photo path for your uploads folder
-            $photo = ltrim((string)($r['profile_photo'] ?? ''), '/');
-            $photoUrl = $photo !== ''
-                ? base_url('uploads/' . $photo)
-                : base_url('resource/img/avatar-student.png');
+            $photoUrl = getStudentPhotoUrl($r['profile_photo'] ?? '');
 
             $studentsMatrix[$sid] = [
                 'student_id'   => $sid,
@@ -1281,6 +1655,11 @@ public function saveAnswer()
     $attemptId  = (int)$this->request->getPost('attempt_id');
     $questionId = (int)$this->request->getPost('question_id');
     $payload    = $this->request->getPost();
+
+    $attemptRow = $this->db->table('quiz_attempts')->where('attempt_id', $attemptId)->get()->getRow();
+    if (! $attemptRow || ! $this->assertImpersonationAttempt($attemptRow)) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid attempt']);
+    }
 
     // 1. Get question details INCLUDING correct_answer
     $questionDetails = $this->db->table('quiz_attempt_questions qaq')
@@ -1472,6 +1851,10 @@ public function submit()
         return redirect()->back()->with('error','Invalid attempt');
     }
 
+    if (! $this->assertImpersonationAttempt($attempt)) {
+        return redirect()->back()->with('error', 'Invalid attempt for this quiz session.');
+    }
+
     $quiz = $this->db->table('quizzes')
         ->where('quiz_id',$attempt->quiz_id)
         ->get()
@@ -1479,6 +1862,10 @@ public function submit()
 
     if (! $quiz) {
         return redirect()->back()->with('error','Quiz not found.');
+    }
+
+    if ($this->adaptiveQuiz()->isAdaptiveQuiz($quiz) && ! empty($attempt->level_id)) {
+        return $this->handleAdaptiveFormSubmit($attempt, $quiz);
     }
 
     // option map posted from the attempt view
@@ -1715,48 +2102,53 @@ public function submit()
              'active_attempt_key' => null,
         ]);
 
-
-/* ===============================
- * AI ADAPTIVE LOGIC (SAFE HOOK)
- * =============================== */
-
-if ((int)($quiz->is_adaptive ?? 0) === 1 && !empty($attempt->level_id)) {
-
-    // Load AI Engine
-    $this->load->library('AiQuizEngine');
-
-    $aiResult = $this->aiquizengine->evaluateLevel(
-        $attempt->student_id,
-        $attempt->quiz_id,
-        $attempt->level_id,
-        $attemptId
-    );
-
-    // Persist level attempt result
-    $this->db->table('student_quiz_levels')->insert([
-        'student_id' => $attempt->student_id,
-        'quiz_id'    => $attempt->quiz_id,
-        'level_id'   => $attempt->level_id,
-        'attempt_no' => $attempt->attempt_no,
-        'raw_score'  => max(0, $score),
-        'ai_score'   => $aiResult['ai_score'],
-        'decision'   => $aiResult['decision'],
-        'passed'     => in_array($aiResult['decision'], ['ADVANCE','ADVANCE_FAST']) ? 1 : 0,
-        'started_at' => $attempt->started_at ?? null,
-        'completed_at' => date('Y-m-d H:i:s'),
-    ]);
-
-    // Handle progression
-    $this->handleAdaptiveDecision(
-        $attempt->student_id,
-        $attempt->quiz_id,
-        $attempt->level_id,
-        $aiResult['decision']
-    );
+    return redirect()->to($this->quizResultUrl($attemptId));
 }
 
-    return redirect()->to(base_url('student/quizzes/review/'.$attemptId));
-}
+    /**
+     * Non-AJAX submit for adaptive quizzes (timer expiry / no JS).
+     */
+    private function handleAdaptiveFormSubmit(object $attempt, object $quiz)
+    {
+        $startUrl = $this->adaptiveStartUrl((int) $quiz->quiz_id, (int) $attempt->student_id);
+        $level    = $this->adaptiveQuiz()->getLevel((int) $attempt->level_id);
+
+        if (! $level) {
+            return redirect()->back()->with('error', 'Quiz level not found.');
+        }
+
+        if ($attempt->status !== 'in_progress') {
+            return redirect()->to($startUrl)->with('msg', 'This level was already submitted.');
+        }
+
+        $optmapPost = $this->request->getPost('optmap') ?? [];
+        $result     = $this->adaptiveQuiz()->finalizeLevelAttempt(
+            $quiz,
+            $attempt,
+            $level,
+            is_array($optmapPost) ? $optmapPost : []
+        );
+
+        if ($result['passed'] && $result['is_final_level']) {
+            return redirect()->to($this->quizResultUrl((int) $attempt->attempt_id))
+                ->with('msg', 'Congratulations! You completed all levels.');
+        }
+
+        if ($result['passed'] && $result['has_next_level']) {
+            return redirect()->to($startUrl)
+                ->with('msg', 'Level passed! Continue to the next level.');
+        }
+
+        if ($result['passed']) {
+            return redirect()->to($startUrl)->with('msg', 'Level passed!');
+        }
+
+        return redirect()->to($startUrl)
+            ->with(
+                'error',
+                'Level not passed. Score ' . $result['percentage'] . '% — need ' . $result['min_pass'] . '%. Try again.'
+            );
+    }
 
 
 
@@ -1881,8 +2273,13 @@ public function review($attemptId)
         ->getRow();
 
     if (! $attempt) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Invalid attempt');
+    }
+
+    if ($this->isQuizImpersonation()
+        && (int) $this->session->get('impersonated_student_id') === (int) $attempt->student_id) {
+        $isAdminOrStaff = true;
     }
 
     // 2) Load quiz
@@ -1892,7 +2289,7 @@ public function review($attemptId)
         ->getRow();
 
     if (! $quiz) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Quiz not found.');
     }
 
@@ -1903,11 +2300,19 @@ public function review($attemptId)
         ->getRow();
 
     if (! $stu) {
-        return redirect()->to(base_url('student/quizzes'))
+        return redirect()->to($this->quizUrl())
             ->with('error', 'Student not found for this attempt.');
     }
 
     // 4) PERMISSION CHECKS
+    $boardPrepViewer = $this->boardPrepPortal
+        && board_prep_auth()
+        && board_prep_linked_student_id() === (int) $attempt->student_id;
+
+    if ($boardPrepViewer) {
+        $isAdminOrStaff = true;
+    }
+
     if (! $isAdminOrStaff) {
 
         // (A) If frontend role is "student" => map user_id -> student_id
@@ -1921,7 +2326,7 @@ public function review($attemptId)
             $myStudentId = $myStu ? (int)$myStu->student_id : 0;
 
             if ($attempt->student_id !== $myStudentId) {
-                return redirect()->to(base_url('student/quizzes'))
+                return redirect()->to($this->quizUrl())
                     ->with('error', 'You are not allowed to view this attempt.');
             }
         }
@@ -1930,20 +2335,20 @@ public function review($attemptId)
         if ($role === 'parent') {
             $parentId = $userId; // your parent login uses user_id = parent_id
             if ((int)$stu->parent_id !== $parentId) {
-                return redirect()->to(base_url('student/quizzes'))
+                return redirect()->to($this->quizUrl())
                     ->with('error', 'You are not allowed to view this attempt.');
             }
         }
 
         // (C) If some other role with no permission
         if (! in_array($role, ['student', 'parent'], true)) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Unauthorized.');
         }
 
         // (D) Respect show_solution for non-staff
         if (! (int)$quiz->show_solution) {
-            return redirect()->to(base_url('student/quizzes'))
+            return redirect()->to($this->quizUrl())
                 ->with('error', 'Solution review is disabled');
         }
     }
@@ -1987,11 +2392,7 @@ $stuInfo = $this->db->table('students s')
 
         $rawPhoto = trim((string)($stuInfo->profile_photo ?? ''));
         if ($rawPhoto !== '') {
-            if (preg_match('#^https?://#i', $rawPhoto)) {
-                $studentPhotoUrl = $rawPhoto;
-            } else {
-                $studentPhotoUrl = base_url($rawPhoto);
-            }
+            $studentPhotoUrl = getStudentPhotoUrl($rawPhoto);
         }
     }
 
@@ -2180,7 +2581,7 @@ $stuInfo = $this->db->table('students s')
         ->getResult();
 
     // 15) Render review page – NO redirect after this
-    return view('frontend/quizzes/review', [
+    $reviewData = [
         'quiz'              => $quiz,
         'attempt'           => $attempt,
         'qq'                => $qq,
@@ -2195,7 +2596,259 @@ $stuInfo = $this->db->table('students s')
         'stats'             => $stats,
         'percentage'        => $percentage,
         'durationText'      => $durationText,
-    ]);
+    ];
+
+    if ($this->boardPrepPortal) {
+        $reviewData['boardPrepReview'] = true;
+        $reviewData['productName']     = config('BoardPrep')->productName;
+    }
+
+    return view('frontend/quizzes/review', $reviewData);
 }
+
+    /**
+     * AJAX: grade current level and return pass/fail + next steps.
+     */
+    public function submitLevel()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Invalid request.',
+            ]);
+        }
+
+        $attemptId = (int) $this->request->getPost('attempt_id');
+        $attempt   = $this->db->table('quiz_attempts')->where('attempt_id', $attemptId)->get()->getRow();
+
+        if (! $attempt || $attempt->status !== 'in_progress') {
+            return $this->response->setJSON(['success' => false, 'message' => 'Attempt not found or already submitted.']);
+        }
+
+        $quiz = $this->db->table('quizzes')->where('quiz_id', $attempt->quiz_id)->get()->getRow();
+        if (! $quiz || ! $this->adaptiveQuiz()->isAdaptiveQuiz($quiz)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Not an adaptive quiz.']);
+        }
+
+        $levelId = (int) ($attempt->level_id ?? 0);
+        $level   = $this->adaptiveQuiz()->getLevel($levelId);
+        if (! $level) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Level not found.']);
+        }
+
+        $optmap = $this->request->getPost('optmap') ?? [];
+        $result = $this->adaptiveQuiz()->finalizeLevelAttempt($quiz, $attempt, $level, is_array($optmap) ? $optmap : []);
+
+        $message = $result['passed']
+            ? ($result['is_final_level']
+                ? 'Excellent! You completed the final level.'
+                : 'Level ' . $result['current_level_no'] . ' passed! You can continue to level ' . ($result['next_level_no'] ?? '') . '.')
+            : 'You scored ' . $result['percentage'] . '%. You need at least ' . $result['min_pass'] . '% to pass. Review your answers and try again.';
+
+        return $this->response->setJSON([
+            'success'        => true,
+            'passed'         => (bool) $result['passed'],
+            'has_next_level' => (bool) $result['has_next_level'],
+            'is_final_level' => (bool) $result['is_final_level'],
+            'message'        => $message,
+            'score'          => [
+                'raw'        => $result['score'],
+                'max'        => $result['max_marks'],
+                'percentage' => $result['percentage'],
+            ],
+            'min_pass'         => $result['min_pass'],
+            'current_level_no' => $result['current_level_no'],
+            'total_levels'     => $result['total_levels'],
+            'level_label'      => $result['level_label'],
+        ]);
+    }
+
+    /**
+     * AJAX: start a fresh in-progress attempt for the next level.
+     */
+    public function moveToNextLevel()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid request.']);
+        }
+
+        $attemptId = (int) $this->request->getPost('attempt_id');
+        $attempt   = $this->db->table('quiz_attempts')->where('attempt_id', $attemptId)->get()->getRow();
+
+        if (! $attempt) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Attempt not found.']);
+        }
+
+        $quiz    = $this->db->table('quizzes')->where('quiz_id', $attempt->quiz_id)->get()->getRow();
+        $levelId = (int) ($attempt->level_id ?? 0);
+        $level   = $this->adaptiveQuiz()->getLevel($levelId);
+
+        if (! $quiz || ! $level) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Quiz or level not found.']);
+        }
+
+        $lastPass = $this->db->tableExists('student_quiz_levels')
+            ? $this->db->table('student_quiz_levels')
+                ->where([
+                    'student_id' => (int) $attempt->student_id,
+                    'quiz_id'    => (int) $attempt->quiz_id,
+                    'level_id'   => $levelId,
+                    'passed'     => 1,
+                ])
+                ->orderBy('completed_at', 'DESC')
+                ->get()
+                ->getRow()
+            : null;
+
+        if (! $lastPass) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Pass the current level before continuing.']);
+        }
+
+        $levels = $this->adaptiveQuiz()->getLevels((int) $quiz->quiz_id);
+        $next   = null;
+        foreach ($levels as $lvl) {
+            if ((int) $lvl->level_no > (int) $level->level_no) {
+                $next = $lvl;
+                break;
+            }
+        }
+
+        if (! $next) {
+            return $this->response->setJSON([
+                'success'  => true,
+                'redirect' => $this->quizResultUrl($attemptId),
+            ]);
+        }
+
+        $activeKey = $quiz->quiz_id . '-' . $attempt->student_id;
+        $this->db->table('quiz_attempts')
+            ->where([
+                'quiz_id'            => $quiz->quiz_id,
+                'student_id'         => $attempt->student_id,
+                'status'             => 'in_progress',
+                'active_attempt_key' => $activeKey,
+            ])
+            ->update(['status' => 'submitted', 'active_attempt_key' => null]);
+
+        $newId = $this->adaptiveQuiz()->createLevelAttempt(
+            (int) $quiz->quiz_id,
+            (int) $attempt->student_id,
+            (int) $next->level_id,
+            $activeKey,
+            (string) $this->request->getIPAddress()
+        );
+
+        $this->adaptiveQuiz()->assignQuestionsForLevel($newId, (int) $quiz->quiz_id, (int) $next->level_id, $quiz);
+
+        return $this->response->setJSON([
+            'success'  => true,
+            'redirect' => $this->adaptiveStartUrl((int) $quiz->quiz_id, (int) $attempt->student_id),
+            'message'  => 'Starting ' . $this->adaptiveQuiz()->levelLabel($next) . '.',
+        ]);
+    }
+
+    /**
+     * AJAX: retry the same level with a new attempt.
+     */
+    public function retryCurrentLevel()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid request.']);
+        }
+
+        $attemptId = (int) $this->request->getPost('attempt_id');
+        $attempt   = $this->db->table('quiz_attempts')->where('attempt_id', $attemptId)->get()->getRow();
+
+        if (! $attempt) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Attempt not found.']);
+        }
+
+        $quiz    = $this->db->table('quizzes')->where('quiz_id', $attempt->quiz_id)->get()->getRow();
+        $levelId = (int) ($attempt->level_id ?? 0);
+
+        if (! $quiz || $levelId <= 0) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid quiz level.']);
+        }
+
+        $activeKey = $quiz->quiz_id . '-' . $attempt->student_id;
+        $this->db->table('quiz_attempts')
+            ->where([
+                'quiz_id'            => $quiz->quiz_id,
+                'student_id'         => $attempt->student_id,
+                'status'             => 'in_progress',
+                'active_attempt_key' => $activeKey,
+            ])
+            ->update(['status' => 'submitted', 'active_attempt_key' => null]);
+
+        $newId = $this->adaptiveQuiz()->createLevelAttempt(
+            (int) $quiz->quiz_id,
+            (int) $attempt->student_id,
+            $levelId,
+            $activeKey,
+            (string) $this->request->getIPAddress()
+        );
+
+        $this->adaptiveQuiz()->assignQuestionsForLevel($newId, (int) $quiz->quiz_id, $levelId, $quiz);
+
+        return $this->response->setJSON([
+            'success'  => true,
+            'redirect' => $this->adaptiveStartUrl((int) $quiz->quiz_id, (int) $attempt->student_id),
+            'message'  => 'New attempt started for this level.',
+        ]);
+    }
+
+    /**
+     * AJAX: mark adaptive quiz complete after final level.
+     */
+    public function completeAdaptiveQuiz()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid request.']);
+        }
+
+        $attemptId = (int) $this->request->getPost('attempt_id');
+        $attempt   = $this->db->table('quiz_attempts')->where('attempt_id', $attemptId)->get()->getRow();
+
+        if (! $attempt) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Attempt not found.']);
+        }
+
+        $this->db->table('quiz_attempts')
+            ->where('attempt_id', $attemptId)
+            ->update(['status' => 'completed']);
+
+        return $this->response->setJSON([
+            'success'  => true,
+            'redirect' => $this->quizResultUrl($attemptId),
+            'message'  => 'Quiz completed successfully!',
+        ]);
+    }
+
+    protected function boardPrepQuizAllowed(object $quiz): bool
+    {
+        if (! $this->db->fieldExists('audience', 'quizzes')) {
+            return false;
+        }
+
+        $auth = board_prep_auth();
+        if (! $auth) {
+            return false;
+        }
+
+        $audience = (string) ($quiz->audience ?? 'school');
+        if (! in_array($audience, ['board_prep', 'both'], true)) {
+            return false;
+        }
+
+        $grade = (string) ($auth['grade_level'] ?? '');
+        if ($grade === '' || (string) ($quiz->prep_grade_level ?? '') !== $grade) {
+            return false;
+        }
+
+        $boardId = (int) ($auth['board_publisher_id'] ?? 0);
+        $quizBoard = isset($quiz->prep_board_publisher_id) ? (int) $quiz->prep_board_publisher_id : 0;
+
+        return $quizBoard <= 0 || $quizBoard === $boardId;
+    }
 
 }

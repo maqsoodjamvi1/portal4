@@ -4,9 +4,11 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
     <!-- Ionicons -->
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <!-- Tempusdominus Bootstrap 4 -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') ?>">
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+
+    <!-- Tempusdominus Bootstrap adapter -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <!-- iCheck -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css') ?>">
@@ -19,13 +21,14 @@
     <!-- Daterange picker -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.css') ?>">
     <!-- summernote -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.css') ?>">
     <!-- DataTables -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
      <!-- Select2 -->
-    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
     <!-- Toastr -->
     <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.css') ?>">
     <!-- Theme style -->
@@ -45,8 +48,9 @@
   <script>
     $.widget.bridge('uibutton', $.ui.button)
   </script>
-  <!-- Bootstrap 4 -->
-  <script src="<?= base_url('resource/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+  <!-- Bootstrap 5 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
   <!-- ChartJS -->
   <script src="<?= base_url('resource/adminlte/plugins/chart.js/Chart.min.js') ?>"></script>
   <!-- Sparkline -->
@@ -62,10 +66,11 @@
   <!-- daterangepicker -->
   <script src="<?= base_url('resource/adminlte/plugins/moment/moment.min.js') ?>"></script>
   <script src="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.js') ?>"></script>
-  <!-- Tempusdominus Bootstrap 4 -->
-  <script src="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') ?>"></script>
+  <!-- Tempusdominus Bootstrap adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="<?= base_url('assets/js/datetimepicker-compat.js?v=20260614') ?>"></script>
   <!-- Summernote -->
-  <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.js') ?>"></script>
+  <script src="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.js') ?>"></script>
   <!-- overlayScrollbars -->
   <script src="<?= base_url('resource/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') ?>"></script>
   <!-- AdminLTE App -->
@@ -92,13 +97,13 @@
   <!--  <script type="text/javascript" src="<?= base_url('assets/js/bootstrap-clockpicker.min.js') ?>">
   </script>  -->
   <!-- DataTables  & Plugins -->
-  <script src="<?= base_url('resource/adminlte/plugins/datatables/jquery.dataTables.min.js') ?>"></script>
-  <script src="<?= base_url('resource/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') ?>"></script>
-  <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js') ?>"></script>
-  <script src="<?= base_url('resource/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') ?>"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
   <script src="<?= base_url('assets/js/jquery.slugit.js') ?>"></script>
-  <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/dataTables.buttons.min.js') ?>"></script>
-  <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') ?>"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="<?= base_url('resource/adminlte/plugins/jszip/jszip.min.js') ?>"></script>
   <script src="<?= base_url('resource/adminlte/plugins/pdfmake/pdfmake.min.js') ?>"></script>
   <script src="<?= base_url('resource/adminlte/plugins/pdfmake/vfs_fonts.js') ?>"></script>
@@ -184,7 +189,7 @@ s0.parentNode.insertBefore(s1,s0);
     border-radius: 0px;
     border: 1px solid blue;
 }
-.input-group-addon {
+.input-group-text {
     padding: 1px 8px !important;
   }
 .select2-container--default .select2-selection--single, .select2-selection .select2-selection--single {
@@ -262,8 +267,8 @@ s0.parentNode.insertBefore(s1,s0);
     <div class="modal fade" id="schoolshortname" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel"><?php echo $school_name; ?></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel"><?php echo $school_name; ?></h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <input type="hidden" name="systemID" id="systemID" value="<?php if (isset($schoolinfo) && is_object($schoolinfo)): ?>
@@ -275,7 +280,7 @@ s0.parentNode.insertBefore(s1,s0);
           </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateRegText" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -356,14 +361,14 @@ s0.parentNode.insertBefore(s1,s0);
           </ul>
           <!-- Right navbar links -->
           <!-- Sidebar toggle button-->
-        <ul class="navbar-nav ml-auto">
+        <ul class="navbar-nav ms-auto">
           <?php if($_SERVER['HTTP_HOST'] == 'demo.timesoftsol.com'){ ?>
-          <li style="margin-right:60px;"> <a style="padding: 6px 11px;" href="https://timesoftsol.com/signup/" class="btn btn-lg btn-flat btn-danger btn-block">Create Your Own School</a></li>
+          <li style="margin-right:60px;"> <a style="padding: 6px 11px;" href="https://timesoftsol.com/signup/" class="btn btn-lg btn-flat btn-danger w-100">Create Your Own School</a></li>
         <?php } ?>
         <!-- User Account: style can be found in dropdown.less -->        
       
-      <li class="dropdown user user-menu pull-right">
-        <a class="nav-link" style="margin-top:5px;" href="javascript:;" class="dropdown-toggle" data-toggle="dropdown"> 
+      <li class="dropdown user user-menu float-end">
+        <a class="nav-link" style="margin-top:5px;" href="javascript:;" class="dropdown-toggle" data-bs-toggle="dropdown"> 
          <?php if (!empty($user) && !empty($user->photo)): ?>
               <img class="user-image" src="<?= base_url('admin/employees-img/' . $user->photo) ?>" />
           <?php else: ?>
@@ -392,14 +397,14 @@ s0.parentNode.insertBefore(s1,s0);
             </li>
             <!-- Menu Footer-->
             <li class="user-footer">
-              <div class="pull-left d-none d-sm-block" style="float: left;"> 
-                <a href="<?= base_url('admin/profile') ?>" class="btn btn-default btn-flat">
+              <div class="float-start d-none d-sm-block" style="float: left;"> 
+                <a href="<?= base_url('admin/profile') ?>" class="btn btn-secondary btn-flat">
                   <i class="fa fa-gear">
                   </i> Profile
                 </a> 
               </div>
-              <div class="pull-right" style="float: right;"> 
-                <a href="<?= base_url('admin/logout') ?>" class="btn btn-default btn-flat">
+              <div class="float-end" style="float: right;"> 
+                <a href="<?= base_url('admin/logout') ?>" class="btn btn-secondary btn-flat">
                   <i class="fa fa-sign-out">
                   </i> Logout
                 </a> 
@@ -416,7 +421,7 @@ s0.parentNode.insertBefore(s1,s0);
 <?php } ?>>
   <!-- Brand Logo -->
   <a style="padding: 7px; background-color: #3c8dbc;" href="<?= base_url() ?>" class="brand-link">
-    <span class="brand-text font-weight-light">
+    <span class="brand-text fw-light">
       <?php echo $school_name; ?>
     </span>
   </a>

@@ -3,20 +3,15 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1>Event Managers</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active">Managers</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Event Managers',
+    'icon' => 'fas fa-user-cog',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Managers', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -24,18 +19,18 @@
    <div class="card card-primary">
     <div class="card-header"><h3 class="card-title">Assign Manager</h3></div>
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-5">
           <label>Teacher</label>
           <select id="tid" class="form-control select2"></select>
         </div>
         <div class="form-group col-md-5">
           <label>House (optional)</label>
-          <select id="house_id" class="form-control select2"><option value="">—</option></select>
+          <select id="house_id" class="form-control select2"><option value="">ï¿½</option></select>
         </div>
         <div class="form-group col-md-2">
           <label>&nbsp;</label>
-          <button id="assignBtn" class="btn btn-primary btn-block"><i class="fas fa-user-tie"></i> Assign</button>
+          <button id="assignBtn" class="btn btn-primary w-100"><i class="fas fa-user-tie"></i> Assign</button>
         </div>
       </div>
 
@@ -69,7 +64,7 @@ $(function(){
 
   function loadHouses(){
     $.post("<?= base_url('admin/sports/houses/data') ?>", {[CSRF_NAME]:CSRF_HASH}, function(resp){
-      let opts = '<option value="">—</option>';
+      let opts = '<option value="">ï¿½</option>';
       (resp.data||[]).forEach(r => opts += `<option value="${r.house_id}">${r.house_name}</option>`);
       $('#house_id').html(opts);
     }, 'json');

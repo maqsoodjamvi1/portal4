@@ -118,7 +118,7 @@ class Students_bulk_cnic extends BaseController
                     <td>' . $value->first_name . ' ' . $value->last_name . '</td>
                     <td><input type="text" id="father_name' . $value->student_id . '" class="form-control" value="' . $f_name . '"></td>
                     <td><input type="text" id="father_cnic' . $value->student_id . '" class="form-control" value="' . $father_cnic . '" data-inputmask=\'"mask": "99999-9999999-9"\' data-mask></td>
-                    <td><a id="save' . $value->student_id . '" data-id="' . $value->student_id . '" class="btn btn-primary btn-xs">Save</a></td>
+                    <td><a id="save' . $value->student_id . '" data-id="' . $value->student_id . '" class="btn btn-primary btn-sm">Save</a></td>
                 </tr>';
 
                 $studentsList .= '<script>$(function(){ $("[data-mask]").inputmask(); });</script>';

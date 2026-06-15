@@ -183,7 +183,12 @@ class FeeChalanSingle extends BaseController
                 $campusinfo = $this->db->table('campus')->where('campus_id', $row->campus_id)->get()->getRow();
 
                 $fee_chalan = $this->db->table('fee_chalan')->where('student_id', $row->student_id)->where('status', 'unpaid')->orderBy('fee_month', 'asc')->get()->getResult();
-                $FChalanNum = $this->db->query("SELECT chalan_id FROM fee_chalan WHERE student_id = $row->student_id AND status = 'unpaid' ORDER BY chalan_id DESC")->getRow();
+                $FChalanNum = $this->db->table('fee_chalan')
+                    ->select('chalan_id')
+                    ->where(['student_id' => (int) $row->student_id, 'status' => 'unpaid'])
+                    ->orderBy('chalan_id', 'DESC')
+                    ->get()
+                    ->getRow();
 
                 $student_fee = [];
                 foreach ($fee_chalan as $chalanvalue) {

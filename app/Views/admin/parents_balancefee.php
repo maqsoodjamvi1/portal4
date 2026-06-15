@@ -1,38 +1,32 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?php 
-$status = ''; 
-if(!empty($_GET['status'])){
-    $status = $_GET['status']; 
+<?php
+$status = '';
+if (!empty($_GET['status'])) {
+    $status = $_GET['status'];
 }
 ?>
-<link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Fee Management</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="#/">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Fee Report</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Parents Balance Fee',
+    'icon' => 'fas fa-balance-scale-left',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Parents Balance Fee', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
         <div class="col-lg-12">
-            <div class="card card-primary card-outline" id="balanceFeeFilterCard">
+            <div class="card sms-card card-primary card-outline" id="balanceFeeFilterCard">
                 <div class="card-header bg-gradient-primary">
                     <h3 class="card-title text-white">
-                        <i class="fas fa-filter mr-2"></i>Report Filters
+                        <i class="fas fa-filter me-2"></i>Report Filters
                     </h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool text-white" id="filterCollapseBtn" title="Hide/Show filters">
@@ -69,10 +63,10 @@ if(!empty($_GET['status'])){
                                             'type' => 'raw',
                                             'label' => 'Display Options',
                                             'col_class' => 'col-md-12 mb-2',
-                                            'html' => '<div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="monthly_fee" checked><label class="custom-control-label" for="monthly_fee">Show Monthly Balance</label></div>
-                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="others_fee" checked><label class="custom-control-label" for="others_fee">Show Other Balance</label></div>
-                                            <div class="custom-control custom-switch custom-switch-lg mb-2"><input type="checkbox" class="custom-control-input" id="show_projected" checked><label class="custom-control-label" for="show_projected">Projected Fees</label></div>
-                                            <div class="custom-control custom-switch custom-switch-lg"><input type="checkbox" class="custom-control-input" id="show_balance" checked><label class="custom-control-label" for="show_balance">Show Total Balance</label></div>',
+                                            'html' => '<div class="form-check form-switch form-switch-lg mb-2"><input type="checkbox" class="form-check-input" id="monthly_fee" checked><label class="form-check-label" for="monthly_fee">Show Monthly Balance</label></div>
+                                            <div class="form-check form-switch form-switch-lg mb-2"><input type="checkbox" class="form-check-input" id="others_fee" checked><label class="form-check-label" for="others_fee">Show Other Balance</label></div>
+                                            <div class="form-check form-switch form-switch-lg mb-2"><input type="checkbox" class="form-check-input" id="show_projected" checked><label class="form-check-label" for="show_projected">Projected Fees</label></div>
+                                            <div class="form-check form-switch form-switch-lg"><input type="checkbox" class="form-check-input" id="show_balance" checked><label class="form-check-label" for="show_balance">Show Total Balance</label></div>',
                                         ],
                                     ],
                                     'actions' => [],
@@ -91,10 +85,10 @@ if(!empty($_GET['status'])){
                                             <button type="button" class="btn btn-outline-primary month-preset" data-count="6">6M</button>
                                             <button type="button" class="btn btn-outline-primary month-preset" data-count="12">12M</button>
                                             <button type="button" class="btn btn-success" id="select-all-months">
-                                                <i class="fas fa-check-circle mr-1"></i>All
+                                                <i class="fas fa-check-circle me-1"></i>All
                                             </button>
                                             <button type="button" class="btn btn-danger" id="deselect-all-months">
-                                                <i class="fas fa-times-circle mr-1"></i>None
+                                                <i class="fas fa-times-circle me-1"></i>None
                                             </button>
                                         </div>
                                     </div>
@@ -105,10 +99,10 @@ if(!empty($_GET['status'])){
                                             $month = date('Y-m', strtotime("-$i months"));
                                             $month_display = date('M y', strtotime($month)); ?>
                                             <div class="col-lg-2 col-md-3 col-4 mb-2">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input class="custom-control-input month-checkbox" type="checkbox" 
+                                                <div class="form-check form-check">
+                                                    <input class="form-check-input month-checkbox" type="checkbox" 
                                                         name="months[]" value="<?= $month ?>" id="month_<?= $i ?>" checked>
-                                                    <label class="custom-control-label" for="month_<?= $i ?>">
+                                                    <label class="form-check-label" for="month_<?= $i ?>">
                                                         <?= $month_display ?>
                                                     </label>
                                                 </div>
@@ -129,55 +123,55 @@ if(!empty($_GET['status'])){
                                     <div class="form-group filter-switch-grid">
                                         <label class="mb-1">Search Family</label>
                                         <input type="text" class="form-control form-control-sm mb-2" id="family_search" placeholder="Search by parent name, family ID, student name...">
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                           <input type="checkbox" class="custom-control-input" id="include_monthly_paid" checked>
-                                          <label class="custom-control-label" for="include_monthly_paid">Include Monthly Paid</label>
+                                        <div class="form-check form-switch form-switch-lg mb-2">
+                                           <input type="checkbox" class="form-check-input" id="include_monthly_paid" checked>
+                                          <label class="form-check-label" for="include_monthly_paid">Include Monthly Paid</label>
                                             </div>
-                                            <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                                <input type="checkbox" class="custom-control-input" id="include_others_paid" checked>
-                                                <label class="custom-control-label" for="include_others_paid">Include Other Paid</label>
+                                            <div class="form-check form-switch form-switch-lg mb-2">
+                                                <input type="checkbox" class="form-check-input" id="include_others_paid" checked>
+                                                <label class="form-check-label" for="include_others_paid">Include Other Paid</label>
                                             </div>
-                                            <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="hide_zero">
-                                            <label class="custom-control-label" for="hide_zero">Hide Zero Balances</label>
+                                            <div class="form-check form-switch form-switch-lg mb-2">
+                                            <input type="checkbox" class="form-check-input" id="hide_zero">
+                                            <label class="form-check-label" for="hide_zero">Hide Zero Balances</label>
                                         </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="monthly_fee_defaulter">
-                                            <label class="custom-control-label" for="monthly_fee_defaulter">Monthly Fee Defaulters</label>
+                                        <div class="form-check form-switch form-switch-lg mb-2">
+                                            <input type="checkbox" class="form-check-input" id="monthly_fee_defaulter">
+                                            <label class="form-check-label" for="monthly_fee_defaulter">Monthly Fee Defaulters</label>
                                         </div>
-                                        <div class="custom-control custom-switch custom-switch-lg mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="other_fee_defaulter">
-                                            <label class="custom-control-label" for="other_fee_defaulter">Other Fee Defaulters</label>
+                                        <div class="form-check form-switch form-switch-lg mb-2">
+                                            <input type="checkbox" class="form-check-input" id="other_fee_defaulter">
+                                            <label class="form-check-label" for="other_fee_defaulter">Other Fee Defaulters</label>
                                         </div>
                                         
 
-                                        <div class="custom-control custom-switch custom-switch-lg">
-                                        <input type="checkbox" class="custom-control-input" id="show_grand_total" checked>
-                                        <label class="custom-control-label" for="show_grand_total">Show Grand Total</label>
+                                        <div class="form-check form-switch form-switch-lg">
+                                        <input type="checkbox" class="form-check-input" id="show_grand_total" checked>
+                                        <label class="form-check-label" for="show_grand_total">Show Grand Total</label>
                                     </div>
-                                        <div class="custom-control custom-switch custom-switch-lg">
-                                            <input type="checkbox" class="custom-control-input" id="show_family_head">
-                                            <label class="custom-control-label" for="show_family_head">Family Heads Only</label>
+                                        <div class="form-check form-switch form-switch-lg">
+                                            <input type="checkbox" class="form-check-input" id="show_family_head">
+                                            <label class="form-check-label" for="show_family_head">Family Heads Only</label>
                                         </div>
                                     </div>
                                     
                                     <div class="d-flex flex-column gap-2 mt-4">
-                                        <button class="btn btn-success btn-lg btn-block" id="viewresult">
-                                            <i class="fas fa-chart-bar mr-2"></i>Generate Report
+                                        <button class="btn btn-success btn-lg w-100" id="viewresult">
+                                            <i class="fas fa-chart-bar me-2"></i>Generate Report
                                         </button>
                                         <div class="btn-group btn-group-sm mt-2" id="reportViewToggle" style="display:none;">
                                             <button type="button" class="btn btn-outline-primary active" id="showCardViewBtn">
-                                                <i class="fas fa-th-large mr-1"></i>Card View
+                                                <i class="fas fa-th-large me-1"></i>Card View
                                             </button>
                                             <button type="button" class="btn btn-outline-primary" id="showTableViewBtn">
-                                                <i class="fas fa-table mr-1"></i>Table View
+                                                <i class="fas fa-table me-1"></i>Table View
                                             </button>
                                         </div>
-                                        <button class="btn btn-primary btn-lg btn-block" id="printBtn" style="display: none;">
-                                            <i class="fas fa-print mr-2"></i>Print Report
+                                        <button class="btn btn-primary btn-lg w-100" id="printBtn" style="display: none;">
+                                            <i class="fas fa-print me-2"></i>Print Report
                                         </button>
-                                        <button class="btn btn-info btn-lg btn-block" id="exportBtn" style="display: none;">
-                                            <i class="fas fa-file-excel mr-2"></i>Export to Excel
+                                        <button class="btn btn-info btn-lg w-100" id="exportBtn" style="display: none;">
+                                            <i class="fas fa-file-excel me-2"></i>Export to Excel
                                         </button>
                                     </div>
                                 </div>
@@ -233,7 +227,7 @@ if(!empty($_GET['status'])){
 .filter-switch-grid > input{
     grid-column: 1 / -1;
 }
-.filter-switch-grid .custom-control{
+.filter-switch-grid .form-check{
     min-height: 26px;
     margin-bottom: 4px !important;
 }
@@ -364,17 +358,17 @@ if(!empty($_GET['status'])){
 .month-chip .month-amount{font-weight:700;font-size:12px;}
 .month-chip.chip-due{border-color:#f59e0b;background:#fffbeb;}
 .month-chip.chip-clear{border-color:#86efac;background:#f0fdf4;}
-.btn-xs{padding:.2rem .35rem;font-size:.7rem;line-height:1.2;}
+.btn-sm{padding:.2rem .35rem;font-size:.7rem;line-height:1.2;}
 @media (max-width: 768px){
     .balance-card-grid{grid-template-columns:1fr;}
     .month-chip-wrap{grid-template-columns:repeat(3,minmax(0,1fr));}
 }
 
-.fee-table .text-left {
+.fee-table .text-start {
     text-align: left;
 }
 
-.fee-table .text-right {
+.fee-table .text-end {
     text-align: right;
 }
 
@@ -460,7 +454,7 @@ $(function() {
     }
     // Initialize select2
     $('.select2').select2({
-        theme: 'bootstrap4'
+        theme: 'bootstrap-5'
     });
     
     $('#filterCollapseBtn').on('click', function() {
@@ -532,11 +526,11 @@ $(function() {
                             // Toggle button state and appearance
                             if (action === 'pay') {
                                 $btn.removeClass('btn-success').addClass('btn-warning')
-                                    .html('<i class="fas fa-undo mr-1"></i> Undo')
+                                    .html('<i class="fas fa-undo me-1"></i> Undo')
                                     .data('action', 'unpay');
                             } else {
                                 $btn.removeClass('btn-warning').addClass('btn-success')
-                                    .html('<i class="fas fa-check-circle mr-1"></i> Mark Paid')
+                                    .html('<i class="fas fa-check-circle me-1"></i> Mark Paid')
                                     .data('action', 'pay');
                             }
                             
@@ -618,14 +612,14 @@ $(function() {
         if(params.cls_sec_id) {
             const className = $('#cls_sec_id option:selected').text();
             filtersContainer.append(`
-                <span class="badge badge-primary filter-badge">
-                    <i class="fas fa-graduation-cap mr-1"></i> Class: ${className}
+                <span class="badge text-bg-primary filter-badge">
+                    <i class="fas fa-graduation-cap me-1"></i> Class: ${className}
                 </span>
             `);
         } else {
             filtersContainer.append(`
-                <span class="badge badge-primary filter-badge">
-                    <i class="fas fa-graduation-cap mr-1"></i> All Classes
+                <span class="badge text-bg-primary filter-badge">
+                    <i class="fas fa-graduation-cap me-1"></i> All Classes
                 </span>
             `);
         }
@@ -635,8 +629,8 @@ $(function() {
             const monthCount = params.months.length;
             const monthText = monthCount === 12 ? 'All months' : `${monthCount} month(s) selected`;
             filtersContainer.append(`
-                <span class="badge badge-info filter-badge">
-                    <i class="fas fa-calendar-alt mr-1"></i> ${monthText}
+                <span class="badge text-bg-info filter-badge">
+                    <i class="fas fa-calendar-alt me-1"></i> ${monthText}
                 </span>
             `);
         }
@@ -644,47 +638,47 @@ $(function() {
         // Other filters
         if(params.show_projected) {
             filtersContainer.append(`
-                <span class="badge badge-secondary filter-badge">
-                    <i class="fas fa-chart-line mr-1"></i> Projected Fees
+                <span class="badge text-bg-secondary filter-badge">
+                    <i class="fas fa-chart-line me-1"></i> Projected Fees
                 </span>
             `);
         }
         
         if(params.show_balance) {
             filtersContainer.append(`
-                <span class="badge badge-secondary filter-badge">
-                    <i class="fas fa-money-bill-wave mr-1"></i> Outstanding Balances
+                <span class="badge text-bg-secondary filter-badge">
+                    <i class="fas fa-money-bill-wave me-1"></i> Outstanding Balances
                 </span>
             `);
         }
         
         if(params.hide_zero) {
             filtersContainer.append(`
-                <span class="badge badge-warning filter-badge">
-                    <i class="fas fa-eye-slash mr-1"></i> Hide Zero Balances
+                <span class="badge text-bg-warning filter-badge">
+                    <i class="fas fa-eye-slash me-1"></i> Hide Zero Balances
                 </span>
             `);
         }
         
         if(params.show_family_head) {
             filtersContainer.append(`
-                <span class="badge badge-warning filter-badge">
-                    <i class="fas fa-users mr-1"></i> Family Heads Only
+                <span class="badge text-bg-warning filter-badge">
+                    <i class="fas fa-users me-1"></i> Family Heads Only
                 </span>
             `);
         }
         
         if(params.monthly_fee_defaulter) {
             filtersContainer.append(`
-                <span class="badge badge-danger filter-badge">
-                    <i class="fas fa-exclamation-triangle mr-1"></i> Monthly Fee Defaulters
+                <span class="badge text-bg-danger filter-badge">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Monthly Fee Defaulters
                 </span>
             `);
         }
         if(params.other_fee_defaulter) {
             filtersContainer.append(`
-                <span class="badge badge-danger filter-badge">
-                    <i class="fas fa-exclamation-triangle mr-1"></i> Other Fee Defaulters
+                <span class="badge text-bg-danger filter-badge">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Other Fee Defaulters
                 </span>
             `);
         }
@@ -823,8 +817,8 @@ $(function() {
         th:nth-child(3), td:nth-child(3) { width: 22%; text-align: left !important; }
         .p-parent { font-weight: 600; font-size: 10px; line-height: 1.25; margin-bottom: 2px; }
         .p-students { font-size: 9px; line-height: 1.2; color: #475569; }
-        .text-left { text-align: left !important; }
-        .text-right { text-align: right !important; }
+        .text-start { text-align: left !important; }
+        .text-end { text-align: right !important; }
         .total-row td { font-weight: 700; background: #f1f5f9 !important; }
         .update-fee-btn, .btn { display: none !important; }
     </style>

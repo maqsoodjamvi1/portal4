@@ -242,7 +242,7 @@ class Worksheet extends MY_Controller {
 
          } 
 
-		$path .= '</tbody><tfoot><tr><td colspan="5" style="text-align: left;"><input type="button" class="btn btn-lg btn-block btn-primary"  id="addrow" value="Add Worksheet" </td></tr><tr></tr></tfoot></table>'; 
+		$path .= '</tbody><tfoot><tr><td colspan="5" style="text-align: left;"><input type="button" class="btn btn-lg w-100 btn-primary"  id="addrow" value="Add Worksheet" </td></tr><tr></tr></tfoot></table>'; 
 
 		echo $path;
 

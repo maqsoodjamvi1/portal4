@@ -54,7 +54,22 @@ class Cookie extends BaseConfig
      *
      * Cookie will only be set if a secure HTTPS connection exists.
      */
+    /**
+     * Set cookie.secure=true in .env when serving over HTTPS.
+     */
     public bool $secure = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $envSecure = env('cookie.secure');
+        if ($envSecure !== null && $envSecure !== '') {
+            $this->secure = filter_var($envSecure, FILTER_VALIDATE_BOOLEAN);
+        } elseif (ENVIRONMENT === 'production') {
+            $this->secure = true;
+        }
+    }
 
     /**
      * --------------------------------------------------------------------------

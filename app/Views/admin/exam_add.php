@@ -40,33 +40,26 @@
   $csrfHash = function_exists('csrf_hash')  ? csrf_hash()  : '';
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Exam</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Exam</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-file-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Exams', 'url' => base_url('admin/exam')],
+        ['label' => $isEdit ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-      <div class="card card-primary card-outline card-tabs">
+      <div class="card sms-card card-primary card-outline card-tabs">
         <div class="card-header p-0 pt-1 border-bottom-0">
           <ul class="nav nav-tabs">
-            <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/exam') ?>">Exams</a></li>
             <?php if ($id === ''): ?>
-              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/add') ?>">Add Exam</a></li>
+              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/add') ?>"><i class="fas fa-plus me-1"></i> Add Exam</a></li>
             <?php else: ?>
-              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/edit?id=' . urlencode($id)) ?>">Edit Exam</a></li>
+              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/edit?id=' . urlencode($id)) ?>"><i class="fas fa-edit me-1"></i> Edit Exam</a></li>
             <?php endif; ?>
           </ul>
         </div>
@@ -74,13 +67,113 @@
         <div class="card-body">
           <div class="tab-content">
             <?php
+              $currentExams = $current_session_exams ?? [];
+              $latestExam = $latest_exam ?? null;
+              $hasUnannouncedLatest = !empty($has_unannounced_latest);
+            ?>
+
+            <?php if (session()->getFlashdata('flash_msg')): ?>
+              <div class="alert alert-success"><?= esc((string) session()->getFlashdata('flash_msg')) ?></div>
+            <?php endif; ?>
+            <?php if (session()->getFlashdata('flash_err')): ?>
+              <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('flash_err')) ?></div>
+            <?php endif; ?>
+
+            <div class="card mb-3">
+              <div class="card-header">
+                <strong>Current Session Exams</strong>
+              </div>
+              <div class="card-body p-0">
+                <?php if (!empty($currentExams)): ?>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                      <thead>
+                        <tr>
+                          <th>Exam ID</th>
+                          <th>Exam</th>
+                          <th>Term</th>
+                          <th>Start</th>
+                          <th>End</th>
+                          <th>Status</th>
+                          <th>Datesheet</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($currentExams as $ex): ?>
+                          <tr>
+                            <td><?= esc((string)($ex['eid'] ?? '')) ?></td>
+                            <td><?= esc((string)($ex['exam_name'] ?? '')) ?></td>
+                            <td><?= esc((string)($ex['term_name'] ?? '')) ?></td>
+                            <td><?= !empty($ex['exam_start_date']) ? esc(date('d-m-Y', strtotime((string)$ex['exam_start_date']))) : '-' ?></td>
+                            <td><?= !empty($ex['exam_end_date']) ? esc(date('d-m-Y', strtotime((string)$ex['exam_end_date']))) : '-' ?></td>
+                            <td>
+                              <?php if ((string)($ex['status'] ?? '') === '1'): ?>
+                                <span class="badge text-bg-success">Announced</span>
+                              <?php else: ?>
+                                <span class="badge text-bg-warning">Unannounced</span>
+                              <?php endif; ?>
+                            </td>
+                            <td>
+                              <?php $datesheetCount = (int)($ex['datesheet_count'] ?? 0); ?>
+                              <?php if ($datesheetCount > 0): ?>
+                                <span class="badge text-bg-info"><?= $datesheetCount ?> row(s)</span>
+                              <?php else: ?>
+                                <span class="badge text-bg-light">No datesheet</span>
+                              <?php endif; ?>
+                            </td>
+                            <td>
+                              <?php if ((string)($ex['status'] ?? '') === '0'): ?>
+                                <a href="<?= base_url('admin/exam/edit?id=' . urlencode((string)($ex['eid'] ?? ''))) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form method="post" action="<?= base_url('admin/exam/announce') ?>" class="d-inline announce-form">
+                                  <?= csrf_field() ?>
+                                  <input type="hidden" name="exam_id" value="<?= esc((string)($ex['eid'] ?? '')) ?>">
+                                  <button type="submit" class="btn btn-sm btn-outline-warning">Announce</button>
+                                </form>
+                              <?php endif; ?>
+                              <?php if ($datesheetCount === 0): ?>
+                                <form method="post" action="<?= base_url('admin/exam/delete') ?>" class="d-inline delete-exam-form">
+                                  <?= csrf_field() ?>
+                                  <input type="hidden" name="exam_id" value="<?= esc((string)($ex['eid'] ?? '')) ?>">
+                                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                              <?php else: ?>
+                                <span class="text-muted small">Delete blocked</span>
+                              <?php endif; ?>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                      </tbody>
+                    </table>
+                  </div>
+                <?php else: ?>
+                  <div class="p-3 text-muted">No exam exists in current session.</div>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <?php if ($hasUnannouncedLatest && !empty($latestExam)): ?>
+              <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap" style="gap: .75rem;">
+                <div>
+                  Latest exam <strong><?= esc((string)($latestExam['exam_name'] ?? '')) ?></strong> is unannounced.
+                  Please announce it before creating a new exam.
+                </div>
+                <form method="post" action="<?= base_url('admin/exam/announce') ?>" class="mb-0 announce-form">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="exam_id" value="<?= esc((string)($latestExam['eid'] ?? '')) ?>">
+                  <button type="submit" class="btn btn-sm btn-warning">Announce Latest Exam</button>
+                </form>
+              </div>
+            <?php endif; ?>
+
+            <?php
               echo form_open(base_url('admin/exam/save'), 'role="form" id="user-edit-form"');
               echo form_hidden('id', (string)$id);
               echo form_hidden('campus_id', (string)$session_campus_id);
               if (function_exists('csrf_field')) { echo csrf_field(); }
             ?>
 
-            <div id="exam_list">
+            <fieldset id="exam_list" <?= $hasUnannouncedLatest ? 'disabled' : '' ?>>
               <div class="row">
                 <div class="col-lg-4">
                   <div class="form-group">
@@ -117,12 +210,12 @@
                 <!-- Date range partial (loads when term changes) -->
                 <div class="col-lg-12" id="dateRange"></div>
               </div>
-            </div>
+            </fieldset>
 
             <div class="form-group mt-3">
-              <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-              <button type="reset" class="btn btn-default">Reset</button>
-              <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+              <button type="submit" id="submitBtn" class="btn btn-primary" <?= $hasUnannouncedLatest ? 'disabled' : '' ?>>Save</button>
+              <button type="reset" class="btn btn-secondary">Reset</button>
+              <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
             </div>
 
             <?= form_close(); ?>
@@ -135,6 +228,22 @@
 
 <script>
 $(function(){
+  $(document).on('submit', '.announce-form', function(e){
+    const warningMessage = 'Warning: Once this exam is announced, it cannot be changed back to unannounced. Do you want to continue?';
+    if (!window.confirm(warningMessage)) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  $(document).on('submit', '.delete-exam-form', function(e){
+    const warningMessage = 'Delete this exam? This is only allowed when no datesheet exists for the exam.';
+    if (!window.confirm(warningMessage)) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
   // Load date range when term is chosen
   $('#term_session_id').on('change', function(){
     const term_session_id = $(this).val();

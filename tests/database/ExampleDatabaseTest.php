@@ -14,6 +14,18 @@ final class ExampleDatabaseTest extends CIUnitTestCase
 
     protected $seed = ExampleSeeder::class;
 
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+
+        if (! class_exists(\SQLite3::class) && env('database.tests.DBDriver') === null) {
+            self::markTestSkipped(
+                'SQLite3 extension is not installed. Run unit tests only: vendor/bin/phpunit --testsuite Unit. '
+                . 'Or set database.tests.* in .env / phpunit.xml for MySQL integration tests.'
+            );
+        }
+    }
+
     public function testModelFindAll(): void
     {
         $model = new ExampleModel();

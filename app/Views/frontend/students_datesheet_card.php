@@ -1,12 +1,11 @@
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 	.list-group-item{
 	  	width: 33% !important;
 	    float: left !important;
 	    padding: 1px 10px !important;
-	    border-right: 0 none;
-	    border-left: 0 none;
+	    border-end: 0 none;
+	    border-start: 0 none;
 	}
 	table{
 	background-color: transparent;
@@ -58,18 +57,14 @@
 		$exams = $this->db->get('exam')->result();
 
 ?>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6 text-center">
-        <h1>
-           Datesheet
-        </h1>
-      </div>
-     
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Datesheet',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('student/dashboard')],
+        ['label' => 'Datesheet', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content"> 
 <div class="">

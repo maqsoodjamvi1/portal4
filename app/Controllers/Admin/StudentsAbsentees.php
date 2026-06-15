@@ -22,7 +22,68 @@ class StudentsAbsentees extends BaseController
     {
         $this->session = \Config\Services::session();
         $this->db = \Config\Database::connect();
+        helper(['server_helper', 'role', 'school']);
         check_permission('admin-add-student-absentees');
+    }
+
+    private function isClassTeacherUser(): bool
+    {
+        return isCurrentUserTeacher();
+    }
+
+    private function getAllowedAttendanceSections(): array
+    {
+        if (! $this->isClassTeacherUser()) {
+            return getAllClassSection();
+        }
+
+        return teacherSubjectSections();
+    }
+
+    private function canMarkAttendanceForSection(int $clsSecId): bool
+    {
+        if (! $this->isClassTeacherUser()) {
+            return true;
+        }
+
+        if ($clsSecId <= 0) {
+            return false;
+        }
+
+        $teacherId = (int) session('member_userid');
+
+        return $this->db->table('teacher_section')
+            ->where('tid', $teacherId)
+            ->where('cls_sec_id', $clsSecId)
+            ->where('status', 1)
+            ->countAllResults() > 0;
+    }
+
+    private function canMarkAttendanceForClass(int $classId, int $campusId): bool
+    {
+        if (! $this->isClassTeacherUser()) {
+            return true;
+        }
+
+        if ($classId <= 0) {
+            return false;
+        }
+
+        $teacherId = (int) session('member_userid');
+
+        return $this->db->table('teacher_section ts')
+            ->join('class_section cs', 'cs.cls_sec_id = ts.cls_sec_id')
+            ->where('ts.tid', $teacherId)
+            ->where('ts.status', 1)
+            ->where('cs.class_id', $classId)
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1)
+            ->countAllResults() > 0;
+    }
+
+    private function attendanceDeniedHtml(string $message): string
+    {
+        return '<div class="alert alert-danger mb-0"><i class="fas fa-ban"></i> ' . esc($message) . '</div>';
     }
 
     /**
@@ -42,7 +103,7 @@ class StudentsAbsentees extends BaseController
             $date = date('Y-m-d');
         }
 
-        $allSections = getAllClassSection();
+        $allSections = $this->getAllowedAttendanceSections();
         if ($campusid < 1) {
             return [];
         }
@@ -50,42 +111,12 @@ class StudentsAbsentees extends BaseController
         $timestamp = strtotime($date);
         $dayName = date('l', $timestamp);
 
-        $activeTimingType = $this->db->table('school_timing_types')
-            ->select('type_id')
-            ->where('campus_id', $campusid)
-            ->where('status', 1)
-            ->orderBy('type_id', 'ASC')
-            ->get()
-            ->getRow();
-
-        $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-
         $sectionsclassinfo = [];
         foreach ($allSections as $section) {
-            $timingQuery = $this->db->table('school_timings')
-                ->select('checkin_timing, checkout_timing')
-                ->where('cls_sec_id', $section['cls_sec_id'])
-                ->where('dayname', $dayName);
-
-            if ($activeTypeId) {
-                $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-            }
-
-            $timingResult = $timingQuery->get();
-
-            $isOff = false;
-            $checkin = null;
-            $checkout = null;
-
-            $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-
-            if ($timing) {
-                $checkin = $timing->checkin_timing;
-                $checkout = $timing->checkout_timing;
-                $isOff = ($checkin === $checkout || ($checkin === null && $checkout === null));
-            } else {
-                $isOff = true;
-            }
+            $timingRow = getSchoolTimingForSectionDay((int) $section['cls_sec_id'], $dayName, $campusid);
+            $checkin  = $timingRow['checkin_timing'] ?? null;
+            $checkout = $timingRow['checkout_timing'] ?? null;
+            $isOff    = ! isSchoolTimingWorkingDay($checkin, $checkout);
 
             $attendanceResult = $this->db->table('attendance')
                 ->select('COUNT(DISTINCT attendance.student_id) AS count', false)
@@ -133,6 +164,34 @@ class StudentsAbsentees extends BaseController
         ]);
     }
 
+    public function activate_class_enrollment()
+    {
+        check_permission('admin-add-student-absentees');
+
+        $classId   = (int) $this->request->getPost('class_id');
+        $sessionId = (int) ($this->request->getPost('session_id') ?: session('member_sessionid'));
+        $campusId  = (int) ($this->request->getPost('campus_id') ?: session('member_campusid'));
+        $clsSecId  = (int) ($this->request->getPost('cls_sec_id') ?? $this->request->getPost('section_id') ?? 0);
+
+        if ($classId <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Please select a class first.',
+            ]);
+        }
+
+        $service = new \App\Libraries\StudentSessionEnrollment();
+        $result  = $service->activateClassForSession(
+            $classId,
+            $sessionId,
+            $campusId,
+            (int) session('member_userid'),
+            $clsSecId
+        );
+
+        return $this->response->setJSON($result);
+    }
+
        public function add()
     {
         check_permission('admin-add-student-absentees');
@@ -153,10 +212,11 @@ class StudentsAbsentees extends BaseController
             'date'      => $date,
         ];
 
+        $this->template_data['preselect_cls_sec_id'] = (int) $this->request->getGet('cls_sec_id');
+
         $this->template_data['infostudents'] = $this->db->table('students')->get()->getResult();
 
-        // Get all class sections using helper
-        $allSections = getAllClassSection();
+        $allSections = $this->getAllowedAttendanceSections();
         
         // Get classes list using helper data
         $classesMap = [];
@@ -191,6 +251,7 @@ class StudentsAbsentees extends BaseController
             ->getResult();
 
         $this->template_data['subjectinfo'] = $this->db->table('allsubject')->get()->getResult();
+        $this->template_data['isClassTeacher'] = $this->isClassTeacherUser();
 
         return view('admin/students_absentees_edit', $this->template_data);
     }
@@ -200,11 +261,40 @@ class StudentsAbsentees extends BaseController
         $req        = $this->request;
         $cls_sec_id = (int) ($req->getPost('cls_sec_id') ?? $req->getPost('section_id') ?? 0);
         $class_id   = (int) $req->getPost('class_id');
-        $campus_id  = (int) $req->getPost('campus_id');
+        $campus_id  = (int) ($req->getPost('campus_id') ?: session('member_campusid'));
+        $session_id = (int) ($req->getPost('session_id') ?: session('member_sessionid'));
         $datevalue  = trim($req->getPost('date') ?? '');
 
         if (!$datevalue || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $datevalue)) {
             $datevalue = date('Y-m-d');
+        }
+
+        if ($cls_sec_id > 0 && ! $this->canMarkAttendanceForSection($cls_sec_id)) {
+            return $this->response->setJSON([
+                'has_records' => false,
+                'is_off'      => false,
+                'html'        => $this->attendanceDeniedHtml('You can only mark attendance for classes where you are the class teacher.'),
+                'echo'        => [
+                    'cls_sec_id' => $cls_sec_id,
+                    'class_id'   => $class_id,
+                    'campus_id'  => $campus_id,
+                    'datevalue'  => $datevalue,
+                ],
+            ]);
+        }
+
+        if ($cls_sec_id <= 0 && $class_id > 0 && ! $this->canMarkAttendanceForClass($class_id, $campus_id)) {
+            return $this->response->setJSON([
+                'has_records' => false,
+                'is_off'      => false,
+                'html'        => $this->attendanceDeniedHtml('You can only mark attendance for classes where you are the class teacher.'),
+                'echo'        => [
+                    'cls_sec_id' => $cls_sec_id,
+                    'class_id'   => $class_id,
+                    'campus_id'  => $campus_id,
+                    'datevalue'  => $datevalue,
+                ],
+            ]);
         }
 
         $timestamp = strtotime($datevalue);
@@ -235,7 +325,27 @@ class StudentsAbsentees extends BaseController
             $resp = $this->get_students_byclass();
             $html = (is_object($resp) && method_exists($resp, 'getBody')) ? $resp->getBody() : (string) $resp;
         } else {
-            $html = $this->getLoadAttendanceButtonHtml($cls_sec_id, $class_id, $datevalue);
+            $students = $this->resolveAttendanceStudents($cls_sec_id, $class_id, $campus_id, $session_id);
+            if ($students === [] && $class_id > 0) {
+                $service = new \App\Libraries\StudentSessionEnrollment();
+                $service->activateClassForSession(
+                    $class_id,
+                    $session_id,
+                    $campus_id,
+                    (int) session('member_userid'),
+                    $cls_sec_id
+                );
+                $students = $this->resolveAttendanceStudents($cls_sec_id, $class_id, $campus_id, $session_id);
+            }
+
+            if ($students === []) {
+                $html = '<div class="alert alert-warning mb-0"><i class="fas fa-users-slash"></i> No students found for this class/section in the current session.'
+                    . ' Ensure students have an active class enrollment for session '
+                    . esc((string) $session_id)
+                    . ' (same session shown in the header). Verify enrollment in Students Print.</div>';
+            } else {
+                $html = $this->getLoadAttendanceButtonHtml($cls_sec_id, $class_id, $datevalue, count($students));
+            }
         }
 
         return $this->response->setJSON([
@@ -252,51 +362,38 @@ class StudentsAbsentees extends BaseController
     }
 public function load_attendance_records()
 {
-    $section_id = $this->request->getPost('section_id');
-    $class_id = $this->request->getPost('class_id');
-    $campus_id = (int) $this->request->getPost('campus_id');
-    $datevalue = trim($this->request->getPost('date') ?? '');
-    $user_id = session('member_userid');
+    $section_id = (int) $this->request->getPost('section_id');
+    $class_id   = (int) $this->request->getPost('class_id');
+    $campus_id  = (int) ($this->request->getPost('campus_id') ?: session('member_campusid'));
+    $session_id = (int) ($this->request->getPost('session_id') ?: session('member_sessionid'));
+    $datevalue  = trim($this->request->getPost('date') ?? '');
+    $user_id    = session('member_userid');
     
     if (!$datevalue || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $datevalue)) {
         return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid date']);
+    }
+
+    if ($section_id > 0 && ! $this->canMarkAttendanceForSection($section_id)) {
+        return $this->response->setJSON([
+            'status'  => 'error',
+            'message' => 'You can only mark attendance for classes where you are the class teacher.',
+        ]);
+    }
+
+    if ($section_id <= 0 && $class_id > 0 && ! $this->canMarkAttendanceForClass($class_id, $campus_id)) {
+        return $this->response->setJSON([
+            'status'  => 'error',
+            'message' => 'You can only mark attendance for classes where you are the class teacher.',
+        ]);
     }
     
     $timestamp = strtotime($datevalue);
     $dayName = date('l', $timestamp);
     $current_date = date('Y-m-d H:i:s');
+
+    $students = $this->resolveAttendanceStudents($section_id, $class_id, $campus_id, $session_id);
     
-    // Get active timing type for this campus
-    $activeTimingType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
-    // Get students based on selection
-    if ($section_id > 0) {
-        $students = $this->db->table('student_class sc')
-            ->select('sc.student_id, sc.cls_sec_id')
-            ->where('sc.status', 1)
-            ->where('sc.cls_sec_id', $section_id)
-            ->get()
-            ->getResult();
-    } else {
-        $students = $this->db->table('student_class sc')
-            ->select('sc.student_id, sc.cls_sec_id')
-            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-            ->where('sc.status', 1)
-            ->where('cs.class_id', $class_id)
-            ->where('cs.campus_id', $campus_id)
-            ->get()
-            ->getResult();
-    }
-    
-    if (empty($students)) {
+    if ($students === []) {
         return $this->response->setJSON(['status' => 'error', 'message' => 'No students found for this class/section']);
     }
     
@@ -305,20 +402,11 @@ public function load_attendance_records()
     $skippedLC = 0;
     
     foreach ($students as $student) {
-        // Get school timing for this student's section using active type_id
-        $timingQuery = $this->db->table('school_timings')
-            ->select('checkin_timing, checkout_timing')
-            ->where('cls_sec_id', $student->cls_sec_id)
-            ->where('dayname', $dayName);
-        
-        if ($activeTypeId) {
-            $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-        }
-        
-        $timingResult = $timingQuery->get();
-        $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-        
-        if (!$timing || $timing->checkin_timing === null || $timing->checkout_timing === null) {
+        $timingRow = getSchoolTimingForSectionDay((int) $student->cls_sec_id, $dayName, (int) $campus_id);
+        $checkin   = $timingRow['checkin_timing'] ?? null;
+        $checkout  = $timingRow['checkout_timing'] ?? null;
+
+        if (! isSchoolTimingWorkingDay($checkin, $checkout)) {
             continue; // Skip if no valid timing found
         }
         
@@ -345,8 +433,8 @@ public function load_attendance_records()
             'student_id'   => $student->student_id,
             'date'         => $datevalue,
             'status'       => 'P', // Default to Present
-            'checkin'      => $timing->checkin_timing,
-            'checkout'     => $timing->checkout_timing,
+            'checkin'      => $checkin,
+            'checkout'     => $checkout,
             'lc_duration'  => 0,
             'el_duration'  => 0,
             'user_id'      => $user_id,
@@ -374,14 +462,22 @@ public function load_attendance_records()
     public function get_students_byclass()
     {
         $eid        = $this->request->getPost('eid');
-        $session_id = (int) $this->request->getPost('session_id');
-        $campus_id  = (int) $this->request->getPost('campus_id');
+        $session_id = (int) ($this->request->getPost('session_id') ?: session('member_sessionid'));
+        $campus_id  = (int) ($this->request->getPost('campus_id') ?: session('member_campusid'));
         $cls_sec_id = (int) ($this->request->getPost('cls_sec_id') ?? $this->request->getPost('section_id') ?? 0);
         $class_id   = (int) $this->request->getPost('class_id');
         $datevalue  = trim($this->request->getPost('date') ?? '');
 
         if (!$datevalue || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $datevalue)) {
             $datevalue = date('Y-m-d');
+        }
+
+        if ($cls_sec_id > 0 && ! $this->canMarkAttendanceForSection($cls_sec_id)) {
+            return $this->response->setBody($this->attendanceDeniedHtml('You can only mark attendance for classes where you are the class teacher.'));
+        }
+
+        if ($cls_sec_id <= 0 && $class_id > 0 && ! $this->canMarkAttendanceForClass($class_id, $campus_id)) {
+            return $this->response->setBody($this->attendanceDeniedHtml('You can only mark attendance for classes where you are the class teacher.'));
         }
 
         $timestamp = strtotime($datevalue);
@@ -399,36 +495,31 @@ public function load_attendance_records()
                     'section_name' => $sectionData['section_name']
                 ];
             }
+        } elseif ($class_id > 0) {
+            $classRow = $this->db->table('classes')
+                ->select('class_name')
+                ->where('class_id', $class_id)
+                ->get()
+                ->getRow();
+            if ($classRow) {
+                $classInfo = (object)[
+                    'class_name' => $classRow->class_name,
+                    'section_name' => 'All Sections',
+                ];
+            }
         }
 
-        // Get students based on selection
-        if ($cls_sec_id > 0) {
-            $classstudents = $this->db->query(
-                "SELECT student_id FROM student_class WHERE status = 1 AND cls_sec_id = ?",
-                [$cls_sec_id]
-            )->getResultArray();
-        } else {
-            $classstudents = $this->db->query(
-                "SELECT sc.student_id
-                   FROM student_class sc
-                  WHERE sc.status = 1
-                    AND sc.cls_sec_id IN (
-                          SELECT cs.cls_sec_id
-                            FROM class_section cs
-                           WHERE cs.class_id = ?
-                             AND cs.campus_id = ?
-                        )",
-                [$class_id, $campus_id]
-            )->getResultArray();
-        }
+        $enrolledStudents = $this->resolveAttendanceStudents($cls_sec_id, $class_id, $campus_id, $session_id);
 
-        if (empty($classstudents)) {
+        if ($enrolledStudents === []) {
             $output = '<div class="alert alert-info mb-0">No students found for the selected class/section.</div>';
             return $this->response->setBody($output);
         }
 
-        $studentIds = array_map(static fn($r) => (int)$r['student_id'], $classstudents);
-        $studentIds = array_values(array_unique(array_filter($studentIds)));
+        $studentIds = array_values(array_unique(array_map(
+            static fn($row) => (int) $row->student_id,
+            $enrolledStudents
+        )));
 
         $attRows = [];
         if (!empty($studentIds)) {
@@ -440,25 +531,29 @@ public function load_attendance_records()
                 ->getResultArray();
         }
 
-        if (empty($attRows)) {
-            $output = '<div class="card"><div class="card-body">';
-            $output .= '<div class="d-flex justify-content-between align-items-center">';
-            $output .= '<h5 class="mb-0">Attendance</h5>';
-            $output .= '<span class="text-muted small">' . esc($datevalue) . ' (' . esc($day) . ')</span>';
-            $output .= '</div><hr class="my-2">';
-            $output .= '<div class="alert alert-warning mb-0">No attendance records found. Click "Load Attendance" to initialize.</div>';
-            $output .= '</div></div>';
-            return $this->response->setBody($output);
+        $attMap = [];
+        foreach ($studentIds as $sid) {
+            $attMap[$sid] = [
+                'student_id' => $sid,
+                'status'     => 'A',
+                'checkin'    => null,
+                'checkout'   => null,
+            ];
         }
 
-        $attMap = [];
         $cnt = ['P' => 0, 'A' => 0, 'L' => 0, 'LC' => 0];
 
         foreach ($attRows as $a) {
-            $sid = (int)$a['student_id'];
+            $sid = (int) $a['student_id'];
+            if (! isset($attMap[$sid])) {
+                continue;
+            }
             $attMap[$sid] = $a;
+        }
+
+        foreach ($attMap as $a) {
             $s = strtoupper(trim($a['status'] ?? 'A'));
-            if (!isset($cnt[$s])) {
+            if (! isset($cnt[$s])) {
                 $s = 'A';
             }
             $cnt[$s]++;
@@ -483,33 +578,43 @@ public function load_attendance_records()
           #attWrap .att-choice.att-lg .btn { font-size: 1rem; padding: .5rem .8rem; border-width: 2px; }
           #attWrap .att-choice.att-lg .btn input { display:none; }
           #attWrap .att-selected .badge { font-size: .95rem; padding: .45rem .6rem; }
+          #attWrap .att-stats-row { display:flex; gap:6px; margin-bottom:10px; }
+          #attWrap .att-stat { flex:1; text-align:center; border-radius:8px; padding:6px 4px; font-size:.8rem; font-weight:600; line-height:1.2; }
+          #attWrap .att-stat b { display:block; font-size:1.15rem; font-weight:700; }
+          #attWrap .att-stat-p { background:#d4edda; color:#155724; }
+          #attWrap .att-stat-a { background:#f8d7da; color:#721c24; }
+          #attWrap .att-stat-l { background:#fff3cd; color:#856404; }
+          #attWrap .att-stat-lc { background:#d1ecf1; color:#0c5460; }
+          @media (max-width:768px) {
+            #attWrap #attTable thead { display:none; }
+            #attWrap #attTable tbody tr { display:flex; flex-wrap:wrap; align-items:center; border-bottom:1px solid #dee2e6; padding:8px 10px; gap:8px; }
+            #attWrap #attTable tbody td { border:none; padding:0; }
+            #attWrap #attTable .col-sno, #attWrap #attTable .col-photo { display:none !important; }
+            #attWrap #attTable td:nth-child(3) { flex:1 1 40%; font-weight:600; font-size:.9rem; text-align:left; }
+            #attWrap #attTable td:nth-child(4) { flex:1 1 55%; text-align:right; }
+            #attWrap .att-selected { display:none; }
+            #attWrap .att-choice.att-lg { display:flex; flex-wrap:nowrap; gap:4px; justify-content:flex-end; }
+            #attWrap .att-choice.att-lg .btn { flex:1; min-width:0; min-height:40px; padding:.35rem .25rem !important; font-size:.75rem !important; }
+          }
         </style>';
 
-        $output .= '<div class="card mb-3">
-         
-          <div class="card-body">
-            <div class="d-flex justify-content-end align-items-center flex-wrap view-options mb-2">
-              <div class="form-check form-check-inline mb-1">
+        $output .= '<div class="card mb-2">
+          <div class="card-body py-2 px-3">
+            <div class="d-flex justify-content-end align-items-center flex-wrap view-options mb-1">
+              <div class="form-check form-check-inline mb-0">
                 <input class="form-check-input" type="checkbox" id="toggleSno">
-                <label class="form-check-label" for="toggleSno">Show S.No</label>
+                <label class="form-check-label small" for="toggleSno">S.No</label>
               </div>
-              <div class="form-check form-check-inline mb-1">
+              <div class="form-check form-check-inline mb-0">
                 <input class="form-check-input" type="checkbox" id="togglePhoto">
-                <label class="form-check-label" for="togglePhoto">Show Photo</label>
+                <label class="form-check-label small" for="togglePhoto">Photo</label>
               </div>
             </div>
-
-            <div class="row mb-2">
-              <div class="col-md-3"><strong>Class:</strong> ' . ($classInfo ? esc($classInfo->class_name . ' - ' . $classInfo->section_name) : 'N/A') . '</div>
-              <div class="col-md-3"><strong>Att. Date:</strong> ' . esc($datevalue) . ' (' . esc($day) . ')</div>
-              <div class="col-md-3"><strong>Today:</strong> ' . esc($today) . ' (' . esc($todayDay) . ')</div>
-              <div class="col-md-3"><strong>Total Records:</strong> ' . count($attMap) . '</div>
-            </div>
-            <div class="row">
-              <div class="col-sm-3"><div class="alert alert-success p-2 mb-2"><strong>P:</strong> <span id="cntP">' . $cnt['P'] . '</span></div></div>
-              <div class="col-sm-3"><div class="alert alert-danger p-2 mb-2"><strong>A:</strong> <span id="cntA">' . $cnt['A'] . '</span></div></div>
-              <div class="col-sm-3"><div class="alert alert-warning p-2 mb-2"><strong>L:</strong> <span id="cntL">' . $cnt['L'] . '</span></div></div>
-              <div class="col-sm-3"><div class="alert alert-info p-2 mb-2"><strong>LC:</strong> <span id="cntLC">' . $cnt['LC'] . '</span></div></div>
+            <div class="att-stats-row">
+              <span class="att-stat att-stat-p">P <b id="cntP">' . $cnt['P'] . '</b></span>
+              <span class="att-stat att-stat-a">A <b id="cntA">' . $cnt['A'] . '</b></span>
+              <span class="att-stat att-stat-l">L <b id="cntL">' . $cnt['L'] . '</b></span>
+              <span class="att-stat att-stat-lc">LC <b id="cntLC">' . $cnt['LC'] . '</b></span>
             </div>
           </div>
         </div>';
@@ -518,7 +623,7 @@ public function load_attendance_records()
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table id="attTable" class="table table-hover table-bordered mb-0">
-                        <thead class="thead-light">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-sno" width="5%">#</th>
                                 <th class="col-photo" width="15%">Photo</th>
@@ -530,9 +635,6 @@ public function load_attendance_records()
 
         $sno = 1;
         foreach ($studentIds as $sid) {
-            if (!isset($attMap[$sid])) {
-                continue;
-            }
             $stu = $stuMap[$sid] ?? null;
             if (!$stu) {
                 continue;
@@ -566,7 +668,7 @@ public function load_attendance_records()
               <div class="att-selected mb-1">
                 <span class="badge badge-status ' . $badgeClass . '">' . $statusLabel . '</span>
               </div>
-              <div class="btn-group btn-group-toggle att-choice att-lg" data-toggle="buttons" role="group">
+              <div class="btn-group btn-group-toggle att-choice att-lg" data-bs-toggle="buttons" role="group">
                 <label class="btn btn-outline-success ' . ($status === 'P' ? 'active' : '') . ' px-3 py-2">
                   <input type="radio" name="status[' . $sid . ']" value="P" data-sid="' . $sid . '" data-date="' . esc($datevalue) . '" ' . ($status === 'P' ? 'checked' : '') . '> P
                 </label>
@@ -747,42 +849,12 @@ public function load_attendance_records()
  */
 private function checkIfDayIsOn($cls_sec_id, $class_id, $campus_id, $dayName)
 {
-    $db = \Config\Database::connect();
-    
-    // Get active timing type for this campus
-    $activeTimingType = $db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
     if ($cls_sec_id > 0) {
-        $timingQuery = $db->table('school_timings')
-            ->select('checkin_timing, checkout_timing')
-            ->where('cls_sec_id', $cls_sec_id)
-            ->where('dayname', $dayName);
-        
-        if ($activeTypeId) {
-            $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-        }
-        
-        $timingResult = $timingQuery->get();
-        $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-        
-        if (!$timing) {
-            return false;
-        }
-        
-        // Day is ON only if checkin and checkout are both set and different
-        return ($timing->checkin_timing !== null && 
-                $timing->checkout_timing !== null && 
-                $timing->checkin_timing !== $timing->checkout_timing);
-        
-    } elseif ($class_id > 0) {
+        return isSectionWorkingOnDay((int) $cls_sec_id, $dayName, (int) $campus_id);
+    }
+
+    if ($class_id > 0) {
+        $db = \Config\Database::connect();
         $sections = $db->table('class_section')
             ->select('cls_sec_id')
             ->where('class_id', $class_id)
@@ -790,134 +862,150 @@ private function checkIfDayIsOn($cls_sec_id, $class_id, $campus_id, $dayName)
             ->where('status', 1)
             ->get()
             ->getResultArray();
-        
+
         foreach ($sections as $section) {
-            $timingQuery = $db->table('school_timings')
-                ->select('checkin_timing, checkout_timing')
-                ->where('cls_sec_id', $section['cls_sec_id'])
-                ->where('dayname', $dayName);
-            
-            if ($activeTypeId) {
-                $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-            }
-            
-            $timingResult = $timingQuery->get();
-            $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-            
-            if ($timing && 
-                $timing->checkin_timing !== null && 
-                $timing->checkout_timing !== null && 
-                $timing->checkin_timing !== $timing->checkout_timing) {
+            if (isSectionWorkingOnDay((int) $section['cls_sec_id'], $dayName, (int) $campus_id)) {
                 return true;
             }
         }
-        return false;
     }
-    
+
     return false;
 }
 
     /**
-     * Check if attendance records exist
+     * Active enrolled students for attendance (current session, campus, class/section).
+     * Uses the same enrollment rules as Students Print, and repairs missing student_class rows.
+     *
+     * @return list<object{student_id: int, cls_sec_id: int}>
      */
-  /**
- * Check if attendance records with status 'P' (Present) exist
- * This determines whether the "Load Attendance" button should be shown
- */
-private function checkAttendanceExists($cls_sec_id, $class_id, $datevalue)
-{
-    if ($cls_sec_id > 0) {
-        // Check if any student in this section has status 'P' for this date
-        $result = $this->db->table('attendance a')
-            ->select('COUNT(*) as count')
-            ->join('student_class sc', 'sc.student_id = a.student_id')
-            ->where('sc.cls_sec_id', $cls_sec_id)
-            ->where('sc.status', 1)
-            ->where('a.date', $datevalue)
-            ->where('a.status', 'P')
+    private function resolveAttendanceStudents(int $clsSecId, int $classId, int $campusId, int $sessionId): array
+    {
+        if ($campusId <= 0) {
+            $campusId = (int) session('member_campusid');
+        }
+        if ($sessionId <= 0) {
+            $sessionId = (int) session('member_sessionid');
+        }
+
+        if ($campusId <= 0 || $sessionId <= 0) {
+            return [];
+        }
+
+        if ($clsSecId <= 0 && $classId <= 0) {
+            return [];
+        }
+
+        $builder = $this->db->table('students s')
+            ->select('s.student_id, sc.cls_sec_id', false)
+            ->join(
+                'student_class sc',
+                'sc.student_id = s.student_id AND sc.session_id = ' . (int) $sessionId . ' AND sc.status = 1',
+                'inner'
+            )
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'inner')
+            ->where('s.campus_id', $campusId)
+            ->where('s.status', 1);
+
+        if ($clsSecId > 0) {
+            $builder->where('sc.cls_sec_id', $clsSecId);
+        } else {
+            $builder->where('cs.class_id', $classId);
+        }
+
+        $rows = $builder
+            ->orderBy('s.first_name', 'ASC')
+            ->orderBy('s.last_name', 'ASC')
             ->get()
-            ->getRow();
-        
-        return ($result && $result->count > 0);
-        
-    } elseif ($class_id > 0) {
-        $ids = $this->db->table('class_section')
-            ->select('cls_sec_id')
-            ->where('class_id', $class_id)
-            ->where('campus_id', session('member_campusid'))
-            ->where('status', 1)
-            ->get()
-            ->getResultArray();
-        $idList = array_column($ids, 'cls_sec_id');
-        
-        if (empty($idList)) {
+            ->getResult();
+
+        return $this->dedupeAttendanceStudents($rows);
+    }
+
+    /**
+     * @param list<object> $rows
+     * @return list<object{student_id: int, cls_sec_id: int}>
+     */
+    private function dedupeAttendanceStudents(array $rows): array
+    {
+        $unique = [];
+
+        foreach ($rows as $row) {
+            $studentId = (int) ($row->student_id ?? 0);
+            $clsSecId  = (int) ($row->cls_sec_id ?? 0);
+
+            if ($studentId <= 0 || $clsSecId <= 0) {
+                continue;
+            }
+
+            if (! isset($unique[$studentId])) {
+                $unique[$studentId] = (object) [
+                    'student_id' => $studentId,
+                    'cls_sec_id' => $clsSecId,
+                ];
+            }
+        }
+
+        return array_values($unique);
+    }
+
+    /**
+     * Whether any attendance row exists for enrolled students on this date.
+     */
+    private function checkAttendanceExists($cls_sec_id, $class_id, $datevalue): bool
+    {
+        $campusId  = (int) session('member_campusid');
+        $sessionId = (int) session('member_sessionid');
+        $students  = $this->resolveAttendanceStudents(
+            (int) $cls_sec_id,
+            (int) $class_id,
+            $campusId,
+            $sessionId
+        );
+
+        if ($students === []) {
             return false;
         }
-        
-        // Check if any student in any section of this class has status 'P' for this date
-        $result = $this->db->table('attendance a')
-            ->select('COUNT(*) as count')
-            ->join('student_class sc', 'sc.student_id = a.student_id')
-            ->whereIn('sc.cls_sec_id', $idList)
-            ->where('sc.status', 1)
-            ->where('a.date', $datevalue)
-            ->where('a.status', 'P')
-            ->get()
-            ->getRow();
-        
-        return ($result && $result->count > 0);
+
+        $studentIds = array_values(array_unique(array_map(
+            static fn($row) => (int) $row->student_id,
+            $students
+        )));
+
+        $count = $this->db->table('attendance')
+            ->where('date', $datevalue)
+            ->whereIn('student_id', $studentIds)
+            ->countAllResults();
+
+        return $count > 0;
     }
-    
-    return false;
-}
 
     /**
      * Generate HTML for the "Load Attendance" button
      */
-  private function getLoadAttendanceButtonHtml($cls_sec_id, $class_id, $datevalue)
+  private function getLoadAttendanceButtonHtml($cls_sec_id, $class_id, $datevalue, ?int $studentCount = null)
 {
-    $campus_id = session('member_campusid');
+    $campus_id = (int) session('member_campusid');
+    $session_id = (int) session('member_sessionid');
     $timestamp = strtotime($datevalue);
     $dayName = date('l', $timestamp);
+
+    if ($studentCount === null) {
+        $studentCount = count($this->resolveAttendanceStudents(
+            (int) $cls_sec_id,
+            (int) $class_id,
+            $campus_id,
+            $session_id
+        ));
+    }
     
-    // Get active timing type for this campus - use $this->db
-    $activeTimingType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
-    // Get student count
-    if ($cls_sec_id > 0) {
-        $studentCount = $this->db->table('student_class')
-            ->where('cls_sec_id', $cls_sec_id)
-            ->where('status', 1)
-            ->countAllResults();
-        
-        // Get timing info
-        $timingQuery = $this->db->table('school_timings')
-            ->select('checkin_timing, checkout_timing')
-            ->where('cls_sec_id', $cls_sec_id)
-            ->where('dayname', $dayName);
-        
-        if ($activeTypeId) {
-            $timingQuery = $timingQuery->where('type_id', $activeTypeId);
+    // Get timing info
+    $timing = null;
+    if ((int) $cls_sec_id > 0) {
+        $timingRow = getSchoolTimingForSectionDay((int) $cls_sec_id, $dayName, $campus_id);
+        if ($timingRow !== null) {
+            $timing = (object) $timingRow;
         }
-        
-        $timingResult = $timingQuery->get();
-        $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
-    } else {
-        $studentCount = $this->db->table('student_class sc')
-            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-            ->where('cs.class_id', $class_id)
-            ->where('sc.status', 1)
-            ->countAllResults();
-        
-        $timing = null;
     }
     
     $html = '<div class="card">
@@ -958,6 +1046,7 @@ private function checkAttendanceExists($cls_sec_id, $class_id, $datevalue)
                 section_id: section_id,
                 class_id: class_id,
                 campus_id: campus_id,
+                session_id: $("#session_id").val(),
                 date: date
             },
             success: function(response) {
@@ -1131,47 +1220,36 @@ public function update_attendance_status()
         return $this->response->setJSON(['success' => false, 'msg' => 'Invalid date']);
     }
 
+    $studentClass = $this->db->table('student_class sc')
+        ->select('sc.cls_sec_id')
+        ->where('sc.student_id', $student_id)
+        ->where('sc.status', 1)
+        ->orderBy('sc.sc_id', 'DESC')
+        ->get()
+        ->getRow();
+
+    if ($studentClass && ! $this->canMarkAttendanceForSection((int) $studentClass->cls_sec_id)) {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => 'You can only mark attendance for classes where you are the class teacher.',
+        ]);
+    }
+
     // Get student's section timing for LC records
     $timing = null;
-    $studentClass = null;
     
     if ($status === 'LC') {
-        // Get student's current class section
-        $studentClass = $this->db->table('student_class sc')
-            ->select('sc.cls_sec_id')
-            ->where('sc.student_id', $student_id)
-            ->where('sc.status', 1)
-            ->orderBy('sc.sc_id', 'DESC')
-            ->get()
-            ->getRow();
         
         if ($studentClass) {
             $timestamp = strtotime($attendanceDate);
             $dayName = date('l', $timestamp);
-            
-            // Get active timing type
-            $campus_id = session('member_campusid');
-            $activeTimingType = $this->db->table('school_timing_types')
-                ->select('type_id')
-                ->where('campus_id', $campus_id)
-                ->where('status', 1)
-                ->orderBy('type_id', 'ASC')
-                ->get()
-                ->getRow();
-            
-            $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-            
-            $timingQuery = $this->db->table('school_timings')
-                ->select('checkin_timing, checkout_timing')
-                ->where('cls_sec_id', $studentClass->cls_sec_id)
-                ->where('dayname', $dayName);
-            
-            if ($activeTypeId) {
-                $timingQuery = $timingQuery->where('type_id', $activeTypeId);
-            }
-            
-            $timingResult = $timingQuery->get();
-            $timing = ($timingResult && $timingResult->getRow()) ? $timingResult->getRow() : null;
+
+            $timingRow = getSchoolTimingForSectionDay(
+                (int) $studentClass->cls_sec_id,
+                $dayName,
+                (int) session('member_campusid')
+            );
+            $timing = $timingRow !== null ? (object) $timingRow : null;
         }
     }
 

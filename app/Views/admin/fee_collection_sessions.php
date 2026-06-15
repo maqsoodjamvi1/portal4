@@ -1,21 +1,16 @@
+<?php $uiNeedsDataTables = false; ?>
+<?php $uiNeedsChart = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Session-wise Fee Collection</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Session-wise Fee Collection</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Session-wise Fee Collection',
+    'icon' => 'fas fa-chart-area',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Session-wise Fee Collection', 'active' => true],
+    ],
+]) ?>
 
 <style>
 /* ===== Layout wrapper ===== */
@@ -238,12 +233,12 @@
 
           <div class="row">
             <div class="col-12">
-              <label class="mb-1 font-weight-bold" style="font-size:13px;">Fee Types</label>
+              <label class="mb-1 fw-bold" style="font-size:13px;">Fee Types</label>
 
               <div class="d-flex align-items-center mb-1">
-                <div class="custom-control custom-checkbox mr-3">
-                  <input type="checkbox" class="custom-control-input" id="chk_all_fee_types">
-                  <label class="custom-control-label" for="chk_all_fee_types" style="font-size:13px;">
+                <div class="form-check form-check me-3">
+                  <input type="checkbox" class="form-check-input" id="chk_all_fee_types">
+                  <label class="form-check-label" for="chk_all_fee_types" style="font-size:13px;">
                     Select All
                   </label>
                 </div>

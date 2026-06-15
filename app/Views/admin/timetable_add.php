@@ -18,23 +18,15 @@ if (! empty($slots)) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 
 
-<!-- Page Header -->
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Create Timetable</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/timetable') ?>">Timetable</a></li>
-                    <li class="breadcrumb-item active">Create</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</div>
+<?= view('components/page_header', [
+    'title' => 'Create Timetable',
+    'icon' => 'fas fa-calendar-plus',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Timetable', 'url' => base_url('admin/timetable')],
+        ['label' => 'Create', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -66,9 +58,9 @@ if (! empty($slots)) {
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mt-4 mt-md-0 pt-md-4">
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input" id="allowSameSubjectPerDay">
-                                    <label class="custom-control-label" for="allowSameSubjectPerDay">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" id="allowSameSubjectPerDay">
+                                    <label class="form-check-label" for="allowSameSubjectPerDay">
                                         Allow same subject multiple times in the same day
                                     </label>
                                 </div>
@@ -80,9 +72,9 @@ if (! empty($slots)) {
                     </div>
                     <div class="row mt-2">
                         <div class="col-md-12">
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="showFullWeekDays">
-                                <label class="custom-control-label" for="showFullWeekDays">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="showFullWeekDays">
+                                <label class="form-check-label" for="showFullWeekDays">
                                     Show full week (Mon–Sun) for assignment
                                 </label>
                             </div>
@@ -127,7 +119,7 @@ if (! empty($slots)) {
                         <button type="button" id="saveTimetable" class="btn btn-primary">
                             <i class="fas fa-save"></i> Save Timetable
                         </button>
-                        <button type="button" id="clearTimetable" class="btn btn-danger float-right">
+                        <button type="button" id="clearTimetable" class="btn btn-danger float-end">
                             <i class="fas fa-trash"></i> Clear All
                         </button>
                     </div>
@@ -145,7 +137,7 @@ window.TTIMETABLE_BOOTSTRAP = {
 
 $(document).ready(function () {
     // Initialize Select2
-    $('.select2').select2({ theme: 'bootstrap4' });
+    $('.select2').select2({ theme: 'bootstrap-5' });
 
     // Global variables
     let currentClsSecId = null;
@@ -239,7 +231,7 @@ $(document).ready(function () {
     teacherLoad.forEach(t => {
         html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                     ${t.name}
-                    <span class="badge badge-primary badge-pill">${t.count}</span>
+                    <span class="badge text-bg-primary rounded-pill">${t.count}</span>
                 </li>`;
     });
     html += `</ul>`;
@@ -311,7 +303,7 @@ $(document).ready(function () {
             const slotId = String(slot.slot_id);
             const slotLabel = 'Slot ' + (slotIndex + 1);
             html += '<tr><td class="align-middle tt-slot-col"><div class="d-flex align-items-center justify-content-between flex-nowrap gap-1">';
-            html += '<span class="text-nowrap small font-weight-bold">' + slotLabel + '</span>';
+            html += '<span class="text-nowrap small fw-bold">' + slotLabel + '</span>';
             html += '<button type="button" class="btn btn-sm btn-outline-secondary tt-fill-row py-0 px-1" data-slot-id="' + slotId + '" title="Put selected subject in this slot on every visible day"><i class="fas fa-arrows-alt-h"></i></button>';
             html += '</div></td>';
 
@@ -329,7 +321,7 @@ $(document).ready(function () {
                     html += '<div class="subject-card bg-gradient-info m-1 p-2 rounded" data-subject-id="' + subject.subject_id + '" draggable="true">';
                     html += '<small>' + subject.subject_name + '</small>';
                     html += '<div class="text-xs">' + (subject.first_name ? (subject.first_name + ' ' + subject.last_name) : '') + '</div>';
-                    html += '<button class="btn btn-xs btn-danger remove-subject" style="position: absolute; top: 0; right: 0;"><i class="fas fa-times"></i></button>';
+                    html += '<button class="btn btn-sm btn-danger remove-subject" style="position: absolute; top: 0; right: 0;"><i class="fas fa-times"></i></button>';
                     html += '</div>';
                 }
                 html += '</td>';
@@ -461,7 +453,7 @@ $(document).ready(function () {
                 // Add remove button if coming from subject pool
                 if (source.id === 'subjectPool') {
                     const removeBtn = document.createElement('button');
-                    removeBtn.className = 'btn btn-xs btn-danger remove-subject';
+                    removeBtn.className = 'btn btn-sm btn-danger remove-subject';
                     removeBtn.style = 'position: absolute; top: 0; right: 0;';
                     removeBtn.innerHTML = '<i class="fas fa-times"></i>';
                     removeBtn.onclick = function(e) {
@@ -519,7 +511,7 @@ $(document).ready(function () {
         subjectCard.innerHTML = `
             <small>${subject.subject_name}</small>
             <div class="text-xs">${subject.first_name ? `${subject.first_name} ${subject.last_name}` : ''}</div>
-            <button class="btn btn-xs btn-danger remove-subject" style="position: absolute; top: 0; right: 0;">
+            <button class="btn btn-sm btn-danger remove-subject" style="position: absolute; top: 0; right: 0;">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -617,7 +609,7 @@ $(document).ready(function () {
     teacherLoad.forEach(t => {
         html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                     ${t.name}
-                    <span class="badge badge-primary badge-pill">${t.count}</span>
+                    <span class="badge text-bg-primary rounded-pill">${t.count}</span>
                 </li>`;
     });
     html += `</ul>`;

@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -27,29 +28,20 @@
 
 	}
 ?>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Generate Fee Chalan
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Generate Fee Chalan</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Generate Fee Chalan',
+    'icon' => 'fas fa-file-invoice',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee_chalan')],
+        ['label' => isset($info) ? 'Edit' : 'Generate', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
-		  <div class="card card-primary card-outline card-tabs">
+        <div class="col-12">
+		  <div class="card sms-card card-primary card-outline card-tabs">
           <div class="card-header p-0 pt-1 border-bottom-0">
 			<ul class="nav nav-tabs">
 			<li class="nav-item"><a class="nav-link" href="<?= base_url('admin/fee_chalan') ?>">Fee Chalan</a></li>
@@ -68,50 +60,50 @@
 			<div class="form-group">
 	        <label>Issue Date:</label>
 	        <div class="input-group date">
-	          <div class="input-group-addon">
+	          <div class="input-group-text">
 	            <i class="fa fa-calendar"></i>
 	          </div>
-	          <input type="text" class="form-control pull-right" id="datepicker2"  readonly="readonly"  value="<?php echo $issue_date; ?>" name="issue_date">
+	          <input type="text" class="form-control float-end" id="datepicker2"  readonly="readonly"  value="<?php echo $issue_date; ?>" name="issue_date">
 	        </div>
 	        <!-- /.input group -->
 	    </div>	
 			<div class="form-group">
           <label>Due Date:</label>
 	        <div class="input-group date">
-            <div class="input-group-addon">
+            <div class="input-group-text">
               <i class="fa fa-calendar"></i>
             </div>
-            <input type="text" class="form-control pull-right" id="datepicker"  readonly="readonly" value="<?php echo $due_date; ?>" name="due_date">
+            <input type="text" class="form-control float-end" id="datepicker"  readonly="readonly" value="<?php echo $due_date; ?>" name="due_date">
           </div>
           <!-- /.input group -->
       </div>			  						
 			<div class="form-group">
 	          <label>Fee Month:</label>
 	          <div class="input-group date">
-	            <div class="input-group-addon">
+	            <div class="input-group-text">
 	              <i class="fa fa-calendar"></i>
 	            </div>
-	            <input type="text" class="form-control pull-right" id="datetimepicker10" value="<?php echo $fee_month; ?>"  name="fee_month">
+	            <input type="text" class="form-control float-end" id="datetimepicker10" value="<?php echo $fee_month; ?>"  name="fee_month">
 				   	<input type="hidden" id="originalfee_month" value="">
       </div>
         <!-- /.input group -->
       </div>
 			<div class="form-group">
           <label>Amount:</label>
-            <input type="text" class="form-control pull-right" id="amount" value="<?php echo $amount; ?>"  name="amount">
+            <input type="text" class="form-control float-end" id="amount" value="<?php echo $amount; ?>"  name="amount">
 			    <!-- /.input group -->
       </div>	
 			<br /> <br />		
 			<div class="form-group">
           <label>Discount:</label>
-            <input type="text" class="form-control pull-right" id="discount" value="<?php echo $discount; ?>"  name="discount">
+            <input type="text" class="form-control float-end" id="discount" value="<?php echo $discount; ?>"  name="discount">
 				  <!-- /.input group -->
       </div>			
  			<br /> <br />
       <div class="form-group">
         <button type="submit" id="submitBtn"  class="btn btn-primary">Save</button>
-				<button type="reset" class="btn btn-default">Reset</button>
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
       </div>
       <?php echo form_close();?>
 			</div>

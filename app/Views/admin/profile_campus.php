@@ -12,7 +12,7 @@
     $bank_name = $bank_address = $bank_code = $bank_acc = '';
     $chalan_h_msg = $chalan_f_msg = $fine_type = $late_fee_fine = '';
     $fee_issue_date = $fee_due_date = $attendance_sms = '';
-    $school = $hostel = $transport = $academy = 0;
+    $school = $transport = $academy = $hifz = 0;
     $principal_name = $principal_signature = '';
 
     if(isset($info) && is_object($info)){
@@ -34,10 +34,10 @@
         $fee_issue_date= $info->fee_issue_date ?? 1;
         $fee_due_date  = $info->fee_due_date ?? 5;
         $school        = $info->s_flag ?? 0;
-        $hostel        = $info->h_flag ?? 0;
         $transport     = $info->t_flag ?? 0;
         $currency_code = $info->currency_code ?? '';
         $academy       = $info->a_flag ?? 0;
+        $hifz          = $info->hfz_flag ?? 0;
         $principal_name = $info->principal_name ?? '';
         $principal_signature = $info->principal_signature ?? '';
     } else {
@@ -46,22 +46,15 @@
     }
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="d-flex align-items-center justify-content-between flex-wrap">
-      <div>
-        <h1 class="mb-1"><?= esc($header) ?> <small class="text-muted">Campus Profile</small></h1>
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item"><a href="#/">Dashboard</a></li>
-          <li class="breadcrumb-item active">Campus Profile</li>
-        </ol>
-      </div>
-      <div class="text-muted small mt-2 mt-md-0">
-        <?= esc($schoolinfo->system_name ?? 'School') ?>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Campus Profile',
+    'icon' => 'fas fa-school',
+    'subtitle' => ($schoolinfo->system_name ?? 'School') . ' — campus settings',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus Profile', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -69,7 +62,7 @@
     <!-- Sticky action bar -->
     <div class="card card-primary card-outline shadow-sm">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h3 class="card-title mb-0"><i class="fas fa-school mr-2"></i>Campus Information</h3>
+        <h3 class="card-title mb-0"><i class="fas fa-school me-2"></i>Campus Information</h3>
         <div class="small text-muted">Fields marked <span class="text-danger">*</span> are required</div>
       </div>
 
@@ -81,13 +74,13 @@
       <div class="card-body p-0">
         <!-- Tabs -->
         <ul class="nav nav-tabs nav-tabs-clean px-3 pt-3" id="campusTabs" role="tablist">
-          <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tab-basic"><i class="fas fa-id-card-alt mr-1"></i>Basics</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-principal"><i class="fas fa-user-tie mr-1"></i>Principal</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-qrcode"><i class="fas fa-user-tie mr-1"></i>QR Code</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-services"><i class="fas fa-concierge-bell mr-1"></i>Services</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-finance"><i class="fas fa-university mr-1"></i>Finance</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-regional"><i class="fas fa-globe-asia mr-1"></i>Regional</a></li>
-          <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-fee"><i class="fas fa-file-invoice-dollar mr-1"></i>Fee Settings</a></li>
+          <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-basic"><i class="fas fa-id-card-alt me-1"></i>Basics</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-principal"><i class="fas fa-user-tie me-1"></i>Principal</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-qrcode"><i class="fas fa-user-tie me-1"></i>QR Code</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-services"><i class="fas fa-concierge-bell me-1"></i>Services</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-finance"><i class="fas fa-university me-1"></i>Finance</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-regional"><i class="fas fa-globe-asia me-1"></i>Regional</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-fee"><i class="fas fa-file-invoice-dollar me-1"></i>Fee Settings</a></li>
         </ul>
 
         <div class="tab-content p-3">
@@ -99,7 +92,7 @@
                 <div class="form-group">
                   <label>Campus Name <span class="text-danger">*</span></label>
                   <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-school"></i></span></div>
+                    <span class="input-group-text"><i class="fas fa-school"></i></span>
                     <input type="text" class="form-control" name="campus_name" value="<?= esc($campus_name) ?>" required maxlength="150" placeholder="e.g. ITDS Smart System – Main Campus">
                   </div>
                   <small class="form-text text-muted">Official display name of the campus.</small>
@@ -110,7 +103,7 @@
                 <div class="form-group">
                   <label>Short Name</label>
                   <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-compress-arrows-alt"></i></span></div>
+                    <span class="input-group-text"><i class="fas fa-compress-arrows-alt"></i></span>
                     <input type="text" class="form-control" name="short_name" value="<?= esc($short_name) ?>" maxlength="20" placeholder="e.g. MAIN">
                   </div>
                 </div>
@@ -119,7 +112,7 @@
               <div class="col-md-6">
                 <label>Mobile Number <span class="text-danger">*</span></label>
                 <div class="input-group">
-                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-mobile-alt"></i></span></div>
+                  <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
                   <input type="tel" class="form-control" name="mobile_no"
                          value="<?= esc($mobile_no) ?>" required maxlength="16"
                          pattern="^\+[0-9]{6,15}$"
@@ -132,7 +125,7 @@
               <div class="col-md-6">
                 <label>Landline</label>
                 <div class="input-group">
-                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone"></i></span></div>
+                  <span class="input-group-text"><i class="fas fa-phone"></i></span>
                   <input type="tel" class="form-control" name="landline"
                          value="<?= esc($landline) ?>"
                          data-inputmask="'mask': '+999999999999999'"
@@ -143,7 +136,7 @@
               <div class="col-12">
                 <label>Location / Address</label>
                 <div class="input-group">
-                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span></div>
+                  <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                   <input type="text" class="form-control" name="location" value="<?= esc($location) ?>" placeholder="Street, City, Country">
                 </div>
               </div>
@@ -157,7 +150,7 @@
             <div class="card card-outline card-info">
                 <div class="card-header">
                     <h5 class="card-title">
-                        <i class="fas fa-qrcode mr-2"></i>Campus QR Code
+                        <i class="fas fa-qrcode me-2"></i>Campus QR Code
                     </h5>
                     <div class="card-tools">
                         <?php if (isset($campusQR) && !empty($campusQR->qr_code)): ?>
@@ -178,7 +171,7 @@
                                      style="width: 250px; height: 250px; border: 1px solid #ddd; padding: 10px;">
                             <?php else: ?>
                                 <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
                                     QR Code could not be generated. Please try again.
                                 </div>
                             <?php endif; ?>
@@ -198,9 +191,9 @@
                         </div>
                         
                         <div class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle mr-2"></i>
+                            <i class="fas fa-info-circle me-2"></i>
                             <strong>Campus QR Code Usage:</strong>
-                            <ul class="mb-0 mt-2 text-left">
+                            <ul class="mb-0 mt-2 text-start">
                                 <li>Scan this QR code to access campus profile</li>
                                 <li>Use for student/parent registration</li>
                                 <li>Display at campus entrance for visitor check-in</li>
@@ -210,11 +203,11 @@
                         
                     <?php else: ?>
                         <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
                             No QR code generated for this campus yet.
                         </div>
                         <button type="button" class="btn btn-primary" onclick="generateCampusQR()">
-                            <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                            <i class="fas fa-qrcode me-2"></i> Generate QR Code
                         </button>
                     <?php endif; ?>
                 </div>
@@ -228,15 +221,13 @@
               <div class="col-md-8">
                 <div class="card card-outline card-primary">
                   <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-user-tie mr-2"></i>Principal Information</h5>
+                    <h5 class="card-title"><i class="fas fa-user-tie me-2"></i>Principal Information</h5>
                   </div>
                   <div class="card-body">
                     <div class="form-group">
                       <label>Principal Name</label>
                       <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        </div>
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
                         <input type="text" class="form-control" name="principal_name" 
                                value="<?= esc($principal_name) ?>" 
                                placeholder="Enter principal's full name" maxlength="100">
@@ -246,10 +237,10 @@
 
                     <div class="form-group">
                       <label>Digital Signature</label>
-                      <div class="custom-file">
-                        <input type="file" class="custom-file-input" name="principal_signature" 
+                      <div class="mb-3">
+                        <input type="file" class="form-control" name="principal_signature" 
                                id="principal_signature" accept="image/png,image/jpeg,image/jpg">
-                        <label class="custom-file-label" for="principal_signature">Choose signature image</label>
+                        <label class="form-label" for="principal_signature">Choose signature image</label>
                       </div>
                       <small class="text-muted d-block mt-2">
                         <i class="fas fa-info-circle"></i> 
@@ -263,7 +254,7 @@
               <div class="col-md-4">
                 <div class="card card-outline card-secondary">
                   <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-eye mr-2"></i>Current Signature</h5>
+                    <h5 class="card-title"><i class="fas fa-eye me-2"></i>Current Signature</h5>
                   </div>
                   <div class="card-body text-center">
                     <?php if (!empty($principal_signature)): ?>
@@ -300,24 +291,23 @@
               <?php
                 $svc = [
                   ['name'=>'school','label'=>'School','checked'=>$school],
-                  ['name'=>'transport','label'=>'Transport','checked'=>$transport],
-                  ['name'=>'hostel','label'=>'Hostel','checked'=>$hostel],
-                  ['name'=>'academy','label'=>'Academy','checked'=>$academy],
+                  ['name'=>'hifz','label'=>'Hifz Program','checked'=>$hifz],
                 ];
                 foreach ($svc as $s):
               ?>
               <div class="col-sm-6 col-lg-3">
-                <div class="custom-control custom-switch mb-3">
-                  <input type="checkbox" class="custom-control-input" id="<?= $s['name'] ?>"
+                <div class="form-check form-switch mb-3">
+                  <input type="checkbox" class="form-check-input" id="<?= $s['name'] ?>"
                          name="<?= $s['name'] ?>" value="1" <?= $s['checked'] ? 'checked' : '' ?>>
-                  <label class="custom-control-label" for="<?= $s['name'] ?>">
-                    <i class="fas fa-check-circle text-success mr-1"></i><?= $s['label'] ?>
+                  <label class="form-check-label" for="<?= $s['name'] ?>">
+                    <i class="fas fa-check-circle text-success me-1"></i><?= $s['label'] ?>
                   </label>
                 </div>
               </div>
               <?php endforeach; ?>
             </div>
-            <small class="text-muted d-block">Changing services may affect fee plans, transport routes, and hostel allocations.</small>
+
+            <small class="text-muted d-block mt-2">Changing services may affect fee plans and program features.</small>
           </div>
 
           <!-- FINANCE -->
@@ -341,7 +331,7 @@
               </div>
             </div>
             <div class="alert alert-light border mt-3">
-              <i class="far fa-lightbulb mr-1"></i>
+              <i class="far fa-lightbulb me-1"></i>
               Tip: Keep bank details consistent with printed fee challans.
             </div>
           </div>
@@ -405,7 +395,7 @@
               <div class="col-sm-6 col-lg-3">
                 <label>Late Fee Fine Amount</label>
                 <div class="input-group">
-                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span></div>
+                  <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
                   <input type="number" class="form-control" name="late_fee_fine" value="<?= esc($late_fee_fine) ?>" min="0" step="0.01" placeholder="0.00">
                 </div>
               </div>
@@ -413,17 +403,17 @@
               <div class="col-lg-6">
                 <label>Chalan Header Message</label>
                 <textarea class="form-control autosize" name="chalan_h_msg" rows="3" maxlength="250" data-count="#hCount"><?= esc($chalan_h_msg) ?></textarea>
-                <div class="text-right small text-muted"><span id="hCount">0</span>/250</div>
+                <div class="text-end small text-muted"><span id="hCount">0</span>/250</div>
               </div>
               <div class="col-lg-6">
                 <label>Chalan Footer Message</label>
                 <textarea class="form-control autosize" name="chalan_f_msg" rows="3" maxlength="250" data-count="#fCount"><?= esc($chalan_f_msg) ?></textarea>
-                <div class="text-right small text-muted"><span id="fCount">0</span>/250</div>
+                <div class="text-end small text-muted"><span id="fCount">0</span>/250</div>
               </div>
             </div>
 
             <div class="alert alert-info mt-3 mb-0">
-              <i class="fas fa-info-circle mr-1"></i>
+              <i class="fas fa-info-circle me-1"></i>
               Fee cycle values are used when generating monthly challans and reminders.
             </div>
           </div>
@@ -434,10 +424,10 @@
       <!-- Sticky footer mirrors the action bar for long forms -->
       <div class="card-footer d-flex justify-content-end gap-2">
         <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save mr-1"></i> Save Changes
+          <i class="fas fa-save me-1"></i> Save Changes
         </button>
         <button type="reset" class="btn btn-light border">
-          <i class="fas fa-undo mr-1"></i> Reset
+          <i class="fas fa-undo me-1"></i> Reset
         </button>
         <a href="#/" class="btn btn-outline-secondary">Cancel</a>
       </div>
@@ -461,7 +451,7 @@
     border: 1px dashed #dee2e6;
 }
 
-.custom-file-label::after {
+.form-label::after {
     content: "Browse";
 }
 
@@ -569,7 +559,7 @@ function generateCampusQR() {
 
 (function($){
   // Select2
-  $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+  $('.select2').select2({ theme: 'bootstrap-5', width: '100%' });
 
   // Masks
   $('[name="mobile_no"]').inputmask({ mask: '+999999999999999', placeholder: '', greedy:false });
@@ -613,17 +603,18 @@ function generateCampusQR() {
   clampDue();
 
   // Service toggles confirm (gentle)
-  $('input[type="checkbox"][name="school"],[name="transport"],[name="hostel"],[name="academy"]').on('change', function(){
+  $('input[type="checkbox"][name="school"],[name="hifz"]').on('change', function(){
     var $t = $(this), label = $t.attr('name'), on = $t.is(':checked');
     if(!confirm('Are you sure you want to ' + (on?'enable':'disable') + ' ' + label + '?')){
       $t.prop('checked', !on);
+      return;
     }
   });
 
   // Custom file input label update
   $('#principal_signature').on('change', function() {
     var fileName = $(this).val().split('\\').pop();
-    $(this).next('.custom-file-label').addClass("selected").html(fileName);
+    $(this).next('.form-label').addClass("selected").html(fileName);
   });
 
   // jQuery Validate
@@ -667,7 +658,7 @@ function generateCampusQR() {
       // Optional: show loader (use your own loader if any)
       let $btn = $('.card-footer .btn-primary');
       let old = $btn.html();
-      $btn.html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving…');
+      $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Saving…');
 
       $.ajax({
         url: $form.attr('action'),
@@ -730,7 +721,7 @@ function removeSignature() {
 }
 
 // Bootstrap tabs - prevent jumping on click
-$('a[data-toggle="tab"]').on('click', function(e) {
+$('a[data-bs-toggle="tab"]').on('click', function(e) {
     e.preventDefault();
     $(this).tab('show');
 });

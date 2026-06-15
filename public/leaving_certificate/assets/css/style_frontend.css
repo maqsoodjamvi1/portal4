@@ -1,0 +1,135 @@
+.btm_link a {
+    color: #fff !important;
+    font-size: 16px !important;
+}
+
+.free_txt{
+	font-family: 'Open Sans', sans-serif;
+	font-size:28px;
+	font-weight: 400;	
+}
+
+.free_txt_sub{
+	font-family: 'Open Sans', sans-serif;
+	font-size:14px;
+	font-weight: 400;	
+}
+
+.sub_box{
+	border:solid 1px #CCC;
+	padding:25px 5px;
+	margin-bottom:25px;
+	text-align:center;
+}
+
+.sub_box:hover{
+	box-shadow: 0px 0px 5px #CCCCCC;
+	background-color: #F1F1F1;
+}
+.box_icon{
+	padding:10px;
+	margin-bottom:10px;
+}
+.box_txt{
+	font-weight:bold;
+	padding-bottom:10px;
+	text-align:center;
+	font-size:12px;
+}
+
+.sub_box_store{
+	border:solid 1px #CCC;
+	padding:5px;
+	text-align:center;
+}
+.sub_box_store:hover{
+	box-shadow: 0px 0px 5px #CCCCCC;
+}
+.box_txt_sub{
+	font-weight:bold;
+	margin-bottom:25px;
+	text-align:center;
+	font-size:12px;
+}
+
+.pricing_top{
+	background:#006cb7;
+	color:#FFF;
+	border-bottom:solid 1px #007dd3;
+}
+
+.price{
+	font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size:40px;
+	font-weight:bold;
+	color:#FFF;
+}
+.price_head{
+	font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size:14px;
+	color:#FFF;
+}
+.pricing_top_green{
+	background:#5bc033;
+	color:#FFF;
+	border-bottom:solid 1px #6bd541;
+	-webkit-border-top-left-radius: 5px;
+	-webkit-border-top-right-radius: 5px;
+	-moz-border-radius-topleft: 5px;
+	-moz-border-radius-topright: 5px;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+.main_top_heading{
+	font-family: 'Oswald', sans-serif;
+	font-weight: 400;
+	font-size:40px;
+	text-transform: uppercase;
+}
+.slctd_txt{
+	font-weight: bold;
+    background: #00733d;
+    color: #FFF;
+    margin: 0px;
+    padding: 10px;
+}
+.slctd_txt_sub{
+	font-weight: bold;
+    color: #000;
+    margin: 0px;
+    padding: 10px;
+
+}
+.school_name{
+	margin-top:5px; 
+	font-size:40px; 
+	font-family:"Times New Roman", Times, serif;
+}
+.header_photo{
+	width: 65px;
+	margin-top: 8px;
+	float: left;
+	border-radius: 8px;
+}
+.campus_name{
+	margin-top:5px;
+	font-family: "Orbitron";
+	font-size: 16px;
+}
+@media screen and (max-width: 992px) {
+	#resultContainer{
+		font-size: 12px;
+	}
+	.header_photo{
+		width: 45px !important;
+	}
+ .school_name{
+ 	font-size: 26px;
+ }
+ .campus_name{
+ 	font-size: 20px !important;
+ }
+ .table-bordered>thead>tr>th, .table-bordered>tbody>tr>th, .table-bordered>tfoot>tr>th, .table-bordered>thead>tr>td, .table-bordered>tbody>tr>td, .table-bordered>tfoot>tr>td{
+ 	font-size: 12px;
+ }
+}

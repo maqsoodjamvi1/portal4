@@ -1,12 +1,11 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<meta name="csrf-token" content="<?= csrf_hash() ?>">
 
 <div class="container-fluid px-3">
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-user-plus mr-2"></i> Readmit Student</h5>
+            <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i> Readmit Student</h5>
             <button type="button" class="btn btn-light btn-sm" onclick="window.print();">
                 <i class="fas fa-print"></i> Print
             </button>
@@ -18,32 +17,28 @@
                 <div class="col-md-6 offset-md-3">
                     <div class="card border-info">
                         <div class="card-header bg-info text-white">
-                            <h6 class="mb-0"><i class="fas fa-search mr-2"></i> Search Dropped Students</h6>
+                            <h6 class="mb-0"><i class="fas fa-search me-2"></i> Search Dropped Students</h6>
                         </div>
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Search By:</label>
-                                <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                                <div class="btn-group btn-group-toggle w-100" data-bs-toggle="buttons">
                                     <label class="btn btn-outline-primary active">
-                                        <input type="radio" name="search_type" value="name" checked> <i class="fas fa-user mr-1"></i> Student Name
+                                        <input type="radio" name="search_type" value="name" checked> <i class="fas fa-user me-1"></i> Student Name
                                     </label>
                                     <label class="btn btn-outline-primary">
-                                        <input type="radio" name="search_type" value="father"> <i class="fas fa-user-friends mr-1"></i> Father Name
+                                        <input type="radio" name="search_type" value="father"> <i class="fas fa-user-friends me-1"></i> Father Name
                                     </label>
                                 </div>
                             </div>
                             
                             <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                </div>
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" class="form-control form-control-lg" id="searchStudent" 
                                        placeholder="Type at least 3 characters..." autocomplete="off">
-                                <div class="input-group-append">
-                                    <button class="btn btn-secondary" type="button" id="clearSearch">
+                                <button class="btn btn-secondary" type="button" id="clearSearch">
                                         <i class="fas fa-times"></i>
                                     </button>
-                                </div>
                             </div>
                             <div id="searchResults" class="mt-3" style="display: none;">
                                 <div class="list-group" id="resultsList"></div>
@@ -59,7 +54,7 @@
                     <div class="col-md-12">
                         <div class="card border-success">
                             <div class="card-header bg-success text-white">
-                                <h6 class="mb-0"><i class="fas fa-user-check mr-2"></i> Student Readmission Details</h6>
+                                <h6 class="mb-0"><i class="fas fa-user-check me-2"></i> Student Readmission Details</h6>
                             </div>
                             <div class="card-body">
                                 <input type="hidden" id="student_id" name="student_id">
@@ -124,8 +119,8 @@
     <div class="card border-info">
         <div class="card-header bg-info text-white">
             <h6 class="mb-0">
-                <i class="fas fa-history mr-2"></i> Fee Payment History
-                <button type="button" class="btn btn-light btn-sm float-right" id="toggleFeeHistory">
+                <i class="fas fa-history me-2"></i> Fee Payment History
+                <button type="button" class="btn btn-light btn-sm float-end" id="toggleFeeHistory">
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </h6>
@@ -166,21 +161,21 @@
                                 <div class="mt-4">
                                     <div class="card">
                                         <div class="card-header bg-info text-white">
-                                            <h6 class="mb-0"><i class="fas fa-money-bill-wave mr-2"></i> Fee Management</h6>
+                                            <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i> Fee Management</h6>
                                         </div>
                                         <div class="card-body">
                                             <div class="alert alert-info">
-                                                <i class="fas fa-info-circle mr-2"></i>
+                                                <i class="fas fa-info-circle me-2"></i>
                                                 <strong>Outstanding Balance:</strong> Rs. <span id="outstandingBalance">0.00</span>
                                             </div>
                                             
                                             <button type="button" class="btn btn-sm btn-primary mb-3" id="addFeeRow">
-                                                <i class="fas fa-plus mr-1"></i> Add Fee
+                                                <i class="fas fa-plus me-1"></i> Add Fee
                                             </button>
                                             
                                             <div class="table-responsive">
                                                 <table class="table table-bordered table-sm" id="feeTable">
-                                                    <thead class="thead-light">
+                                                    <thead class="table-light">
                                                         <tr>
                                                             <th>Fee Type</th>
                                                             <th>Fee Month</th>
@@ -205,15 +200,15 @@
                                                     <table class="table table-bordered">
                                                         <tr>
                                                             <th>Total Amount:</th>
-                                                            <td class="text-right">Rs. <span id="totalAmount">0.00</span></td>
+                                                            <td class="text-end">Rs. <span id="totalAmount">0.00</span></td>
                                                         </tr>
                                                         <tr>
                                                             <th>Total Discount:</th>
-                                                            <td class="text-right">Rs. <span id="totalDiscount">0.00</span></td>
+                                                            <td class="text-end">Rs. <span id="totalDiscount">0.00</span></td>
                                                         </tr>
                                                         <tr class="table-success">
                                                             <th>Net Payable:</th>
-                                                            <td class="text-right">Rs. <span id="netPayable">0.00</span></td>
+                                                            <td class="text-end">Rs. <span id="netPayable">0.00</span></td>
                                                         </tr>
                                                     </table>
                                                 </div>
@@ -225,10 +220,10 @@
                                 <!-- Action Buttons -->
                                 <div class="form-group text-center mt-4">
                                     <button type="button" class="btn btn-success btn-lg" id="btnReadmit">
-                                        <i class="fas fa-save mr-2"></i> Process Readmission
+                                        <i class="fas fa-save me-2"></i> Process Readmission
                                     </button>
                                     <button type="button" class="btn btn-secondary btn-lg" id="btnCancel">
-                                        <i class="fas fa-times mr-2"></i> Cancel
+                                        <i class="fas fa-times me-2"></i> Cancel
                                     </button>
                                 </div>
                             </div>
@@ -285,10 +280,24 @@
 <script>
 let searchTimeout;
 let selectedStudentId = null;
-
 $(function() {
     // Initialize datepickers
     $('.datepicker').datepicker({ format: 'dd/mm/yyyy', autoclose: true });
+    
+    // Search timeout variable
+    let searchTimeout;
+    let selectedStudentId = null;
+    
+    // Helper function to escape HTML
+    window.escapeHtml = function(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
     
     // Search functionality
     $('#searchStudent').on('input', function() {
@@ -315,31 +324,57 @@ $(function() {
                 },
                 dataType: 'json',
                 beforeSend: function() {
-                   console.log('Searching for:', $('#searchStudent').val());
-    console.log('Search type:', $('input[name="search_type"]:checked').val());
-    console.log('Campus ID:', $('#campus_id').val());
-    $('#searchResults').show();
-    $('#resultsList').html('<div class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>');
-},
-success: function(res) {
-    console.log('Search response:', res);
-                    if (res.success && res.data.length > 0) {
+                    console.log('Searching for:', $('#searchStudent').val());
+                    console.log('Search type:', $('input[name="search_type"]:checked').val());
+                    $('#searchResults').show();
+                    $('#resultsList').html('<div class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>');
+                },
+                success: function(res) {
+                    console.log('Search response:', res);
+                    
+                    if (res.success && res.data && res.data.length > 0) {
                         let html = '';
                         res.data.forEach(function(student) {
+                            // Debug: Check if class_display is present
+                            console.log('Student:', student.student_name, 'Class:', student.class_display);
+                            
                             html += `
                                 <a href="javascript:void(0)" class="list-group-item list-group-item-action student-result" 
                                    data-student-id="${student.student_id}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong><i class="fas fa-user-graduate mr-1"></i> ${escapeHtml(student.student_name)}</strong>
-                                            <br>
-                                            <small class="text-muted">
-                                                <i class="fas fa-id-card mr-1"></i>Reg: ${escapeHtml(student.reg_no)} | 
-                                                <i class="fas fa-user-friends mr-1"></i>${escapeHtml(student.father_name)} |
-                                                <i class="fas fa-calendar-times mr-1"></i>Left: ${student.leaving_date}
-                                            </small>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2 flex-wrap">
+                                                <strong class="me-2"><i class="fas fa-user-graduate me-1"></i> ${escapeHtml(student.student_name)}</strong>
+                                                <span class="badge text-bg-info" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-chalkboard me-1"></i> ${escapeHtml(student.class_display || 'No class record')}
+                                                </span>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 col-sm-6">
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-id-card fa-fw me-1"></i>Reg: ${escapeHtml(student.reg_no || 'N/A')}
+                                                    </small>
+                                                </div>
+                                                <div class="col-md-4 col-sm-6">
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-user-friends fa-fw me-1"></i>Father: ${escapeHtml(student.father_name || 'N/A')}
+                                                    </small>
+                                                </div>
+                                                <div class="col-md-4 col-sm-12">
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-calendar-times fa-fw me-1"></i>Left: ${student.leaving_date || 'N/A'}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            ${student.leaving_reason && student.leaving_reason !== 'N/A' ? `
+                                            <div class="mt-1">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-comment fa-fw me-1"></i>Reason: ${escapeHtml(student.leaving_reason)}
+                                                </small>
+                                            </div>
+                                            ` : ''}
                                         </div>
-                                        <i class="fas fa-chevron-right text-muted"></i>
+                                        <i class="fas fa-chevron-right text-muted ms-2 mt-2"></i>
                                     </div>
                                 </a>
                             `;
@@ -352,15 +387,17 @@ success: function(res) {
                             loadStudentForReadmission(studentId);
                         });
                     } else {
-                        $('#resultsList').html('<div class="list-group-item text-muted"><i class="fas fa-user-slash mr-1"></i> No dropped students found</div>');
+                        $('#resultsList').html('<div class="list-group-item text-center text-muted"><i class="fas fa-user-slash me-1"></i> No dropped students found</div>');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.error('Search error:', error);
                     $('#resultsList').html('<div class="list-group-item text-danger">Error searching students</div>');
                 }
             });
         }, 500);
     });
+    
     
     // Clear search
     $('#clearSearch').on('click', function() {
@@ -526,26 +563,27 @@ $('#btnReadmit').on('click', function() {
         return;
     }
     
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    const requestData = {
-        student_id: parseInt(studentId),
-        cls_sec_id: parseInt(clsSecId),
+    const postData = (window.adminCsrfPayload || function (d) { return d; })({
+        student_id: parseInt(studentId, 10),
+        cls_sec_id: parseInt(clsSecId, 10),
         readmission_date: readmissionDate,
+        fee_data: JSON.stringify(feeData)
+    });
+
+    console.log('Final request data:', JSON.stringify({
+        student_id: postData.student_id,
+        cls_sec_id: postData.cls_sec_id,
+        readmission_date: postData.readmission_date,
         fee_data: feeData
-    };
-    
-    console.log('Final request data:', JSON.stringify(requestData, null, 2));
-    
+    }, null, 2));
+
     $.ajax({
         url: '<?= site_url("admin/students/process_readmission") ?>',
         method: 'POST',
-        contentType: 'application/json',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken
-        },
-        data: JSON.stringify(requestData),
+        dataType: 'json',
+        data: postData,
         beforeSend: function() {
-            $('#btnReadmit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Processing...');
+            $('#btnReadmit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Processing...');
         },
         success: function(res) {
             console.log('Response:', res);
@@ -558,7 +596,7 @@ $('#btnReadmit').on('click', function() {
                 }
             } else {
                 toastr.error(res.msg);
-                $('#btnReadmit').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Process Readmission');
+                $('#btnReadmit').prop('disabled', false).html('<i class="fas fa-save me-2"></i> Process Readmission');
             }
         },
         error: function(xhr) {
@@ -569,12 +607,16 @@ $('#btnReadmit').on('click', function() {
             let errorMsg = 'An error occurred';
             try {
                 const response = JSON.parse(xhr.responseText);
-                errorMsg = response.msg || errorMsg;
+                errorMsg = response.msg || response.message || errorMsg;
             } catch(e) {
-                errorMsg = xhr.statusText || errorMsg;
+                if (xhr.responseText && xhr.responseText.length < 500) {
+                    errorMsg = xhr.responseText;
+                } else {
+                    errorMsg = xhr.statusText || errorMsg;
+                }
             }
             toastr.error(errorMsg);
-            $('#btnReadmit').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Process Readmission');
+            $('#btnReadmit').prop('disabled', false).html('<i class="fas fa-save me-2"></i> Process Readmission');
         }
     });
 });
@@ -703,7 +745,7 @@ function displayFeeHistory(data) {
     // Fee History Table
     html += `<div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
         <table class="table table-bordered table-sm table-hover" id="feeHistoryTable">
-            <thead class="thead-light">
+            <thead class="table-light">
                 <tr>
                     <th rowspan="2">Academic Year</th>
                     <th rowspan="2">Class</th>`;
@@ -745,7 +787,7 @@ function displayFeeHistory(data) {
             let amount = Math.round(session.monthly_amounts[monthNum] || 0);
             rowTotal += amount;
             let displayClass = amount > 0 ? 'table-success' : '';
-            html += `<td class="text-right ${displayClass}">
+            html += `<td class="text-end ${displayClass}">
                         ${amount > 0 ? amount.toLocaleString() : '-'}
                       </td>`;
         }
@@ -755,28 +797,28 @@ function displayFeeHistory(data) {
             let amount = Math.round(session.non_monthly[feeType] || 0);
             rowTotal += amount;
             let displayClass = amount > 0 ? 'table-info' : '';
-            html += `<td class="text-right ${displayClass}">
+            html += `<td class="text-end ${displayClass}">
                         ${amount > 0 ? amount.toLocaleString() : '-'}
                       </td>`;
         });
         
-        html += `<td class="text-right font-weight-bold">${rowTotal.toLocaleString()}</td>`;
+        html += `<td class="text-end fw-bold">${rowTotal.toLocaleString()}</td>`;
         html += `</tr>`;
         grandTotal += rowTotal;
     });
     
     // Add grand total row
-    html += `<tr class="thead-light font-weight-bold">
-        <td colspan="2" class="text-right">GRAND TOTAL:</td>`;
+    html += `<tr class="table-light fw-bold">
+        <td colspan="2" class="text-end">GRAND TOTAL:</td>`;
     
     for (let monthNum in data.months) {
-        html += `<td class="text-right"></td>`;
+        html += `<td class="text-end"></td>`;
     }
     data.non_monthly_types.forEach(function() {
-        html += `<td class="text-right"></td>`;
+        html += `<td class="text-end"></td>`;
     });
     
-    html += `<td class="text-right text-success">${grandTotal.toLocaleString()}</td>
+    html += `<td class="text-end text-success">${grandTotal.toLocaleString()}</td>
         </table>`;
     
     html += `</tbody></table></div>`;

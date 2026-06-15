@@ -1,9 +1,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1>Vocabulary Bank (Bulk JSON Import / Manual)</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Vocabulary Bank (Bulk JSON Import / Manual)',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Vocabulary Bank (Bulk JSON Import / Manual)', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
 
@@ -23,7 +28,7 @@
       <div class="card-body">
 
         <!-- Class / Subject / Topic -->
-        <div class="form-row mb-3">
+        <div class="row mb-3">
           <div class="form-group col-md-4">
             <label for="class_id">Class</label>
             <select name="class_id_master" id="class_id" class="form-control" required>
@@ -47,14 +52,12 @@
               <select name="topic_id_master" id="topic_id" class="form-control" required>
                 <option value="">-- Select Topic --</option>
               </select>
-              <div class="input-group-append">
-                <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#topicModal">+</button>
-              </div>
+              <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#topicModal">+</button>
             </div>
           </div>
         </div>
 
-        <div class="form-row mb-2">
+        <div class="row mb-2">
   <div class="form-group col-md-12">
     <div id="vocabCountInfo"
          class="alert alert-light border py-1 px-2 mb-0 small"
@@ -65,13 +68,13 @@
       </div>
 
       <div class="d-flex align-items-start mt-1">
-        <small class="text-muted mr-2 mb-0" style="white-space:nowrap;">Words:</small>
+        <small class="text-muted me-2 mb-0" style="white-space:nowrap;">Words:</small>
         <div style="flex:1; max-height:60px; overflow-y:auto; font-size:11px;">
           <span id="vocabWordList"></span>
         </div>
         <button type="button"
                 id="btnCopyVocabWords"
-                class="btn btn-xs btn-outline-secondary ml-2"
+                class="btn btn-sm btn-outline-secondary ms-2"
                 style="font-size:11px; padding:2px 6px; display:none;">
           Copy
         </button>
@@ -138,7 +141,7 @@
 
         <div class="table-responsive">
           <table class="table table-bordered table-sm" id="vocabTable">
-           <thead class="thead-light">
+           <thead class="table-light">
 <tr>
   <th style="width:3%"></th>
   <th>Word</th>
@@ -168,7 +171,7 @@
 
       </div>
 
-      <div class="card-footer text-right">
+      <div class="card-footer text-end">
         <button type="submit" class="btn btn-success">Save All Vocabulary</button>
       </div>
     </form>
@@ -183,7 +186,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Add Topic</h5>
-          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="t_class_id" name="class_id">
@@ -194,7 +197,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary">Save Topic</button>
         </div>
       </div>

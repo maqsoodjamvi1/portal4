@@ -3,7 +3,7 @@
 
 <?php
 // Inputs expected from controller:
-// $campusInfo, $fee_type_info, $a_fee_type_info, $t_fee_type_info, $h_fee_type_info
+// $campusInfo, $fee_type_info, $a_fee_type_info, $t_fee_type_info
 // $today_chalans - Array of chalans generated today
 $isEdit = isset($isEdit) ? (bool)$isEdit : (isset($fee_chalan) && $fee_chalan);
 $header = $isEdit ? 'Edit Fee Chalan' : 'Generate Fee Chalan';
@@ -20,22 +20,15 @@ $selected_fee_type_ids = $selected_fee_type_ids ?? [];
 $today_chalans = $today_chalans ?? [];
 ?>
 
-<!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><?= esc($header) ?></h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active"><?= esc($header) ?></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-file-invoice-dollar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee-chalan')],
+        ['label' => $isEdit ? 'Edit' : 'Generate', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -54,8 +47,8 @@ $today_chalans = $today_chalans ?? [];
             
             <!-- ========== FEE TYPE SELECTION ========== -->
             <div class="form-group mb-4" id="feeTypeSelectionBlock">
-              <label class="font-weight-bold">
-                <i class="fas fa-tags mr-1"></i> Select Fee Types <span class="text-danger">*</span>
+              <label class="fw-bold">
+                <i class="fas fa-tags me-1"></i> Select Fee Types <span class="text-danger">*</span>
               </label>
               <p class="text-muted small mb-2">You must tick at least one fee type before generating challans. Generation cannot run with zero fee types selected.</p>
               
@@ -78,13 +71,13 @@ $today_chalans = $today_chalans ?? [];
                   <?php endforeach; ?>
                 <?php else : ?>
                   <div class="alert alert-warning mb-0">
-                    <i class="fas fa-exclamation-triangle mr-1"></i> No fee types are configured for this campus. Configure fee types before generating challans.
+                    <i class="fas fa-exclamation-triangle me-1"></i> No fee types are configured for this campus. Configure fee types before generating challans.
                   </div>
                 <?php endif; ?>
                 
                 <!-- Add other fee types similarly... -->
               </div>
-              <div id="fee-type-validation-msg" class="text-danger small mt-2 font-weight-bold" style="display:none;" role="alert"></div>
+              <div id="fee-type-validation-msg" class="text-danger small mt-2 fw-bold" style="display:none;" role="alert"></div>
             </div>
             <!-- ========== END FEE TYPE SELECTION ========== -->
 
@@ -92,30 +85,26 @@ $today_chalans = $today_chalans ?? [];
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
-                  <label><i class="fas fa-calendar-alt mr-1"></i> Issue Date <span class="text-danger">*</span></label>
+                  <label><i class="fas fa-calendar-alt me-1"></i> Issue Date <span class="text-danger">*</span></label>
                   <div class="input-group date" id="datepicker2" data-target-input="nearest">
                     <input type="text" name="issue_date" autocomplete="off"
                            class="form-control datetimepicker-input"
-                           data-toggle="datetimepicker" data-target="#datepicker2"
+                           data-bs-toggle="datetimepicker" data-bs-target="#datepicker2"
                            value="<?= esc($issue_date_val) ?>" required/>
-                    <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
+                    <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                   </div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-group">
-                  <label><i class="fas fa-calendar-check mr-1"></i> Due Date <span class="text-danger">*</span></label>
+                  <label><i class="fas fa-calendar-check me-1"></i> Due Date <span class="text-danger">*</span></label>
                   <div class="input-group date" id="datepicker" data-target-input="nearest">
                     <input type="text" name="due_date" autocomplete="off"
                            class="form-control datetimepicker-input"
-                           data-toggle="datetimepicker" data-target="#datepicker"
+                           data-bs-toggle="datetimepicker" data-bs-target="#datepicker"
                            value="<?= esc($due_date_val) ?>" required/>
-                    <div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
+                    <span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
                   </div>
                 </div>
               </div>
@@ -125,12 +114,12 @@ $today_chalans = $today_chalans ?? [];
 <div class="row">
     <div class="col-md-6">
         <div class="form-group">
-            <label><i class="fas fa-calendar-week mr-1"></i> Fee Month <span class="text-danger">*</span></label>
+            <label><i class="fas fa-calendar-week me-1"></i> Fee Month <span class="text-danger">*</span></label>
             <input type="month" class="form-control" name="fee_month" 
                    value="<?= esc($fee_month_val) ?>" required>
             <?php if (isset($fee_month_note) && !empty($fee_month_note)): ?>
                 <small class="form-text text-info">
-                    <i class="fas fa-info-circle mr-1"></i>
+                    <i class="fas fa-info-circle me-1"></i>
                     <?= esc($fee_month_note) ?>
                 </small>
             <?php endif; ?>
@@ -139,7 +128,7 @@ $today_chalans = $today_chalans ?? [];
 
     <div class="col-md-6">
         <div class="form-group">
-            <label><i class="fas fa-calendar-week mr-1"></i> Fine Month (Optional)</label>
+            <label><i class="fas fa-calendar-week me-1"></i> Fine Month (Optional)</label>
             <input type="month" class="form-control" name="fine_month" 
                    value="<?= esc($fine_month_val ?? '') ?>">
             <small class="form-text text-muted">Leave empty if no fine applicable</small>
@@ -148,15 +137,15 @@ $today_chalans = $today_chalans ?? [];
 </div>
 
             <div class="fee-chalan-campus-defaults border rounded bg-light px-3 pt-3 pb-2 mb-0">
-              <h6 class="text-muted text-uppercase small font-weight-bold mb-3">
-                <i class="fas fa-sliders-h mr-1"></i> Campus defaults
+              <h6 class="text-muted text-uppercase small fw-bold mb-3">
+                <i class="fas fa-sliders-h me-1"></i> Campus defaults
               </h6>
               <p class="small text-muted mb-3">Fine rules and challan messages are saved to this campus. Small buttons update only that field.</p>
 
               <div class="row">
                 <div class="col-md-6">
                   <div class="form-group mb-2">
-                    <label class="small font-weight-bold mb-1">Fine type</label>
+                    <label class="small fw-bold mb-1">Fine type</label>
                     <select name="fine_type" class="form-control form-control-sm">
                       <option value="per_day_fine" <?= (!empty($campusInfo->fine_type) && $campusInfo->fine_type == 'per_day_fine') ? 'selected' : '' ?>>
                         Per Day Fine
@@ -169,37 +158,31 @@ $today_chalans = $today_chalans ?? [];
                 </div>
                 <div class="col-md-6">
                   <div class="form-group mb-2">
-                    <label class="small font-weight-bold mb-1">Fine amount</label>
+                    <label class="small fw-bold mb-1">Fine amount</label>
                     <div class="input-group input-group-sm">
                       <input type="text" class="form-control" id="late_fee_fine" name="late_fee_fine"
                              value="<?= esc($campusInfo->late_fee_fine ?? '') ?>">
-                      <div class="input-group-append">
-                        <button class="btn btn-outline-primary" id="btn_late_fee" type="button">Save</button>
-                      </div>
+                      <button class="btn btn-outline-primary" id="btn_late_fee" type="button">Save</button>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="form-group mb-2">
-                <label class="small font-weight-bold mb-1">Header message</label>
+                <label class="small fw-bold mb-1">Header message</label>
                 <div class="input-group input-group-sm">
                   <input type="text" class="form-control" id="chalan_h_msg" name="chalan_h_msg"
                          value="<?= esc($campusInfo->chalan_h_msg ?? '') ?>">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-primary" id="btn_h_msg" type="button">Save</button>
-                  </div>
+                  <button class="btn btn-outline-primary" id="btn_h_msg" type="button">Save</button>
                 </div>
               </div>
 
               <div class="form-group mb-0">
-                <label class="small font-weight-bold mb-1">Footer message</label>
+                <label class="small fw-bold mb-1">Footer message</label>
                 <div class="input-group input-group-sm">
                   <input type="text" class="form-control" id="chalan_f_msg" name="chalan_f_msg"
                          value="<?= esc($campusInfo->chalan_f_msg ?? '') ?>">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-primary" id="btn_f_msg" type="button">Save</button>
-                  </div>
+                  <button class="btn btn-outline-primary" id="btn_f_msg" type="button">Save</button>
                 </div>
               </div>
             </div>
@@ -209,19 +192,19 @@ $today_chalans = $today_chalans ?? [];
         <div class="card-footer bg-white fee-chalan-actions-footer pt-3 pb-4 px-3 border-top shadow-sm">
           <div class="row align-items-stretch">
             <div class="col-md-8 mb-2 mb-md-0">
-              <button type="submit" id="submitBtn" class="btn btn-primary btn-lg btn-block fee-chalan-generate-btn py-3 font-weight-bold shadow-sm">
-                <i class="fas fa-<?= $isEdit ? 'save' : 'play' ?> mr-2"></i>
+              <button type="submit" id="submitBtn" class="btn btn-primary btn-lg w-100 fee-chalan-generate-btn py-3 fw-bold shadow-sm">
+                <i class="fas fa-<?= $isEdit ? 'save' : 'play' ?> me-2"></i>
                 <?= $isEdit ? 'Update Fee Chalan' : 'Generate Fee Chalans' ?>
               </button>
             </div>
             <div class="col-md-4">
-              <button type="button" class="btn btn-outline-secondary btn-lg btn-block py-3" onclick="history.go(-1);">
-                <i class="fas fa-arrow-left mr-2"></i>Cancel
+              <button type="button" class="btn btn-outline-secondary btn-lg w-100 py-3" onclick="history.go(-1);">
+                <i class="fas fa-arrow-left me-2"></i>Cancel
               </button>
             </div>
           </div>
           <p class="text-center text-muted small mb-0 mt-2">
-            <i class="fas fa-info-circle mr-1"></i>Select fee types and dates above, then confirm in the dialog.
+            <i class="fas fa-info-circle me-1"></i>Select fee types and dates above, then confirm in the dialog.
           </p>
         </div>
 
@@ -234,9 +217,9 @@ $today_chalans = $today_chalans ?? [];
       <div class="card card-success card-outline">
         <div class="card-header">
           <h3 class="card-title">
-            <i class="fas fa-calendar-day mr-2"></i>
+            <i class="fas fa-calendar-day me-2"></i>
             Today's Generated Chalans
-            <span class="badge badge-success ml-2"><?= is_array($today_chalans) ? count($today_chalans) : 0 ?></span>
+            <span class="badge text-bg-success ms-2"><?= is_array($today_chalans) ? count($today_chalans) : 0 ?></span>
           </h3>
           <div class="card-tools">
             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -265,10 +248,10 @@ $today_chalans = $today_chalans ?? [];
             <?php if (!empty($newAdmissions)): ?>
               <div class="bg-success-light border-bottom border-success">
                 <div class="p-2 bg-success text-white">
-                  <i class="fas fa-star-of-life mr-1"></i>
+                  <i class="fas fa-star-of-life me-1"></i>
                   <strong>New Admissions</strong>
-                  <span class="badge badge-light ml-2"><?= count($newAdmissions) ?></span>
-                  <small class="ml-2">(Admitted this month)</small>
+                  <span class="badge text-bg-light ms-2"><?= count($newAdmissions) ?></span>
+                  <small class="ms-2">(Admitted this month)</small>
                 </div>
               </div>
               <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
@@ -287,16 +270,16 @@ $today_chalans = $today_chalans ?? [];
                         <td>
                           <div class="d-flex flex-column">
                             <strong class="text-success">
-                              <i class="fas fa-user-graduate mr-1"></i>
+                              <i class="fas fa-user-graduate me-1"></i>
                               <?= esc($chalan->student_name ?? 'N/A') ?>
-                              <span class="badge badge-success ml-1">New</span>
+                              <span class="badge text-bg-success ms-1">New</span>
                             </strong>
                             <small class="text-muted mt-1">
-                              <i class="fas fa-calendar-alt mr-1"></i>
+                              <i class="fas fa-calendar-alt me-1"></i>
                               Admission: <?= date('d M Y', strtotime($chalan->date_of_admission ?? 'now')) ?>
                             </small>
                             <small class="text-muted mt-1">
-                              <i class="fas fa-graduation-cap mr-1"></i>
+                              <i class="fas fa-graduation-cap me-1"></i>
                               <?= esc($chalan->class_display ?? 'N/A') ?>
                             </small>
                           </div>
@@ -304,14 +287,14 @@ $today_chalans = $today_chalans ?? [];
                         <td>
                           <div class="d-flex flex-column">
                             <div class="mb-1">
-                              <span class="badge badge-info">
-                                <i class="fas fa-file-invoice mr-1"></i>
+                              <span class="badge text-bg-info">
+                                <i class="fas fa-file-invoice me-1"></i>
                                 <?= esc($chalan->invoice_no ?? 'N/A') ?>
                               </span>
                             </div>
                             <div>
-                              <span class="badge badge-primary">
-                                <i class="fas fa-tag mr-1"></i>
+                              <span class="badge text-bg-primary">
+                                <i class="fas fa-tag me-1"></i>
                                 <?= esc($chalan->fee_type_name ?? 'N/A') ?>
                               </span>
                             </div>
@@ -323,7 +306,7 @@ $today_chalans = $today_chalans ?? [];
                               PKR <?= number_format($chalan->amount ?? 0, 2) ?>
                             </strong>
                             <small class="text-muted mt-1">
-                              <i class="fas fa-calendar-alt mr-1"></i>
+                              <i class="fas fa-calendar-alt me-1"></i>
                               <?= !empty($chalan->fee_month) ? date('M Y', strtotime($chalan->fee_month . '-01')) : 'N/A' ?>
                             </small>
                           </div>
@@ -349,9 +332,9 @@ $today_chalans = $today_chalans ?? [];
             <?php if (!empty($existingAdmissions)): ?>
               <div class="bg-secondary-light border-bottom border-secondary">
                 <div class="p-2 bg-secondary text-white">
-                  <i class="fas fa-users mr-1"></i>
+                  <i class="fas fa-users me-1"></i>
                   <strong>Existing Students</strong>
-                  <span class="badge badge-light ml-2"><?= count($existingAdmissions) ?></span>
+                  <span class="badge text-bg-light ms-2"><?= count($existingAdmissions) ?></span>
                 </div>
               </div>
               <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
@@ -370,11 +353,11 @@ $today_chalans = $today_chalans ?? [];
                         <td>
                           <div class="d-flex flex-column">
                             <strong class="text-primary">
-                              <i class="fas fa-user-graduate mr-1"></i>
+                              <i class="fas fa-user-graduate me-1"></i>
                               <?= esc($chalan->student_name ?? 'N/A') ?>
                             </strong>
                             <small class="text-muted mt-1">
-                              <i class="fas fa-graduation-cap mr-1"></i>
+                              <i class="fas fa-graduation-cap me-1"></i>
                               <?= esc($chalan->class_display ?? 'N/A') ?>
                             </small>
                           </div>
@@ -382,14 +365,14 @@ $today_chalans = $today_chalans ?? [];
                         <td>
                           <div class="d-flex flex-column">
                             <div class="mb-1">
-                              <span class="badge badge-info">
-                                <i class="fas fa-file-invoice mr-1"></i>
+                              <span class="badge text-bg-info">
+                                <i class="fas fa-file-invoice me-1"></i>
                                 <?= esc($chalan->invoice_no ?? 'N/A') ?>
                               </span>
                             </div>
                             <div>
-                              <span class="badge badge-primary">
-                                <i class="fas fa-tag mr-1"></i>
+                              <span class="badge text-bg-primary">
+                                <i class="fas fa-tag me-1"></i>
                                 <?= esc($chalan->fee_type_name ?? 'N/A') ?>
                               </span>
                             </div>
@@ -401,7 +384,7 @@ $today_chalans = $today_chalans ?? [];
                               PKR <?= number_format($chalan->amount ?? 0, 2) ?>
                             </strong>
                             <small class="text-muted mt-1">
-                              <i class="fas fa-calendar-alt mr-1"></i>
+                              <i class="fas fa-calendar-alt me-1"></i>
                               <?= !empty($chalan->fee_month) ? date('M Y', strtotime($chalan->fee_month . '-01')) : 'N/A' ?>
                             </small>
                           </div>
@@ -427,19 +410,19 @@ $today_chalans = $today_chalans ?? [];
               <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <div>
                   <span class="text-muted small">
-                    <i class="fas fa-info-circle mr-1"></i>
+                    <i class="fas fa-info-circle me-1"></i>
                     Total: <?= count($today_chalans) ?> chalans
                   </span>
                   <?php if (!empty($newAdmissions)): ?>
-                    <span class="text-success small ml-3">
-                      <i class="fas fa-star-of-life mr-1"></i>
+                    <span class="text-success small ms-3">
+                      <i class="fas fa-star-of-life me-1"></i>
                       New: <?= count($newAdmissions) ?>
                     </span>
                   <?php endif; ?>
                 </div>
                 <button id="deleteAllTodayBtn" class="btn btn-danger btn-sm" 
                         data-total="<?= count($today_chalans) ?>">
-                  <i class="fas fa-trash-alt mr-1"></i>
+                  <i class="fas fa-trash-alt me-1"></i>
                   Delete All
                 </button>
               </div>
@@ -491,15 +474,15 @@ $today_chalans = $today_chalans ?? [];
     <div class="modal-content">
       <div class="modal-header bg-info text-white">
         <h5 class="modal-title">
-          <i class="fas fa-check-circle mr-2"></i>Confirm Chalan Generation
+          <i class="fas fa-check-circle me-2"></i>Confirm Chalan Generation
         </h5>
-        <button type="button" class="close text-white" data-dismiss="modal">
+        <button type="button" class="close text-white" data-bs-dismiss="modal">
           <span>&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning">
-          <i class="fas fa-exclamation-triangle mr-2"></i>
+          <i class="fas fa-exclamation-triangle me-2"></i>
           Please review the details before proceeding:
         </div>
         
@@ -546,17 +529,17 @@ $today_chalans = $today_chalans ?? [];
         </div>
 
         <div class="alert alert-info">
-          <i class="fas fa-info-circle mr-2"></i>
+          <i class="fas fa-info-circle me-2"></i>
           <strong>Note:</strong> This will generate chalans for all active students. 
           The process may take a few minutes depending on the number of students.
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          <i class="fas fa-times mr-1"></i>Cancel
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Cancel
         </button>
         <button type="button" id="confirmGenerateBtn" class="btn btn-success">
-          <i class="fas fa-check mr-1"></i>Confirm & Generate
+          <i class="fas fa-check me-1"></i>Confirm & Generate
         </button>
       </div>
     </div>
@@ -569,7 +552,7 @@ $today_chalans = $today_chalans ?? [];
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title">
-          <i class="fas fa-spinner fa-pulse mr-2"></i>Generating Fee Chalans
+          <i class="fas fa-spinner fa-pulse me-2"></i>Generating Fee Chalans
         </h5>
       </div>
       <div class="modal-body">
@@ -678,7 +661,7 @@ $(document).ready(function() {
     $('#selectStandardOnly').click(function() {
         $('.fee-card-checkbox-modern').prop('checked', false);
         $('.fee-card-modern').removeClass('selected');
-        $('.fee-card-modern:not(.academy):not(.transport):not(.hostel)').each(function() {
+        $('.fee-card-modern:not(.academy):not(.transport)').each(function() {
             $(this).find('.fee-card-checkbox-modern').prop('checked', true);
             $(this).addClass('selected');
         });
@@ -802,7 +785,7 @@ $(document).ready(function() {
         // Show a loading state on the generate button if needed
         const submitBtn = $('#submitBtn');
         const originalHtml = submitBtn.html();
-        submitBtn.html('<i class="fas fa-spinner fa-spin mr-2"></i>Generating...');
+        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Generating...');
         submitBtn.prop('disabled', true);
         
         // Start the SSE generation process
@@ -896,22 +879,22 @@ $(document).ready(function() {
                         let rows = '';
                         skipDetails.forEach(function(row) {
                             const sid = escapeHtml(row.student_id);
-                            const reg = row.reg_no ? '<span class="text-muted small ml-1">Reg ' + escapeHtml(row.reg_no) + '</span>' : '';
+                            const reg = row.reg_no ? '<span class="text-muted small ms-1">Reg ' + escapeHtml(row.reg_no) + '</span>' : '';
                             const nm = escapeHtml(row.name || '—');
                             const det = escapeHtml(row.detail || '');
                             rows += '<tr><td class="align-top text-nowrap"><strong>#' + sid + '</strong>' + reg + '</td>' +
                                 '<td class="align-top">' + nm + '</td>' +
-                                '<td class="align-top small text-left">' + det + '</td></tr>';
+                                '<td class="align-top small text-start">' + det + '</td></tr>';
                         });
                         const truncNote = truncated
-                            ? '<p class="text-warning small mb-0 mt-2"><i class="fas fa-info-circle mr-1"></i>Showing the first ' + skipDetails.length + ' skipped students only.</p>'
+                            ? '<p class="text-warning small mb-0 mt-2"><i class="fas fa-info-circle me-1"></i>Showing the first ' + skipDetails.length + ' skipped students only.</p>'
                             : '';
                         skipBlock =
-                            '<div class="mt-3 text-left">' +
-                            '<p class="font-weight-bold text-secondary mb-2"><i class="fas fa-user-slash mr-1"></i>Why students were skipped</p>' +
+                            '<div class="mt-3 text-start">' +
+                            '<p class="fw-bold text-secondary mb-2"><i class="fas fa-user-slash me-1"></i>Why students were skipped</p>' +
                             '<div class="table-responsive border rounded" style="max-height:320px;overflow:auto;">' +
                             '<table class="table table-sm table-striped table-bordered mb-0">' +
-                            '<thead class="thead-light"><tr><th style="width:22%">Student</th><th style="width:28%">Name</th><th style="width:50%">Explanation</th></tr></thead>' +
+                            '<thead class="table-light"><tr><th style="width:22%">Student</th><th style="width:28%">Name</th><th style="width:50%">Explanation</th></tr></thead>' +
                             '<tbody>' + rows + '</tbody></table></div>' + truncNote + '</div>';
                     } else if (skipped > 0) {
                         skipBlock = '<p class="text-muted small mt-2 mb-0">Skipped count is ' + skipped + ' but no detailed rows were returned.</p>';
@@ -919,14 +902,14 @@ $(document).ready(function() {
 
                     const summary =
                         '<p class="mb-2">' +
-                        '<span class="text-success font-weight-bold">' + success + '</span> student(s) had new challan lines created.' +
-                        (skipped > 0 ? ' <span class="text-warning font-weight-bold">' + skipped + '</span> student(s) were skipped.' : '') +
+                        '<span class="text-success fw-bold">' + success + '</span> student(s) had new challan lines created.' +
+                        (skipped > 0 ? ' <span class="text-warning fw-bold">' + skipped + '</span> student(s) were skipped.' : '') +
                         '</p>';
 
                     Swal.fire({
                         icon: skipped > 0 ? 'warning' : 'success',
                         title: 'Generation complete',
-                        html: '<div class="text-left" style="max-width:100%">' + summary + skipBlock + '</div>',
+                        html: '<div class="text-start" style="max-width:100%">' + summary + skipBlock + '</div>',
                         width: '720px',
                         confirmButtonText: 'OK',
                         allowOutsideClick: false
@@ -1040,7 +1023,7 @@ $(document).ready(function() {
         Swal.fire({
             title: 'Delete All Chalans?',
             html: `
-                <div class="text-left">
+                <div class="text-start">
                     <p>You are about to delete <strong>${total}</strong> chalans.</p>
                     <p class="text-warning">This operation may take 30-60 seconds.</p>
                     <p class="text-danger mt-2">This action cannot be undone!</p>
@@ -1057,7 +1040,7 @@ $(document).ready(function() {
                     html: `
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-3" role="status">
-                                <span class="sr-only">Loading...</span>
+                                <span class="visually-hidden">Loading...</span>
                             </div>
                             <p>Deleting <strong>${total}</strong> chalans...</p>
                             <p class="text-muted small">Please wait, this may take a moment</p>
@@ -1105,10 +1088,10 @@ $(document).ready(function() {
     // Update badge count and footer
     function updateTodayChalansCount() {
         const remainingCount = $('#todayChalansList tr').length;
-        $('.badge-success').text(remainingCount);
+        $('.text-bg-success').text(remainingCount);
         $('#deleteAllTodayBtn').data('total', remainingCount);
-        $('#deleteAllTodayBtn').html(`<i class="fas fa-trash-alt mr-1"></i>Delete All (${remainingCount})`);
-        $('.card-footer .text-muted.small').html(`<i class="fas fa-info-circle mr-1"></i>Total: ${remainingCount} chalans`);
+        $('#deleteAllTodayBtn').html(`<i class="fas fa-trash-alt me-1"></i>Delete All (${remainingCount})`);
+        $('.card-footer .text-muted.small').html(`<i class="fas fa-info-circle me-1"></i>Total: ${remainingCount} chalans`);
         
         if (remainingCount === 0) {
             $('#todayChalansList').closest('.card-body').html(`
@@ -1219,7 +1202,7 @@ $(document).ready(function() {
     100% { transform: scale(1); opacity: 1; }
 }
 
-.badge-success {
+.text-bg-success {
     animation: pulse 1s ease-in-out 3;
 }
 

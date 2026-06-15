@@ -47,25 +47,18 @@
 }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-building"></i> Campus Management</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Campus Management</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Campus Management',
+    'icon' => 'fas fa-building',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus Management', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <!-- Filters Card -->
-  <div class="card card-info">
+  <div class="card sms-card card-info">
     <div class="card-header">
       <h3 class="card-title"><i class="fas fa-filter"></i> Filters</h3>
       <div class="card-tools">
@@ -107,7 +100,7 @@
         <div class="col-md-2">
           <div class="form-group">
             <label>&nbsp;</label>
-            <button id="applyFilters" class="btn btn-primary btn-block">
+            <button id="applyFilters" class="btn btn-primary w-100">
               <i class="fas fa-search"></i> Apply
             </button>
           </div>
@@ -141,11 +134,13 @@
               <th>Campus Name</th>
               <th>Address</th>
               <th>Contact</th>
+              <th>Owner</th>
+              <th>Owner Roles</th>
               <th>Status</th>
               <th>Students</th>
               <th>Staff</th>
               <th>Expiry Date</th>
-              <th>Actions</th>
+              <th width="160px">Actions</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -176,7 +171,7 @@
     <div class="modal-content">
       <div class="modal-header bg-info">
         <h5 class="modal-title"><i class="fas fa-building"></i> Campus Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -186,7 +181,129 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Campus Expiry Modal -->
+<div class="modal fade" id="changeExpiryModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title"><i class="fas fa-calendar-alt"></i> Change Campus Expiry</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2"><strong>Campus:</strong> <span id="expiryCampusName"></span></p>
+
+        <div id="expiryPaymentHistoryWrap" class="mb-3">
+          <h6 class="mb-2"><i class="fas fa-history"></i> Subscription Payment History</h6>
+          <div id="expiryPaymentHistoryLoading" class="text-center text-muted py-3">
+            <i class="fas fa-spinner fa-spin"></i> Loading payment history...
+          </div>
+          <div id="expiryPaymentSummary" class="alert alert-light border py-2 mb-2" style="display:none;"></div>
+          <div id="expiryPaymentHistoryTable" style="display:none;">
+            <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+              <table class="table table-sm table-bordered table-striped mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Plan</th>
+                    <th>Paid Amount</th>
+                    <th>Discount</th>
+                    <th>Payment Date</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="expiryPaymentHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="expiryPaymentHistoryEmpty" class="alert alert-secondary py-2 mb-0" style="display:none;">
+            No subscription payment records found for this campus.
+          </div>
+        </div>
+
+        <hr class="my-3">
+        <div class="form-group mb-0">
+          <label for="newCampusExpiry"><i class="fas fa-calendar"></i> New Expiry Date</label>
+          <input type="date" id="newCampusExpiry" class="form-control" required>
+          <small class="form-text text-muted">Updates the active subscription expiry for this campus.</small>
+        </div>
+        <input type="hidden" id="expiryCampusId">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="saveExpiryBtn" class="btn btn-warning">
+          <i class="fas fa-save"></i> Save Expiry
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Campus Owner Account Modal -->
+<div class="modal fade" id="resetOwnerPasswordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary">
+        <h5 class="modal-title"><i class="fas fa-user-shield"></i> Campus Owner Account</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2"><strong>Campus:</strong> <span id="resetCampusName"></span></p>
+        <div class="alert alert-info py-2">
+          <small>
+            <strong>Owner account</strong> (first user created for this campus):<br>
+            <span id="resetOwnerName"></span><br>
+            Username: <code id="resetOwnerUsername"></code><br>
+            Email: <code id="resetOwnerEmail"></code><br>
+            Plan: <span id="resetOwnerPlan">—</span><br>
+            Account status: <span id="resetOwnerStatus"></span><br>
+            Current role: <span id="resetOwnerRole">Loading...</span>
+          </small>
+        </div>
+        <div id="resetOwnerRoleOk" class="alert alert-success py-2 small" style="display:none;">
+          <i class="fas fa-check-circle"></i> <strong>Director System</strong> is assigned for this campus plan.
+        </div>
+        <div id="resetOwnerRoleMissing" class="alert alert-warning py-2 small" style="display:none;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span id="resetOwnerRoleMissingText">Owner does not have a valid <strong>Director System</strong> role for this plan — menu will be limited until assigned.</span>
+          <button type="button" id="assignDirectorSystemBtn" class="btn btn-sm btn-warning mt-2">
+            <i class="fas fa-user-shield"></i> Assign Director System Role
+          </button>
+        </div>
+        <div id="resetOwnerInactiveAlert" class="alert alert-warning py-2 small" style="display:none;">
+          <i class="fas fa-exclamation-triangle"></i>
+          This account is <strong>inactive</strong> (<code>users.status</code>). Login shows &quot;Your account is inactive&quot; until activated — separate from campus expiry.
+          <button type="button" id="activateOwnerBtn" class="btn btn-sm btn-success mt-2">
+            <i class="fas fa-user-check"></i> Activate owner account
+          </button>
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-2"><i class="fas fa-key"></i> Reset password</h6>
+        <div class="form-group">
+          <label for="ownerNewPassword">New Password</label>
+          <input type="password" id="ownerNewPassword" class="form-control" minlength="6" autocomplete="new-password">
+        </div>
+        <div class="form-group mb-0">
+          <label for="ownerConfirmPassword">Confirm Password</label>
+          <input type="password" id="ownerConfirmPassword" class="form-control" minlength="6" autocomplete="new-password">
+        </div>
+        <input type="hidden" id="resetCampusId">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" id="saveOwnerPasswordBtn" class="btn btn-primary">
+          <i class="fas fa-key"></i> Reset Password
+        </button>
       </div>
     </div>
   </div>
@@ -198,13 +315,13 @@
     <div class="modal-content">
       <div class="modal-header bg-danger">
         <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Bulk Delete Campuses</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <div class="alert alert-danger">
-          <i class="fas fa-exclamation-triangle fa-2x float-left mr-3"></i>
+          <i class="fas fa-exclamation-triangle fa-2x float-start me-3"></i>
           <strong>DANGER!</strong> This action is IRREVERSIBLE and will delete ALL selected campuses and ALL their associated data.
         </div>
         
@@ -229,7 +346,7 @@
             <li>All quiz attempts and question banks</li>
             <li>All notices and communications</li>
             <li>All assets and expenses</li>
-            <li>All sports and hostel records</li>
+            <li>All sports records</li>
             <li>All photos and files from these campuses</li>
           </ul>
         </div>
@@ -242,7 +359,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" id="confirmBulkDeleteBtn" class="btn btn-danger" disabled>
           <i class="fas fa-trash-alt"></i> Permanently Delete All Selected
         </button>
@@ -259,6 +376,18 @@ $(function () {
   let selectedCampuses = new Set();
   let currentDeleteCampusId = null;
   let currentDeleteCampusName = null;
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
 
   // Initialize DataTable
   const table = $('#campus-datatable').DataTable({
@@ -292,21 +421,57 @@ $(function () {
       { data: 'campus_address' },
       { data: 'contact' },
       {
+        data: null,
+        orderable: false,
+        render: function(data) {
+          if (!data.owner_username) {
+            return '<span class="text-muted">—</span>';
+          }
+          const nameLine = data.owner_name
+            ? '<span class="d-block small text-muted">' + escapeHtml(data.owner_name) + '</span>'
+            : '';
+          const statusBadge = data.owner_status === 1
+            ? '<span class="badge text-bg-success">Active</span>'
+            : '<span class="badge text-bg-danger">Inactive</span>';
+          return nameLine
+            + '<code class="small">' + escapeHtml(data.owner_username) + '</code> '
+            + statusBadge;
+        }
+      },
+      {
+        data: 'owner_roles',
+        orderable: false,
+        render: function(roles, type, data) {
+          const roleList = roles || [];
+          if (!roleList.length) {
+            return '<span class="badge text-bg-danger">None</span>';
+          }
+          const roleLabel = escapeHtml(roleList.join(', '));
+          if (data.owner_has_only_director_system) {
+            return '<span class="badge text-bg-success">' + roleLabel + '</span>';
+          }
+          if (data.owner_has_director_system) {
+            return '<span class="badge text-bg-warning">' + roleLabel + '</span>';
+          }
+          return '<span class="badge text-bg-secondary">' + roleLabel + '</span>';
+        }
+      },
+      {
         data: 'campus_status',
         render: function(data) {
           let badgeClass = '';
           let badgeText = '';
           switch(data) {
             case 'active':
-              badgeClass = 'badge-success';
+              badgeClass = 'text-bg-success';
               badgeText = 'Active';
               break;
             case 'expired':
-              badgeClass = 'badge-warning';
+              badgeClass = 'text-bg-warning';
               badgeText = 'Expired';
               break;
             default:
-              badgeClass = 'badge-danger';
+              badgeClass = 'text-bg-danger';
               badgeText = 'Inactive';
           }
           return `<span class="badge ${badgeClass}">${badgeText}</span>`;
@@ -324,12 +489,19 @@ $(function () {
         data: null,
         orderable: false,
         render: function(data) {
+          const campusName = escapeHtml(data.campus_name || '');
           return `
             <div class="btn-group btn-group-sm">
-              <button class="btn btn-info view-campus" data-id="${data.campus_id}">
+              <button type="button" class="btn btn-info view-campus" data-id="${data.campus_id}" title="View details">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="btn btn-danger delete-campus" data-id="${data.campus_id}" data-name="${data.campus_name}">
+              <button type="button" class="btn btn-warning change-expiry" data-id="${data.campus_id}" data-name="${campusName}" data-expiry="${data.campus_expiry || ''}" title="Change expiry">
+                <i class="fas fa-calendar-alt"></i>
+              </button>
+              <button type="button" class="btn btn-primary reset-owner-password" data-id="${data.campus_id}" data-name="${campusName}" title="Campus owner account (role &amp; password)">
+                <i class="fas fa-user-shield"></i>
+              </button>
+              <button type="button" class="btn btn-danger delete-campus" data-id="${data.campus_id}" data-name="${campusName}" title="Delete campus">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </div>
@@ -458,7 +630,7 @@ $(function () {
     const listHtml = selectedCampusesList.map(campus => 
       `<div class="d-flex justify-content-between align-items-center p-2 border-bottom">
         <span><i class="fas fa-building"></i> ${escapeHtml(campus.name)}</span>
-        <span class="badge badge-secondary">ID: ${campus.id}</span>
+        <span class="badge text-bg-secondary">ID: ${campus.id}</span>
       </div>`
     ).join('');
     
@@ -506,18 +678,6 @@ $(function () {
   $('#bulkConfirmDelete').on('change', function() {
     $('#confirmBulkDeleteBtn').prop('disabled', !$(this).is(':checked'));
   });
-
-  // Escape HTML helper
-  function escapeHtml(text) {
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-  }
 
   // Apply filters
   $('#applyFilters').click(function() {
@@ -688,6 +848,339 @@ $(function () {
     });
   });
 
+  function formatDateForInput(dateStr) {
+    if (!dateStr) return '';
+    return String(dateStr).substring(0, 10);
+  }
+
+  function formatDisplayDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString();
+  }
+
+  function formatMoney(amount, currency) {
+    const n = parseFloat(amount);
+    if (isNaN(n)) return '—';
+    return (currency || 'PKR') + ' ' + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  function resetExpiryPaymentHistoryUi() {
+    $('#expiryPaymentHistoryLoading').show();
+    $('#expiryPaymentSummary').hide().empty();
+    $('#expiryPaymentHistoryTable').hide();
+    $('#expiryPaymentHistoryEmpty').hide();
+    $('#expiryPaymentHistoryBody').empty();
+  }
+
+  function loadExpiryPaymentHistory(campusId) {
+    resetExpiryPaymentHistoryUi();
+
+    $.ajax({
+      url: "<?= base_url('admin/campus-management/get-payment-history') ?>",
+      type: 'POST',
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        campus_id: campusId,
+        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+      },
+      success: function(response) {
+        $('#expiryPaymentHistoryLoading').hide();
+
+        if (!response.success || !response.data) {
+          $('#expiryPaymentHistoryEmpty').show().text(response.msg || 'Could not load payment history.');
+          return;
+        }
+
+        const data = response.data;
+        const currency = data.currency_code || 'PKR';
+        const summary = data.summary || {};
+        const payments = data.payments || [];
+
+        if (data.current_expiry) {
+          $('#newCampusExpiry').val(formatDateForInput(data.current_expiry));
+        }
+
+        const summaryHtml = `
+          <div class="row small">
+            <div class="col-md-4"><strong>Current expiry:</strong> ${formatDisplayDate(data.current_expiry)}</div>
+            <div class="col-md-4"><strong>Total paid:</strong> ${formatMoney(summary.total_paid_amount, currency)}</div>
+            <div class="col-md-4"><strong>Paid invoices:</strong> ${summary.paid_count || 0} / ${summary.total_records || 0}</div>
+          </div>
+        `;
+        $('#expiryPaymentSummary').html(summaryHtml).show();
+
+        if (payments.length === 0) {
+          $('#expiryPaymentHistoryEmpty').show();
+          return;
+        }
+
+        const rows = payments.map(function(p, idx) {
+          const statusBadge = p.is_paid
+            ? '<span class="badge text-bg-success">Paid</span>'
+            : '<span class="badge text-bg-secondary">Unpaid</span>';
+          const activeBadge = p.is_active
+            ? ' <span class="badge text-bg-info">Active</span>'
+            : '';
+          const paidAmount = p.is_paid ? formatMoney(p.bill_amount, currency) : '—';
+          const payDate = p.is_paid ? formatDisplayDate(p.payment_date || p.paid_date) : '—';
+
+          return `<tr>
+            <td>${idx + 1}</td>
+            <td>${escapeHtml(p.plan_name || 'N/A')}</td>
+            <td>${paidAmount}</td>
+            <td>${p.discount > 0 ? formatMoney(p.discount, currency) : '—'}</td>
+            <td>${payDate}</td>
+            <td>${formatDisplayDate(p.campus_expiry)}</td>
+            <td>${statusBadge}${activeBadge}</td>
+          </tr>`;
+        }).join('');
+
+        $('#expiryPaymentHistoryBody').html(rows);
+        $('#expiryPaymentHistoryTable').show();
+      },
+      error: function(xhr) {
+        $('#expiryPaymentHistoryLoading').hide();
+        let msg = 'Could not load payment history.';
+        if (xhr.responseJSON && xhr.responseJSON.msg) {
+          msg = xhr.responseJSON.msg;
+        }
+        $('#expiryPaymentHistoryEmpty').show().text(msg);
+      }
+    });
+  }
+
+  // Change campus expiry
+  $('#campus-datatable').on('click', '.change-expiry', function() {
+    const campusId = $(this).data('id');
+    const campusName = $(this).data('name');
+    const expiry = $(this).data('expiry');
+
+    $('#expiryCampusId').val(campusId);
+    $('#expiryCampusName').text(campusName);
+    $('#newCampusExpiry').val(formatDateForInput(expiry));
+    $('#changeExpiryModal').modal('show');
+    loadExpiryPaymentHistory(campusId);
+  });
+
+  $('#saveExpiryBtn').on('click', function() {
+    const btn = $(this);
+    const campusId = $('#expiryCampusId').val();
+    const campusExpiry = $('#newCampusExpiry').val();
+
+    if (!campusExpiry) {
+      Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select an expiry date.' });
+      return;
+    }
+
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+    $.ajax({
+      url: "<?= base_url('admin/campus-management/update-expiry') ?>",
+      type: 'POST',
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        campus_id: campusId,
+        campus_expiry: campusExpiry,
+        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+      },
+      success: function(response) {
+        if (response.success) {
+          Swal.fire({ icon: 'success', title: 'Saved', text: response.msg, timer: 2500, showConfirmButton: true });
+          loadExpiryPaymentHistory(campusId);
+          table.ajax.reload(null, false);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error', text: response.msg || 'Could not update expiry.' });
+        }
+      },
+      error: function(xhr) {
+        let msg = 'Failed to update expiry.';
+        if (xhr.responseJSON && xhr.responseJSON.msg) {
+          msg = xhr.responseJSON.msg;
+        } else if (xhr.status === 404) {
+          msg = 'Update route not found (404). Redeploy app/Config/Routes.php and app/Controllers/Admin/CampusManagement.php on the server.';
+        } else if (xhr.status === 403) {
+          msg = 'Access denied (403). Check you are logged in as admin.';
+        }
+        Swal.fire({ icon: 'error', title: 'Error', text: msg });
+      },
+      complete: function() {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Expiry');
+      }
+    });
+  });
+
+  function renderOwnerRoleState(data) {
+    const roles = data.current_roles || [];
+    const roleLabel = roles.length ? roles.join(', ') : 'None';
+    $('#resetOwnerPlan').text(data.plan_name ? (data.plan_name + ' (plan ' + data.plan_id + ')') : 'N/A');
+    $('#resetOwnerRole').html(
+      roles.length
+        ? '<span class="badge text-bg-secondary">' + escapeHtml(roleLabel) + '</span>'
+        : '<span class="badge text-bg-danger">None</span>'
+    );
+    if (data.has_only_director_system) {
+      $('#resetOwnerRoleOk').show();
+      $('#resetOwnerRoleMissing').hide();
+    } else {
+      $('#resetOwnerRoleOk').hide();
+      $('#resetOwnerRoleMissing').show();
+      if (data.has_director_system) {
+        $('#resetOwnerRoleMissingText').html(
+          'Owner has <strong>Director System</strong> but also other roles (' + escapeHtml(roleLabel) + '). '
+          + 'Assign again to remove all other roles and keep only Director System.'
+        );
+      } else {
+        $('#resetOwnerRoleMissingText').html(
+          'Owner does not have a valid <strong>Director System</strong> role for this plan — menu will be limited until assigned.'
+        );
+      }
+    }
+  }
+
+  function loadCampusOwner(campusId, campusName, triggerBtn) {
+    if (triggerBtn) triggerBtn.prop('disabled', true);
+    $('#resetCampusId').val(campusId);
+    $('#resetCampusName').text(campusName);
+    $('#ownerNewPassword, #ownerConfirmPassword').val('');
+    $('#resetOwnerName, #resetOwnerUsername, #resetOwnerEmail, #resetOwnerPlan').text('Loading...');
+    $('#resetOwnerRole').text('Loading...');
+    $('#resetOwnerStatus').text('Loading...');
+    $('#resetOwnerInactiveAlert, #resetOwnerRoleOk, #resetOwnerRoleMissing').hide();
+    $('#resetOwnerPasswordModal').modal('show');
+
+    $.post("<?= base_url('admin/campus-management/get-owner') ?>", {
+      campus_id: campusId,
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    }, function(response) {
+      if (response.success) {
+        const owner = response.data.owner;
+        const ownerName = [owner.first_name, owner.last_name].filter(Boolean).join(' ') || 'N/A';
+        $('#resetOwnerName').text(ownerName);
+        $('#resetOwnerUsername').text(owner.username || 'N/A');
+        $('#resetOwnerEmail').text(owner.email || 'N/A');
+        if (owner.is_active) {
+          $('#resetOwnerStatus').html('<span class="badge text-bg-success">Active</span>');
+          $('#resetOwnerInactiveAlert').hide();
+        } else {
+          $('#resetOwnerStatus').html('<span class="badge text-bg-danger">Inactive</span>');
+          $('#resetOwnerInactiveAlert').show();
+        }
+        renderOwnerRoleState(response.data);
+      } else {
+        $('#resetOwnerPasswordModal').modal('hide');
+        Swal.fire({ icon: 'error', title: 'Error', text: response.msg });
+      }
+    }, 'json').fail(function() {
+      $('#resetOwnerPasswordModal').modal('hide');
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load owner account.' });
+    }).always(function() {
+      if (triggerBtn) triggerBtn.prop('disabled', false);
+    });
+  }
+
+  // Campus owner account (role + password)
+  $('#campus-datatable').on('click', '.reset-owner-password', function() {
+    loadCampusOwner($(this).data('id'), $(this).data('name'), $(this));
+  });
+
+  $('#assignDirectorSystemBtn').on('click', function() {
+    const campusId = $('#resetCampusId').val();
+    const btn = $(this);
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Assigning...');
+
+    $.post("<?= base_url('admin/campus-management/assign-owner-director-system') ?>", {
+      campus_id: campusId,
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    }, function(response) {
+      if (response.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Role assigned',
+          text: response.msg,
+          timer: 4000,
+          showConfirmButton: true
+        });
+        loadCampusOwner(campusId, $('#resetCampusName').text(), null);
+        table.ajax.reload(null, false);
+      } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: response.msg });
+      }
+    }, 'json').fail(function(xhr) {
+      let msg = 'Failed to assign Director System role.';
+      if (xhr.responseJSON && xhr.responseJSON.msg) msg = xhr.responseJSON.msg;
+      Swal.fire({ icon: 'error', title: 'Error', text: msg });
+    }).always(function() {
+      btn.prop('disabled', false).html('<i class="fas fa-user-shield"></i> Assign Director System Role');
+    });
+  });
+
+  $('#activateOwnerBtn').on('click', function() {
+    const campusId = $('#resetCampusId').val();
+    const btn = $(this);
+    btn.prop('disabled', true);
+
+    $.post("<?= base_url('admin/campus-management/activate-owner') ?>", {
+      campus_id: campusId,
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    }, function(response) {
+      if (response.success) {
+        Swal.fire({ icon: 'success', title: 'Activated', text: response.msg, timer: 3000, showConfirmButton: true });
+        $('#resetOwnerStatus').html('<span class="badge text-bg-success">Active</span>');
+        $('#resetOwnerInactiveAlert').hide();
+        table.ajax.reload(null, false);
+      } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: response.msg });
+      }
+    }, 'json').always(function() {
+      btn.prop('disabled', false);
+    });
+  });
+
+  $('#saveOwnerPasswordBtn').on('click', function() {
+    const btn = $(this);
+    const campusId = $('#resetCampusId').val();
+    const password = $('#ownerNewPassword').val();
+    const confirmPassword = $('#ownerConfirmPassword').val();
+
+    if (!password && !confirmPassword) {
+      Swal.fire({ icon: 'info', title: 'No password', text: 'Enter a new password to reset, or use Assign Director System above.' });
+      return;
+    }
+    if (password.length < 6) {
+      Swal.fire({ icon: 'warning', title: 'Invalid', text: 'Password must be at least 6 characters.' });
+      return;
+    }
+    if (password !== confirmPassword) {
+      Swal.fire({ icon: 'warning', title: 'Mismatch', text: 'Passwords do not match.' });
+      return;
+    }
+
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Resetting...');
+
+    $.post("<?= base_url('admin/campus-management/reset-owner-password') ?>", {
+      campus_id: campusId,
+      password: password,
+      confirm_password: confirmPassword,
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    }, function(response) {
+      if (response.success) {
+        Swal.fire({ icon: 'success', title: 'Done', text: response.msg, timer: 3000, showConfirmButton: true });
+        $('#resetOwnerPasswordModal').modal('hide');
+        $('#ownerNewPassword, #ownerConfirmPassword').val('');
+      } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: response.msg });
+      }
+    }, 'json').fail(function() {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to reset password.' });
+    }).always(function() {
+      btn.prop('disabled', false).html('<i class="fas fa-key"></i> Reset Password');
+    });
+  });
+
   // Single delete campus
   $('#campus-datatable').on('click', '.delete-campus', function() {
     currentDeleteCampusId = $(this).data('id');
@@ -748,20 +1241,32 @@ $(function () {
 </script>
 
 <style>
-.badge-success {
+.text-bg-success {
   background-color: #28a745;
   color: white;
   padding: 5px 10px;
   border-radius: 20px;
 }
-.badge-warning {
+.text-bg-warning {
   background-color: #ffc107;
   color: #212529;
   padding: 5px 10px;
   border-radius: 20px;
 }
-.badge-danger {
+.text-bg-danger {
   background-color: #dc3545;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+}
+.text-bg-secondary {
+  background-color: #6c757d;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+}
+.text-bg-info {
+  background-color: #17a2b8;
   color: white;
   padding: 5px 10px;
   border-radius: 20px;

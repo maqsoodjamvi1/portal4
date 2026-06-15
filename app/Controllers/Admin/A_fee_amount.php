@@ -34,7 +34,13 @@ class A_fee_amount extends BaseController {
 	public function data(){
 		$campusid = $this->session->get('member_campusid');
 		
-		$infoteachers = $this->db->query("select * FROM users WHERE campus_id={$campusid} AND status=1 AND id IN (select userID from user_roles WHERE roleID=5)")->getResultArray();
+		$infoteachers = $this->db->table('users')
+		    ->where(['campus_id' => (int) $campusid, 'status' => 1])
+		    ->whereIn('id', static function ($builder) {
+		        return $builder->select('userID')->from('user_roles')->where('roleID', 5);
+		    })
+		    ->get()
+		    ->getResultArray();
 
 		$this->template_data['infoteachers'] = $infoteachers;
 

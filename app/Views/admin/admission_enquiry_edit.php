@@ -21,30 +21,24 @@ $today            = date('Y-m-d');
 $date             = $info->date            ?? $today; // ✅ default to today
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1 class="mb-0">Admission Enquiry</h1>
-        <small class="text-muted"><?= esc($header) ?></small>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active"><?= esc($header) ?></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Admission Enquiry',
+    'icon' => 'fas fa-door-open',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Admission Enquiry', 'url' => base_url('admin/admission_enquiry')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
     <div class="col-12">
       <div class="card card-primary card-outline shadow-sm">
         <div class="card-header d-flex flex-wrap align-items-center">
-          <h3 class="card-title mr-2"><i class="fas fa-user-plus mr-1"></i> <?= esc($header) ?></h3>
-          <span class="badge badge-info ml-auto">Enquiry</span>
+          <h3 class="card-title me-2"><i class="fas fa-user-plus me-1"></i> <?= esc($header) ?></h3>
+          <span class="badge text-bg-info ms-auto">Enquiry</span>
         </div>
 
         <div class="card-body">
@@ -57,7 +51,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-6 mb-3">
               <label class="mb-1" for="student_name">Student Name <span class="text-danger">*</span></label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
                 <input type="text" class="form-control" name="student_name" id="student_name"
                        placeholder="e.g. Ahmed Ali"
                        value="<?= esc($student_name) ?>" required>
@@ -68,7 +62,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-6 mb-3">
               <label class="mb-1" for="father_name">Father Name</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user-tie"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
                 <input type="text" class="form-control" name="father_name" id="father_name"
                        placeholder="e.g. Muhammad Ali"
                        value="<?= esc($father_name) ?>">
@@ -79,7 +73,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="student_age">Age of Student</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-child"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-child"></i></span>
                 <input type="number" min="2" max="25" step="1" class="form-control" name="student_age" id="student_age"
                        placeholder="e.g. 10"
                        value="<?= esc($student_age) ?>">
@@ -91,7 +85,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="father_phone">Father Phone Number</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
                 <input type="text" class="form-control" name="father_phone" id="father_phone"
                        placeholder="03XX-XXXXXXX"
                        value="<?= esc($father_phone) ?>">
@@ -103,7 +97,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="mother_phone">Mother Phone Number</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone-alt"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-phone-alt"></i></span>
                 <input type="text" class="form-control" name="mother_phone" id="mother_phone"
                        placeholder="03XX-XXXXXXX"
                        value="<?= esc($mother_phone) ?>">
@@ -114,7 +108,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="previous_school">Previous School</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-school"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-school"></i></span>
                 <input type="text" class="form-control" name="previous_school" id="previous_school"
                        placeholder="e.g. Beaconhouse"
                        value="<?= esc($previous_school) ?>" list="school_suggestions">
@@ -127,7 +121,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="previous_fee">Previous Fee (PKR)</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-rupee-sign"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
                 <input type="text" class="form-control" name="previous_fee" id="previous_fee"
                        placeholder="e.g. 4500"
                        value="<?= esc($previous_fee) ?>">
@@ -138,7 +132,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-6 mb-3">
               <label class="mb-1" for="address">Address</label>
               <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span></div>
+                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                 <input type="text" class="form-control" name="address" id="address"
                        placeholder="House #, Street, Area, City"
                        value="<?= esc($address) ?>">
@@ -149,17 +143,15 @@ $date             = $info->date            ?? $today; // ✅ default to today
             <div class="col-md-3 mb-3">
               <label class="mb-1" for="date">Enquiry Date <span class="text-success">(auto-today)</span></label>
               <div class="input-group input-group-sm date" id="enquiry_datepicker" data-target-input="nearest">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="far fa-calendar-alt"></i></span></div>
+                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
                 <input type="text"
                        name="date"
                        id="date"
                        class="form-control datetimepicker-input"
-                       data-target="#enquiry_datepicker"
+                       data-bs-target="#enquiry_datepicker"
                        value="<?= esc($date) ?>"
                        required>
-                <div class="input-group-append" data-target="#enquiry_datepicker" data-toggle="datetimepicker">
-                  <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                </div>
+                <span class="input-group-text" data-bs-target="#enquiry_datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
               </div>
               <small class="text-muted">Defaults to today; change if needed.</small>
             </div>
@@ -173,14 +165,14 @@ $date             = $info->date            ?? $today; // ✅ default to today
           </div>
 
           <div class="d-flex align-items-center">
-            <button type="submit" id="submitBtn" class="btn btn-primary mr-2">
-              <i class="fas fa-save mr-1"></i> Save
+            <button type="submit" id="submitBtn" class="btn btn-primary me-2">
+              <i class="fas fa-save me-1"></i> Save
             </button>
-            <button type="reset" class="btn btn-secondary mr-2">
-              <i class="fas fa-undo mr-1"></i> Reset
+            <button type="reset" class="btn btn-secondary me-2">
+              <i class="fas fa-undo me-1"></i> Reset
             </button>
-            <a href="<?= base_url('admin/admission-enquiry') ?>" class="btn btn-default">
-              <i class="fas fa-times mr-1"></i> Cancel
+            <a href="<?= base_url('admin/admission-enquiry') ?>" class="btn btn-secondary">
+              <i class="fas fa-times me-1"></i> Cancel
             </a>
           </div>
 
@@ -193,7 +185,7 @@ $date             = $info->date            ?? $today; // ✅ default to today
 
 <script>
 $(function () {
-  // --- Datepicker (Tempus Dominus in AdminLTE) ---
+  // --- Datepicker (Flatpickr datetimepicker compatibility adapter) ---
   // default to today if input is empty (extra safety)
   var $date = $('#date');
   if(!$date.val()){
@@ -268,10 +260,10 @@ $(function () {
   $('#user-edit-form').ajaxForm({
     beforeSubmit: function(){
       if(!$('#user-edit-form').valid()) return false;
-      $('#submitBtn').html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...').prop('disabled', true);
+      $('#submitBtn').html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...').prop('disabled', true);
     },
     success: function(responseText){
-      $('#submitBtn').html('<i class="fas fa-save mr-1"></i> Save').prop('disabled', false);
+      $('#submitBtn').html('<i class="fas fa-save me-1"></i> Save').prop('disabled', false);
       var json = (typeof responseText === 'string') ? (function(){ try { return JSON.parse(responseText); } catch(e){ return {}; } })() : responseText;
 
       if (json && json.success) {
@@ -283,7 +275,7 @@ $(function () {
       return false;
     },
     error: function(){
-      $('#submitBtn').html('<i class="fas fa-save mr-1"></i> Save').prop('disabled', false);
+      $('#submitBtn').html('<i class="fas fa-save me-1"></i> Save').prop('disabled', false);
       toastr.error('Request failed. Please try again.');
     }
   });

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="system/Test/bootstrap.php"
+    backupGlobals="false"
+    colors="true"
+    cacheDirectory="build/.phpunit.cache">
+    <testsuites>
+        <testsuite name="Integration">
+            <directory>./tests/database</directory>
+            <directory>./tests/session</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <server name="app.baseURL" value="http://example.com/"/>
+        <const name="HOMEPATH" value="./"/>
+        <const name="CONFIGPATH" value="./app/Config/"/>
+        <const name="PUBLICPATH" value="./public/"/>
+        <!-- Uncomment and set a dedicated test database (never production):
+        <env name="database.tests.hostname" value="localhost"/>
+        <env name="database.tests.database" value="ci_test"/>
+        <env name="database.tests.username" value="tests_user"/>
+        <env name="database.tests.password" value=""/>
+        <env name="database.tests.DBDriver" value="MySQLi"/>
+        <env name="database.tests.DBPrefix" value="db_"/>
+        -->
+    </php>
+</phpunit>

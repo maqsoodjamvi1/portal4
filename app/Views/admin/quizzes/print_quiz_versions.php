@@ -391,11 +391,11 @@ if (!empty($school->logo)) {
   flex: 1;
   padding: 12px;
   text-align: center;
-  border-right: 1px solid #fff;
+  border-end: 1px solid #fff;
 }
 
 .match-header div:last-child {
-  border-right: none;
+  border-end: none;
 }
 
 .match-row {
@@ -407,12 +407,12 @@ if (!empty($school->logo)) {
   flex: 1;
   padding: 12px;
   text-align: center;
-  border-right: 1px solid #000;
+  border-end: 1px solid #000;
   font-size: 17px; /* Increased from 15px (+2) */
 }
 
 .match-row div:last-child {
-  border-right: none;
+  border-end: none;
 }
 
 /* ========== SIGNATURE SECTION ========== */

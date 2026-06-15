@@ -29,68 +29,61 @@ class Bill_amount extends MY_Controller {
 	}
 
 	function data(){
-		$campus_id = $this->input->get('campus_id');
+		$campus_id = $this->input->post('campus_id') ?: $this->input->get('campus_id');
+		if ($campus_id === null || $campus_id === '') {
+			$campus_id = $this->session->userdata('member_campusid');
+		}
+		$campus_id = (int) $campus_id;
 		$session_id = $this->session->userdata('member_sessionid');
 		$plan_id = $this->input->post('plan_id'); 
 		$schoolinfo = getSchoolInfo();
 
 		$bill_plans_info = $this->db->get('bill_plans')->result();
+		$bill_type_id   = ensureDefaultBillTypeId();
 
-		$bill_type_info = $this->db->get('bill_type')->result();
+		$data  = '<input type="hidden" name="bill_type_id[]" value="' . $bill_type_id . '">';
+		$data .= '<table class="table"><thead><tr><th>Plan</th><th>Active</th><th>Amount</th></tr></thead><tbody>';
 
-		$data = '';
-		$data .= '<table class="table"><tr><td></td>';
-		
-		if(isset($bill_type_info)){
-			foreach ($bill_type_info as $bill_type_value) { 
-			$data .= '<th>'.$bill_type_value->bill_type_name.'<input type="hidden" value="'.$bill_type_value->bill_type_id.'" name="bill_type_id[]"></th>';						
-			} 
-
-		} 
-
-		if(isset($bill_plans_info)){
-			foreach ($bill_plans_info as  $billvalue) { 
-				$data .= '<tr><th>'.$billvalue->plan_name.'<input type="hidden" name="plan_id[]" value="'.$billvalue->plan_id.'" ></th>';
-			foreach ($bill_type_info as  $bill_type_value) { 
-				
+		if (isset($bill_plans_info)) {
+			foreach ($bill_plans_info as $billvalue) {
 				$this->db->where('campus_id', $campus_id);
 				$this->db->where('plan_id', $billvalue->plan_id);
-				$this->db->where('bill_type_id', $bill_type_value->bill_type_id);
+				$this->db->where('bill_type_id', $bill_type_id);
 				$bill_amount_info = $this->db->get('bill_amount')->row();
-				
-				$amount_id = 0;
+
+				$amount_id  = 0;
 				$fee_amount = 0;
-				$status = 0;
-				if($bill_amount_info){
-					$amount_id = $bill_amount_info->amount_id;
-					$status = $bill_amount_info->status;
+				$status     = 0;
+				if ($bill_amount_info) {
+					$amount_id  = $bill_amount_info->amount_id;
+					$status     = $bill_amount_info->status;
 					$fee_amount = $bill_amount_info->amount;
 				}
 
-				$data .= '<td>';
-				
-				$data .= '<input ';
-				if($status == 1){
-					$data .= 'checked';	
+				$data .= '<tr>';
+				$data .= '<th>' . $billvalue->plan_name . '<input type="hidden" name="plan_id[]" value="' . $billvalue->plan_id . '"></th>';
+				$data .= '<td><input ';
+				if ($status == 1) {
+					$data .= 'checked';
 				}
-				$data .=' name="'.$bill_type_value->bill_type_id.'_'.$billvalue->plan_id.'_status"  type="checkbox" value="1" ><input type="hidden" class="form-control" name="'.$bill_type_value->bill_type_id.'_'.$billvalue->plan_id.'_amount_id" id="'.$bill_type_value->bill_type_id.'_'.$billvalue->plan_id.'_amount_id" value="'.$amount_id.'"><input type="text" class="form-control" name="ftv'.$bill_type_value->bill_type_id.'_ci'.$billvalue->plan_id.'_amount" id="ftv'.$bill_type_value->bill_type_id.'_ci'.$billvalue->plan_id.'_amount" value="'.$fee_amount.'">';
-				
+				$data .= ' name="' . $bill_type_id . '_' . $billvalue->plan_id . '_status" type="checkbox" value="1"></td>';
+				$data .= '<td><input type="hidden" class="form-control" name="' . $bill_type_id . '_' . $billvalue->plan_id . '_amount_id" value="' . $amount_id . '">';
+				$data .= '<input type="text" class="form-control" name="ftv' . $bill_type_id . '_ci' . $billvalue->plan_id . '_amount" value="' . $fee_amount . '"></td>';
+				$data .= '</tr>';
+			}
+		}
 
-				$data .= '</td>';
-				} 
-				$data .= '</tr>';		
-				} 
-			}				
-
-		$data .= '</table>';
+		$data .= '</tbody></table>';
 		$this->output->set_output($data);
 	}
 
 	function add(){
 		check_permission('admin-add-bill-amount');
-		$campus_id = $this->session->userdata('member_campusid');
+		$campus_id = (int) ($this->input->get('campus_id') ?: $this->session->userdata('member_campusid'));
 		$session_id = $this->session->userdata('member_sessionid');
 		$schoolinfo = getSchoolInfo();
+
+		$this->template_data['campus_id'] = $campus_id;
 
 		$classesinfo = $this->db->get('classes')->result();
 		$this->template_data['classesinfo'] = $classesinfo;
@@ -146,6 +139,10 @@ class Bill_amount extends MY_Controller {
 		
 		$bill_type_ids = $this->input->post('bill_type_id');
 		$plan_ids = $this->input->post('plan_id');
+
+		if (empty($bill_type_ids)) {
+			$bill_type_ids = [ensureDefaultBillTypeId()];
+		}
 
 		foreach($bill_type_ids as $bill_type_id){
 			$i=0;

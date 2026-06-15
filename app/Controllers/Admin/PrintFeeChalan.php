@@ -75,33 +75,12 @@ public function get_chalans()
         ->get()
         ->getResult();
 
-    $a_fee_type_info = $db->table('fee_type')
-        ->where('a_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
-
-    $t_fee_type_info = $db->table('fee_type')
-        ->where('t_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
-
-    $h_fee_type_info = $db->table('fee_type')
-        ->where('h_flag', 1)
-        ->where('system_id', $system_id)
-        ->where('status', 1)
-        ->get()
-        ->getResult();
 
     return view('admin/fee_chalan_add', [
         'campusInfo' => $campusInfo,
         'fee_type_info' => $fee_type_info,
-        'a_fee_type_info' => $a_fee_type_info,
-        't_fee_type_info' => $t_fee_type_info,
-        'h_fee_type_info' => $h_fee_type_info
+        'a_fee_type_info' => [],
+        't_fee_type_info' => [],
     ]);
 }
 
@@ -372,11 +351,6 @@ private function buildLast12MonthsUnpaid(int $studentId): array
         return $this->renderChalan('admin/printchalanview/single_copy_fee_chalan_familywise', true);
     }
 
-    public function hostel()
-    {
-        return $this->renderChalan('admin/printchalanview/fee_chalan_hostel', false, true);
-    }
-
     public function withHeader()
     {
         return $this->renderChalan('admin/fee_chalan_with_header');
@@ -389,7 +363,7 @@ private function buildLast12MonthsUnpaid(int $studentId): array
 
         $payload = $this->request->getJSON(true);
         $key     = $payload['template_key'] ?? '';
-        if (!in_array($key, ['entries','thermal','single_copy','three_copy','no_discount','familywise','family_single','hostel','with_header'], true)) {
+        if (!in_array($key, ['entries','thermal','single_copy','three_copy','no_discount','familywise','family_single','with_header'], true)) {
             return $this->response->setJSON(['ok' => false, 'msg' => 'Invalid template']);
         }
 
@@ -458,7 +432,7 @@ public function get_studentinfo()
 
 
 
-    private function renderChalan(string $viewName, bool $isFamilywise = false, bool $isHostel = false)
+    private function renderChalan(string $viewName, bool $isFamilywise = false)
     {
         $request = service('request');
 
@@ -489,7 +463,7 @@ public function get_studentinfo()
             'sectionsclassinfo' => $sectionsclassinfo,
             'data' => $isFamilywise
                 ? $this->fetchFamilywiseChalanData()
-                : ($isHostel ? $this->fetchHostelChalanData() : $this->fetchChalanData(false, false, $cls_sec_id, $fee_month))
+                : $this->fetchChalanData(false, $cls_sec_id, $fee_month)
         ];
         //print_r($data);
         // exit;
@@ -500,13 +474,11 @@ public function get_studentinfo()
 
     private function fetchChalanData(
     bool $isFamilywise = false,
-    bool $isHostel = false,
     ?int $cls_sec_id = null,
     ?string $fee_month = null   // kept for compatibility; not used to filter unpaid list
 ): array
 {
     if ($isFamilywise) return $this->fetchFamilywiseChalanData();
-    if ($isHostel)     return $this->fetchHostelChalanData();
 
     $campus_id  = (int) session()->get('member_campusid');
     $session_id = (int) session()->get('member_sessionid');

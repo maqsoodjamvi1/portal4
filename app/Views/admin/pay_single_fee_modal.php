@@ -7,7 +7,7 @@
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title" id="payModalTitle">Pay Fee</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
           <span>&times;</span>
         </button>
       </div>
@@ -25,9 +25,9 @@
           <input type="text" id="paidDateField" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
         </div>
 
-        <div class="form-group text-right">
-          <button type="button" id="btnPaySingle" class="btn btn-success btn-block">
-            <i class="fas fa-check-circle mr-1"></i> Submit Payment
+        <div class="form-group text-end">
+          <button type="button" id="btnPaySingle" class="btn btn-success w-100">
+            <i class="fas fa-check-circle me-1"></i> Submit Payment
           </button>
         </div>
       </div>

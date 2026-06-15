@@ -82,8 +82,16 @@ class A_students extends MY_Controller {
 			$className = '';
 			$sectionName = '';
 
-			$unpaid = $this->db->query('SELECT SUM(amount)-SUM(discount) as total FROM `fee_chalan` WHERE status = "UnPaid" and student_id ='.$row->student_id)->row();
-			$discount = $this->db->query('SELECT SUM(discount) as total_discount FROM `fee_chalan` WHERE status = "UnPaid" and student_id ='.$row->student_id)->row();
+			$unpaid = $this->db->table('fee_chalan')
+				->select('SUM(amount) - SUM(discount) as total', false)
+				->where('status', 'UnPaid')
+				->where('student_id', (int) $row->student_id)
+				->get()->row();
+			$discount = $this->db->table('fee_chalan')
+				->select('SUM(discount) as total_discount', false)
+				->where('status', 'UnPaid')
+				->where('student_id', (int) $row->student_id)
+				->get()->row();
 	
 			if($discount){
 				$total_discount = $discount->total_discount;
@@ -112,7 +120,13 @@ class A_students extends MY_Controller {
 				$sectionName = $sectionInfo->section_name;
 			}
 
-			$getclassfee = $this->db->query('SELECT * FROM `fee_amount` WHERE class_id='.$classsectioninfo->class_id.' and fee_type_id IN(select fee_type_id from fee_type where is_monthly_fee=1) and session_id='.$sessionid.' and campus_id='.$campusid)->row();
+			$monthlyFeeSub = $this->db->select('fee_type_id')->from('fee_type')->where('is_monthly_fee', 1)->get_compiled_select();
+			$getclassfee = $this->db->from('fee_amount')
+				->where('class_id', (int) $classsectioninfo->class_id)
+				->where("fee_type_id IN ($monthlyFeeSub)", null, false)
+				->where('session_id', (int) $sessionid)
+				->where('campus_id', (int) $campusid)
+				->get()->row();
 			
 			if($getclassfee){	
 		   		$projectedfee = ($getclassfee->amount - $row->discounted_amount);
@@ -226,22 +240,31 @@ class A_students extends MY_Controller {
 		}
 		
 	
-		$groupTeacherInfo = $this->db->query('select * from a_group_teacher WHERE cls_sub_group_id IN(select cls_sub_group_id from a_subject_group where campus_id='.$campusid.')')->result();
+		$groupSub = $this->db->select('cls_sub_group_id')->from('a_subject_group')->where('campus_id', (int) $campusid)->get_compiled_select();
+		$groupTeacherInfo = $this->db->from('a_group_teacher')->where("cls_sub_group_id IN ($groupSub)", null, false)->get()->result();
 
 		//print_r($groupTeacherInfo);
 		$groups = array();
 		foreach ($groupTeacherInfo as $key => $value) {
-			$subjectGroupInfo = $this->db->query('select * from a_subject_group WHERE cls_sub_group_id='.$value->cls_sub_group_id)->result();
+			$subjectGroupInfo = $this->db->from('a_subject_group')->where('cls_sub_group_id', (int) $value->cls_sub_group_id)->get()->result();
 			foreach ($subjectGroupInfo as $key => $subjectGroupvalue) {
-				$clsSubjectInfo = $this->db->query('select * from a_class_subjects WHERE cls_sub_id='.$subjectGroupvalue->cls_sub_id)->row();
+				$clsSubjectInfo = $this->db->from('a_class_subjects')->where('cls_sub_id', (int) $subjectGroupvalue->cls_sub_id)->get()->row();
+				if (!$clsSubjectInfo) {
+					continue;
+				}
 
-				$subjectInfo = $this->db->query('select * from a_subject WHERE sid='.$clsSubjectInfo->subject_id)->row();
+				$subjectInfo = $this->db->from('a_subject')->where('sid', (int) $clsSubjectInfo->subject_id)->get()->row();
 
-				$classesInfo = $this->db->query('select * from a_classes WHERE class_id='.$clsSubjectInfo->class_id)->row();
+				$classesInfo = $this->db->from('a_classes')->where('class_id', (int) $clsSubjectInfo->class_id)->get()->row();
 
-				$groupInfo = $this->db->query('select * from a_groups WHERE group_id='.$subjectGroupvalue->group_id)->row();
+				$groupInfo = $this->db->from('a_groups')->where('group_id', (int) $subjectGroupvalue->group_id)->get()->row();
 
-				$feeInfo = $this->db->query('select * from a_fee_amount WHERE campus_id='.$campusid.' AND subject_id='.$subjectInfo->sid.' AND class_id='.$classesInfo->class_id.' AND session_id='.$sessionid)->row();
+				$feeInfo = $this->db->from('a_fee_amount')
+					->where('campus_id', (int) $campusid)
+					->where('subject_id', (int) $subjectInfo->sid)
+					->where('class_id', (int) $classesInfo->class_id)
+					->where('session_id', (int) $sessionid)
+					->get()->row();
 				$subjectFee = 0;
 				if($feeInfo){
 					$subjectFee  = $feeInfo->amount;
@@ -325,22 +348,31 @@ class A_students extends MY_Controller {
 		$academic_sessioninfo = $this->db->get('academic_session')->result();
 		$this->template_data['academic_sessioninfo'] = $academic_sessioninfo;
 
-		$groupTeacherInfo = $this->db->query('select * from a_group_teacher WHERE cls_sub_group_id IN(select cls_sub_group_id from a_subject_group where campus_id='.$campusid.')')->result();
+		$groupSub = $this->db->select('cls_sub_group_id')->from('a_subject_group')->where('campus_id', (int) $campusid)->get_compiled_select();
+		$groupTeacherInfo = $this->db->from('a_group_teacher')->where("cls_sub_group_id IN ($groupSub)", null, false)->get()->result();
 
 		//print_r($groupTeacherInfo);
 		$groups = array();
 		foreach ($groupTeacherInfo as $key => $value) {
-			$subjectGroupInfo = $this->db->query('select * from a_subject_group WHERE cls_sub_group_id='.$value->cls_sub_group_id)->result();
+			$subjectGroupInfo = $this->db->from('a_subject_group')->where('cls_sub_group_id', (int) $value->cls_sub_group_id)->get()->result();
 			foreach ($subjectGroupInfo as $key => $subjectGroupvalue) {
-				$clsSubjectInfo = $this->db->query('select * from a_class_subjects WHERE cls_sub_id='.$subjectGroupvalue->cls_sub_id)->row();
+				$clsSubjectInfo = $this->db->from('a_class_subjects')->where('cls_sub_id', (int) $subjectGroupvalue->cls_sub_id)->get()->row();
+				if (!$clsSubjectInfo) {
+					continue;
+				}
 
-				$subjectInfo = $this->db->query('select * from a_subject WHERE sid='.$clsSubjectInfo->subject_id)->row();
+				$subjectInfo = $this->db->from('a_subject')->where('sid', (int) $clsSubjectInfo->subject_id)->get()->row();
 
-				$classesInfo = $this->db->query('select * from a_classes WHERE class_id='.$clsSubjectInfo->class_id)->row();
+				$classesInfo = $this->db->from('a_classes')->where('class_id', (int) $clsSubjectInfo->class_id)->get()->row();
 
-				$groupInfo = $this->db->query('select * from a_groups WHERE group_id='.$subjectGroupvalue->group_id)->row();
+				$groupInfo = $this->db->from('a_groups')->where('group_id', (int) $subjectGroupvalue->group_id)->get()->row();
 
-				$feeInfo = $this->db->query('select * from a_fee_amount WHERE campus_id='.$campusid.' AND subject_id='.$subjectInfo->sid.' AND class_id='.$classesInfo->class_id.' AND session_id='.$sessionid)->row();
+				$feeInfo = $this->db->from('a_fee_amount')
+					->where('campus_id', (int) $campusid)
+					->where('subject_id', (int) $subjectInfo->sid)
+					->where('class_id', (int) $classesInfo->class_id)
+					->where('session_id', (int) $sessionid)
+					->get()->row();
 				$subjectFee = 0;
 				if($feeInfo){
 					$subjectFee  = $feeInfo->amount;
@@ -581,7 +613,11 @@ class A_students extends MY_Controller {
 		$this->db->trans_begin();
 		foreach ($gt_ids as $key => $gt_id) {
 			
-			$ssInfo = $this->db->query("select * from a_student_subjects where gt_id = ".$gt_id." AND student_id=".$id." AND session_id=".$sessionid)->row();
+			$ssInfo = $this->db->from('a_student_subjects')
+				->where('gt_id', (int) $gt_id)
+				->where('student_id', (int) $id)
+				->where('session_id', (int) $sessionid)
+				->get()->row();
 
 			$data = array(
 			'gt_id' => $gt_id,
@@ -612,12 +648,17 @@ class A_students extends MY_Controller {
 	function get_parentinfo(){
 		$campusid = $this->session->userdata('member_campusid');
 		$term = $this->input->post('term');		
-		$parentssinfo = $this->db->query("select * from a_parents where (f_name like '%".$term['term']."%' )  ")->result_array();
+		$searchTerm = trim((string) ($term['term'] ?? ''));
+		$this->db->from('a_parents');
+		if ($searchTerm !== '') {
+			$this->db->like('f_name', $searchTerm);
+		}
+		$parentssinfo = $this->db->get()->result_array();
 		 // Initialize Array with fetched data
 
      $data = array();
      foreach($parentssinfo as $parent){
-     	$classstudents = $this->db->query("select * from a_students where parent_id = ".$parent['parent_id'])->row();
+     	$classstudents = $this->db->from('a_students')->where('parent_id', (int) $parent['parent_id'])->get()->row();
      	if($classstudents){
      		 $data[] = array("id" => $parent['parent_id'], "text" => $parent['f_name']);
      	}
@@ -634,12 +675,22 @@ function get_studentinfo(){
 		$term = $this->input->post('term');		
 		$status = $this->input->post('status');		
 		//echo "select * from students where (first_name like '%".$term['term']."%' OR last_name like '%".$term['term']."%') AND status=".$status." AND campus_id=".$campusid;
-		$studentsinfo = $this->db->query("select * from a_students where (first_name like '%".$term['term']."%' OR last_name like '%".$term['term']."%') AND status=".$status." AND campus_id=".$campusid)->result_array();
+		$searchTerm = trim((string) ($term['term'] ?? ''));
+		$this->db->from('a_students');
+		$this->db->where('status', (int) $status);
+		$this->db->where('campus_id', (int) $campusid);
+		if ($searchTerm !== '') {
+			$this->db->group_start();
+			$this->db->like('first_name', $searchTerm);
+			$this->db->or_like('last_name', $searchTerm);
+			$this->db->group_end();
+		}
+		$studentsinfo = $this->db->get()->result_array();
 		 // Initialize Array with fetched data 
      $data = array();
      foreach($studentsinfo as $student){
      	
-     	$parentsInfo = $this->db->query("select f_name from a_parents where  parent_id = ".$student['parent_id'])->row();
+     	$parentsInfo = $this->db->select('f_name')->from('a_parents')->where('parent_id', (int) $student['parent_id'])->get()->row();
 
      	
      	$stdInfotxt = $student['first_name']." ".$student['last_name']." c/o ".$parentsInfo->f_name;

@@ -52,7 +52,7 @@ $fmtMonth = function(string $ym) {
               <?php $val = $grid[$cl['class_id']][$ym][$sid] ?? 0; $rowTotal += (int)$val; ?>
               <td class="text-center"><?= (int)$val ?></td>
             <?php endforeach; ?>
-            <td class="text-center font-weight-bold"><?= (int)$rowTotal ?></td>
+            <td class="text-center fw-bold"><?= (int)$rowTotal ?></td>
           </tr>
         <?php endforeach; ?>
       </tbody>

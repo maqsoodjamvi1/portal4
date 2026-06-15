@@ -10,6 +10,7 @@ class StudentsPrint extends BaseController
     public function __construct()
     {
         $this->db = \Config\Database::connect();
+        check_permission('admin-students');
     }
 
   public function index(): string
@@ -26,7 +27,7 @@ class StudentsPrint extends BaseController
         ->get()
         ->getResultArray();
 
-    // Active class sections for this campus
+    // Active class sections (filters + readmission modal — single query)
     $classSections = $this->db->table('class_section cs')
         ->select('
             cs.cls_sec_id,
@@ -39,25 +40,11 @@ class StudentsPrint extends BaseController
         ->where('cs.campus_id', $campusId)
         ->where('cs.status', 1)
         ->orderBy('c.class_id', 'ASC')
-        ->orderBy('s.section_name', 'ASC')
+        ->orderBy('s.section_id', 'ASC')
         ->get()
         ->getResultArray();
 
-    // ========== ADD SECTIONS CLASS INFO FOR READMISSION ==========
-    $sectionsclassinfo = $this->db->table('class_section cs')
-        ->select('
-            cs.cls_sec_id,
-            CONCAT(c.class_name, " - ", s.section_name) AS label
-        ', false)
-        ->join('classes c', 'c.class_id = cs.class_id', 'inner')
-        ->join('sections s', 's.section_id = cs.section_id', 'inner')
-        ->where('cs.campus_id', $campusId)
-        ->where('cs.status', 1)
-        ->orderBy('c.class_name', 'ASC')
-        ->orderBy('s.section_name', 'ASC')
-        ->get()
-        ->getResultArray();
-    // ========== END SECTIONS CLASS INFO ==========
+    $sectionsclassinfo = $classSections;
 
     // Calculate stats
     $totalStudents = $this->db->table('students')
@@ -79,16 +66,20 @@ class StudentsPrint extends BaseController
         ->where('s.campus_id', $campusId)
         ->countAllResults();
 
+    $statusParam = strtolower((string) $this->request->getGet('status'));
+    $initialShowAll = ($statusParam === '0' || $statusParam === 'all' || $statusParam === 'false');
+
     return view('admin/students_print', [
-        'classes'           => $classes,
-        'classSections'     => $classSections,
-        'sectionsclassinfo' => $sectionsclassinfo,  // ADD THIS LINE
-        'stats'             => [
+        'classes'            => $classes,
+        'classSections'      => $classSections,
+        'sectionsclassinfo'  => $sectionsclassinfo,
+        'stats'              => [
             'total_students'   => $totalStudents,
             'current_students' => $currentStudents,
             'dropped_students' => $droppedStudents,
-            'slc_count'        => $slcCount
-        ]
+            'slc_count'        => $slcCount,
+        ],
+        'initial_show_all'   => $initialShowAll,
     ]);
 }
 
@@ -99,15 +90,15 @@ public function data(): \CodeIgniter\HTTP\ResponseInterface
     $draw = (int) $req->getPost('draw');
     $start = (int) $req->getPost('start');
     $length = (int) $req->getPost('length');
+    $exportAll = ($req->getPost('export_all') === '1' || $req->getPost('export_all') === 1);
     
     $searchName = trim((string) $req->getPost('search_name'));
     $searchFather = trim((string) $req->getPost('search_father'));
     $classId = (string) $req->getPost('class_id');
     $clsSecId = (int) $req->getPost('cls_sec_id');
     
-    $showAll = $req->getPost('show_all') === 'true' ? true : false;
     $showAllParam = $req->getPost('show_all');
-$showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam === true);
+    $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam === true);
 
     $sessionId = (int) session('member_sessionid');
     $campusId = (int) session('member_campusid');
@@ -124,6 +115,11 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
         ->join('classes c', 'c.class_id = cs.class_id', 'left')
         ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
         ->join('classes ac', 'ac.class_id = s.class_id', 'left')
+        ->join(
+            '(SELECT student_id, COUNT(*) AS slc_cnt, MAX(id) AS slc_last_id FROM school_leaving_certificates GROUP BY student_id) slc_sum',
+            'slc_sum.student_id = s.student_id',
+            'left'
+        )
         ->where('s.campus_id', $campusId);
 
     // Apply status filter - show only current students by default
@@ -220,8 +216,8 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
         p.hear_source,
         p.emergency_contact_person,
         p.relationship,
-        (SELECT COUNT(*) FROM school_leaving_certificates slc WHERE slc.student_id = s.student_id) as has_slc,
-        (SELECT slc.id FROM school_leaving_certificates slc WHERE slc.student_id = s.student_id ORDER BY slc.id DESC LIMIT 1) as slc_id
+        IFNULL(slc_sum.slc_cnt, 0) AS has_slc,
+        slc_sum.slc_last_id AS slc_id
     ", false);
 
     // Ordering (same as before)
@@ -252,7 +248,9 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
         'ps_city' => 's.ps_city',
         'admission_class_id' => 's.class_id',
         'admission_class' => 'ac.class_name',
-        'caste' => 's.caste',
+        'caste' => 'p.caste',
+        'health_condition' => 's.health_conditions',
+        'major_injuries' => 's.major_injuries',
         'gr_no' => 's.gr_no',
         'gr_date' => 's.gr_date',
         'std_type' => 's.std_type',
@@ -288,14 +286,12 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
             }
         }
     } else {
-        $builder->orderBy('c.class_name', 'ASC')
-            ->orderBy('sec.section_name', 'ASC')
-            ->orderBy('s.first_name', 'ASC')
-            ->orderBy('s.last_name', 'ASC');
+        $builder->orderBy('s.student_id', 'ASC');
     }
 
-    // Paging
-    if ($length > 0) {
+    // Paging (export_all or "All" page length = -1 → return full filtered set)
+    $noLimit = $exportAll || $length < 0;
+    if (! $noLimit && $length > 0) {
         $builder->limit($length, $start);
     }
 
@@ -314,7 +310,7 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
                   style="width:38px;height:38px;border-radius:4px;object-fit:cover">';
 
         $data[] = [
-            'rownum' => $start + (++$i),
+            'rownum' => $exportAll ? (++$i) : ($start + (++$i)),
             'profile_photo' => $img,
             'student_id' => (int)($r['student_id'] ?? 0),
             'parent_id' => (int)($r['parent_id'] ?? 0),
@@ -369,6 +365,332 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
         'data' => $data,
     ]);
 }
+
+    /**
+     * Print-ready contact list (HTML) using the same filters as the directory grid.
+     * mode=class: grouped by class_id (all sections under each class heading). mode=family: grouped by parent.
+     */
+    public function contactListPrint()
+    {
+        $sessionId = (int) session('member_sessionid');
+        $campusId = (int) session('member_campusid');
+        if ($campusId <= 0) {
+            return redirect()->to(base_url('admin/students_print'))
+                ->with('error', 'Please select a campus before printing the contact list.');
+        }
+
+        $mode = strtolower((string) $this->request->getGet('mode'));
+        if (! in_array($mode, ['class', 'family'], true)) {
+            $mode = 'class';
+        }
+
+        $searchName = trim((string) $this->request->getGet('search_name'));
+        $searchFather = trim((string) $this->request->getGet('search_father'));
+        $classId = (string) $this->request->getGet('class_id');
+        $clsSecId = (int) $this->request->getGet('cls_sec_id');
+        $showAllParam = $this->request->getGet('show_all');
+        $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam === 1);
+
+        $base = $this->db->table('students s')
+            ->join('parents p', 'p.parent_id = s.parent_id', 'left')
+            ->join(
+                'student_class sc',
+                'sc.student_id = s.student_id AND sc.session_id = ' . (int) $sessionId . ' AND sc.status = 1',
+                'left'
+            )
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('s.campus_id', $campusId);
+
+        if (! $showAll) {
+            $base->where('s.status', 1);
+        }
+
+        if ($searchName !== '') {
+            $escaped = $this->db->escapeLikeString($searchName);
+            $base->groupStart()
+                ->like('s.first_name', $escaped, 'both')
+                ->orLike('s.last_name', $escaped, 'both')
+                ->orWhere("CONCAT(s.first_name, ' ', s.last_name) LIKE " . $this->db->escape('%' . $escaped . '%') . " ESCAPE '!'", null, false)
+                ->groupEnd();
+        }
+
+        if ($searchFather !== '') {
+            $ft = $this->db->escapeLikeString($searchFather);
+            $base->like('p.f_name', $ft, 'both');
+        }
+
+        if ($classId !== '' && ctype_digit((string) $classId)) {
+            $base->where('c.class_id', (int) $classId);
+        }
+
+        if ($clsSecId > 0) {
+            $base->where('cs.cls_sec_id', $clsSecId);
+        }
+
+        $base->select("
+            s.student_id,
+            s.reg_no,
+            s.first_name,
+            s.last_name,
+            s.status,
+            CASE s.status WHEN 1 THEN 'Current' WHEN 4 THEN 'Dropped' ELSE 'Other' END AS status_text,
+            IFNULL(p.parent_id, 0) AS parent_id,
+            p.f_name AS father_name,
+            p.m_name AS mother_name,
+            IFNULL(c.class_id, 0) AS class_id,
+            IFNULL(sec.section_id, 0) AS section_id,
+            c.class_name,
+            sec.section_name,
+            p.father_contact,
+            p.mother_contact,
+            p.emergency_contact,
+            p.whatsapp,
+            p.address_line1,
+            p.city,
+            p.emergency_contact_person,
+            p.relationship
+        ", false);
+
+        if ($mode === 'family') {
+            $base->orderBy('IFNULL(p.parent_id, s.student_id)', 'ASC', false)
+                ->orderBy('c.class_id', 'ASC')
+                ->orderBy('sec.section_id', 'ASC')
+                ->orderBy('s.first_name', 'ASC')
+                ->orderBy('s.last_name', 'ASC');
+        } else {
+            // Class/section print: must be sorted by class_id then section_id so the view
+            // can emit one heading per group without duplicate sections.
+            $base->orderBy('c.class_id', 'ASC', false)
+                ->orderBy('sec.section_id', 'ASC', false)
+                ->orderBy('s.first_name', 'ASC')
+                ->orderBy('s.last_name', 'ASC');
+        }
+
+        $rows = $base->get()->getResultArray();
+
+        [$schoolName, $schoolLogo, $campusLabel] = $this->resolveContactListBranding($campusId);
+
+        $filterSummary = [];
+        if (! $showAll) {
+            $filterSummary[] = 'Current students only';
+        } else {
+            $filterSummary[] = 'All statuses';
+        }
+        if ($classId !== '' && ctype_digit((string) $classId)) {
+            $cn = $this->db->table('classes')->select('class_name')->where('class_id', (int) $classId)->get()->getRow('class_name');
+            if ($cn) {
+                $filterSummary[] = 'Class: ' . $cn;
+            }
+        }
+        if ($clsSecId > 0) {
+            $secRow = $this->db->table('class_section cs')
+                ->select('CONCAT(c.class_name, " - ", s.section_name) AS lbl', false)
+                ->join('classes c', 'c.class_id = cs.class_id')
+                ->join('sections s', 's.section_id = cs.section_id')
+                ->where('cs.cls_sec_id', $clsSecId)
+                ->get()->getRow('lbl');
+            if ($secRow) {
+                $filterSummary[] = 'Section: ' . $secRow;
+            }
+        }
+        if ($searchName !== '') {
+            $filterSummary[] = 'Student search: ' . $searchName;
+        }
+        if ($searchFather !== '') {
+            $filterSummary[] = 'Father search: ' . $searchFather;
+        }
+
+        return view('admin/students_print_contact_list', [
+            'school_name'     => $schoolName,
+            'school_logo'     => $schoolLogo,
+            'campus_label'    => $campusLabel,
+            'mode'            => $mode,
+            'rows'            => $rows,
+            'row_count'       => count($rows),
+            'filter_summary'  => $filterSummary,
+            'printed_at'      => date('d M Y, H:i'),
+            'printed_by'      => trim((string) (session('member_name') ?? session('member_username') ?? '')),
+        ]);
+    }
+
+    /**
+     * Print-ready roster: one row per class section, student names comma-separated.
+     */
+    public function sectionRosterPrint()
+    {
+        $sessionId = (int) session('member_sessionid');
+        $campusId = (int) session('member_campusid');
+        if ($campusId <= 0) {
+            return redirect()->to(base_url('admin/students_print'))
+                ->with('error', 'Please select a campus before printing the section roster.');
+        }
+
+        $classId = (string) $this->request->getGet('class_id');
+        $clsSecId = (int) $this->request->getGet('cls_sec_id');
+
+        $builder = $this->db->table('class_section cs')
+            ->select("
+                cs.cls_sec_id,
+                CONCAT(c.class_name, ' - ', sec.section_name) AS section_label,
+                c.class_id,
+                sec.section_id
+            ", false)
+            ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'inner')
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1);
+
+        if ($classId !== '' && ctype_digit((string) $classId)) {
+            $builder->where('cs.class_id', (int) $classId);
+        }
+
+        if ($clsSecId > 0) {
+            $builder->where('cs.cls_sec_id', $clsSecId);
+        }
+
+        $sections = $builder
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('sec.section_id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $rows = [];
+        $totalStudents = 0;
+
+        foreach ($sections as $section) {
+            $students = $this->db->table('student_class sc')
+                ->select("CONCAT(s.first_name, ' ', s.last_name) AS student_name, s.gender", false)
+                ->join('students s', 's.student_id = sc.student_id', 'inner')
+                ->where('sc.cls_sec_id', (int) $section['cls_sec_id'])
+                ->where('sc.session_id', $sessionId)
+                ->where('sc.status', 1)
+                ->where('s.status', 1)
+                ->where('s.campus_id', $campusId)
+                ->orderBy('s.first_name', 'ASC')
+                ->orderBy('s.last_name', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            $maleNames = [];
+            $femaleNames = [];
+            $otherNames = [];
+
+            foreach ($students as $student) {
+                $name = trim((string) ($student['student_name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+
+                $gender = strtolower(trim((string) ($student['gender'] ?? '')));
+                if (in_array($gender, ['male', 'm', 'boy'], true)) {
+                    $maleNames[] = $name;
+                } elseif (in_array($gender, ['female', 'f', 'girl'], true)) {
+                    $femaleNames[] = $name;
+                } else {
+                    $otherNames[] = $name;
+                }
+            }
+
+            $count = count($maleNames) + count($femaleNames) + count($otherNames);
+            $totalStudents += $count;
+
+            $rows[] = [
+                'section_label'  => (string) ($section['section_label'] ?? ''),
+                'male_names'     => $maleNames,
+                'female_names'   => $femaleNames,
+                'other_names'    => $otherNames,
+                'student_count'  => $count,
+                'male_count'     => count($maleNames),
+                'female_count'   => count($femaleNames),
+            ];
+        }
+
+        [$schoolName, $schoolLogo, $campusLabel] = $this->resolveContactListBranding($campusId);
+
+        $sessionRow = $this->db->table('academic_session')
+            ->select('session_name')
+            ->where('session_id', $sessionId)
+            ->get()
+            ->getRow('session_name');
+
+        $filterSummary = ['Current students only', 'Session: ' . trim((string) ($sessionRow ?? ''))];
+        if ($classId !== '' && ctype_digit((string) $classId)) {
+            $cn = $this->db->table('classes')->select('class_name')->where('class_id', (int) $classId)->get()->getRow('class_name');
+            if ($cn) {
+                $filterSummary[] = 'Class: ' . $cn;
+            }
+        }
+        if ($clsSecId > 0) {
+            $secRow = $this->db->table('class_section cs')
+                ->select('CONCAT(c.class_name, " - ", s.section_name) AS lbl', false)
+                ->join('classes c', 'c.class_id = cs.class_id')
+                ->join('sections s', 's.section_id = cs.section_id')
+                ->where('cs.cls_sec_id', $clsSecId)
+                ->get()->getRow('lbl');
+            if ($secRow) {
+                $filterSummary[] = 'Section: ' . $secRow;
+            }
+        }
+
+        return view('admin/students_print_section_roster', [
+            'school_name'     => $schoolName,
+            'school_logo'     => $schoolLogo,
+            'campus_label'    => $campusLabel,
+            'rows'            => $rows,
+            'section_count'   => count($rows),
+            'student_count'   => $totalStudents,
+            'filter_summary'  => $filterSummary,
+            'printed_at'      => date('d M Y, H:i'),
+            'printed_by'      => trim((string) (session('member_name') ?? session('member_username') ?? '')),
+        ]);
+    }
+
+    /**
+     * School name + logo for print reports (scoped to the user's campus / system).
+     *
+     * @return array{0: string, 1: string, 2: string} [schoolName, logoUrl, campusLabel]
+     */
+    private function resolveContactListBranding(int $campusId): array
+    {
+        $schoolName = 'School';
+        $schoolLogo = '';
+        $campusLabel = '';
+
+        if ($campusId > 0) {
+            $campusRow = $this->db->table('campus')
+                ->select('campus_name, system_id')
+                ->where('campus_id', $campusId)
+                ->get()
+                ->getRow();
+
+            if ($campusRow) {
+                $campusLabel = trim((string) ($campusRow->campus_name ?? ''));
+                $systemId = (int) ($campusRow->system_id ?? 0);
+                if ($systemId > 0) {
+                    $schoolRow = $this->db->table('system')
+                        ->select('system_name, logo')
+                        ->where('system_id', $systemId)
+                        ->get()
+                        ->getRow();
+                    if ($schoolRow) {
+                        $name = trim((string) ($schoolRow->system_name ?? ''));
+                        if ($name !== '') {
+                            $schoolName = $name;
+                        }
+                        $logoFile = trim((string) ($schoolRow->logo ?? ''));
+                        if ($logoFile !== '') {
+                            $schoolLogo = base_url('system-logo/' . $logoFile);
+                        }
+                    }
+                }
+            }
+        }
+
+        return [$schoolName, $schoolLogo, $campusLabel];
+    }
+
     private function defaultAvatarUrl(): string
     {
         $candidates = [
@@ -475,7 +797,7 @@ $showAll = ($showAllParam === 'true' || $showAllParam === '1' || $showAllParam =
 
         $default = [
             'visible' => array_fill(0, 20, true),
-            'order' => [[11, 'asc'], [12, 'asc'], [4, 'asc']],
+            'order' => [[2, 'asc']],
             'length' => 25,
         ];
         $default['visible'][2] = false;
@@ -527,19 +849,13 @@ public function stats(): \CodeIgniter\HTTP\ResponseInterface
 {
     $campusId = (int) $this->request->getPost('campus_id');
     $sessionId = (int) $this->request->getPost('session_id');
-    
-    // Debug: Log received values
-    log_message('debug', 'Stats called - campus_id: ' . $campusId . ', session_id: ' . $sessionId);
-    
-    // If values are empty, try getting from session
+
     if ($campusId === 0) {
-        $campusId = session('member_campusid');
-        log_message('debug', 'campus_id from session: ' . $campusId);
+        $campusId = (int) session('member_campusid');
     }
-    
+
     if ($sessionId === 0) {
-        $sessionId = session('member_sessionid');
-        log_message('debug', 'session_id from session: ' . $sessionId);
+        $sessionId = (int) session('member_sessionid');
     }
     
     // Total students (all statuses)
@@ -565,9 +881,6 @@ public function stats(): \CodeIgniter\HTTP\ResponseInterface
         ->where('s.campus_id', $campusId)
         ->countAllResults();
     
-    // Debug: Log results
-    log_message('debug', 'Stats results - total: ' . $totalStudents . ', current: ' . $currentStudents);
-    
     return $this->response->setJSON([
         'success' => true,
         'total_students' => $totalStudents,
@@ -583,7 +896,7 @@ public function stats(): \CodeIgniter\HTTP\ResponseInterface
 public function autocomplete_student()
 {
     $term = $this->request->getGet('term');
-    $campus_id = session('campus_id');
+    $campus_id = (int) (session('member_campusid') ?: $this->request->getGet('campus_id'));
     
     if (strlen($term) < 3) {
         return $this->response->setJSON([]);
@@ -612,7 +925,7 @@ public function autocomplete_student()
 public function autocomplete_father()
 {
     $term = $this->request->getGet('term');
-    $campus_id = session('campus_id');
+    $campus_id = (int) (session('member_campusid') ?: $this->request->getGet('campus_id'));
     
     if (strlen($term) < 3) {
         return $this->response->setJSON([]);
@@ -630,6 +943,361 @@ public function autocomplete_father()
     $results = $builder->get()->getResult();
     
     return $this->response->setJSON($results);
+}
+
+public function bonafideCertificate()
+{
+    $studentId = (int) $this->request->getGet('student_id');
+    $campusId  = (int) session('member_campusid');
+    $sessionId = (int) session('member_sessionid');
+    $loginUserId = (int) session('member_userid');
+
+    if ($studentId <= 0 || $campusId <= 0) {
+        return redirect()->to(base_url('admin/students_print'))->with('error', 'Invalid student selection.');
+    }
+
+    $student = $this->db->table('students s')
+        ->select("
+            s.student_id, s.class_id, s.reg_no, s.first_name, s.last_name, s.date_of_birth, s.status,
+            p.f_name AS father_name,
+            c.class_name,
+            sec.section_name
+        ", false)
+        ->join('parents p', 'p.parent_id = s.parent_id', 'left')
+        ->join('student_class sc', 'sc.student_id = s.student_id AND sc.session_id = ' . (int) $sessionId, 'left')
+        ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+        ->join('classes c', 'c.class_id = cs.class_id', 'left')
+        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+        ->where('s.student_id', $studentId)
+        ->where('s.campus_id', $campusId)
+        ->get()
+        ->getRowArray();
+
+    if (!$student) {
+        return redirect()->to(base_url('admin/students_print'))->with('error', 'Student not found.');
+    }
+
+    $school = $this->db->table('system')->get()->getRowArray();
+    $schoolInfoObj = function_exists('getSchoolInfo') ? getSchoolInfo() : null;
+    $campusInfoObj = function_exists('getCampusInfo') ? getCampusInfo() : null;
+    $schoolName = trim((string)($school['system_name'] ?? 'School'));
+
+    $recipientMode = strtolower((string) $this->request->getGet('recipient_mode'));
+    $recipientName = trim((string) $this->request->getGet('recipient_name'));
+    $purposeText = trim((string) $this->request->getGet('purpose'));
+
+    $toggles = [
+        'show_reg_no'     => $this->asBool($this->request->getGet('show_reg_no'), true),
+        'show_father'     => $this->asBool($this->request->getGet('show_father'), true),
+        'show_class'      => $this->asBool($this->request->getGet('show_class'), true),
+        'show_dob'        => $this->asBool($this->request->getGet('show_dob'), true),
+        'show_current_fee'=> $this->asBool($this->request->getGet('show_current_fee'), true),
+        'show_monthly_fee'=> $this->asBool($this->request->getGet('show_monthly_fee'), true),
+        'show_issue_date' => $this->asBool($this->request->getGet('show_issue_date'), true),
+    ];
+
+    $student = $this->resolveBonafideClassSection($student, $studentId, $campusId, $sessionId);
+
+    $currentFee = $this->fetchCurrentFeeAmount($studentId);
+    $monthlyFee = $this->fetchStudentMonthlyFee($student, $campusId, $sessionId, (int)($school['system_id'] ?? 0));
+    $fullName   = trim((string)($student['first_name'] ?? '') . ' ' . (string)($student['last_name'] ?? ''));
+    $classText  = trim((string)($student['class_name'] ?? ''));
+    $section    = trim((string)($student['section_name'] ?? ''));
+    if ($section !== '') {
+        $classText .= ($classText !== '' ? ' - ' : '') . $section;
+    }
+
+    $principalName = '';
+    if ($loginUserId > 0) {
+        $loginUser = $this->db->table('users')
+            ->select('first_name, last_name, username')
+            ->where('id', $loginUserId)
+            ->get()
+            ->getRowArray();
+        if ($loginUser) {
+            $principalName = trim(((string)($loginUser['first_name'] ?? '')) . ' ' . ((string)($loginUser['last_name'] ?? '')));
+            if ($principalName === '') {
+                $principalName = trim((string)($loginUser['username'] ?? ''));
+            }
+        }
+    }
+
+    $schoolPhone = $this->pickFirstNonEmpty(
+        $school['phone'] ?? null,
+        $school['mobile_no'] ?? null,
+        $school['landline'] ?? null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->phone ?? null) : null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->mobile_no ?? null) : null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->landline ?? null) : null,
+        is_object($campusInfoObj) ? ($campusInfoObj->mobile_no ?? null) : null,
+        is_object($campusInfoObj) ? ($campusInfoObj->landline ?? null) : null
+    );
+
+    $schoolEmail = $this->pickFirstNonEmpty(
+        $school['email'] ?? null,
+        $school['school_email'] ?? null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->email ?? null) : null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->school_email ?? null) : null,
+        is_object($campusInfoObj) ? ($campusInfoObj->email ?? null) : null
+    );
+
+    $schoolAddress = $this->pickFirstNonEmpty(
+        $school['address'] ?? null,
+        is_object($schoolInfoObj) ? ($schoolInfoObj->address ?? null) : null,
+        is_object($campusInfoObj) ? ($campusInfoObj->location ?? null) : null
+    );
+
+    return view('admin/bonafide_certificate', [
+        'school_name'     => $schoolName !== '' ? $schoolName : 'School',
+        'student'         => $student,
+        'student_name'    => $fullName,
+        'class_text'      => $classText,
+        'recipient_mode'  => ($recipientMode === 'custom') ? 'custom' : 'twmc',
+        'recipient_name'  => $recipientName,
+        'toggles'         => $toggles,
+        'issue_date'      => date('d M Y'),
+        'dob_display'     => $this->formatBonafideDobDisplay($student['date_of_birth'] ?? ''),
+        'current_fee'     => $currentFee,
+        'monthly_fee'     => $monthlyFee,
+        'school_logo'     => !empty($school['logo']) ? base_url('system-logo/' . $school['logo']) : '',
+        'school_phone'    => $schoolPhone,
+        'school_address'  => $schoolAddress,
+        'school_email'    => $schoolEmail,
+        'purpose_text'    => $purposeText,
+        'principal_name'  => $principalName,
+    ]);
+}
+
+private function pickFirstNonEmpty(...$values): string
+{
+    foreach ($values as $value) {
+        $v = trim((string)($value ?? ''));
+        if ($v !== '') {
+            return $v;
+        }
+    }
+
+    return '';
+}
+
+private function resolveBonafideClassSection(array $student, int $studentId, int $campusId, int $sessionId): array
+{
+    $className = trim((string)($student['class_name'] ?? ''));
+    $sectionName = trim((string)($student['section_name'] ?? ''));
+
+    if ($className !== '' && $sectionName !== '') {
+        return $student;
+    }
+
+    // 1) Try current session enrollment first.
+    $row = $this->db->table('student_class sc')
+        ->select('c.class_name, sec.section_name')
+        ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+        ->join('classes c', 'c.class_id = cs.class_id', 'left')
+        ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+        ->where('sc.student_id', $studentId)
+        ->where('sc.session_id', $sessionId)
+        ->where('sc.status', 1)
+        ->limit(1)
+        ->get()
+        ->getRowArray();
+
+    if ($row) {
+        $student['class_name'] = $className !== '' ? $className : trim((string)($row['class_name'] ?? ''));
+        $student['section_name'] = $sectionName !== '' ? $sectionName : trim((string)($row['section_name'] ?? ''));
+        $className = trim((string)($student['class_name'] ?? ''));
+        $sectionName = trim((string)($student['section_name'] ?? ''));
+    }
+
+    // 2) Fallback to latest active enrollment across sessions.
+    if ($className === '' || $sectionName === '') {
+        $latest = $this->db->table('student_class sc')
+            ->select('c.class_name, sec.section_name')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('sc.student_id', $studentId)
+            ->where('sc.status', 1)
+            ->orderBy('sc.session_id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if ($latest) {
+            $student['class_name'] = $className !== '' ? $className : trim((string)($latest['class_name'] ?? ''));
+            $student['section_name'] = $sectionName !== '' ? $sectionName : trim((string)($latest['section_name'] ?? ''));
+            $className = trim((string)($student['class_name'] ?? ''));
+        }
+    }
+
+    // 3) Final fallback: students.class_id if enrollment records are missing.
+    if ($className === '' && !empty($student['class_id'])) {
+        $classRow = $this->db->table('classes')
+            ->select('class_name')
+            ->where('class_id', (int) $student['class_id'])
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        if ($classRow) {
+            $student['class_name'] = trim((string)($classRow['class_name'] ?? ''));
+        }
+    }
+
+    return $student;
+}
+
+private function fetchCurrentFeeAmount(int $studentId): float
+{
+    $row = $this->db->table('fee_chalan')
+        ->select('SUM(amount - IFNULL(discount,0)) AS due_amount', false)
+        ->where('student_id', $studentId)
+        ->where('status', 'unpaid')
+        ->get()
+        ->getRowArray();
+
+    return (float)($row['due_amount'] ?? 0);
+}
+
+private function asBool($value, bool $default = false): bool
+{
+    if ($value === null || $value === '') {
+        return $default;
+    }
+
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    $v = strtolower(trim((string)$value));
+    return in_array($v, ['1', 'true', 'yes', 'on'], true);
+}
+
+/** e.g. 03/15/2012 (Fifteen March Two Thousand Twelve) */
+private function formatBonafideDobDisplay(?string $raw): string
+{
+    $raw = trim((string) $raw);
+    if ($raw === '' || $raw === '0000-00-00' || $raw === '00/00/0000') {
+        return '';
+    }
+
+    $ts = strtotime($raw);
+    if ($ts === false) {
+        return '';
+    }
+
+    $numeric = date('m/d/Y', $ts);
+    $day     = (int) date('j', $ts);
+    $month   = date('F', $ts);
+    $year    = (int) date('Y', $ts);
+    $words   = $this->bonafideNumberToWords($day) . ' ' . $month . ' ' . $this->bonafideYearToWords($year);
+
+    return $numeric . ' (' . $words . ')';
+}
+
+private function bonafideNumberToWords(int $number): string
+{
+    static $words = [
+        0 => 'Zero', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five',
+        6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten',
+        11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen',
+        16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen', 20 => 'Twenty',
+        21 => 'Twenty One', 22 => 'Twenty Two', 23 => 'Twenty Three', 24 => 'Twenty Four', 25 => 'Twenty Five',
+        26 => 'Twenty Six', 27 => 'Twenty Seven', 28 => 'Twenty Eight', 29 => 'Twenty Nine', 30 => 'Thirty',
+        31 => 'Thirty One',
+    ];
+
+    if (isset($words[$number])) {
+        return $words[$number];
+    }
+
+    if ($number < 100) {
+        $tens = (int) (floor($number / 10) * 10);
+        $ones = $number % 10;
+        $parts = [];
+        if ($tens > 0 && isset($words[$tens])) {
+            $parts[] = $words[$tens];
+        }
+        if ($ones > 0 && isset($words[$ones])) {
+            $parts[] = $words[$ones];
+        }
+
+        return implode(' ', $parts);
+    }
+
+    return (string) $number;
+}
+
+private function bonafideYearToWords(int $year): string
+{
+    if ($year >= 2000 && $year < 2100) {
+        $remainder = $year - 2000;
+        if ($remainder === 0) {
+            return 'Two Thousand';
+        }
+
+        return 'Two Thousand ' . $this->bonafideNumberToWords($remainder);
+    }
+
+    if ($year >= 1900 && $year < 2000) {
+        $remainder = $year - 1900;
+        if ($remainder === 0) {
+            return 'Nineteen Hundred';
+        }
+
+        return 'Nineteen Hundred ' . $this->bonafideNumberToWords($remainder);
+    }
+
+    return $this->bonafideNumberToWords($year);
+}
+
+private function fetchStudentMonthlyFee(array $student, int $campusId, int $sessionId, int $systemId): float
+{
+    $classId = (int)($student['class_id'] ?? 0);
+    $studentId = (int)($student['student_id'] ?? 0);
+    if ($classId <= 0 || $studentId <= 0 || $campusId <= 0 || $sessionId <= 0 || $systemId <= 0) {
+        return 0.0;
+    }
+
+    $monthlyType = $this->db->table('fee_type')
+        ->select('fee_type_id')
+        ->where([
+            'system_id'      => $systemId,
+            'status'         => 1,
+            's_flag'         => 1,
+            'is_monthly_fee' => 1,
+        ])
+        ->get()
+        ->getRowArray();
+
+    if (!$monthlyType) {
+        return 0.0;
+    }
+
+    $stdRow = $this->db->table('fee_amount')
+        ->select('amount')
+        ->where([
+            'class_id'    => $classId,
+            'campus_id'   => $campusId,
+            'session_id'  => $sessionId,
+            'fee_type_id' => (int)$monthlyType['fee_type_id'],
+        ])
+        ->get()
+        ->getRowArray();
+
+    $studentRow = $this->db->table('students')
+        ->select('discounted_amount')
+        ->where('student_id', $studentId)
+        ->get()
+        ->getRowArray();
+
+    $standard = (float)($stdRow['amount'] ?? 0);
+    $discount = (float)($studentRow['discounted_amount'] ?? 0);
+    $monthly = $standard - $discount;
+    if ($monthly < 0) {
+        $monthly = 0;
+    }
+
+    return $monthly;
 }
 
 

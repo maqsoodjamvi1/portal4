@@ -1,18 +1,25 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1 class="mb-3">Quizzes</h1>
-  <a href="<?= base_url('admin/quizzes/create') ?>" class="btn btn-primary btn-sm">+ Create Quiz</a>
-</section>
-
+<?= view('components/page_header', [
+    'title' => 'Quizzes',
+    'icon' => 'fas fa-question-circle',
+    'actionsHtml' => '<div class="text-sm-right">'
+        . '<a href="' . esc(base_url('admin/quizzes/create'), 'attr') . '" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create Quiz</a>'
+        . '</div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quizzes', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <?php if (session()->getFlashdata('msg')): ?>
     <div class="alert alert-success"><?= esc(session()->getFlashdata('msg')) ?></div>
   <?php endif; ?>
 
-  <div class="card">
+  <div class="card sms-card">
     <div class="card-body p-0">
       <table class="table table-striped table-hover mb-0">
         <thead>
@@ -40,9 +47,9 @@
               <td><?= (int)$q->max_attempts ?></td>
               <td>
                 <?php if ($q->is_published): ?>
-                  <span class="badge badge-success">Yes</span>
+                  <span class="badge text-bg-success">Yes</span>
                 <?php else: ?>
-                  <span class="badge badge-secondary">No</span>
+                  <span class="badge text-bg-secondary">No</span>
                 <?php endif; ?>
               </td>
               <td>

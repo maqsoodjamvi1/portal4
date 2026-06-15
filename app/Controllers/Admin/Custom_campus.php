@@ -287,82 +287,55 @@ class Custom_campus extends MY_Controller {
 	}
 
 	function get_packages(){
-		$max_fee = 0;
-		$max_students = 0;
-		$stdMaxFee = 0;
-		$no_of_students = 0;
-		
-		if($this->input->post('max_fee')){
-		 	$max_fee = $this->input->post('max_fee');
-		}
-		if($this->input->post('max_students')){
-			$max_students = $this->input->post('max_students');
-		}
-		
-		$currentDate = date('Y-m-d');
-		$next_due_date = date('Y-m-d', strtotime("+30 days"));
-		
-		$this->db->where('student_limit', $max_students);
-		$system_plans_info = $this->db->get('system_plans')->result();
+		helper('role');
 
-		$packagePlan = '';
-		$packagePlan .= '<table class="table">';
-		
-	foreach ($system_plans_info as $key => $system_plans) {
+		$max_students = (int) ($this->input->post('max_students') ?? 0);
+		$planId       = getSystemPlanId();
 
-		if($system_plans->month_count == 1){
-			$Bill = $system_plans->price."/Month";
-		}else{
-			$Bill = $system_plans->price."/Annum";
+		$this->db->where('plan_id', $planId);
+		if ($max_students > 0) {
+			$this->db->where('student_limit', $max_students);
+		}
+		$system_plans = $this->db->get('system_plans')->row();
+
+		if (! $system_plans) {
+			echo '<p class="text-muted">Annual package is not configured.</p>';
+			exit;
 		}
 
-		$packagePlan .= '<tr><td><input type="checkbox" name="plan_id" value="'.$system_plans->plan_id.'"></td><td style="vertical-align: middle;">'.$system_plans->plan_name.'</td><td>Max Students: '.$system_plans->student_limit.'</td><td>Max Fee: '.$system_plans->fee_limit.'</td><td>'.$Bill.'</td>';
- 
-			$packagePlan .= '<tr>';
-		}
-
-		$packagePlan .= '</table><script>
-		$(document).on("click", "input[type=\'checkbox\']", function() {      
-   		 $("input[type=\'checkbox\']").not(this).prop("checked", false);      
-		});</script>';
+		$Bill = $system_plans->price . '/Annum';
+		$packagePlan  = '<table class="table">';
+		$packagePlan .= '<tr><td><input type="checkbox" name="plan_id" value="' . (int) $system_plans->plan_id . '" checked></td>';
+		$packagePlan .= '<td style="vertical-align: middle;">' . esc($system_plans->plan_name) . ' (Annual)</td>';
+		$packagePlan .= '<td>Max Students: ' . (int) $system_plans->student_limit . '</td>';
+		$packagePlan .= '<td>Max Fee: ' . esc($system_plans->fee_limit) . '</td>';
+		$packagePlan .= '<td>' . esc($Bill) . '</td></tr>';
+		$packagePlan .= '</table>';
 		echo $packagePlan;
 		exit;
 	}
 	function calculateCampusBill(){
-		$max_fee = 0;
-		$max_students = 0;
-		$plan = $this->input->post('plan');
-		if($this->input->post('max_fee')){
-			$max_fee = $this->input->post('max_fee');
+		helper('role');
+
+		$max_fee = (int) ($this->input->post('max_fee') ?? 0);
+		$max_students = (int) ($this->input->post('max_students') ?? 0);
+
+		$systemPlan = $this->db->table('system_plans')->where('plan_id', getSystemPlanId())->get()->getRow();
+		$installmentPlan = getAnnualInstallPlan();
+		$numberOfStudents = $this->db->table('number_of_students')->where('id', $max_students)->get()->getRow();
+		$maxFee = $this->db->table('max_student_fee')->where('id', $max_fee)->get()->getRow();
+
+		if (! $systemPlan || ! $installmentPlan || ! $numberOfStudents || ! $maxFee) {
+			echo '<span class="text-danger">Unable to calculate bill.</span>';
+			return;
 		}
-		if($this->input->post('max_students')){
-			$max_students = $this->input->post('max_students');
-		}
-		
-		$installment_plan = $this->input->post('installment_plan');
-		$currentDate = date('Y-m-d');
 
-		$next_due_date = date('Y-m-d', strtotime("+30 days"));		
+		$installmentBill = $systemPlan->factor * $installmentPlan->discount_factor * $installmentPlan->month_count * $maxFee->max_fee * $numberOfStudents->no_of_students;
 
-		$this->db->where('plan_id', $plan);
-		$systemPlan = $this->db->get('system_plans')->row();
-
-		$this->db->where('install_id', $installment_plan);
-		$installmentPlan = $this->db->get('system_installment_plan')->row();
-
-		$this->db->where('id', $max_students);
-		$numberOfStudents = $this->db->get('number_of_students')->row();
-
-		$this->db->where('id', $max_fee);
-		$maxFee = $this->db->get('max_student_fee')->row();
-
-		$monthlyBill = ($systemPlan->factor*$installmentPlan->discount_factor*$maxFee->max_fee*$numberOfStudents->no_of_students);
-
-		$installmentBill = ($systemPlan->factor*$installmentPlan->discount_factor*$installmentPlan->month_count*$maxFee->max_fee*$numberOfStudents->no_of_students);
-		
-		echo $monthlyBill."/Month<br>";
-		echo $installmentBill."/".$installmentPlan->install_name."<br><input type='hidden' name='bill_amount' value='".$installmentBill."'>";
-
+		echo $installmentBill . '/' . esc($installmentPlan->install_name) . ' (Annual)<br>';
+		echo '<input type="hidden" name="bill_amount" value="' . esc($installmentBill) . '">';
+		echo '<input type="hidden" name="plan_id" value="' . (int) $systemPlan->plan_id . '">';
+		echo '<input type="hidden" name="installment_plan" value="' . (int) $installmentPlan->install_id . '">';
 	}
 
 	function delete(){

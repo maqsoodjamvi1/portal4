@@ -1,21 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?= base_url('resource/datatables/dataTables.bootstrap4.min.css') ?>">
-
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1><i class="fas fa-running"></i> Sports Events</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Sports Events</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<?= view('components/page_header', [
+    'title' => 'Sports Events',
+    'icon' => 'fas fa-running',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
@@ -47,8 +42,8 @@
   </div>
 </section>
 
-<script src="<?= base_url('resource/datatables/jquery.dataTables.min.js') ?>"></script>
-<script src="<?= base_url('resource/datatables/dataTables.bootstrap4.min.js') ?>"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script>
   const CSRF_NAME = '<?= csrf_token() ?>';
   const CSRF_HASH = '<?= csrf_hash() ?>';
@@ -57,13 +52,13 @@
     const v = (g || '').toLowerCase().trim();
     switch (v) {
         case 'male':
-            return '<span class="badge badge-primary">Male</span>';
+            return '<span class="badge text-bg-primary">Male</span>';
         case 'female':
-            return '<span class="badge badge-danger">Female</span>';
+            return '<span class="badge text-bg-danger">Female</span>';
         case 'mixed':
-            return '<span class="badge badge-secondary">Mixed</span>';
+            return '<span class="badge text-bg-secondary">Mixed</span>';
         default:
-            return '<span class="badge badge-light">-</span>';
+            return '<span class="badge text-bg-light">-</span>';
     }
 }
 

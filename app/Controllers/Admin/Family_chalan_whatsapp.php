@@ -125,7 +125,11 @@ class FamilyChalanWhatsapp extends BaseController
         $term = $this->request->getPost('term.term');
         $campusId = session('member_campusid');
 
-        $parents = $this->db->query("SELECT * FROM parents WHERE f_name LIKE '%{$term}%' AND campus_id = {$campusId}")->getResult();
+        $builder = $this->db->table('parents')->where('campus_id', (int) $campusId);
+        if ($term !== '') {
+            $builder->like('f_name', $term);
+        }
+        $parents = $builder->get()->getResult();
         $data = [];
 
         foreach ($parents as $parent) {
@@ -144,7 +148,16 @@ class FamilyChalanWhatsapp extends BaseController
         $status = $this->request->getPost('status');
         $campusId = session('member_campusid');
 
-        $students = $this->db->query("SELECT * FROM students WHERE (first_name LIKE '%{$term}%' OR last_name LIKE '%{$term}%') AND status = {$status} AND campus_id = {$campusId}")->getResult();
+        $builder = $this->db->table('students')
+            ->where('status', (int) $status)
+            ->where('campus_id', (int) $campusId);
+        if ($term !== '') {
+            $builder->groupStart()
+                ->like('first_name', $term)
+                ->orLike('last_name', $term)
+                ->groupEnd();
+        }
+        $students = $builder->get()->getResult();
         $data = [];
 
         foreach ($students as $student) {

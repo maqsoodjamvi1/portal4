@@ -23,7 +23,6 @@
 				$session_id = $sessionData['sessionid'];
 			}
 			?>
-<!-- Content Header (Page header) -->
 <style type="text/css">
 	.verticalTableHeader {
     text-align:center;
@@ -52,17 +51,18 @@ table {
     table-layout : fixed;
 }
 </style>
-<section class="content-header">
-  <h1> Students Attendance Report<small></small> </h1>
-  <ol class="breadcrumb">
-    <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-    <li class="active">Students Attendance Report</li>
-  </ol>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Term Attendance Report',
+    'icon' => 'fas fa-calendar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Term Attendance Report', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
-    <div class="col-xs-12">
+    <div class="col-12">
       <div class="nav-tabs-custom">
        
         <div class="tab-content">
@@ -78,7 +78,7 @@ table {
 		      </div>
 		   <input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
 		    <div class="col-lg-6 col-lg-offset-3">
-	            <div class="form-group pull-left">
+	            <div class="form-group float-start">
 	              <label for="class">Sections</label>
 	              <select class="form-control select2" name="section_id" id="section_id">
 	              	 <option value="0">Select Section</option>
@@ -89,11 +89,11 @@ table {
 	                <?php } ?>
 	              </select>
 	            </div>
-	            <div class="form-group  pull-left" style="margin-left: 15px;">
+	            <div class="form-group  float-start" style="margin-left: 15px;">
 	            	<label for="class">Date</label>
 	             <input type="month" name="date" id="date" required value="<?php echo date('Y-m-d'); ?>" class="form-control" style="height: 24px;line-height: 15px;padding: 0 10px;">
 	           </div>
-	            <div class="form-group  pull-left"  style="margin-left: 15px;">
+	            <div class="form-group  float-start"  style="margin-left: 15px;">
 	            <button type="button" onclick="getstudents();" class="btn btn-sm btn-primary" style="margin-top: 19px;height: 24px;line-height: 10px;">View</button>
 	           </div>
 	          </div> 

@@ -245,7 +245,7 @@ function data(){
 						
 
           $studentsList .= '<td style="font-size:11px;"><input id="enable_a_fee_'.$value->student_id.'_'.$tg_id.'" name="enable_a_fee_'.$value->student_id.'_'.$tg_id.'" value="1" id="enable_com_'.$value->student_id.'" type="checkbox" '.$strChecked.' ><input type="text" id="student_a_discount_'.$value->student_id.'_'.$tg_id.'" name="student_a_discount_'.$value->student_id.'_'.$tg_id.'" value="'.$group_fee.'" '.$strReadonly.'  class="form-control">
-          	<a id="save'.$value->student_id.'_'.$tg_id.'" data-tg="'.$tg_id.'" data-id="'.$value->student_id.'" class="btn btn-primary btn-xs">Enroll</a>
+          	<a id="save'.$value->student_id.'_'.$tg_id.'" data-tg="'.$tg_id.'" data-id="'.$value->student_id.'" class="btn btn-primary btn-sm">Enroll</a>
           <script type="text/javascript">
        			
        			$("#enable_a_fee_'.$value->student_id.'_'.$tg_id.'").on("click", function () {

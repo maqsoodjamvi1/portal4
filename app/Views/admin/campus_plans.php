@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-   <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Campus Plans
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Campus Plans</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+   <?= view('components/page_header', [
+    'title' => 'Campus Plans',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus Plans', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -99,8 +90,8 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-					// html += '<a href="<?php echo '#/campus_plans?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fasfa-pencil"></i> Edit Bill</a>';
-					html += '<a href="<?php echo '#/campus_bill?id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Print Bill</a>';
+					// html += '<a href="<?php echo '#/campus_plans?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fasfa-pencil"></i> Edit Bill</a>';
+					html += '<a href="<?php echo '#/campus_bill?id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Print Bill</a>';
 					html += '</div>';
 					return html;
 				}

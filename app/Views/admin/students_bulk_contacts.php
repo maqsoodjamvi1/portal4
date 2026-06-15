@@ -4,11 +4,11 @@
 <?php $status = $_GET['status'] ?? ''; ?>
 
 <!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -30,15 +30,6 @@
           <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_enroll') ?>">Enroll Students</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_cnic') ?>">Father Names</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Fee Detail</a></li>
-          <?php if (!empty($campus_info->a_flag)) : ?>
-            <li class="nav-item"><a class="nav-link" href="#/students_bulk_academy_fee">Academy Fee Detail</a></li>
-          <?php endif; ?>
-          <?php if (!empty($campus_info->h_flag)) : ?>
-            <li class="nav-item"><a class="nav-link" href="#/h_student_beds?m=add">Student Bed</a></li>
-          <?php endif; ?>
-          <?php if (!empty($campus_info->t_flag)) : ?>
-            <li class="nav-item"><a class="nav-link" href="#/students_vehicle">Students Vehicle</a></li>
-          <?php endif; ?>
           <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/students_bulk_contacts') ?>">Contact Numbers</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/students_bulk_info') ?>">Other Student Info</a></li>
         <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulkcsv/addbulk') ?>">Entries through Excel</a></li>
@@ -49,9 +40,9 @@
 
 
 <div class="p-3">
-  <div class="form-row align-items-end">
+  <div class="row align-items-end">
     <div class="form-group col-md-6">
-      <label for="cls_sec_id" class="font-weight-bold">Select Class</label>
+      <label for="cls_sec_id" class="fw-bold">Select Class</label>
       <select class="form-control select2" name="cls_sec_id" id="cls_sec_id">
   <option value="">All Classes</option>
   <?php if (!empty($sectionsclassinfo)) : ?>
@@ -79,7 +70,7 @@
 <!-- Loader -->
 <div id="loader-1" class="text-center my-3 d-none">
   <div class="spinner-border text-primary" role="status">
-    <span class="sr-only">Loading...</span>
+    <span class="visually-hidden">Loading...</span>
   </div>
 </div>
 
@@ -106,7 +97,7 @@
 
   function initTooltips() {
     if ($.fn.tooltip) {
-      $list.find('[data-toggle="tooltip"]').tooltip({
+      $list.find('[data-bs-toggle="tooltip"]').tooltip({
         container: 'body',
         trigger: 'hover'
       });

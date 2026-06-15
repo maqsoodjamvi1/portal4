@@ -101,8 +101,8 @@
 		</div>
 	    <div class="form-group">
         <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-		<button type="reset" class="btn btn-default">Reset</button>
-		<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+		<button type="reset" class="btn btn-secondary">Reset</button>
+		<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 	    </div>
 	    <?php echo form_close();?>
 		</div>

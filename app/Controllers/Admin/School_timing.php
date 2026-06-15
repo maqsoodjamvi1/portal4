@@ -1,127 +1,155 @@
 <?php
+
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class School_timing extends BaseController
 {
     protected $db;
     protected $session;
+    protected $template_data = [];
+
+    private const WEEK_DAYS = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+    ];
 
     public function __construct()
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form', 'url']);
+        helper(['form', 'url', 'school']);
         check_permission('admin-school-timing');
     }
 
     public function index()
     {
-        return view('admin/school_timing', $this->template_data);
+        return redirect()->to(base_url('admin/school_timing/add'));
     }
 
-     public function data()
+    public function data(): ResponseInterface
     {
-        $campusid = $this->session->get('member_campusid');
-        $school_timing_type_id = $this->request->getPost('school_timing_type_id');
+        $campusId = (int) $this->session->get('member_campusid');
 
-        // 1. Get sections & class/section names
-        $sectionsinfo = $this->db->table('class_section')
-            ->where(['campus_id' => $campusid, 'status' => 1])
-            ->get()->getResult();
-
-        if (empty($sectionsinfo)) {
-            return $this->response->setBody("<div class='btn btn-danger'>Please add class sections to add school timing.</div>");
+        if ($campusId <= 0) {
+            return $this->response->setBody(
+                '<div class="alert alert-warning mb-0">Campus is not selected.</div>'
+            );
         }
 
-        $sectionsclassinfo = [];
-        foreach ($sectionsinfo as $section) {
-            $classinfo = $this->db->table('classes')->where('class_id', $section->class_id)->get()->getRow();
-            $sectioninfo = $this->db->table('sections')->where('section_id', $section->section_id)->get()->getRow();
-            $sectionsclassinfo[] = [
-                'section_id' => $section->cls_sec_id,
-                'sectionclassname' => $classinfo->class_name . " (" . $sectioninfo->section_name . ")"
-            ];
+        $sectionsclassinfo = $this->getSectionOptions($campusId);
+        if ($sectionsclassinfo === []) {
+            return $this->response->setBody(
+                "<div class='alert alert-danger mb-0'>Please add class sections before adding school timing.</div>"
+            );
         }
 
-        // 2. Prepare all school timings, indexed by day/section
+        $sectionIds = array_column($sectionsclassinfo, 'section_id');
         $schoolTimingsInfo = [];
-        $timings = $this->db->table('school_timings')
-            ->where('type_id', $school_timing_type_id)
-            ->get()->getResult();
-        foreach ($timings as $row) {
-            $schoolTimingsInfo[$row->dayname][$row->cls_sec_id] = $row;
+
+        foreach (getSchoolTimingsForSections($sectionIds, $campusId) as $row) {
+            $day = (string) ($row['dayname'] ?? '');
+            $sec = (int) ($row['cls_sec_id'] ?? 0);
+            if ($day !== '' && $sec > 0) {
+                $schoolTimingsInfo[$day][$sec] = (object) $row;
+            }
         }
 
-        // 3. Pass all to view
-        return view('admin/partials/school_timing_table', [
+        return $this->response->setBody(view('admin/partials/school_timing_table', [
             'sectionsclassinfo' => $sectionsclassinfo,
             'schoolTimingsInfo' => $schoolTimingsInfo,
-            'school_timing_type_id' => $school_timing_type_id,
-        ]);
+        ]));
     }
 
     public function add()
     {
         check_permission('admin-add-timetable');
-        $campusid = $this->session->get('member_campusid');
-
-        $this->template_data['info'] = $this->db->table('school_timings')->get()->getResultArray();
-
-        $infoschooltimingtypes = $this->db->table('school_timing_types')
-            ->where('campus_id', $campusid)
-            ->get()->getResultArray();
-
-        if (empty($infoschooltimingtypes)) {
-            return $this->response->setBody("<div class='alert alert-danger'>Click Here To Set School Timing Type Before Adding School Timings <a href='/admin.php#/school_timming_type?m=add'>School Timing Type</a></div>");
-        }
-
-        $this->template_data['infoschooltimingtypes'] = $infoschooltimingtypes;
-        $this->template_data['sectionsclassinfo'] = userClassSections();
-        $this->template_data['subjectinfo'] = $this->db->table('allsubject')->get()->getResult();
 
         return view('admin/school_timing_edit', $this->template_data);
     }
 
-    public function save()
+    public function save(): ResponseInterface
     {
         check_permission('admin-add-timetable');
 
-        $campus_id = (int) $this->session->get('member_campusid');
-        $school_timing_type_id = $this->request->getPost('school_timing_type_id');
-        $section_ids = $this->request->getPost('section_id');
-        $days = $this->request->getPost('dayname');
+        $campusId = (int) $this->session->get('member_campusid');
+        $sectionIds = array_values(array_unique(array_filter(array_map('intval', (array) $this->request->getPost('section_id')))));
+        $days = array_values(array_intersect((array) $this->request->getPost('dayname'), self::WEEK_DAYS));
 
-        $cls_sec_List = implode(', ', $section_ids);
-        $this->db->query("DELETE FROM school_timings WHERE cls_sec_id IN($cls_sec_List) AND type_id={$school_timing_type_id}");
+        if ($campusId <= 0) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'Campus is not selected.']);
+        }
+
+        if ($sectionIds === [] || $days === []) {
+            return $this->response->setJSON(['success' => false, 'msg' => 'No timing data to save.']);
+        }
+
+        foreach ($days as $day) {
+            foreach ($sectionIds as $sectionId) {
+                $checkIn  = trim((string) $this->request->getPost("{$day}_{$sectionId}_checkin_date"));
+                $checkOut = trim((string) $this->request->getPost("{$day}_{$sectionId}_checkout_date"));
+
+                if ($checkIn === '' xor $checkOut === '') {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'msg'     => "Enter both check-in and check-out for {$day} (section {$sectionId}), or leave both empty.",
+                    ]);
+                }
+            }
+        }
+
+        $insertRows = [];
+        foreach ($days as $day) {
+            foreach ($sectionIds as $sectionId) {
+                $checkIn  = trim((string) $this->request->getPost("{$day}_{$sectionId}_checkin_date"));
+                $checkOut = trim((string) $this->request->getPost("{$day}_{$sectionId}_checkout_date"));
+
+                if ($checkIn === '' && $checkOut === '') {
+                    continue;
+                }
+
+                $row = [
+                    'cls_sec_id'      => $sectionId,
+                    'dayname'         => $day,
+                    'checkin_timing'  => $checkIn,
+                    'checkout_timing' => $checkOut,
+                ];
+
+                if (schoolTimingsHasCampusIdColumn()) {
+                    $row['campus_id'] = $campusId;
+                }
+
+                $insertRows[] = $row;
+            }
+        }
 
         $this->db->transBegin();
 
-        foreach ($days as $day) {
-            foreach ($section_ids as $section_id) {
-                $checkintime = $this->request->getPost("{$day}_{$section_id}_checkin_date");
-                $checkouttime = $this->request->getPost("{$day}_{$section_id}_checkout_date");
+        $deleteBuilder = $this->db->table('school_timings')->whereIn('cls_sec_id', $sectionIds);
+        if (schoolTimingsHasCampusIdColumn()) {
+            $deleteBuilder->where('campus_id', $campusId);
+        }
+        $deleteBuilder->delete();
 
-                $data = [
-                    'cls_sec_id' => $section_id,
-                    'dayname' => $day,
-                    'checkin_timing' => $checkintime,
-                    'checkout_timing' => $checkouttime,
-                    'type_id' => $school_timing_type_id
-                ];
-
-                $this->db->table('school_timings')->insert($data);
-            }
+        if ($insertRows !== []) {
+            $this->db->table('school_timings')->insertBatch($insertRows);
         }
 
         if ($this->db->transStatus() === false) {
             $this->db->transRollback();
-            return $this->response->setJSON(['success' => false, 'msg' => 'Failed to save school timing']);
+            return $this->response->setJSON(['success' => false, 'msg' => 'Failed to save school timing.']);
         }
 
         $this->db->transCommit();
-        return $this->response->setJSON(['success' => true, 'msg' => 'Add School Timing Success']);
+
+        return $this->response->setJSON(['success' => true, 'msg' => 'School timing saved successfully.']);
     }
 
     public function delete()
@@ -135,5 +163,35 @@ class School_timing extends BaseController
 
         return $this->response->setJSON(['success' => true, 'msg' => 'Delete Classes Success']);
     }
+
+    /**
+     * @return list<array{section_id:int, sectionclassname:string}>
+     */
+    private function getSectionOptions(int $campusId): array
+    {
+        if ($campusId <= 0) {
+            return [];
+        }
+
+        $rows = $this->db->table('class_section cs')
+            ->select('cs.cls_sec_id, c.class_name, s.section_name')
+            ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+            ->join('sections s', 's.section_id = cs.section_id', 'inner')
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1)
+            ->orderBy('c.class_id', 'ASC')
+            ->orderBy('s.section_id', 'ASC')
+            ->get()
+            ->getResult();
+
+        $sections = [];
+        foreach ($rows as $row) {
+            $sections[] = [
+                'section_id'       => (int) $row->cls_sec_id,
+                'sectionclassname' => trim($row->class_name . ' (' . $row->section_name . ')'),
+            ];
+        }
+
+        return $sections;
+    }
 }
-// end file

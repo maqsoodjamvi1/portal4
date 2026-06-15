@@ -650,7 +650,7 @@ public function get_students_byclass()
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table id="attTable" class="table table-hover table-bordered mb-0">
-                    <thead class="thead-light">
+                    <thead class="table-light">
                         <tr>
                             <th class="col-sno"   width="5%">#</th>
                             <th class="col-photo" width="15%">Photo</th>
@@ -695,7 +695,7 @@ public function get_students_byclass()
           <div class="att-selected mb-1">
             <span class="badge badge-status '.$badgeClass.'">'.$statusLabel.'</span>
           </div>
-          <div class="btn-group btn-group-toggle att-choice att-lg" data-toggle="buttons" role="group" aria-label="Status">
+          <div class="btn-group btn-group-toggle att-choice att-lg" data-bs-toggle="buttons" role="group" aria-label="Status">
             <label class="btn btn-outline-success '.($status==='P'?'active':'').' px-3 py-2">
               <input type="radio" name="status['.$sid.']" value="P"  data-sid="'.$sid.'" data-date="'.esc($datevalue).'" '.($status==='P'?'checked':'').'> P
             </label>

@@ -552,8 +552,8 @@ body {
 
 /* ===== UTILITY CLASSES ===== */
 .text-center { text-align: center !important; }
-.text-right { text-align: right !important; }
-.text-left { text-align: left !important; }
+.text-end { text-align: right !important; }
+.text-start { text-align: left !important; }
 .mb-0 { margin-bottom: 0 !important; }
 .mt-0 { margin-top: 0 !important; }
 .mb-1 { margin-bottom: 4px !important; }
@@ -755,13 +755,13 @@ body {
     <!-- Action Buttons -->
     <div class="action-buttons no-print">
         <button onclick="window.print()" class="btn btn-primary btn-sm">
-            <i class="fas fa-print mr-1"></i> Print Report
+            <i class="fas fa-print me-1"></i> Print Report
         </button>
         <a href="<?= base_url('admin/quizzes') ?>" class="btn btn-secondary btn-sm">
-            <i class="fas fa-arrow-left mr-1"></i> Back
+            <i class="fas fa-arrow-left me-1"></i> Back
         </a>
         <button onclick="toggleAllQuizzes()" class="btn btn-info btn-sm" id="toggleQuizzesBtn">
-            <i class="fas fa-compress mr-1"></i> Hide Quiz Details
+            <i class="fas fa-compress me-1"></i> Hide Quiz Details
         </button>
     </div>
 
@@ -940,7 +940,7 @@ body {
                             ?>
                                 <tr>
                                     <td class="text-center"><?= $studentCounter ?></td>
-                                    <td class="text-left">
+                                    <td class="text-start">
                                         <div style="display: flex; align-items: center;">
                                             <?php $photo = !empty($student->profile_photo) 
                                                 ? base_url('uploads/' . ltrim($student->profile_photo, '/'))
@@ -1088,12 +1088,12 @@ function toggleAllQuizzes() {
         quizColumns.forEach(col => {
             col.style.display = 'table-cell';
         });
-        toggleBtn.innerHTML = '<i class="fas fa-compress mr-1"></i> Hide Quiz Details';
+        toggleBtn.innerHTML = '<i class="fas fa-compress me-1"></i> Hide Quiz Details';
     } else {
         quizColumns.forEach(col => {
             col.style.display = 'none';
         });
-        toggleBtn.innerHTML = '<i class="fas fa-expand mr-1"></i> Show Quiz Details';
+        toggleBtn.innerHTML = '<i class="fas fa-expand me-1"></i> Show Quiz Details';
     }
 }
 
@@ -1290,7 +1290,7 @@ function viewStudentReport(studentId) {
                 const totalPossible = quizMaxMarks * attemptCount;
                 
                 reportHTML += `
-                    <div class="quiz-summary" style="margin-bottom: 15px; border-left: 4px solid #3498db;">
+                    <div class="quiz-summary" style="margin-bottom: 15px; border-start: 4px solid #3498db;">
                         <div class="quiz-summary-header">
                             <div>
                                 <h5 class="quiz-title">${quizTitle}</h5>
@@ -1331,7 +1331,7 @@ function viewStudentReport(studentId) {
                         
                         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #dee2e6;">
                             <div style="font-size: 9pt; color: #2c3e50;">
-                                <i class="fas fa-info-circle mr-2"></i>
+                                <i class="fas fa-info-circle me-2"></i>
                                 This quiz allows ${maxAttempts} attempt(s). Student made ${attemptCount} attempt(s).
                             </div>
                         </div>

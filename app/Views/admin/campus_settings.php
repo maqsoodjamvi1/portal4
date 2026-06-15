@@ -1,24 +1,17 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-cog"></i> Campus Settings</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Campus Settings</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Campus Settings',
+    'icon' => 'fas fa-cog',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Campus Settings', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
-  <div class="card card-primary">
+  <div class="card sms-card card-primary">
     <div class="card-header">
       <h3 class="card-title"><i class="fas fa-money-bill-wave"></i> Salary & Attendance Settings</h3>
     </div>
@@ -53,9 +46,9 @@
             <h5><i class="fas fa-clock"></i> Late & Early Leave Deduction</h5>
             <hr>
             <div class="form-group">
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="lateDeduction" name="late_deduction_enabled" value="1" <?= isset($settings) && $settings->late_deduction_enabled ? 'checked' : '' ?>>
-                <label class="custom-control-label" for="lateDeduction">Enable Late Deduction</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="lateDeduction" name="late_deduction_enabled" value="1" <?= isset($settings) && $settings->late_deduction_enabled ? 'checked' : '' ?>>
+                <label class="form-check-label" for="lateDeduction">Enable Late Deduction</label>
               </div>
             </div>
             <div class="form-group">
@@ -67,9 +60,9 @@
               <input type="number" name="late_grace_minutes" class="form-control" value="<?= $settings->late_grace_minutes ?? 5 ?>" placeholder="Default: 5 minutes">
             </div>
             <div class="form-group">
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="earlyLeaveDeduction" name="early_leave_deduction_enabled" value="1" <?= isset($settings) && $settings->early_leave_deduction_enabled ? 'checked' : '' ?>>
-                <label class="custom-control-label" for="earlyLeaveDeduction">Enable Early Leave Deduction</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="earlyLeaveDeduction" name="early_leave_deduction_enabled" value="1" <?= isset($settings) && $settings->early_leave_deduction_enabled ? 'checked' : '' ?>>
+                <label class="form-check-label" for="earlyLeaveDeduction">Enable Early Leave Deduction</label>
               </div>
             </div>
             <div class="form-group">
@@ -84,9 +77,9 @@
             <h5><i class="fas fa-gift"></i> Attendance Bonus Settings</h5>
             <hr>
             <div class="form-group">
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="attendanceBonus" name="attendance_bonus_enabled" value="1" <?= isset($settings) && $settings->attendance_bonus_enabled ? 'checked' : '' ?>>
-                <label class="custom-control-label" for="attendanceBonus">Enable Attendance Bonus</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="attendanceBonus" name="attendance_bonus_enabled" value="1" <?= isset($settings) && $settings->attendance_bonus_enabled ? 'checked' : '' ?>>
+                <label class="form-check-label" for="attendanceBonus">Enable Attendance Bonus</label>
               </div>
             </div>
             <div class="form-group">
@@ -109,9 +102,9 @@
             <h5><i class="fas fa-shield-alt"></i> Security Deduction Settings</h5>
             <hr>
             <div class="form-group">
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="securityDeduction" name="security_deduction_enabled" value="1" <?= isset($settings) && $settings->security_deduction_enabled ? 'checked' : '' ?>>
-                <label class="custom-control-label" for="securityDeduction">Enable Security Deduction</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="securityDeduction" name="security_deduction_enabled" value="1" <?= isset($settings) && $settings->security_deduction_enabled ? 'checked' : '' ?>>
+                <label class="form-check-label" for="securityDeduction">Enable Security Deduction</label>
               </div>
             </div>
             <div class="form-group">
@@ -130,7 +123,7 @@
       </div>
       <div class="card-footer">
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
-        <button type="reset" class="btn btn-default"><i class="fas fa-undo"></i> Reset</button>
+        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Reset</button>
       </div>
     </form>
   </div>

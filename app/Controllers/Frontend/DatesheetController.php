@@ -37,9 +37,12 @@ class DatesheetController extends BaseController
         // 2) For parents: Get all children
         if ($role === 'parent') {
             $children = $this->getParentChildren($userId);
-            
-            // If no active student selected, show list of children
+
             $activeStudentId = (int) ($this->session->get('active_student_id') ?? 0);
+            if ($activeStudentId <= 0 && ! empty($children)) {
+                $activeStudentId = (int) $children[0]['student_id'];
+                $this->session->set('active_student_id', $activeStudentId);
+            }
             
             $data = [
                 'role' => $role,

@@ -52,21 +52,16 @@
     }
 </style>
 
-<section class="content-header no-print">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-calendar-check"></i> Attendance Report</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Attendance Report</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<div class="no-print">
+<?= view('components/page_header', [
+    'title' => 'Attendance Report',
+    'icon' => 'fas fa-calendar-check',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Attendance Report', 'active' => true],
+    ],
+]) ?>
+</div>
 
 <section class="content">
     <?php
@@ -172,7 +167,7 @@
                     'type' => 'raw',
                     'label' => 'Include Absent Dates',
                     'col_class' => 'col-md-2 mb-2',
-                    'html' => '<div class="custom-control custom-switch mt-1"><input type="checkbox" class="custom-control-input" id="include_dates" checked><label class="custom-control-label" for="include_dates">Yes / No</label></div>',
+                    'html' => '<div class="form-check form-switch mt-1"><input type="checkbox" class="form-check-input" id="include_dates" checked><label class="form-check-label" for="include_dates">Yes / No</label></div>',
                 ],
             ],
             'actions' => [
@@ -180,16 +175,16 @@
                     'type' => 'submit',
                     'id' => 'btn-generate-report',
                     'label' => 'Generate Report',
-                    'icon' => 'fas fa-search mr-1',
-                    'class' => 'btn btn-primary btn-block',
+                    'icon' => 'fas fa-search me-1',
+                    'class' => 'btn btn-primary w-100',
                     'col_class' => 'col-md-2 mb-2',
                 ],
                 [
                     'type' => 'button',
                     'id' => 'print-report',
                     'label' => 'Print Report',
-                    'icon' => 'fas fa-print mr-1',
-                    'class' => 'btn btn-info btn-block',
+                    'icon' => 'fas fa-print me-1',
+                    'class' => 'btn btn-info w-100',
                     'attrs' => 'style="display:none;"',
                     'col_class' => 'col-md-2 mb-2',
                 ],
@@ -197,8 +192,8 @@
                     'type' => 'button',
                     'id' => 'export-excel',
                     'label' => 'Export',
-                    'icon' => 'fas fa-file-excel mr-1',
-                    'class' => 'btn btn-success btn-block',
+                    'icon' => 'fas fa-file-excel me-1',
+                    'class' => 'btn btn-success w-100',
                     'attrs' => 'style="display:none;"',
                     'col_class' => 'col-md-2 mb-2',
                 ],
@@ -207,7 +202,7 @@
     ?>
     
     <!-- Summary Card -->
-    <div class="card card-info no-print" id="summary-card" style="display:none;">
+    <div class="card sms-card card-info no-print" id="summary-card" style="display:none;">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-chart-bar"></i> Report Summary</h3>
         </div>
@@ -217,7 +212,7 @@
     </div>
     
     <!-- SINGLE Report Card - Used for both screen and print -->
-    <div class="card card-primary" id="report-card" style="display:none;">
+    <div class="card sms-card card-primary" id="report-card" style="display:none;">
         <div class="card-header no-print">
             <h3 class="card-title"><i class="fas fa-table"></i> Attendance Details</h3>
             <div class="card-tabs">
@@ -562,12 +557,12 @@ if (dateNote) {
             // Absent details: count + dates comma separated on same line
             let absentDetails = '';
             if (absentCount > 0) {
-                absentDetails = '<span class="badge badge-danger" style="font-size: 14px; margin-right: 8px;">' + absentCount + ' day(s)</span>';
+                absentDetails = '<span class="badge text-bg-danger" style="font-size: 14px; margin-right: 8px;">' + absentCount + ' day(s)</span>';
                 if (absentDates !== '-') {
                     absentDetails += '<span class="absent-dates-text">' + absentDates + '</span>';
                 }
             } else {
-                absentDetails = '<span class="badge badge-success">0 Absent</span>';
+                absentDetails = '<span class="badge text-bg-success">0 Absent</span>';
             }
             
             // WhatsApp button - only show if student has whatsapp number
@@ -1318,12 +1313,12 @@ function generateWeeklyMessage(data, parentName, schoolName, includeDates, share
     font-size: 20px;
     font-weight: bold;
 }
-.badge-danger {
+.text-bg-danger {
     font-size: 14px;
     padding: 5px 10px;
     border-radius: 4px;
 }
-.badge-success {
+.text-bg-success {
     font-size: 14px;
     padding: 5px 10px;
     border-radius: 4px;
@@ -1422,22 +1417,22 @@ table.dataTable tbody td {
 }
 
 /* Custom Switch Styling */
-.custom-control-input:checked ~ .custom-control-label::before {
+.form-check-input:checked ~ .form-check-label::before {
     background-color: #25D366;
     border-color: #25D366;
 }
 
-.custom-switch .custom-control-label::before {
+.form-switch .form-check-label::before {
     width: 50px;
     border-radius: 25px;
 }
 
-.custom-switch .custom-control-label::after {
+.form-switch .form-check-label::after {
     width: 20px;
     border-radius: 20px;
 }
 
-.custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+.form-switch .form-check-input:checked ~ .form-check-label::after {
     transform: translateX(26px);
 }
 </style>

@@ -14,8 +14,40 @@ class Classdiary extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form', 'url']);
+        helper(['form', 'url', 'server_helper', 'role', 'school']);
         check_permission('admin-classdairy');
+    }
+
+    private function isTeacherUser(): bool
+    {
+        return isCurrentUserTeacher();
+    }
+
+    private function canTeacherEditDiary(int $clsSecId, int $secSubId): bool
+    {
+        if (! $this->isTeacherUser()) {
+            return true;
+        }
+
+        $teacherId = (int) $this->session->get('member_userid');
+        if ($teacherId <= 0 || $clsSecId <= 0 || $secSubId <= 0) {
+            return false;
+        }
+
+        return $this->db->table('teacher_subjects')
+            ->where('tid', $teacherId)
+            ->where('cls_sec_id', $clsSecId)
+            ->where('sec_sub_id', $secSubId)
+            ->where('status', 1)
+            ->countAllResults() > 0;
+    }
+
+    private function teacherDiaryDeniedResponse(string $message)
+    {
+        return $this->response->setJSON([
+            'success' => false,
+            'msg'     => $message,
+        ]);
     }
 
     public function index()
@@ -100,27 +132,10 @@ class Classdiary extends BaseController
         }
     }
 
-    // 4) Active timing type for campus (once)
-    $typeId = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where(['campus_id' => $campusid, 'status' => 1])
-        ->get()->getRow('type_id');
-
-    // Allowed day map per section
-    $allowedDaysBySection = [];
-    if ($typeId) {
-        $timings = $this->db->table('school_timings')
-            ->select('cls_sec_id, dayname, checkin_timing, checkout_timing')
-            ->whereIn('cls_sec_id', $clsSecIds)
-            ->where('type_id', $typeId)
-            ->get()->getResultArray();
-
-        foreach ($timings as $t) {
-            if ($t['checkin_timing'] !== $t['checkout_timing']) {
-                $allowedDaysBySection[$t['cls_sec_id']][$t['dayname']] = true;
-            }
-        }
-    }
+    // 4) Working days per section (campus-scoped, no timing types)
+    $allowedDaysBySection = buildAllowedWorkingDaysMap(
+        getSchoolTimingsForSections($clsSecIds, (int) $campusid)
+    );
 
     // 5) All diary entries for the range + those subjects (batch)
     $diaries = [];
@@ -193,9 +208,8 @@ public function add()
     $sessionid = session('member_sessionid'); 
     $schoolinfo = getSchoolInfo();
     $today = date('Y-m-d');
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
-    $teacher_id = session('member_userid');
+    $isTeacher = $this->isTeacherUser();
+    $teacher_id = (int) session('member_userid');
 
     $this->template_data['sessionData'] = [
         'campusid'  => $campus_id,
@@ -300,34 +314,20 @@ public function add()
 
     // ===== Load Subjects Based on User Role =====
     if ($isTeacher && $teacher_id) {
-        // TEACHER: Get only subjects they teach
-        $subjectIds = [];
-        $teacherSubjects = [];
-        
-        foreach ($sectionsclassinfo as $section) {
-            $cls_sec_id = $section['cls_sec_id'];
-            $sectionSubjects = getSectionSubjects($cls_sec_id);
-            
-            foreach ($sectionSubjects as $subject) {
-                $subjectId = $subject['subject_id'];
-                if (!in_array($subjectId, $subjectIds)) {
-                    $subjectIds[] = $subjectId;
-                    $teacherSubjects[] = (object)[
-                        'sid' => $subject['subject_id'],
-                        'subject_name' => $subject['subject_name'],
-                        'subject_short_name' => $subject['subject_short_name'] ?? $subject['subject_name']
-                    ];
-                }
-            }
-        }
-        
-        // Sort subjects by name
-        usort($teacherSubjects, function($a, $b) {
-            return strcmp($a->subject_name, $b->subject_name);
-        });
-        
-        $this->template_data['subjectinfo'] = $teacherSubjects;
-        
+        $sql = "SELECT DISTINCT
+                    a.sid,
+                    a.subject_name,
+                    a.subject_short_name
+                FROM teacher_subjects ts
+                INNER JOIN section_subjects ss ON ss.sec_sub_id = ts.sec_sub_id
+                INNER JOIN allsubject a ON a.sid = ss.subject_id
+                WHERE ts.tid = ?
+                    AND ts.status = 1
+                    AND ss.status = 1
+                    AND a.status = 1
+                ORDER BY a.subject_name ASC";
+
+        $this->template_data['subjectinfo'] = $this->db->query($sql, [$teacher_id])->getResult();
     } else {
         // ADMIN/NON-TEACHER: Get all subjects
         $this->template_data['subjectinfo'] = $this->db
@@ -340,6 +340,9 @@ public function add()
     $this->template_data['termsinfo'] = $this->db->table('terms')
         ->where('system_id', $schoolinfo->system_id)
         ->get()->getResult();
+
+    $this->template_data['preselect_cls_sec_id'] = (int) ($this->request->getGet('cls_sec_id') ?? 0);
+    $this->template_data['isTeacher'] = $isTeacher;
 
     return view('admin/classdiary_edit', $this->template_data);
 }
@@ -356,11 +359,20 @@ public function selectSectionSubjectbySection()
         return $this->response->setBody('<option value="">Select Subject</option>');
     }
 
-    // ---- Role check ----
-    $rolesRaw = function_exists('currentUserRoles') ? (array) currentUserRoles() : [];
-    $roleIds = array_map('intval', $rolesRaw);
-    $isTeacher = in_array(5, $roleIds, true);
+    $isTeacher = $this->isTeacherUser();
     $tid = (int) (session('member_userid') ?? 0);
+
+    if ($isTeacher && $tid > 0) {
+        $assigned = $this->db->table('teacher_subjects')
+            ->where('tid', $tid)
+            ->where('cls_sec_id', $cls_sec_id)
+            ->where('status', 1)
+            ->countAllResults();
+
+        if ($assigned === 0) {
+            return $this->response->setBody('<option value="">No assigned subjects</option>');
+        }
+    }
 
     $rows = [];
     
@@ -609,46 +621,16 @@ public function get_bagpack()
     // =====================================================================
     // GET SCHOOL TIMINGS TO DETERMINE WORKING DAYS
     // =====================================================================
-    
-    $campusId = session('member_campusid');
-    $typeRow = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campusId)
-        ->where('status', 1)
-        ->orderBy('updated_date', 'DESC')
-        ->orderBy('type_id', 'DESC')
-        ->get(1)->getRow();
-    
-    $type_id = $typeRow ? (int) $typeRow->type_id : null;
-    
-    $timings = [];
-    if ($type_id) {
-        $timingRows = $this->db->table('school_timings')
-            ->select('dayname, checkin_timing, checkout_timing')
-            ->where('cls_sec_id', $cls_sec_id)
-            ->where('type_id', $type_id)
-            ->get()
-            ->getResult();
-        
-        foreach ($timingRows as $row) {
-            $dayKey = strtolower(trim($row->dayname ?? ''));
-            $timings[$dayKey] = [
-                'checkin' => $row->checkin_timing,
-                'checkout' => $row->checkout_timing,
-                'is_working' => ($row->checkin_timing !== $row->checkout_timing)
-            ];
-        }
-    }
-    
-    $isWorkingDay = function($date) use ($timings) {
-        $dayOfWeek = strtolower(date('l', strtotime($date)));
-        $dayMap = [
-            'monday' => 'monday', 'tuesday' => 'tuesday', 'wednesday' => 'wednesday',
-            'thursday' => 'thursday', 'friday' => 'friday', 'saturday' => 'saturday', 'sunday' => 'sunday'
-        ];
-        $key = $dayMap[$dayOfWeek] ?? $dayOfWeek;
-        if (!isset($timings[$key])) return false;
-        return $timings[$key]['is_working'];
+
+    $campusId = (int) session('member_campusid');
+    $allowedMap = buildAllowedWorkingDaysMap(
+        getSchoolTimingsForSections([(int) $cls_sec_id], $campusId)
+    );
+
+    $isWorkingDay = static function ($date) use ($allowedMap, $cls_sec_id): bool {
+        $dayName = date('l', strtotime($date));
+
+        return isWorkingDayForSection((int) $cls_sec_id, $dayName, $allowedMap);
     };
     
     $getNextWorkingDay = function($startDate) use ($isWorkingDay) {
@@ -1168,9 +1150,9 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-success"><i class="fas fa-chalkboard-teacher"></i> Class Work:</h5>
               <?php foreach ($classwork as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong><br>
-                  <div class="ml-4"><?= nl2br(esc($item['content'])) ?></div>
+                  <div class="ms-4"><?= nl2br(esc($item['content'])) ?></div>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -1181,9 +1163,9 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-primary"><i class="fas fa-home"></i> Home Work:</h5>
               <?php foreach ($homework as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong><br>
-                  <div class="ml-4"><?= nl2br(esc($item['content'])) ?></div>
+                  <div class="ms-4"><?= nl2br(esc($item['content'])) ?></div>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -1194,9 +1176,9 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-info"><i class="fas fa-headphones"></i> Audio Tasks:</h5>
               <?php foreach ($audioTasks as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong><br>
-                  <div class="ml-4"><?= esc($item['caption']) ?></div>
+                  <div class="ms-4"><?= esc($item['caption']) ?></div>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -1207,9 +1189,9 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-danger"><i class="fas fa-video"></i> Video Tasks:</h5>
               <?php foreach ($videoTasks as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong><br>
-                  <div class="ml-4"><?= esc($item['caption']) ?></div>
+                  <div class="ms-4"><?= esc($item['caption']) ?></div>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -1220,9 +1202,9 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-warning"><i class="fas fa-image"></i> Picture Tasks:</h5>
               <?php foreach ($pictureTasks as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong><br>
-                  <div class="ml-4"><?= esc($item['caption']) ?></div>
+                  <div class="ms-4"><?= esc($item['caption']) ?></div>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -1235,7 +1217,7 @@ public function get_bagpack()
               <?php foreach ($quizzes as $item): 
                 $quiz = $item['quiz'];
               ?>
-                <div class="ml-3 mb-2 p-2 rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="ms-3 mb-2 p-2 rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                   <strong><?= esc($item['subject']) ?>: <?= esc($quiz->title) ?></strong><br>
                   <small>
                     <?php if ($quiz->time_limit_sec > 0): ?>⏱️ <?= floor($quiz->time_limit_sec / 60) ?> min | <?php endif; ?>
@@ -1254,16 +1236,16 @@ public function get_bagpack()
             <div class="mb-3">
               <h5 class="text-purple" style="color: #6f42c1;"><i class="fas fa-tasks"></i> Classroom Activities:</h5>
               <?php foreach ($activities as $item): ?>
-                <div class="ml-3 mb-2">
+                <div class="ms-3 mb-2">
                   <strong><?= esc($item['subject']) ?>:</strong>
                   <?php foreach ($item['activities'] as $activity): ?>
-                    <div class="ml-4 mt-1 p-2 border rounded">
+                    <div class="ms-4 mt-1 p-2 border rounded">
                       <strong>📌 <?= esc($activity['name'] ?? 'Activity') ?></strong>
                       <?php if (!empty($activity['type'])): ?>
-                        <span class="badge badge-secondary ml-1"><?= esc($activity['type']) ?></span>
+                        <span class="badge text-bg-secondary ms-1"><?= esc($activity['type']) ?></span>
                       <?php endif; ?>
                       <?php if (!empty($activity['duration_minutes'])): ?>
-                        <span class="badge badge-light ml-1">⏱️ <?= $activity['duration_minutes'] ?> min</span>
+                        <span class="badge text-bg-light ms-1">⏱️ <?= $activity['duration_minutes'] ?> min</span>
                       <?php endif; ?>
                       <?php if (!empty($activity['description'])): ?>
                         <div class="small text-muted mt-1"><?= esc(substr($activity['description'], 0, 150)) ?></div>
@@ -1279,7 +1261,7 @@ public function get_bagpack()
           <?php if (!empty($bagpack)): ?>
             <div class="mt-3">
               <h5 class="text-warning"><i class="fas fa-bag-shopping"></i> Bring on <?= esc($nextWorkingDayName) ?> (<?= esc($nextWorkingFormattedDate) ?>):</h5>
-              <ol class="ml-4">
+              <ol class="ms-4">
                 <?php 
                 sort($bagpack);
                 $uniqueBagpack = array_unique($bagpack);
@@ -1390,6 +1372,10 @@ private function saveFromJson($diaryDataJson)
             'success' => false,
             'msg' => 'Missing required fields (section/subject/week).'
         ]);
+    }
+
+    if (! $this->canTeacherEditDiary($sectionId, $secSubId)) {
+        return $this->teacherDiaryDeniedResponse('You can only add diary entries for subjects assigned to you.');
     }
     
     $diaryData = json_decode($diaryDataJson, true);
@@ -1542,6 +1528,11 @@ private function saveFromFormData()
             'msg' => 'Missing required fields (section/subject/week).'
         ]);
     }
+
+    if (! $this->canTeacherEditDiary($cls_sec_id, $sec_sub_id)) {
+        return $this->teacherDiaryDeniedResponse('You can only add diary entries for subjects assigned to you.');
+    }
+
     if (empty($dates)) {
         return $this->response->setJSON([
             'success' => false,
@@ -1684,7 +1675,7 @@ public function get_classdiary()
     if (!$sec_sub_id) {
         return $this->response->setBody('
         <div class="alert alert-warning d-flex align-items-center" role="alert">
-          <i class="fas fa-exclamation-circle mr-2"></i>
+          <i class="fas fa-exclamation-circle me-2"></i>
           <div><strong>Select Class Section &amp; Subject</strong> to load the class diary.</div>
         </div>');
     }
@@ -1701,6 +1692,14 @@ public function get_classdiary()
         }
     }
 
+    if ($cls_sec_id > 0 && ! $this->canTeacherEditDiary($cls_sec_id, $sec_sub_id)) {
+        return $this->response->setBody('
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+          <i class="fas fa-ban me-2"></i>
+          <div>You can only view diary entries for subjects assigned to you.</div>
+        </div>');
+    }
+
     $term_weeks = $this->db->table('term_weeks')
         ->where('term_weeks_id', $term_weeks_id)
         ->get()
@@ -1709,7 +1708,7 @@ public function get_classdiary()
     if (!$term_weeks) {
         return $this->response->setBody('
         <div class="alert alert-danger d-flex align-items-center" role="alert">
-          <i class="fas fa-times-circle mr-2"></i>
+          <i class="fas fa-times-circle me-2"></i>
           <div>Invalid or missing <strong>Term Week</strong>. Please select a valid week.</div>
         </div>');
     }
@@ -1734,66 +1733,16 @@ public function get_classdiary()
         ->get()
         ->getResultArray();
 
-    // Get active timing type
-    $campusId = session('member_campusid');
-    $typeRow = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campusId)
-        ->where('status', 1)
-        ->orderBy('updated_date', 'DESC')
-        ->orderBy('type_id', 'DESC')
-        ->get(1)
-        ->getRow();
+    // Get working weekdays for this section
+    $campusId = (int) session('member_campusid');
+    $allowedNums = getWorkingWeekdayNumbersForSection((int) $cls_sec_id, $campusId);
+    $allowed = array_fill_keys($allowedNums, true);
 
-    if (!$typeRow) {
+    if ($allowed === []) {
         return $this->response->setBody('
         <div class="alert alert-info d-flex align-items-center" role="alert">
-          <i class="far fa-calendar-times mr-2"></i>
-          <div>No active timing type found for this campus.</div>
-        </div>');
-    }
-    $type_id = (int) $typeRow->type_id;
-
-    // Build allowed weekdays from school_timings
-    $timingsQB = $this->db->table('school_timings')
-        ->select('dayname, checkin_timing, checkout_timing')
-        ->where('cls_sec_id', $cls_sec_id)
-        ->where('type_id', $type_id)
-        ->groupStart()
-            ->where('checkout_timing IS NOT NULL', null, false)
-            ->where('checkin_timing IS NOT NULL', null, false)
-            ->where("TRIM(checkout_timing) <> ''", null, false)
-            ->where("TRIM(checkin_timing) <> ''", null, false)
-        ->groupEnd()
-        ->where('TIME_TO_SEC(checkout_timing) <> TIME_TO_SEC(checkin_timing)', null, false);
-
-    $timingsResult = $timingsQB->get();
-    $timings = $timingsResult ? $timingsResult->getResult() : [];
-
-    $mapText = [
-        'mon'=>1,'monday'=>1,
-        'tue'=>2,'tues'=>2,'tuesday'=>2,
-        'wed'=>3,'wednesday'=>3,
-        'thu'=>4,'thur'=>4,'thurs'=>4,'thursday'=>4,
-        'fri'=>5,'friday'=>5,
-        'sat'=>6,'saturday'=>6,
-        'sun'=>7,'sunday'=>7,
-    ];
-    $allowed = [];
-
-    foreach ($timings as $row) {
-        $txt = strtolower(trim((string)($row->dayname ?? '')));
-        $key = preg_replace('/[^a-z]/', '', $txt);
-        if (isset($mapText[$key])) {
-            $allowed[$mapText[$key]] = true;
-        }
-    }
-
-    if (empty($allowed)) {
-        return $this->response->setBody('
-        <div class="alert alert-info d-flex align-items-center" role="alert">
-          <i class="far fa-calendar-times mr-2"></i>
-          <div>No working days configured for this section and timing type.</div>
+          <i class="far fa-calendar-times me-2"></i>
+          <div>No working days configured for this section. Please set school timings first.</div>
         </div>');
     }
 
@@ -1876,7 +1825,7 @@ public function get_classdiary()
 
     if (empty($weekDays)) {
         return $this->response->setBody('
-        <div class="alert alert-info m-2">No days in this week match your section\'s working days for the active timing type.</div>');
+        <div class="alert alert-info m-2">No days in this week match your section\'s working days. Please set school timings first.</div>');
     }
 
     // Return the new view

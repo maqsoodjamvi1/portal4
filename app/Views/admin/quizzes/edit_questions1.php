@@ -103,9 +103,9 @@
                                             <option value="match" <?= $q['question_type'] === 'match' ? 'selected' : '' ?>>Match</option>
                                         </select>
                                         
-                                        <button type="button" class="btn btn-light btn-sm ml-2 btn-move-up">?</button>
+                                        <button type="button" class="btn btn-light btn-sm ms-2 btn-move-up">?</button>
                                         <button type="button" class="btn btn-light btn-sm btn-move-down">?</button>
-                                        <button type="button" class="btn btn-danger btn-sm ml-2 btn-remove">×</button>
+                                        <button type="button" class="btn btn-danger btn-sm ms-2 btn-remove">×</button>
                                     </div>
                                 </div>
                                 
@@ -115,7 +115,7 @@
                                     <input type="hidden" name="questions[<?= $index ?>][existing_image]" value="<?= $q['question_image'] ?>">
                                     
                                     <!-- Question Mode -->
-                                    <div class="form-row">
+                                    <div class="row">
                                         <div class="form-group col-md-3">
                                             <label>Question Mode</label>
                                             <select name="questions[<?= $index ?>][question_media]" class="form-control form-control-sm q-media">
@@ -167,7 +167,7 @@
                                     
                                     <!-- MCQ Options -->
                                     <div class="q-block q-mcq q-mcq_multi" style="<?= !in_array($q['question_type'], ['mcq', 'mcq_multi']) ? 'display:none;' : '' ?>">
-                                        <div class="form-row">
+                                        <div class="row">
                                             <div class="form-group col-md-6">
                                                 <label>A</label>
                                                 <input type="text" 
@@ -242,7 +242,7 @@
                                     <!-- Match -->
                                     <div class="q-block q-match" style="<?= $q['question_type'] !== 'match' ? 'display:none;' : '' ?>">
                                         <div class="d-flex align-items-center mb-2">
-                                            <label class="mr-3">Match Pairs (Left ? Right)</label>
+                                            <label class="me-3">Match Pairs (Left ? Right)</label>
                                             <div class="form-check">
                                                 <input type="checkbox" 
                                                        class="form-check-input" 
@@ -256,7 +256,7 @@
                                         <div class="match-pairs">
                                             <?php if (!empty($matchPairs)): ?>
                                                 <?php foreach ($matchPairs as $pairIdx => $pair): ?>
-                                                    <div class="form-row mb-2">
+                                                    <div class="row mb-2">
                                                         <div class="col">
                                                             <input type="text" 
                                                                    class="form-control form-control-sm" 
@@ -277,7 +277,7 @@
                                                     </div>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
-                                                <div class="form-row mb-2">
+                                                <div class="row mb-2">
                                                     <div class="col">
                                                         <input type="text" 
                                                                class="form-control form-control-sm" 
@@ -305,7 +305,7 @@
                 </div>
             </div>
             
-            <div class="card-footer text-right">
+            <div class="card-footer text-end">
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i> Update All Questions
                 </button>
@@ -316,7 +316,7 @@
 
 <style>
 .question-card {
-    border-left: 4px solid #007bff;
+    border-start: 4px solid #007bff;
 }
 .q-image-wrap img {
     max-height: 150px;
@@ -348,9 +348,9 @@ $(document).ready(function() {
                             <option value="match">Match</option>
                         </select>
                         
-                        <button type="button" class="btn btn-light btn-sm ml-2 btn-move-up">?</button>
+                        <button type="button" class="btn btn-light btn-sm ms-2 btn-move-up">?</button>
                         <button type="button" class="btn btn-light btn-sm btn-move-down">?</button>
-                        <button type="button" class="btn btn-danger btn-sm ml-2 btn-remove">×</button>
+                        <button type="button" class="btn btn-danger btn-sm ms-2 btn-remove">×</button>
                     </div>
                 </div>
                 
@@ -359,7 +359,7 @@ $(document).ready(function() {
                     <input type="hidden" name="questions[${index}][id]" value="0">
                     
                     <!-- Question Mode -->
-                    <div class="form-row">
+                    <div class="row">
                         <div class="form-group col-md-3">
                             <label>Question Mode</label>
                             <select name="questions[${index}][question_media]" class="form-control form-control-sm q-media">
@@ -394,7 +394,7 @@ $(document).ready(function() {
                     
                     <!-- MCQ Options (hidden by default) -->
                     <div class="q-block q-mcq q-mcq_multi d-none">
-                        <div class="form-row">
+                        <div class="row">
                             <div class="form-group col-md-6">
                                 <label>A</label>
                                 <input type="text" class="form-control" name="questions[${index}][option_a]">
@@ -450,14 +450,14 @@ $(document).ready(function() {
                     
                     <div class="q-block q-match d-none">
                         <div class="d-flex align-items-center mb-2">
-                            <label class="mr-3">Match Pairs (Left ? Right)</label>
+                            <label class="me-3">Match Pairs (Left ? Right)</label>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" name="questions[${index}][is_drag]" value="1">
                                 <label class="form-check-label">Draggable</label>
                             </div>
                         </div>
                         <div class="match-pairs">
-                            <div class="form-row mb-2">
+                            <div class="row mb-2">
                                 <div class="col">
                                     <input type="text" class="form-control form-control-sm" name="questions[${index}][match_pairs][0][left]" placeholder="Left">
                                 </div>
@@ -517,7 +517,7 @@ $(document).ready(function() {
             }
             
             // For match, ensure at least one pair
-            if (type === 'match' && card.find('.match-pairs .form-row').length === 0) {
+            if (type === 'match' && card.find('.match-pairs .row').length === 0) {
                 addMatchPair(card, index);
             }
         } else {
@@ -537,8 +537,8 @@ $(document).ready(function() {
     
     // Remove match pair
     $(document).on('click', '.btn-remove-pair', function() {
-        if ($(this).closest('.match-pairs').find('.form-row').length > 1) {
-            $(this).closest('.form-row').remove();
+        if ($(this).closest('.match-pairs').find('.row').length > 1) {
+            $(this).closest('.row').remove();
         }
     });
     
@@ -593,9 +593,9 @@ $(document).ready(function() {
    
     // Helper functions
     function addMatchPair(card, index) {
-        const pairCount = card.find('.match-pairs .form-row').length;
+        const pairCount = card.find('.match-pairs .row').length;
         const html = `
-            <div class="form-row mb-2">
+            <div class="row mb-2">
                 <div class="col">
                     <input type="text" class="form-control form-control-sm" name="questions[${index}][match_pairs][${pairCount}][left]" placeholder="Left">
                 </div>

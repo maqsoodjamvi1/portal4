@@ -2,35 +2,17 @@
 <?= $this->section('content') ?>
 
 <?php
-if(isset($info)){
-	$header = 'Edit Bill Amount';
-}else{
-	$header = 'Add Bill Amount';
-}
-
-$campus_id = ''; 
-if(!empty($_GET['campus_id'])){
- $campus_id = $_GET['campus_id']; 
-}
+$header = isset($info) ? 'Edit Bill Amount' : 'Add Bill Amount';
+$campus_id = (int) ($campus_id ?? session('member_campusid') ?? 0);
 ?>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Bill Amount  
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Bill Amount</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+    <?= view('components/page_header', [
+    'title' => 'Bill Amount',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Bill Amount', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -40,8 +22,8 @@ if(!empty($_GET['campus_id'])){
       <div class="card-body">
 			<div class="tab-content">
 			<?php
-			echo form_open('c=bill_amount&m=save', 'role="form" id="user-edit-form"');
-			echo form_hidden('campus_id', $campus_id);
+			echo form_open(base_url('admin/bill_amount/save'), 'role="form" id="user-edit-form"');
+			echo form_hidden('campus_id', (string) $campus_id);
 			?>
 			<div class="">
 			<div class="col-lg-12">
@@ -49,8 +31,8 @@ if(!empty($_GET['campus_id'])){
 	    	</div>
 			<div id="feeamountarea" class="feeamountarea"></div>
               <div class="form-group">
-                <button type="submit" id="submitBtn" class="btn btn-primary mr-2">Save</button>
-								<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+                <button type="submit" id="submitBtn" class="btn btn-primary me-2">Save</button>
+								<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
               </div>
             <?php echo form_close();?>
 			</div>
@@ -63,20 +45,43 @@ if(!empty($_GET['campus_id'])){
     <!-- /.content -->
 <script type="text/javascript">
 $(function(){
+    var campusId = <?= (int) $campus_id ?>;
 
-	//$("#plan_id").change(function(){
-			//var plan_id = $('#plan_id').val();
-      $("#loader-1").css("display", "block");
-	    $.ajax({
-            url:'<?php echo site_url('c=bill_amount&m=data&campus_id='.$campus_id);?>', 
-            type: "POST",
-            data:{},
-            success:function(res){
-		         $("#feeamountarea").html(res);
-		 			   $("#loader-1").css("display", "none");
-					 }
-      });
-//});
+    function hideLoader() {
+        $("#loader-1").css("display", "none");
+    }
+
+    function loadBillAmountGrid() {
+        if (campusId < 1) {
+            hideLoader();
+            $("#feeamountarea").html('<p class="text-danger">Campus is not selected. Choose a campus from the header, then reload this page.</p>');
+            return;
+        }
+
+        $("#loader-1").css("display", "block");
+        $.ajax({
+            url: '<?= base_url('admin/bill_amount/data') ?>',
+            type: 'POST',
+            data: {
+                campus_id: campusId,
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+            },
+            success: function (res) {
+                $("#feeamountarea").html(res);
+                hideLoader();
+            },
+            error: function () {
+                hideLoader();
+                $("#feeamountarea").html('<p class="text-danger">Could not load bill amounts. Please refresh and try again.</p>');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Could not load bill amounts.');
+                }
+            }
+        });
+    }
+
+    loadBillAmountGrid();
+
 $('#user-edit-form').validate({
 	rules:{
 		amount:{
@@ -101,7 +106,6 @@ $('#user-edit-form').ajaxForm({
 			var json = $.parseJSON(responseText);
 			if(json.success){
 				toastr.success(json.msg);
-				//location.href = 'admin.php#/';
 				location.reload();			
 			}else{
 				toastr.error(json.msg);

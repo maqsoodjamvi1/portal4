@@ -2,22 +2,20 @@
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <h1>
-        Top Level Planning Subject Wise
-        <small></small>
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li class="active">Top Level Planning Subject Wise</li>
-      </ol>
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Top Level Planning — Subject Wise',
+    'icon' => 'fas fa-book-open',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'url' => base_url('admin/top_level_planning')],
+        ['label' => 'Subject Wise', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 					<li><a href="<?= base_url('admin/top_level_planning') ?>">Top Level Planning</a></li>
@@ -25,7 +23,7 @@
 					<li><a href="<?= base_url('admin/top_level_planning_gradewise') ?>">Grade Wise View</a></li>
 				</ul>
 				   
-<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+<div class="tab-content table-responsive no-padding"><div class="col-12">
 	<?php	
 	echo "Under Construction";
 	exit;			

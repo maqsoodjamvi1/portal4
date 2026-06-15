@@ -3,7 +3,7 @@
   
   <div class="chalanwrapper">
     <div class="row">
-      <div class="col-sm-3 ml-2 mt-2">
+      <div class="col-sm-3 ms-2 mt-2">
         <img style="width: 100%;" src="<?= base_url('system-logo/' . esc($student_info['logo'] ?? '')) ?>">
       </div>
       <div class="col-sm-8 mt-2">
@@ -12,7 +12,7 @@
       </div>
     </div>
 
-    <div class="ml-2 mt-2" style="text-align: left;">
+    <div class="ms-2 mt-2" style="text-align: left;">
       <?= esc($student_info['bank_name'] ?? '') ?>, <?= esc($student_info['bank_address'] ?? '') ?>, <?= esc($student_info['bank_code'] ?? '') ?><br />
       <?php if (!empty($student_info['bank_acc'])): ?>
         Account No: <?= esc($student_info['bank_acc']) ?><br />

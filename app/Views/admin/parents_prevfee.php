@@ -8,24 +8,14 @@
   }
 ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Fee Detail
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active">Fee Detail</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Fee Detail',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Detail', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
     <div class="row">
@@ -88,20 +78,27 @@
  </script>
  <script type="text/javascript">
 $(function(){
-  $('#month').on('change', function() {  
-  $("#loader-1").css("display", "block"); 
-  var cls_sec_id = $('#cls_sec_id').val();
-  var month = $('#month').val();
-  $.ajax({
-            url: 'admin.php?c=parents_prevfee&m=data', 
-            type: "POST",
-            data:{cls_sec_id:cls_sec_id,month:month},
-            success:function(res){
-             $("#studentsList").html(res);
-             $("#loader-1").css("display", "none");
-          }
-      });
-  });
+  function loadPrevFeeReport() {
+    $("#loader-1").css("display", "block");
+    var cls_sec_id = $('#cls_sec_id').val();
+    var month = $('#month').val();
+    $.ajax({
+      url: '<?= base_url('admin/parents_prevfee/data') ?>',
+      type: "POST",
+      data: {cls_sec_id: cls_sec_id, month: month},
+      success: function(res) {
+        $("#studentsList").html(res);
+        $("#loader-1").css("display", "none");
+      },
+      error: function() {
+        $("#loader-1").css("display", "none");
+        toastr.error('Could not load fee detail report.');
+      }
+    });
+  }
+
+  $('#month').on('change', loadPrevFeeReport);
+  loadPrevFeeReport();
 });
 </script>
 

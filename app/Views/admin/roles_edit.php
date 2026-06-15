@@ -86,11 +86,9 @@ ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 	<label for="">Role Permissions</label>
 	<div class="role-perm-search-wrap">
 		<div class="input-group input-group-sm">
-			<div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+			<span class="input-group-text"><i class="fas fa-search"></i></span>
 			<input type="search" class="form-control" id="rolePermSearchInput" placeholder="Search name or permission key…" autocomplete="off">
-			<div class="input-group-append">
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="rolePermSearchClear">Clear</button>
-			</div>
+			<button type="button" class="btn btn-outline-secondary btn-sm" id="rolePermSearchClear">Clear</button>
 		</div>
 		<small class="text-muted" id="rolePermSearchHint"></small>
 	</div>
@@ -99,8 +97,8 @@ ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 	</div>
 	<div class="form-group">
 	<button type="submit" class="btn btn-primary">Save</button>
-	<button type="reset" class="btn btn-default">Reset</button>
-	<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+	<button type="reset" class="btn btn-secondary">Reset</button>
+	<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 	</div>
 	<?php echo form_close();?>
 	</div>

@@ -31,29 +31,19 @@ if(isset($info)){
 	}
 	tr{border-bottom:2px solid #000;}
 </style>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-8">
-            <h1>
-               Defaulter Student Fee Report
-            </h1>
-          </div>
-          <div class="col-sm-4">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Defaulter Student Fee Report</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Defaulter Student Fee Report',
+    'icon' => 'fas fa-exclamation-circle',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Defaulter Student Fee Report', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->	
     <section class="content">
       <div class="row">
         <div class="col-lg-12">
-		  <div class="card card-primary card-outline card-tabs">
+		  <div class="card sms-card card-primary card-outline card-tabs">
           	<div class="card-header p-0 pt-1 border-bottom-0">
           	<div class="card-body">	
 			<div class="tab-content">
@@ -94,8 +84,8 @@ if(isset($info)){
 			</div>	
 			  <!-- <div class="form-group">
                 <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-				<button type="reset" class="btn btn-default">Reset</button>
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
               </div> -->
             <?php //echo form_close();?>
 			</div>

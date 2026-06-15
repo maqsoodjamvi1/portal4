@@ -2,6 +2,7 @@
 /** @var array $dateRange [ ['date' => 'Y-m-d'], ... ] */
 /** @var array $sectionLabels [cls_sec_id => 'Class — Section'] */
 /** @var array $matrix [cls_sec_id][Y-m-d] => [subject_name, ...] */
+/** @var array|null $examInfo */
 ?>
 <style>
   #datesheetSummaryTable { table-layout: fixed; width: 100%; }
@@ -18,11 +19,21 @@
   .table thead th { border-bottom: 2px solid #d9dde3; }
 </style>
 
+<?php if (!empty($examInfo)): ?>
+  <div class="mb-2">
+    <span class="badge text-bg-warning me-1">Current Exam</span>
+    <strong><?= esc((string)($examInfo['exam_name'] ?? 'Exam')) ?></strong>
+    <?php if ((string)($examInfo['status'] ?? '') === '0'): ?>
+      <span class="text-muted small">(Unannounced)</span>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
 <div class="table-responsive">
   <table class="table table-bordered table-hover table-sm text-center" id="datesheetSummaryTable">
-    <thead class="thead-light">
+    <thead class="table-light">
       <tr>
-        <th class="sum-sticky sum-sec text-left align-middle bg-secondary text-white">Class — Section</th>
+        <th class="sum-sticky sum-sec text-start align-middle bg-secondary text-white">Class — Section</th>
         <?php foreach ($dateRange as $d): $ts = strtotime($d['date']); ?>
           <th class="sum-date align-middle bg-light" title="<?= date('D, j M Y', $ts) ?>">
             <div class="vhead">
@@ -36,12 +47,12 @@
     <tbody>
       <?php foreach ($sectionLabels as $sid => $label): ?>
         <tr>
-          <td class="sum-sticky sum-sec text-left align-middle bg-light" title="<?= esc($label) ?>"><?= esc($label) ?></td>
+          <td class="sum-sticky sum-sec text-start align-middle bg-light" title="<?= esc($label) ?>"><?= esc($label) ?></td>
           <?php foreach ($dateRange as $d): 
             $day = $d['date'];
             $subs = $matrix[$sid][$day] ?? [];
           ?>
-            <td class="sum-cell text-left">
+            <td class="sum-cell text-start">
               <?php if (!empty($subs)): ?>
                 <?php foreach ($subs as $s):
                   // keep chips compact (short label for display, full on title)

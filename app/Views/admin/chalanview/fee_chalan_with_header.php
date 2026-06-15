@@ -1,6 +1,5 @@
 <html dir="rtl" lang="ur">
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 @media print
 {
@@ -60,23 +59,15 @@ if(isset($_GET['show_line2'])){
 }
 
 ?>
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Fee Chalan
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?php echo '#/';?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Fee Chalan</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Fee Chalan With Header',
+    'icon' => 'fas fa-file-invoice',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Print Fee Chalan', 'url' => base_url('admin/print-fee-chalan')],
+        ['label' => 'With Header', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -85,7 +76,7 @@ if(isset($_GET['show_line2'])){
       <div class="row">
         <div class="col-lg-4 form-group">
             <label>Fee Month:</label>
-              <input type="month" class="form-control pull-right" id="datetimepicker10"  value="<?php echo $fee_month; ?>" name="fee_month">
+              <input type="month" class="form-control float-end" id="datetimepicker10"  value="<?php echo $fee_month; ?>" name="fee_month">
             <!-- /.input group -->
         </div>
         <div class="col-lg-4 form-group">
@@ -106,23 +97,23 @@ if(isset($_GET['show_line2'])){
       </div>
             <div class="col-lg-4 form-group">
                 <label>Footer Lines 1:</label>
-                  <input type="text" class="form-control pull-right"  value="<?php echo $footer_line1; ?>" name="footer_line1">
+                  <input type="text" class="form-control float-end"  value="<?php echo $footer_line1; ?>" name="footer_line1">
                 <!-- /.input group -->
             </div>
             
              <div class="col-lg-4 form-group">
                 <label>Footer Lines 2:</label>
-                  <input type="text" class="form-control pull-right"  value="<?php echo $footer_line2; ?>" name="footer_line2">
+                  <input type="text" class="form-control float-end"  value="<?php echo $footer_line2; ?>" name="footer_line2">
                 <!-- /.input group -->
             </div>
             <div class="col-lg-2 form-group">
                 <label>Show Footer Line 1:</label>
-                  <input type="checkbox" class="form-control pull-right" <?php if($show_line1 == 1){ ?> checked <?php } ?>  value="1" name="show_line1">
+                  <input type="checkbox" class="form-control float-end" <?php if($show_line1 == 1){ ?> checked <?php } ?>  value="1" name="show_line1">
                 <!-- /.input group -->
             </div>
             <div class="col-lg-2 form-group">
                 <label>Show Footer Line 2:</label>
-                  <input type="checkbox" class="form-control pull-right" <?php if($show_line2 == 1){ ?> checked <?php } ?>  value="1" name="show_line2">
+                  <input type="checkbox" class="form-control float-end" <?php if($show_line2 == 1){ ?> checked <?php } ?>  value="1" name="show_line2">
                 <!-- /.input group -->
             </div>
             <div class="col-sm-2">
@@ -143,14 +134,14 @@ if(isset($_GET['show_line2'])){
                 <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
                 <div class="chalanwrapper">
                   <div class="row">
-                    <div class="col-sm-2 ml-2 mt-2"></div>
+                    <div class="col-sm-2 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">Fee Slip - Bank Copy</div><br />
                     <img style="width: 95%;margin-left: 8px;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['chalan_header']; ?>">
-                    <!-- <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                    <!-- <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                     <div class="col-sm-8"><span style="font-weight:bold;font-size: 16px;"><?php echo $student_info['system_name']; ?></span><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div> -->
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
 
                   <?php 
                     // if($student_info['bank_name']){
@@ -269,14 +260,14 @@ if(isset($_GET['show_line2'])){
                 <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
                 <div class="chalanwrapper"> 
                   <div class="row">
-                    <div class="col-sm-2 ml-2 mt-2"></div>
+                    <div class="col-sm-2 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">School Copy</div><br />
-                    <!-- <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div> -->
+                    <!-- <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div> -->
                     <img style="width: 95%;margin-left: 8px;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['chalan_header']; ?>">
                     <!-- <div class="col-sm-8" ><span style="font-weight:bold;font-size: 16px;"><?php echo $student_info['system_name']; ?></span><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div> -->
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     // if($student_info['bank_name']){
                     //   echo $student_info['bank_name'].', '; 
@@ -400,14 +391,14 @@ if(isset($_GET['show_line2'])){
                    <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
                 <div class="chalanwrapper">
                   <div class="row">
-                    <div class="col-sm-2 ml-2 mt-2"></div>
+                    <div class="col-sm-2 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">Student Copy</div><br />
                     <img style="width: 95%;margin-left: 8px;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['chalan_header']; ?>">
-                    <!-- <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div> -->
+                    <!-- <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div> -->
                     <!-- <div class="col-sm-8" ><span style="font-weight:bold;font-size: 16px;"><?php echo $student_info['system_name']; ?></span><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div> -->
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     // if($student_info['bank_name']){
                     //   echo $student_info['bank_name'].', '; 

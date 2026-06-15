@@ -70,15 +70,15 @@
                         <div class="activity-title">
                             <i class="fa <?= $typeIcon ?>"></i>
                             <span class="activity-name"><?= esc($activity['name']) ?></span>
-                            <span class="activity-badge <?= $typeClass ?> ml-2"><?= $typeLabel ?></span>
+                            <span class="activity-badge <?= $typeClass ?> ms-2"><?= $typeLabel ?></span>
                             <?php if (isset($activity['duration_minutes'])): ?>
-                                <span class="badge badge-light ml-1">
+                                <span class="badge text-bg-light ms-1">
                                     <i class="fa fa-clock-o"></i> <?= $activity['duration_minutes'] ?> min
                                 </span>
                             <?php endif; ?>
                         </div>
                         <div class="activity-actions">
-                            <button type="button" class="btn btn-sm btn-link text-primary p-0 mr-2" 
+                            <button type="button" class="btn btn-sm btn-link text-primary p-0 me-2" 
                                     onclick="openActivityModal('<?= $day['date'] ?>', '<?= $activity['activity_id'] ?>')"
                                     title="Edit Activity">
                                 <i class="fa fa-edit"></i>
@@ -115,7 +115,7 @@
                                 <span class="task-badge video-task" title="Video Task">
                                     <i class="fa fa-video-camera"></i> Video Task
                                     <?php if (!empty($activity['video_task']['caption'])): ?>
-                                        <small class="text-muted d-block ml-4"><?= esc($activity['video_task']['caption']) ?></small>
+                                        <small class="text-muted d-block ms-4"><?= esc($activity['video_task']['caption']) ?></small>
                                     <?php endif; ?>
                                 </span>
                             <?php endif; ?>
@@ -124,7 +124,7 @@
                                 <span class="task-badge audio-task" title="Audio Task">
                                     <i class="fa fa-headphones"></i> Audio Task
                                     <?php if (!empty($activity['audio_task']['caption'])): ?>
-                                        <small class="text-muted d-block ml-4"><?= esc($activity['audio_task']['caption']) ?></small>
+                                        <small class="text-muted d-block ms-4"><?= esc($activity['audio_task']['caption']) ?></small>
                                     <?php endif; ?>
                                 </span>
                             <?php endif; ?>
@@ -134,7 +134,7 @@
                                     <i class="fa fa-users"></i> Group Work 
                                     (<?= $activity['group_activity']['group_size'] ?> students/group)
                                     <?php if (!empty($activity['group_activity']['instructions'])): ?>
-                                        <small class="text-muted d-block ml-4"><?= esc($activity['group_activity']['instructions']) ?></small>
+                                        <small class="text-muted d-block ms-4"><?= esc($activity['group_activity']['instructions']) ?></small>
                                     <?php endif; ?>
                                 </span>
                             <?php endif; ?>
@@ -342,7 +342,7 @@
 
 .activity-item {
     background: #f8f9fa;
-    border-left: 4px solid #007bff;
+    border-start: 4px solid #007bff;
     padding: 12px;
     margin-bottom: 10px;
     border-radius: 6px;

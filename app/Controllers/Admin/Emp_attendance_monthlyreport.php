@@ -81,7 +81,7 @@ class Emp_attendance_monthlyreport extends MY_Controller {
 	   
 	   {
 	      	
-	 $users = $this->db->query("select * from users where status=1 AND campus_id=".$campus_id)->result();
+	 $users = $this->db->from('users')->where('status', 1)->where('campus_id', (int) $campus_id)->get()->result();
 
 
 	$classstudentsTotal = $this->db->query("select count(id) as totalStudents from users where  status=1 and campus_id = ".$campus_id)->row();

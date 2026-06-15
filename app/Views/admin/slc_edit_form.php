@@ -116,16 +116,16 @@ $outstandingBalance = $outstanding_balance ?? 0;
         border-radius: 10px;
         padding: 16px;
         margin-bottom: 20px;
-        border-left: 4px solid;
+        border-start: 4px solid;
     }
     
     .fee-status-card.pending {
-        border-left-color: #dc2626;
+        border-start-color: #dc2626;
         background: #fef2f2;
     }
     
     .fee-status-card.clear {
-        border-left-color: #10b981;
+        border-start-color: #10b981;
         background: #f0fdf4;
     }
     
@@ -276,13 +276,13 @@ $outstandingBalance = $outstanding_balance ?? 0;
     
     .alert-danger {
         background: #fee2e2;
-        border-left: 4px solid #dc2626;
+        border-start: 4px solid #dc2626;
         color: #991b1b;
     }
     
     .alert-success {
         background: #d1fae5;
-        border-left: 4px solid #10b981;
+        border-start: 4px solid #10b981;
         color: #065f46;
     }
     

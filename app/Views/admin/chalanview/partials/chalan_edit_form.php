@@ -37,13 +37,13 @@ $defaultStudentId = $isFamily && ! empty($family_students)
         <input type="hidden" name="parent_id" value="<?= $parent_id ?>">
 
         <div class="mb-2 d-flex flex-wrap align-items-center">
-            <button type="button" class="btn btn-sm btn-primary mr-2 mb-1" id="chalan-add-row">+ Add new fee item</button>
+            <button type="button" class="btn btn-sm btn-primary me-2 mb-1" id="chalan-add-row">+ Add new fee item</button>
             <span class="text-muted small">Pick student (family) and fee type: <strong>Amount</strong> comes from class fee setup. For <strong>monthly</strong> fee types, <strong>discount</strong> is the student monthly discount multiplied by fee plan units (same rules as bulk challan).</span>
         </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover table-sm">
-                <thead class="thead-light">
+                <thead class="table-light">
                     <tr>
                         <?php if ($isFamily): ?>
                             <th>Student</th>
@@ -106,7 +106,7 @@ $defaultStudentId = $isFamily && ! empty($family_students)
                                 <input type="number" name="discount[]" class="form-control form-control-sm discount-input"
                                        value="<?= esc($chalan['discount'] ?? '0') ?>" step="0.01" min="0" required>
                             </td>
-                            <td class="net-amount-cell text-right">0.00</td>
+                            <td class="net-amount-cell text-end">0.00</td>
                             <td>
                                 <select name="status[]" class="form-control form-control-sm">
                                     <?php $st = (string) ($chalan['status'] ?? 'unpaid'); ?>
@@ -175,7 +175,7 @@ $defaultStudentId = $isFamily && ! empty($family_students)
                             <input type="number" name="discount[]" class="form-control form-control-sm discount-input"
                                    value="0" step="0.01" min="0" required<?= $tplDisabled ?>>
                         </td>
-                        <td class="net-amount-cell text-right">0.00</td>
+                        <td class="net-amount-cell text-end">0.00</td>
                         <td>
                             <select name="status[]" class="form-control form-control-sm"<?= $tplDisabled ?>>
                                 <option value="unpaid" selected>Unpaid</option>
@@ -190,7 +190,7 @@ $defaultStudentId = $isFamily && ! empty($family_students)
                 </tbody>
                 <tfoot class="table-info">
                     <tr>
-                        <th colspan="<?= $isFamily ? 6 : 5 ?>" class="text-right">Totals:</th>
+                        <th colspan="<?= $isFamily ? 6 : 5 ?>" class="text-end">Totals:</th>
                         <th id="total-amount">0</th>
                         <th id="total-discount">0</th>
                         <th id="total-net">0</th>

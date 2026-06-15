@@ -1,28 +1,25 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 <?php helper('url'); ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6"><h1 class="mb-0">Student Attendance – Report (Card View)</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right mb-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Student Attendance Report</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Attendance Report',
+    'icon' => 'fas fa-clipboard-list',
+    'subtitle' => 'Card view by class and section.',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Attendance Report', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
 
     <!-- Filters -->
-    <div class="card card-primary card-outline shadow-sm mb-2">
+    <div class="card sms-card card-primary card-outline shadow-sm mb-2">
       <div class="card-body py-2">
-        <div class="form-row align-items-end">
+        <div class="row align-items-end">
           <input type="hidden" id="campus_id" value="<?= (int)$campusId ?>">
 
           <div class="form-group col-sm-2 mb-2">
@@ -76,8 +73,8 @@
             <input type="number" id="parent_id" class="form-control form-control-sm dependent-filter" placeholder="e.g., 123">
           </div>
 
-          <div class="form-group col-sm-4 ml-auto text-right mb-2">
-            <button id="btnExport" class="btn btn-sm btn-outline-secondary mr-1">Export CSV</button>
+          <div class="form-group col-sm-4 ms-auto text-end mb-2">
+            <button id="btnExport" class="btn btn-sm btn-outline-secondary me-1">Export CSV</button>
             <button id="btnPrint" class="btn btn-sm btn-primary">Print</button>
           </div>
         </div>
@@ -150,7 +147,7 @@
   // ————— Post-render tweaks —————
   function centerTermBadges(scope) {
     // Find any "Term:" badges and center them
-    (scope || document).querySelectorAll('.card .badge.badge-secondary').forEach(function (el) {
+    (scope || document).querySelectorAll('.card .badge.text-bg-secondary').forEach(function (el) {
       if (!/^\s*Term:/i.test(el.textContent)) return;
       const parent = el.parentElement;
       if (parent) {
@@ -203,7 +200,7 @@
       let studentName = '';
       let studentId   = '';
       let clsLabel    = '';
-      const hdrLine = header.querySelector('.font-weight-600');
+      const hdrLine = header.querySelector('.fw-semibold');
       if (hdrLine) {
         const text = hdrLine.textContent.replace(/\s+/g,' ').trim();
         // Try to extract "(ID: NNN)"
@@ -326,7 +323,7 @@
 
 /* Keep visuals tight */
 .card-body.p-2 { padding: .5rem !important; }
-.font-weight-600 { font-weight: 600; }
+
 .badge { font-weight: 500; }
 
 /* Disabled filters dimming */
@@ -353,7 +350,7 @@
 /* ===== Print (clear borders, spacing, no chrome) ===== */
 @media print {
   /* Hide UI chrome; show print header */
-  .no-print, .content-header, .card.card-primary.card-outline .card-body .form-row,
+  .no-print, .content-header, .card.card-primary.card-outline .card-body .row,
   #btnFilter, #btnReset, #btnExport, #btnPrint,
   .breadcrumb { display: none !important; }
 

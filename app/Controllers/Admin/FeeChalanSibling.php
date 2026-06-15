@@ -33,7 +33,11 @@ class FeeChalanSibling extends BaseController
         $schoolinfo = getSchoolInfo();
         $keyword = '';
 
-        $stdresult = $this->db->query("SELECT student_id FROM students WHERE campus_id = $campus_id AND parent_id = $parent_id")->getResult();
+        $stdresult = $this->db->table('students')
+            ->select('student_id')
+            ->where(['campus_id' => (int) $campus_id, 'parent_id' => (int) $parent_id])
+            ->get()
+            ->getResult();
 
         if (!empty($stdresult)) {
             foreach ($stdresult as $studentinfo) {
@@ -57,7 +61,10 @@ class FeeChalanSibling extends BaseController
                     $builder->orderBy('fee_month', 'asc');
                     $chalan_info = $builder->get()->getRow();
 
-                    $unpaid_total = $this->db->query("SELECT SUM(amount) - SUM(discount) AS total FROM fee_chalan WHERE student_id = {$row->student_id} AND status = 'unpaid'")->getRow();
+                    $unpaid_total = $this->db->query(
+                        "SELECT SUM(amount) - SUM(discount) AS total FROM fee_chalan WHERE student_id = ? AND status = 'unpaid'",
+                        [(int) $row->student_id]
+                    )->getRow();
 
                     if ($unpaid_total && $unpaid_total->total) {
                         $classSectioninfo = getClassSection($row->cls_sec_id);
@@ -79,7 +86,12 @@ class FeeChalanSibling extends BaseController
                             ->orderBy('fee_month', 'asc')
                             ->get()->getResult();
 
-                        $FChalanNum = $this->db->query("SELECT chalan_id FROM fee_chalan WHERE student_id = {$row->student_id} AND status = 'unpaid' ORDER BY chalan_id DESC")->getRow();
+                        $FChalanNum = $this->db->table('fee_chalan')
+                            ->select('chalan_id')
+                            ->where(['student_id' => (int) $row->student_id, 'status' => 'unpaid'])
+                            ->orderBy('chalan_id', 'DESC')
+                            ->get()
+                            ->getRow();
 
                         $student_fee = [];
                         foreach ($fee_chalan as $chalanvalue) {

@@ -1,16 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <?php
 helper(['url', 'form']);
-$status = (string) (service('request')->getGet('status') ?? '1');
+$status = (string) ($status ?? '1');
+$role_filter = (string) ($role_filter ?? 'all');
 $csrfName = csrf_token();
 $csrfHash = csrf_hash();
 ?>
 
 <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>">
-<link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') ?>">
-
 <style>
     .status-badge {
         padding: 5px 10px;
@@ -36,66 +36,67 @@ $csrfHash = csrf_hash();
         border-radius: 50%;
         object-fit: cover;
     }
+    .users-filters .form-control,
+    .users-filters .form-select {
+        min-width: 9rem;
+    }
+    @media (min-width: 768px) {
+        .users-filters {
+            max-width: 28rem;
+        }
+    }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Employee Management</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Employees</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Employee Management',
+    'icon' => 'fas fa-users',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Employees', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-users mr-2"></i>
-                            <?= $status === '1' ? 'Current Employees' : 'Dropped Employees' ?>
+                <div class="card sms-card">
+                    <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+                        <h3 class="card-title mb-2 mb-md-0">
+                            <i class="fas fa-users me-2"></i>
+                            Employees
                         </h3>
                         <div class="card-tools">
                             <a href="<?= base_url('admin/users/add') ?>" class="btn btn-primary btn-sm">
-                                <i class="fas fa-user-plus mr-1"></i> Add New Employee
+                                <i class="fas fa-user-plus me-1"></i> Add New Employee
+                            </a>
+                            <a href="<?= base_url('admin/users_bulk_info') ?>" class="btn btn-outline-primary btn-sm ms-1">
+                                <i class="fas fa-users-cog me-1"></i> Bulk info
                             </a>
                         </div>
                     </div>
-                    
+
                     <div class="card-body">
-                        <ul class="nav nav-pills mb-3">
-                            <li class="nav-item">
-                                <a class="nav-link <?= $status === '1' ? 'active' : '' ?>" 
-                                   href="<?= base_url('admin/users?status=1') ?>">
-                                    <i class="fas fa-user-check mr-1"></i> Current Employees
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link <?= $status === '0' ? 'active' : '' ?>" 
-                                   href="<?= base_url('admin/users?status=0') ?>">
-                                    <i class="fas fa-user-slash mr-1"></i> Dropped Employees
-                                </a>
-                            </li>
-                        </ul>
+                        <div class="d-flex flex-wrap align-items-end mb-3 users-filters">
+                            <div class="form-group mb-2 mb-md-0 me-md-3">
+                                <label for="filterStatus" class="small text-muted mb-1 d-block">Employment status</label>
+                                <select id="filterStatus" class="form-control form-control-sm form-select">
+                                    <option value="1" <?= $status === '1' ? 'selected' : '' ?>>Active</option>
+                                    <option value="0" <?= $status === '0' ? 'selected' : '' ?>>Dropped</option>
+                                    <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>All</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <table id="users-table" class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th width="40">#</th>
+                                    <th width="56">S.No</th>
                                     <th>Employee</th>
                                     <th>Contact</th>
                                     <th>Role</th>
                                     <th>Designation</th>
-                                    <th width="100">Status</th>
+                                    <th width="120">Status</th>
                                     <th width="250">Actions</th>
                                 </tr>
                             </thead>
@@ -109,14 +110,14 @@ $csrfHash = csrf_hash();
 </section>
 
 <script src="<?= base_url('resource/adminlte/plugins/bootstrap-switch/js/bootstrap-switch.min.js') ?>"></script>
-<script src="<?= base_url('resource/adminlte/plugins/datatables/jquery.dataTables.min.js') ?>"></script>
-<script src="<?= base_url('resource/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') ?>"></script>
 
 <script>
 $(function() {
     const csrfName = '<?= $csrfName ?>';
     const csrfHash = '<?= $csrfHash ?>';
-    const currentStatus = '<?= $status ?>';
+
+    let filterStatus = '<?= esc($status, 'js') ?>';
+    let filterRole = '<?= esc($role_filter, 'js') ?>';
 
     const table = $('#users-table').DataTable({
         processing: true,
@@ -125,17 +126,25 @@ $(function() {
             url: '<?= base_url("admin/users/data") ?>',
             type: 'POST',
             data: function(d) {
-                d.status = currentStatus;
+                d.status = filterStatus;
+                d.role_filter = filterRole;
                 d[csrfName] = csrfHash;
             }
         },
+        order: [[1, 'desc']],
         columns: [
-            { 
-                data: 'id',
-                className: 'text-center align-middle'
-            },
-            { 
+            {
                 data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center align-middle',
+                render: function(data, type, row, meta) {
+                    return meta.settings._iDisplayStart + meta.row + 1;
+                }
+            },
+            {
+                data: null,
+                name: 'full_name',
                 className: 'align-middle',
                 render: function(data) {
                     return `
@@ -148,21 +157,31 @@ $(function() {
                     `;
                 }
             },
-            { 
+            {
                 data: 'mobile_no',
                 className: 'align-middle',
                 render: function(data) {
-                    return data ? `<i class="fas fa-phone mr-1"></i>${data}` : '-';
+                    return data ? `<i class="fas fa-phone me-1"></i>${data}` : '-';
                 }
             },
-            { 
+            {
                 data: 'role',
                 className: 'align-middle',
                 render: function(data) {
-                    return `<span class="badge badge-info">${data}</span>`;
+                    if (!data) {
+                        return `<span class="badge text-bg-secondary">No Role</span>`;
+                    }
+                    const roles = String(data)
+                        .split(',')
+                        .map(role => role.trim())
+                        .filter(Boolean);
+                    if (!roles.length) {
+                        return `<span class="badge text-bg-secondary">No Role</span>`;
+                    }
+                    return roles.map(role => `<span class="badge text-bg-info me-1 mb-1">${role}</span>`).join('');
                 }
             },
-            { 
+            {
                 data: 'designation',
                 className: 'align-middle',
                 render: function(data) {
@@ -171,23 +190,19 @@ $(function() {
             },
             {
                 data: 'status',
+                name: 'status',
                 className: 'align-middle text-center',
                 render: function(data, type, row) {
-                    if (currentStatus === '0') {
-                        return `<span class="badge badge-danger">Inactive</span>`;
-                    }
-                    
-                    let checked = data == 1 ? 'checked' : '';
+                    const checked = parseInt(data, 10) === 1 ? 'checked' : '';
+                    const label = parseInt(data, 10) === 1 ? 'Active' : 'Dropped';
                     return `
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" 
-                                   class="custom-control-input status-switch" 
+                        <div class="form-check form-switch justify-content-center d-inline-flex flex-column align-items-center">
+                            <input type="checkbox"
+                                   class="form-check-input status-switch"
                                    id="status_${row.id}"
                                    data-id="${row.id}"
                                    ${checked}>
-                            <label class="custom-control-label" for="status_${row.id}">
-                                ${data == 1 ? 'Active' : 'Inactive'}
-                            </label>
+                            <label class="form-check-label small" for="status_${row.id}">${label}</label>
                         </div>
                     `;
                 }
@@ -196,33 +211,30 @@ $(function() {
                 data: 'id',
                 className: 'align-middle text-center',
                 orderable: false,
+                searchable: false,
                 render: function(data) {
                     return `
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-info dropdown-toggle" 
-                                    data-toggle="dropdown" aria-expanded="false">
+                            <button type="button" class="btn btn-sm btn-info dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i> Actions
                             </button>
                             <div class="dropdown-menu">
-                              
-
                                 <a class="dropdown-item" href="<?= base_url('admin/users/view') ?>/${data}">
-    <i class="fas fa-user mr-2 text-primary"></i>View Profile
-</a>
-
-
+                                    <i class="fas fa-user me-2 text-primary"></i>View Profile
+                                </a>
                                 <a class="dropdown-item" href="<?= base_url('admin/users/edit') ?>/${data}">
-                                    <i class="fas fa-edit mr-2 text-warning"></i>Edit Details
+                                    <i class="fas fa-edit me-2 text-warning"></i>Edit Details
                                 </a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="<?= base_url('admin/users/subjects') ?>/${data}">
-                                    <i class="fas fa-book mr-2 text-success"></i>Subjects
+                                    <i class="fas fa-book me-2 text-success"></i>Subjects
                                 </a>
                                 <a class="dropdown-item" href="<?= base_url('admin/users/timetable') ?>/${data}">
-                                    <i class="fas fa-clock mr-2 text-info"></i>Time Table
+                                    <i class="fas fa-clock me-2 text-info"></i>Time Table
                                 </a>
                                 <a class="dropdown-item" href="<?= base_url('admin/users/salary') ?>/${data}">
-                                    <i class="fas fa-money-bill mr-2 text-danger"></i>Salary History
+                                    <i class="fas fa-money-bill me-2 text-danger"></i>Salary History
                                 </a>
                             </div>
                         </div>
@@ -232,12 +244,27 @@ $(function() {
         ]
     });
 
-    // Handle status toggle
+    function syncUrl() {
+        const params = new URLSearchParams();
+        if (filterStatus !== '1') {
+            params.set('status', filterStatus);
+        }
+        const q = params.toString();
+        const base = '<?= base_url('admin/users') ?>';
+        history.replaceState(null, '', q ? base + '?' + q : base);
+    }
+
+    $('#filterStatus').on('change', function() {
+        filterStatus = $('#filterStatus').val();
+        syncUrl();
+        table.ajax.reload();
+    });
+
     $(document).on('change', '.status-switch', function() {
         const $this = $(this);
         const userId = $this.data('id');
         const newStatus = $this.is(':checked') ? 1 : 0;
-        
+
         $.ajax({
             url: '<?= base_url("admin/users/toggleStatus") ?>',
             type: 'POST',
@@ -248,10 +275,11 @@ $(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    toastr.success('Status updated successfully');
-                    $this.next('label').text(newStatus == 1 ? 'Active' : 'Inactive');
+                    toastr.success(newStatus === 1 ? 'Employee marked active' : 'Employee marked dropped');
+                    $this.next('label').text(newStatus === 1 ? 'Active' : 'Dropped');
+                    table.ajax.reload(null, false);
                 } else {
-                    toastr.error('Failed to update status');
+                    toastr.error(response.msg || 'Failed to update status');
                     $this.prop('checked', !newStatus);
                 }
             },

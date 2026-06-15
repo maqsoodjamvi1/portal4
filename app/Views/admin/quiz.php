@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Quiz
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Quiz</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Quiz',
+    'icon' => 'fas fa-clipboard-list',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quiz', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -91,10 +82,10 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/quiz?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="far fa-edit"></i></a>';
-						   html += '<a href="<?php echo '#/quiz_questions?m=add&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">Add Questions</a>';
+						  html += '<a href="<?php echo '#/quiz?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="far fa-edit"></i></a>';
+						   html += '<a href="<?php echo '#/quiz_questions?m=add&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">Add Questions</a>';
 
-						    html += '<a href="<?php echo '#/quiz_questions?id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">View Questions</a>';
+						    html += '<a href="<?php echo '#/quiz_questions?id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">View Questions</a>';
 
 					html += '</div>';
 					return html;

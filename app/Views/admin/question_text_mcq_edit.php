@@ -15,24 +15,16 @@
 
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Quiz Question
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Quiz Question</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'English MCQS Question',
+    'icon' => 'fas fa-spell-check',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'English MCQS', 'url' => base_url('admin/question_text_mcq')],
+        ['label' => 'Add', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -147,9 +139,9 @@
             <?php } ?>
             </div>
              </td>     
-             <td colspan="2" style="border-left: 0 none !important;border-right: 0 none !important;"> <textarea class="form-control editor" name="hint_text0<?php echo $i; ?>" placeholder="Explanation" rows="3" id="hint_text<?php echo $i; ?>"><?php echo $value->explanation; ?></textarea>
+             <td colspan="2" style="border-start: 0 none !important;border-end: 0 none !important;"> <textarea class="form-control editor" name="hint_text0<?php echo $i; ?>" placeholder="Explanation" rows="3" id="hint_text<?php echo $i; ?>"><?php echo $value->explanation; ?></textarea>
              </td>
-             <td style="border-left: 0 none !important;"><a class="deleteRow"></a></td>
+             <td style="border-start: 0 none !important;"><a class="deleteRow"></a></td>
             </tr></tr>
             <?php 
             $j=0;
@@ -184,7 +176,7 @@
         <tfoot>
             <tr>
             <td colspan="5" style="text-align: center;">
-               <!--  <input type="button" class="btn btn-lg btn-block btn-primary"  id="addrow" value="Add Question" /> -->
+               <!--  <input type="button" class="btn btn-lg w-100 btn-primary"  id="addrow" value="Add Question" /> -->
                 <a style="display:block;background-color: #3c8dbc !important;width: 100%; text-align: center;color: #fff;padding: 7px 15px;margin:0 auto;" href="javascript:void(0);" class="addCF">Add Question</a>
              </td>
             </tr>
@@ -200,14 +192,14 @@
     var cols2 = "";
     var optionNums = "";
     
-    cols += '<td colspan="2" style="border-right: 0 none !important;"><input type="hidden" name="optionscount[]" value="1" /> <select class="form-control" id="question_type'+ counter +'" name="question_type'+ counter +'"><option value="">Question Type</option><option value="text">Text</option><option value="image">Image</option><option value="video">Video</option></select><div id="questionArea'+ counter +'">';
+    cols += '<td colspan="2" style="border-end: 0 none !important;"><input type="hidden" name="optionscount[]" value="1" /> <select class="form-control" id="question_type'+ counter +'" name="question_type'+ counter +'"><option value="">Question Type</option><option value="text">Text</option><option value="image">Image</option><option value="video">Video</option></select><div id="questionArea'+ counter +'">';
     cols += '<textarea style="display:none" class="form-control" name="question_text'+ counter +'" placeholder="Question" id="question_text'+ counter +'" style="margin-bottom: 4px;"></textarea>';
 
     cols += '<input type="file" style="display:none" class="form-control" name="question_image'+ counter +'" placeholder="Image" id="question_image'+ counter +'" style="margin-bottom: 4px;">';
    
     cols += '<input type="url" style="display:none" class="form-control" name="video_url'+ counter +'" placeholder="Video URL" id="video_url'+ counter +'" style="margin-bottom: 4px;">';
    
-    cols += '</div></td><td colspan="2" style="border-right: 0 none !important;border-left: 0 none !important;"><textarea class="form-control editor2" name="explanation_text'+ counter +'" placeholder="Explanation" id="explanation_text'+ counter +'"></textarea></td>';
+    cols += '</div></td><td colspan="2" style="border-end: 0 none !important;border-start: 0 none !important;"><textarea class="form-control editor2" name="explanation_text'+ counter +'" placeholder="Explanation" id="explanation_text'+ counter +'"></textarea></td>';
            
         var template_id = $('#template_id').val();   
         if(template_id == 1 || template_id ==2){ 
@@ -261,8 +253,8 @@
 		 <div class="col-lg-3">
          <div class="form-group">
            <button type="submit" class="btn btn-primary">Save</button>
-           <button type="reset" class="btn btn-default">Reset</button>
-           <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+           <button type="reset" class="btn btn-secondary">Reset</button>
+           <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
          </div>	 
 		 </div>
 		 </div>

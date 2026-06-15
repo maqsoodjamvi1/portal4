@@ -2,6 +2,7 @@
 namespace App\Controllers\Frontend;
 
 use App\Controllers\BaseController;
+use App\Libraries\ExamQuizService;
 
 class PendingQuizzes extends BaseController
 {
@@ -23,12 +24,14 @@ class PendingQuizzes extends BaseController
         $studentId = (int) $this->session->get('student_id');
         $clsSecId  = (int) $this->session->get('cls_sec_id');
 
-        if ($studentId && !$clsSecId) {
-            // fallback: fetch from a_students
-            $row = $this->db->table('a_students')
+        if ($studentId && ! $clsSecId) {
+            $row = $this->db->table('student_class')
                 ->select('cls_sec_id')
                 ->where('student_id', $studentId)
-                ->limit(1)->get()->getRow();
+                ->orderBy('session_id', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRow();
             if ($row) {
                 $clsSecId = (int) ($row->cls_sec_id ?? 0);
             }
@@ -70,6 +73,8 @@ class PendingQuizzes extends BaseController
             $filterSql   .= ' AND q.subject_id = ?';
             $params[]     = $subjectId;
         }
+
+        $portalVisibilitySql = (new ExamQuizService())->portalVisibilitySql('q');
 
       $sql = "
     SELECT 
@@ -115,6 +120,7 @@ class PendingQuizzes extends BaseController
 
     WHERE q.cls_sec_id   = ?
       AND q.is_published = 1
+      {$portalVisibilitySql}
       AND (q.start_at IS NULL OR q.start_at <= NOW())
       AND (q.end_at   IS NULL OR q.end_at   >= NOW())
       {$filterSql}
@@ -208,6 +214,7 @@ class PendingQuizzes extends BaseController
            ON s.sid = ss.subject_id
     WHERE q.cls_sec_id = ?
       AND q.is_published = 1
+      {$portalVisibilitySql}
     ORDER BY subject_label
 ", [$clsSecId])->getResult();
 
@@ -222,6 +229,7 @@ class PendingQuizzes extends BaseController
             JOIN academic_session acs ON acs.session_id = ts.session_id
             WHERE q.cls_sec_id   = ?
               AND q.is_published = 1
+              {$portalVisibilitySql}
             ORDER BY acs.session_name DESC, t.short_name ASC
         ", [$clsSecId])->getResult();
 

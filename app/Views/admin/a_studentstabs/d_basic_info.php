@@ -5,11 +5,11 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-primary text-white">
-    <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i> Basic Student Information</h5>
+    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Basic Student Information</h5>
   </div>
   <div class="card-body">
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="reg_no">Registration No</label>
         <input type="text" readonly class="form-control" name="reg_no" id="reg_no" value="<?= $reg_no ?>">
@@ -39,7 +39,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="row">
       <div class="form-group col-md-3">
         <label for="father_cnic">Father CNIC <i class="fas fa-info-circle text-secondary" title="Enter CNIC to auto-fetch parent info"></i></label>
         <input type="text" class="form-control" name="father_cnic" id="father_cnic" onkeyup="checkfathercnic()" value="<?= $father_cnic ?>" data-inputmask='"mask": "99999-9999999-9"' data-mask>
@@ -63,19 +63,17 @@
         ?>
         <label for="datepicker2">Date Of Admission</label>
         <div class="input-group date" id="datepicker2" data-target-input="nearest">
-          <input type="text" class="form-control datetimepicker-input" name="date_of_admission" value="<?= $formattedDate ?>" data-target="#datepicker2" />
-          <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-          </div>
+          <input type="text" class="form-control datetimepicker-input" name="date_of_admission" value="<?= $formattedDate ?>" data-bs-target="#datepicker2" />
+          <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
         </div>
       </div>
     </div>
 
-    <div class="form-row mt-4">
-      <div class="form-group col-md-12 text-right">
-        <button type="submit" id="submitBtn" class="btn btn-primary studentsubmit"><i class="fas fa-save mr-1"></i> Save</button>
-        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo mr-1"></i> Reset</button>
-        <button type="button" class="btn btn-light" onclick="history.go(-1);"><i class="fas fa-times mr-1"></i> Cancel</button>
+    <div class="row mt-4">
+      <div class="form-group col-md-12 text-end">
+        <button type="submit" id="submitBtn" class="btn btn-primary studentsubmit"><i class="fas fa-save me-1"></i> Save</button>
+        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo me-1"></i> Reset</button>
+        <button type="button" class="btn btn-light" onclick="history.go(-1);"><i class="fas fa-times me-1"></i> Cancel</button>
       </div>
     </div>
 

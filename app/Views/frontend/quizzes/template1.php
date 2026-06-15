@@ -1,7 +1,57 @@
-<?= $this->extend('frontend/layouts/master_portal') ?>
-<?= $this->section('content') ?>
+<?php
+$boardPrepPortal = ! empty($boardPrepPortal);
+if ($boardPrepPortal) {
+    $navActive = 'dashboard';
+}
+?>
+<?= $this->extend($boardPrepPortal ? 'board_prep/app_layout' : 'frontend/layouts/master_portal') ?>
+<?= $this->section($boardPrepPortal ? 'main' : 'content') ?>
 
 <style>
+  /* Hide portal chrome on quiz attempt (language/logout header, sidebar, mobile bottom nav) */
+  body.quiz-attempt-page .main-header,
+  body.quiz-attempt-page .main-sidebar,
+  body.quiz-attempt-page .parent-portal-bottomnav {
+    display: none !important;
+  }
+  body.quiz-attempt-page .content-wrapper {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  body.quiz-attempt-page.layout-fixed .wrapper,
+  body.quiz-attempt-page .wrapper {
+    overflow: visible;
+  }
+  @media (max-width: 767.98px) {
+    body.quiz-attempt-page.parent-portal-client .content-wrapper {
+      padding-bottom: 0 !important;
+    }
+    body.quiz-attempt-page .quiz-footer {
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      z-index: 1040;
+    }
+  }
+
+  .quiz-exit-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-right: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.2);
+    color: #fff !important;
+    font-weight: 700;
+    font-size: .85rem;
+    text-decoration: none !important;
+    border: 1px solid rgba(255,255,255,.35);
+    flex-shrink: 0;
+  }
+  .quiz-exit-home:hover { color: #fff !important; background: rgba(255,255,255,.32); }
+
   :root{
     --bg: #f7fbff;
     --card: #ffffff;
@@ -98,10 +148,28 @@
     padding:.7rem .9rem;margin-bottom:.6rem;cursor:pointer;
     background:#f9fbff; display:flex; align-items:center; gap:.55rem;
     transition:transform .05s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   .option:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,.06)}
-  .option input{margin-top:2px}
-  .option span{font-size:1rem}
+  .option input{
+    margin-top:0;
+    flex-shrink:0;
+    cursor:pointer;
+    width:1.2rem;
+    height:1.2rem;
+    accent-color:var(--brand);
+  }
+  .option input[type="checkbox"]{
+    width:1.25rem;
+    height:1.25rem;
+  }
+  .option span{
+    font-size:1rem;
+    flex:1;
+    line-height:1.45;
+    pointer-events:none;
+  }
   .option.checked{
     border-color:var(--brand);
     background:linear-gradient(0deg, rgba(103,89,255,.10), rgba(103,89,255,.10));
@@ -440,6 +508,18 @@ input.has-answer, textarea.has-answer {
     background-color: rgba(103,89,255,.05) !important;
 }
 </style>
+<script>document.body.classList.add('quiz-attempt-page');</script>
+
+<?php
+$__quizDashUrl = $boardPrepPortal
+    ? board_prep_url('dashboard')
+    : base_url('student/dashboard');
+$__quizSid = (int) ($studentIdForUrl ?? 0);
+$__sessionSid = (int) (session('student_id') ?? 0);
+if (! $boardPrepPortal && $__quizSid > 0 && $__quizSid !== $__sessionSid) {
+    $__quizDashUrl .= '?sid=' . $__quizSid;
+}
+?>
 
 <?php
 // Try to build meta line safely – adjust variable names as per your controller
@@ -470,7 +550,12 @@ if (!empty($topicList)) {
 
 <section class="quiz-topbar">
   <div class="d-flex align-items-center justify-content-between flex-wrap flex-md-nowrap">
-    <div class="mb-1 mb-md-0">
+    <div class="mb-1 mb-md-0 d-flex align-items-start flex-wrap" style="gap:4px;">
+      <a href="<?= esc($__quizDashUrl) ?>" class="quiz-exit-home" title="Dashboard"
+         onclick="return confirm('Leave quiz and go to dashboard?');">
+        <i class="fas fa-arrow-left"></i><span class="d-none d-sm-inline">Exit</span>
+      </a>
+      <div>
       <h1 class="quiz-title mb-0">
         🎮 <?= esc($quiz->title) . esc($topicSuffix) ?>
       </h1>
@@ -487,10 +572,11 @@ if (!empty($topicList)) {
           <?= esc($quiz->instructions) ?>
         </small>
       <?php endif; ?>
+      </div>
     </div>
 
   <?php
-  $totalQ = isset($totalQuestions) ? (int)$totalQuestions : count($qq ?? []);
+  $totalQ = count($qq ?? []);
 ?>
 <div class="d-flex align-items-center flex-wrap justify-content-end" style="gap:.5rem">
 
@@ -498,7 +584,7 @@ if (!empty($topicList)) {
     <div class="pill pill-questions" id="quiz-question-counter"
          data-total="<?= $totalQ ?>">
       <i class="fas fa-list-ol"></i>
-      <span id="quiz-q-remaining"><?= $totalQ - 1 ?></span> questions left
+      <span id="quiz-q-current">1</span>/<span id="quiz-q-total"><?= $totalQ ?></span>
     </div>
   <?php endif; ?>
 
@@ -519,6 +605,8 @@ if (!empty($topicList)) {
 </div>
 
   </div>
+
+  <?= $this->include('frontend/quizzes/partials/adaptive_quiz_ui') ?>
 </section>
 
   <div class="mt-1 small">
@@ -529,10 +617,21 @@ if (!empty($topicList)) {
       </span>
     <?php endif; ?>
   </div>
-</section>
 
+<?php
+  $quizUrls = $quizUrls ?? [
+    'submit'       => base_url('student/quizzes/submit'),
+    'saveAnswer'   => base_url('student/quizzes/save-answer'),
+    'review'       => base_url('student/quizzes/review/' . (int) ($attemptId ?? 0)),
+    'submitLevel'  => base_url('student/quizzes/submit-level'),
+    'nextLevel'    => base_url('student/quizzes/move-to-next-level'),
+    'retryLevel'   => base_url('student/quizzes/retry-current-level'),
+    'completeQuiz' => base_url('student/quizzes/complete-adaptive-quiz'),
+    'catalog'      => base_url('student/quizzes'),
+  ];
+?>
 <section class="content">
-  <form action="<?= base_url('student/quizzes/submit') ?>" method="post" id="attemptForm">
+  <form action="<?= esc($quizUrls['submit']) ?>" method="post" id="attemptForm">
     <?= csrf_field() ?>
     <input type="hidden" name="attempt_id" value="<?= (int)$attemptId ?>">
     <input type="hidden" id="currentIndex" value="0">
@@ -722,7 +821,7 @@ if (!empty($topicList)) {
                     <div class="col-md-6">
                       <?php foreach ($leftItems as $left): ?>
                         <div class="match-row d-flex align-items-center" data-left="<?= esc($left) ?>">
-                          <div class="match-left-label pr-2">
+                          <div class="match-left-label pe-2">
                             <strong><?= esc($left) ?></strong>
                           </div>
                           <div class="match-dropzone flex-fill">
@@ -801,7 +900,7 @@ if (!empty($topicList)) {
             <img id="zoomImg" src="" alt="Zoom" style="width:100%;height:auto;display:block">
           </div>
           <div class="modal-footer py-2">
-            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -857,8 +956,12 @@ if (!empty($topicList)) {
       clearInterval(intervalId);
       renderTime(0);
       updateColor();
-      var quizForm = document.getElementById('attemptForm');
-      if (quizForm) quizForm.submit();
+      if (window.__adaptiveQuizConfig && window.__adaptiveQuizConfig.enabled && typeof window.adaptiveSubmitLevel === 'function') {
+        window.adaptiveSubmitLevel();
+      } else {
+        var quizForm = document.getElementById('attemptForm');
+        if (quizForm) quizForm.submit();
+      }
       return;
     }
     renderTime(remaining);
@@ -867,36 +970,39 @@ if (!empty($topicList)) {
 })();
 
 /* -----------------------------------
-   REMAINING QUESTIONS COUNTER
-   (based on current question index)
+   QUESTION COUNTER (current / total on this level)
 ----------------------------------- */
 (function() {
   const counter = document.getElementById('quiz-question-counter');
   if (!counter) {
-    // no counter on this page
     window.quizUpdateRemaining = function(){};
     return;
   }
 
-  const total = parseInt(counter.getAttribute('data-total') || '0', 10);
-  const elRemaining = document.getElementById('quiz-q-remaining');
-  if (!elRemaining || !total) {
+  const elCurrent = document.getElementById('quiz-q-current');
+  const elTotal   = document.getElementById('quiz-q-total');
+  const blocksNow = document.querySelectorAll('.question-block').length;
+  let total = blocksNow > 0
+    ? blocksNow
+    : parseInt(counter.getAttribute('data-total') || '0', 10);
+
+  if (elTotal && total > 0) {
+    elTotal.textContent = total;
+    counter.setAttribute('data-total', String(total));
+  }
+
+  if (!elCurrent || !total) {
     window.quizUpdateRemaining = function(){};
     return;
   }
 
-  // currentIndex is 0-based
-  // remaining = total - (currentIndex + 1)
   window.quizUpdateRemaining = function(currentIndex) {
     currentIndex = parseInt(currentIndex || 0, 10);
     if (currentIndex < 0) currentIndex = 0;
     if (currentIndex >= total) currentIndex = total - 1;
-
-    const remaining = Math.max(total - (currentIndex + 1), 0);
-    elRemaining.textContent = remaining;
+    elCurrent.textContent = currentIndex + 1;
   };
 
-  // initial: at Q1 (index 0) → remaining = total - 1
   quizUpdateRemaining(0);
 })();
 
@@ -923,7 +1029,8 @@ function setCurrent(idx){
 
   if (btnNext) {
     if (idx === totalQuestions - 1) {
-      btnNext.textContent = 'Submit Quiz ✅';
+      var isAdaptive = window.__adaptiveQuizConfig && window.__adaptiveQuizConfig.enabled;
+      btnNext.textContent = isAdaptive ? 'Submit Level' : 'Submit Quiz';
       btnNext.classList.remove('btn-next');
       btnNext.classList.add('btn-submit');
       btnNext.setAttribute('data-mode', 'submit');
@@ -959,7 +1066,10 @@ if (btnNext) {
       return;
     }
 
-    // mode === 'submit' → submit immediately (even if some questions are blank)
+    if (window.__adaptiveQuizConfig && window.__adaptiveQuizConfig.enabled && typeof window.adaptiveSubmitLevel === 'function') {
+      window.adaptiveSubmitLevel();
+      return;
+    }
     const form = document.getElementById('attemptForm');
     if (form) form.submit();
   });
@@ -1187,7 +1297,7 @@ function saveAnswer(e){
   }
 
   setAutosaveState('pending');
-  fetch('<?= base_url('student/quizzes/save-answer') ?>', {
+  fetch('<?= esc($quizUrls['saveAnswer']) ?>', {
     method: 'POST',
     headers: {
       'X-Requested-With':'XMLHttpRequest',
@@ -1216,7 +1326,7 @@ document.addEventListener('click', function(e){
   }
 });
 
-// ✅ Always select radio/checkbox correctly (dot will show)
+// Radio: clicking option row triggers selection. Checkbox: label[for] handles it (no .click() — would double-toggle).
 document.addEventListener('click', function (e) {
   const opt = e.target.closest('label.option');
   if (!opt) return;
@@ -1224,12 +1334,15 @@ document.addEventListener('click', function (e) {
   const input = opt.querySelector('input[type="radio"], input[type="checkbox"]');
   if (!input) return;
 
-  // If user clicked the input itself, let browser handle it
   if (e.target === input) return;
 
-  // Trigger native click so UI (radio dot) is always correct
+  if (input.type === 'checkbox') {
+    return;
+  }
+
   input.click();
 });
+
 
 
 // ✅ Image zoom modal
@@ -1491,5 +1604,29 @@ document.addEventListener('click', function(e){
     }, 500);
 })();
 </script>
+
+<?php if (! empty($isAdaptive) && ! empty($levelInfo)): ?>
+<?= $this->include('frontend/quizzes/partials/adaptive_quiz_overlay') ?>
+<script>
+window.__adaptiveQuizConfig = {
+  enabled: true,
+  attemptId: <?= (int) $attemptId ?>,
+  currentLevelNo: <?= (int) ($currentLevelNo ?? 1) ?>,
+  totalLevels: <?= (int) ($totalLevels ?? 0) ?>,
+  passPct: <?= (float) ($levelInfo->passing_percentage ?? $levelInfo->min_pass_percentage ?? 60) ?>,
+  csrfName: <?= json_encode(csrf_token()) ?>,
+  csrfHash: <?= json_encode(csrf_hash()) ?>,
+  urls: {
+    submitLevel: <?= json_encode($quizUrls['submitLevel']) ?>,
+    nextLevel: <?= json_encode($quizUrls['nextLevel']) ?>,
+    retryLevel: <?= json_encode($quizUrls['retryLevel']) ?>,
+    completeQuiz: <?= json_encode($quizUrls['completeQuiz']) ?>,
+    review: <?= json_encode($quizUrls['review']) ?>,
+    catalog: <?= json_encode($quizUrls['catalog']) ?>
+  }
+};
+</script>
+<script src="<?= base_url('assets/js/quiz_adaptive_student.js') ?>?v=20260517c"></script>
+<?php endif; ?>
 
 <?= $this->endSection() ?>

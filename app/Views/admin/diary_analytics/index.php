@@ -1,3 +1,4 @@
+<?php $uiNeedsChart = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -84,22 +85,15 @@
 </style>
 
 <!-- Content Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-chart-line"></i> Class Diary Analytics</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/classdiary-view') ?>">Class Diary</a></li>
-                    <li class="breadcrumb-item active">Analytics</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Class Diary Analytics',
+    'icon' => 'fas fa-chart-line',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Diary', 'url' => base_url('admin/classdiary-view')],
+        ['label' => 'Analytics', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -201,12 +195,12 @@
                     </div>
                 </div>
                 <div class="col-md-2 filter-buttons">
-                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 32px;">
+                    <button type="submit" class="btn btn-primary w-100" style="margin-top: 32px;">
                         <i class="fas fa-search"></i> Generate Report
                     </button>
                 </div>
                 <div class="col-md-3 filter-buttons">
-                    <button type="button" id="exportBtn" class="btn btn-success btn-block" style="margin-top: 32px;">
+                    <button type="button" id="exportBtn" class="btn btn-success w-100" style="margin-top: 32px;">
                         <i class="fas fa-file-excel"></i> Export to Excel
                     </button>
                 </div>
@@ -755,7 +749,7 @@ $(document).ready(function() {
             <div class="card">
                 <div class="card-header">
                     <h5><i class="fas fa-list"></i> Detailed Diary Data 
-                        <span class="badge badge-secondary">${entries.length} entries</span>
+                        <span class="badge text-bg-secondary">${entries.length} entries</span>
                     </h5>
                 </div>
                 <div class="card-body">

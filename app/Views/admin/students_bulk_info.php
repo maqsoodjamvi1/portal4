@@ -62,7 +62,7 @@
 
 <!-- Columns selector -->
 <div class="p-3 pt-2 pb-0 border-bottom bg-light">
-  <div class="form-row align-items-stretch">
+  <div class="row align-items-stretch">
 
     <!-- ========== Student Fields ========== -->
     <div class="col-lg-4 mb-3">
@@ -78,93 +78,93 @@
           <div class="d-flex flex-wrap">
 
             <!-- Core -->
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_dob" value="date_of_birth" data-group="student" checked>
-              <label class="custom-control-label" for="col_dob">Date of Birth</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_dob" value="date_of_birth" data-group="student" checked>
+              <label class="form-check-label" for="col_dob">Date of Birth</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_gender" value="gender" data-group="student">
-              <label class="custom-control-label" for="col_gender">Gender</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_gender" value="gender" data-group="student">
+              <label class="form-check-label" for="col_gender">Gender</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_flag" value="flag" data-group="student">
-              <label class="custom-control-label" for="col_flag">Student Type</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_flag" value="flag" data-group="student">
+              <label class="form-check-label" for="col_flag">Student Type</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_photo" value="profile_photo" data-group="student">
-              <label class="custom-control-label" for="col_photo">Photo</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_photo" value="profile_photo" data-group="student">
+              <label class="form-check-label" for="col_photo">Photo</label>
             </div>
 
             <!-- Student table (new) -->
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_first_name" value="first_name" data-group="student">
-              <label class="custom-control-label" for="col_first_name">First Name</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_first_name" value="first_name" data-group="student">
+              <label class="form-check-label" for="col_first_name">First Name</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_last_name" value="last_name" data-group="student">
-              <label class="custom-control-label" for="col_last_name">Last Name</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_last_name" value="last_name" data-group="student">
+              <label class="form-check-label" for="col_last_name">Last Name</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_date_of_admission" value="date_of_admission" data-group="student">
-              <label class="custom-control-label" for="col_date_of_admission">Date of Admission</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_date_of_admission" value="date_of_admission" data-group="student">
+              <label class="form-check-label" for="col_date_of_admission">Date of Admission</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_std_cnic" value="std_cnic" data-group="student">
-              <label class="custom-control-label" for="col_std_cnic">Student CNIC</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_std_cnic" value="std_cnic" data-group="student">
+              <label class="form-check-label" for="col_std_cnic">Student CNIC</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_std_type" value="std_type" data-group="student">
-              <label class="custom-control-label" for="col_std_type">Student Type (Alt)</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_std_type" value="std_type" data-group="student">
+              <label class="form-check-label" for="col_std_type">Student Type (Alt)</label>
             </div>
 
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_address" value="address" data-group="student">
-              <label class="custom-control-label" for="col_address">Address</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_address" value="address" data-group="student">
+              <label class="form-check-label" for="col_address">Address</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_prev_school" value="previous_school" data-group="student">
-              <label class="custom-control-label" for="col_prev_school">Previous School</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_prev_school" value="previous_school" data-group="student">
+              <label class="form-check-label" for="col_prev_school">Previous School</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_ps_city" value="ps_city" data-group="student">
-              <label class="custom-control-label" for="col_ps_city">PS City</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_ps_city" value="ps_city" data-group="student">
+              <label class="form-check-label" for="col_ps_city">PS City</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_health" value="health_condition" data-group="student">
-              <label class="custom-control-label" for="col_health">Health Condition</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_health" value="health_condition" data-group="student">
+              <label class="form-check-label" for="col_health">Health Condition</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_injuries" value="major_injuries" data-group="student">
-              <label class="custom-control-label" for="col_injuries">Major Injuries</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_injuries" value="major_injuries" data-group="student">
+              <label class="form-check-label" for="col_injuries">Major Injuries</label>
             </div>
             
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_grno" value="gr_no" data-group="student">
-              <label class="custom-control-label" for="col_grno">GR No</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_grno" value="gr_no" data-group="student">
+              <label class="form-check-label" for="col_grno">GR No</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_grdate" value="gr_date" data-group="student">
-              <label class="custom-control-label" for="col_grdate">GR Date</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_grdate" value="gr_date" data-group="student">
+              <label class="form-check-label" for="col_grdate">GR Date</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_religion" value="religion" data-group="student">
-              <label class="custom-control-label" for="col_religion">Religion</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_religion" value="religion" data-group="student">
+              <label class="form-check-label" for="col_religion">Religion</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_city" value="city" data-group="student">
-              <label class="custom-control-label" for="col_city">City</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_city" value="city" data-group="student">
+              <label class="form-check-label" for="col_city">City</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_hear_source" value="hear_source" data-group="student">
-              <label class="custom-control-label" for="col_hear_source">Hear Source</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_hear_source" value="hear_source" data-group="student">
+              <label class="form-check-label" for="col_hear_source">Hear Source</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_emergency_person" value="emergency_contact_person" data-group="student">
-              <label class="custom-control-label" for="col_emergency_person">Emergency Person</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_emergency_person" value="emergency_contact_person" data-group="student">
+              <label class="form-check-label" for="col_emergency_person">Emergency Person</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_relationship" value="relationship" data-group="student">
-              <label class="custom-control-label" for="col_relationship">Relationship</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_relationship" value="relationship" data-group="student">
+              <label class="form-check-label" for="col_relationship">Relationship</label>
             </div>
 
           </div>
@@ -185,53 +185,53 @@
         <div class="card-body py-2">
           <div class="d-flex flex-wrap">
 
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_f_name" value="f_name" data-group="parent">
-              <label class="custom-control-label" for="col_f_name">Father Name</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_f_name" value="f_name" data-group="parent">
+              <label class="form-check-label" for="col_f_name">Father Name</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_father_email" value="father_email" data-group="parent">
-              <label class="custom-control-label" for="col_father_email">Father Email</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_father_email" value="father_email" data-group="parent">
+              <label class="form-check-label" for="col_father_email">Father Email</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_father_occupation" value="father_occupation" data-group="parent">
-              <label class="custom-control-label" for="col_father_occupation">Father Occupation</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_father_occupation" value="father_occupation" data-group="parent">
+              <label class="form-check-label" for="col_father_occupation">Father Occupation</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_caste" value="caste" data-group="parent">
-              <label class="custom-control-label" for="col_caste">Caste</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_caste" value="caste" data-group="parent">
+              <label class="form-check-label" for="col_caste">Caste</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_father_office_address" value="father_office_address" data-group="parent">
-              <label class="custom-control-label" for="col_father_office_address">Father Office Address</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_father_office_address" value="father_office_address" data-group="parent">
+              <label class="form-check-label" for="col_father_office_address">Father Office Address</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_m_name" value="m_name" data-group="parent">
-              <label class="custom-control-label" for="col_m_name">Mother Name</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_m_name" value="m_name" data-group="parent">
+              <label class="form-check-label" for="col_m_name">Mother Name</label>
             </div>
 
             <!-- NEW Parent (bulk) -->
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_father_contact" value="father_contact" data-group="parent">
-              <label class="custom-control-label" for="col_father_contact">Father Contact</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_father_contact" value="father_contact" data-group="parent">
+              <label class="form-check-label" for="col_father_contact">Father Contact</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_whatsapp" value="whatsapp" data-group="parent">
-              <label class="custom-control-label" for="col_whatsapp">Whatsapp</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_whatsapp" value="whatsapp" data-group="parent">
+              <label class="form-check-label" for="col_whatsapp">Whatsapp</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_mother_contact" value="mother_contact" data-group="parent">
-              <label class="custom-control-label" for="col_mother_contact">Mother Contact</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_mother_contact" value="mother_contact" data-group="parent">
+              <label class="form-check-label" for="col_mother_contact">Mother Contact</label>
             </div>
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_emergency_contact" value="emergency_contact" data-group="parent">
-              <label class="custom-control-label" for="col_emergency_contact">Emergency Contact</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_emergency_contact" value="emergency_contact" data-group="parent">
+              <label class="form-check-label" for="col_emergency_contact">Emergency Contact</label>
             </div>
 
             <!-- Dependency: selecting CNIC will auto-select Father Name -->
-            <div class="custom-control custom-checkbox mr-3 mb-2">
-              <input type="checkbox" class="custom-control-input upd-col" id="col_father_cnic" value="father_cnic" data-group="parent">
-              <label class="custom-control-label" for="col_father_cnic">Father CNIC</label>
+            <div class="form-check form-check me-3 mb-2">
+              <input type="checkbox" class="form-check-input upd-col" id="col_father_cnic" value="father_cnic" data-group="parent">
+              <label class="form-check-label" for="col_father_cnic">Father CNIC</label>
             </div>
 
           </div>
@@ -263,47 +263,47 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
   <div class="d-flex flex-wrap">
 
     <!-- Month columns -->
-    <div class="custom-control custom-checkbox mr-3 mb-2">
+    <div class="form-check form-check me-3 mb-2">
       <input type="checkbox"
-             class="custom-control-input upd-col upd-month"
+             class="form-check-input upd-col upd-month"
              id="col_month_prev"
              value="month_prev"
              data-ym="<?= esc($prevYm) ?>"
-             data-target=".col-month_prev">
-      <label class="custom-control-label" for="col_month_prev"><?= esc($prevLbl) ?></label>
+             data-bs-target=".col-month_prev">
+      <label class="form-check-label" for="col_month_prev"><?= esc($prevLbl) ?></label>
     </div>
 
-    <div class="custom-control custom-checkbox mr-3 mb-2">
+    <div class="form-check form-check me-3 mb-2">
       <input type="checkbox"
-             class="custom-control-input upd-col upd-month"
+             class="form-check-input upd-col upd-month"
              id="col_month_curr"
              value="month_curr"
              data-ym="<?= esc($currYm) ?>"
-             data-target=".col-month_curr">
-      <label class="custom-control-label" for="col_month_curr"><?= esc($currLbl) ?></label>
+             data-bs-target=".col-month_curr">
+      <label class="form-check-label" for="col_month_curr"><?= esc($currLbl) ?></label>
     </div>
 
-    <div class="custom-control custom-checkbox mr-3 mb-2">
+    <div class="form-check form-check me-3 mb-2">
       <input type="checkbox"
-             class="custom-control-input upd-col upd-month"
+             class="form-check-input upd-col upd-month"
              id="col_month_next"
              value="month_next"
              data-ym="<?= esc($nextYm) ?>"
-             data-target=".col-month_next">
-      <label class="custom-control-label" for="col_month_next"><?= esc($nextLbl) ?></label>
+             data-bs-target=".col-month_next">
+      <label class="form-check-label" for="col_month_next"><?= esc($nextLbl) ?></label>
     </div>
 
     <!-- Fee attrs (unchanged) -->
-    <div class="custom-control custom-checkbox mr-3 mb-2">
-      <input type="checkbox" class="custom-control-input upd-col" id="col_discounted_amount"
-             value="discounted_amount" data-group="fee" data-target=".col-discounted_amount">
-      <label class="custom-control-label" for="col_discounted_amount">Student Fee</label>
+    <div class="form-check form-check me-3 mb-2">
+      <input type="checkbox" class="form-check-input upd-col" id="col_discounted_amount"
+             value="discounted_amount" data-group="fee" data-bs-target=".col-discounted_amount">
+      <label class="form-check-label" for="col_discounted_amount">Student Fee</label>
     </div>
 
-    <div class="custom-control custom-checkbox mr-3 mb-2">
-      <input type="checkbox" class="custom-control-input upd-col" id="col_fee_plan"
-             value="fee_plan" data-group="fee" data-target=".col-fee_plan">
-      <label class="custom-control-label" for="col_fee_plan">Fee Plan</label>
+    <div class="form-check form-check me-3 mb-2">
+      <input type="checkbox" class="form-check-input upd-col" id="col_fee_plan"
+             value="fee_plan" data-group="fee" data-bs-target=".col-fee_plan">
+      <label class="form-check-label" for="col_fee_plan">Fee Plan</label>
     </div>
 
     <!-- Where hidden month inputs will be injected (keep INSIDE the form) -->
@@ -391,7 +391,7 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
                   <th data-col="std_cnic" style="min-width:160px;">Student CNIC</th>
                   <th data-col="std_type" style="min-width:140px;">Student Type</th>
 
-                  <th class="text-right" style="width: 110px;">Action</th>
+                  <th class="text-end" style="width: 110px;">Action</th>
                 </tr>
               </thead>
               <tbody id="studentsTbody">
@@ -410,7 +410,7 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
           <div class="modal-content">
             <div class="modal-header py-2">
               <h6 class="modal-title" id="photoModalLabel">Capture / Crop Photo</h6>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="btnModalClose">
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" id="btnModalClose">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
@@ -418,10 +418,10 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
             <div class="modal-body py-2">
               <ul class="nav nav-tabs mb-2" id="photoTabs" role="tablist">
                 <li class="nav-item">
-                  <a class="nav-link active" id="camera-tab" data-toggle="tab" href="#cameraPane" role="tab">Camera</a>
+                  <a class="nav-link active" id="camera-tab" data-bs-toggle="tab" href="#cameraPane" role="tab">Camera</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" id="upload-tab" data-toggle="tab" href="#uploadPane" role="tab">Upload</a>
+                  <a class="nav-link" id="upload-tab" data-bs-toggle="tab" href="#uploadPane" role="tab">Upload</a>
                 </li>
               </ul>
 
@@ -463,7 +463,7 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
       <!-- Loader -->
       <div id="loader-1" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);">
         <div style="position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);">
-          <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           <div>Loading...</div>
         </div>
       </div>
@@ -551,7 +551,7 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
   /* Name column: clamp width so it can't eat the screen */
   #studentsTable .th-name,
   #studentsTable .student-name-cell {
-    border-right: 1px solid #e9ecef;
+    border-end: 1px solid #e9ecef;
     /* Desktop: ~280px; can shrink on smaller screens but never below 140px */
     width: clamp(140px, 40vw, 280px);
     max-width: clamp(140px, 40vw, 280px);
@@ -587,12 +587,12 @@ $nextLbl = $next->format('M Y');   $nextYm = $next->format('Y-m');
   @media (max-width: 768px) {
     .content .card-header .nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
     .content .card-header .nav .nav-item { float: none; display: inline-block; }
-    .content .form-row > [class*="col-"],
+    .content .row > [class*="col-"],
     .content .row > [class*="col-"] { margin-bottom: .75rem; }
     .content .btn-group { display: flex; width: 100%; }
     .content .btn-group .btn { flex: 1 1 auto; }
     #studentsTable td .form-control,
-    #studentsTable td .custom-select,
+    #studentsTable td .form-select,
     #studentsTable td select { min-width: 120px; }
     #studentsTable .action-cell .btn,
     #studentsTable td .saveStudentBtn { width: 100%; }
@@ -836,9 +836,9 @@ father_cnic: () => `
            placeholder="35202-XXXXXXX-X"
            autocomplete="off"
            inputmode="numeric">
-    <div class="custom-control custom-checkbox mt-1">
-      <input type="checkbox" class="custom-control-input cnic-clear-toggle" id="clr_${Math.random().toString(36).slice(2)}">
-      <label class="custom-control-label small" for="clr_${Math.random().toString(36).slice(2)}">Clear & relink</label>
+    <div class="form-check form-check mt-1">
+      <input type="checkbox" class="form-check-input cnic-clear-toggle" id="clr_${Math.random().toString(36).slice(2)}">
+      <label class="form-check-label small" for="clr_${Math.random().toString(36).slice(2)}">Clear & relink</label>
     </div>
     <input type="hidden" name="parent_id" class="parent-id" value="">
     <small class="text-muted cnic-hint d-block mt-1"></small>
@@ -877,7 +877,7 @@ father_cnic: () => `
       profile_photo: () => `
         <div class="d-flex align-items-center">
           <input type="file" name="profile_photo" class="fileInputPhoto d-none">
-          <button type="button" class="btn btn-xs btn-outline-primary btnCaptureCrop ml-0">Capture/Upload</button>
+          <button type="button" class="btn btn-sm btn-outline-primary btnCaptureCrop ms-0">Capture/Upload</button>
         </div>`,
       address:                 () => `<input name="address" class="form-control form-control-sm" placeholder="Address">`,
       previous_school:         () => `<input name="previous_school" class="form-control form-control-sm" placeholder="Previous School">`,
@@ -1145,9 +1145,9 @@ father_cnic: () => `
         if (!$cnicCell.find('.cnic-clear-toggle').length) {
           const sid = ($('#studentsTable [name="student_id"]').first().val() || Math.random().toString(36).slice(2));
           $cnicCell.append(
-            '<div class="custom-control custom-checkbox mt-1">' +
-              '<input type="checkbox" class="custom-control-input cnic-clear-toggle" id="clr_'+sid+'">' +
-              '<label class="custom-control-label small" for="clr_'+sid+'">Clear & relink</label>' +
+            '<div class="form-check form-check mt-1">' +
+              '<input type="checkbox" class="form-check-input cnic-clear-toggle" id="clr_'+sid+'">' +
+              '<label class="form-check-label small" for="clr_'+sid+'">Clear & relink</label>' +
             '</div>'
           );
         }

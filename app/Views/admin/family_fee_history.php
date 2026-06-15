@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-  <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Family Fee History
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Family Fee History</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+  <?= view('components/page_header', [
+    'title' => 'Family Fee History',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Family Fee History', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -29,7 +20,7 @@
           <div class="card-body">
           <div class="row">
               <div class="col-lg-12">
-                <form id="form-filter" class="form-inline">
+                <form id="form-filter" class="d-flex flex-wrap align-items-center">
                 <div class="col-lg-3">
                     <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
                        <option value="0">Select Student</option>   
@@ -52,7 +43,7 @@
                 </div>
                 <div class="col-lg-3">
                   <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
+                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-secondary">Reset</button>
                 </div>
                 </form>
     </div>

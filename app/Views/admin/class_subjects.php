@@ -1,29 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-
-    <!-- Content Header (Page header) -->
-
-    <section class="content-header">
-
-      <h1>
-
-        Class Subjects
-
-        <small></small>
-
-      </h1>
-
-      <ol class="breadcrumb">
-
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-        <li class="active">Class Subjects</li>
-
-      </ol>
-
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Class Subjects',
+    'icon' => 'fas fa-book',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Subjects', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
 
@@ -31,7 +18,7 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
           <div class="nav-tabs-custom">
 
@@ -43,7 +30,7 @@
 
 				</ul>
 
-				<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+				<div class="tab-content table-responsive no-padding"><div class="col-12">
 
               <table class="table table-striped table-bordered table-hover" id="class-subjects-datatable" width="100%">
 
@@ -151,7 +138,7 @@ $(function(){
 
 					html += '<div class="btn-group">';
 
-						  html += '<a href="<?php echo '#/class_subjects?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/class_subjects?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 
 						  if(row.issys == '1'){
 
@@ -159,7 +146,7 @@ $(function(){
 
 						  }else{
 
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/class_subjects/delete&sst='); ?>' + data + '\',\'class-subjects-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/class_subjects/delete&sst='); ?>' + data + '\',\'class-subjects-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 
 						  }
 

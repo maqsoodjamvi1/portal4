@@ -1,11 +1,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="d-flex align-items-center justify-content-between">
-    <h1 class="mb-0">Bulk Topic Manager</h1>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Bulk Topic Manager',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Bulk Topic Manager', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
 
@@ -15,7 +18,7 @@
     </div>
 
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <div class="form-group col-md-4">
           <label>Class</label>
           <select id="class_id" class="form-control">
@@ -37,7 +40,7 @@
           <button type="button" id="btnLoad" class="btn btn-primary" disabled>
             <i class="fa fa-search"></i> Load Topics
           </button>
-          <div class="ml-2 small text-muted" id="loadHint"></div>
+          <div class="ms-2 small text-muted" id="loadHint"></div>
         </div>
       </div>
 
@@ -67,7 +70,7 @@
 
           <div class="table-responsive">
             <table class="table table-bordered table-sm" id="topicTable">
-              <thead class="thead-light">
+              <thead class="table-light">
                 <tr>
                   <th style="width:60px;">#</th>
                   <th>Topic Name</th>
@@ -79,7 +82,7 @@
             </table>
           </div>
 
-          <div class="text-right">
+          <div class="text-end">
             <button type="submit" class="btn btn-success" id="btnSaveAll">
               <i class="fa fa-save"></i> Save All
             </button>

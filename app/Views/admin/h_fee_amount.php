@@ -24,7 +24,7 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
           <div class="nav-tabs-custom">
 
@@ -32,7 +32,7 @@
 					<li class="active"><a href="<?= base_url('admin/fee_amount') ?>">Fee Amount</a></li>
 					<li><a href="<?= base_url('admin/fee_amount/add') ?>">Add Fee Amount</a></li>
 				</ul>
-				<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+				<div class="tab-content table-responsive no-padding"><div class="col-12">
               <table class="table table-striped table-bordered table-hover" id="users-datatable" width="100%">
 					<thead>
 						<tr>
@@ -114,7 +114,7 @@ $(function(){
 
 					html += '<div class="btn-group">';
 
-						  html += '<a href="<?php echo '#/fee_amount?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/fee_amount?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 
 						
 
@@ -124,7 +124,7 @@ $(function(){
 
 						  }else{
 
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/users/delete&id='); ?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 
 						  }
 

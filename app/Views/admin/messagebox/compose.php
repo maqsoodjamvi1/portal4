@@ -1,28 +1,20 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
   <!-- Content Wrapper. Contains page content -->
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Compose</h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Compose</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+    <?= view('components/page_header', [
+    'title' => 'Compose',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Compose', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
         <div class="row">
           <div class="col-md-3">
-            <a href="#/messages" class="btn btn-primary btn-block mb-3">Back to Inbox</a>
+            <a href="#/messages" class="btn btn-primary w-100 mb-3">Back to Inbox</a>
 
             <div class="card">
               <div class="card-header">
@@ -39,7 +31,7 @@
                   <li class="nav-item active">
                     <a href="#" class="nav-link">
                       <i class="fas fa-inbox"></i> Inbox
-                      <span class="badge bg-primary float-right">12</span>
+                      <span class="badge bg-primary float-end">12</span>
                     </a>
                   </li>
                   <li class="nav-item">
@@ -55,7 +47,7 @@
                   <li class="nav-item">
                     <a href="#" class="nav-link">
                       <i class="fas fa-filter"></i> Junk
-                      <span class="badge bg-warning float-right">65</span>
+                      <span class="badge bg-warning float-end">65</span>
                     </a>
                   </li>
                   <li class="nav-item">
@@ -120,8 +112,8 @@ echo form_open(site_url(route_to('admin_messages_save')), ['role'=>'form','id'=>
                 </div>
                 <div class="form-group">
                   <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-                  <button type="reset" class="btn btn-default">Reset</button>
-                  <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+                  <button type="reset" class="btn btn-secondary">Reset</button>
+                  <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
                 </div>
                 <?php echo form_close();?>
               </div>

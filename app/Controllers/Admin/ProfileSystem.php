@@ -95,14 +95,22 @@ class ProfileSystem extends BaseController
 
     public function updateRegText()
     {
-        $systemID = $this->request->getPost('systemID');
-        $reg_text = $this->request->getPost('reg_text');
+        $systemID = (int) $this->request->getPost('systemID');
+        $reg_text = strtoupper(trim((string) $this->request->getPost('reg_text')));
+
+        if ($systemID <= 0) {
+            json_response(['success' => false, 'msg' => lang('SchoolSetup.reg_text_invalid_school')]);
+        }
+
+        if (! preg_match('/^[A-Z0-9]{2,3}$/', $reg_text)) {
+            json_response(['success' => false, 'msg' => lang('SchoolSetup.reg_text_invalid')]);
+        }
 
         $this->db->table('system')->where('system_id', $systemID)->update(['reg_text' => $reg_text]);
 
         $this->session->set(['member_reg_text' => $reg_text]);
 
-        json_response(['success' => true, 'msg' => 'Text Updated']);
+        json_response(['success' => true, 'msg' => lang('SchoolSetup.reg_text_saved')]);
     }
 
     public function update_password()

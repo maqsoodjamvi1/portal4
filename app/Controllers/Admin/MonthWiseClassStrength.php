@@ -118,7 +118,7 @@ class MonthWiseClassStrength extends BaseController
       </div>
       <div>
         <button id="dsPrintBtn" class="btn btn-sm btn-outline-dark">
-          <i class="fas fa-print mr-1"></i> Print
+          <i class="fas fa-print me-1"></i> Print
         </button>
       </div>
     </div>
@@ -138,7 +138,7 @@ class MonthWiseClassStrength extends BaseController
 
     <div class="table-responsive table-sticky-wrap">
       <table class="table table-bordered table-hover table-sm ds-table mb-0">
-        <thead class="thead-dark">
+        <thead class="table-dark">
           <tr>
             <th class="sticky-col th-sec">Class / Section</th>
             <?php foreach ($dateKeys as $d): ?>
@@ -172,7 +172,7 @@ class MonthWiseClassStrength extends BaseController
                                  . ')</span>';
                         }
                       ?>
-                      <div class="badge badge-pill badge-info ds-badge mb-1">
+                      <div class="badge rounded-pill text-bg-info ds-badge mb-1">
                         <?= esc($nm) ?>
                       </div><?= $tm ?><br>
                     <?php endforeach; ?>

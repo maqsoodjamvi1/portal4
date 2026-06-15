@@ -139,7 +139,7 @@ function data(){
 
         $studentsList .= '</select></th>';
         $studentsList .= '<th><input type="text" name="vehicle_fare'.$value->student_id.'" id="vehicle_fare'.$value->student_id.'" value="'.$vehicle_fare.'" ></th>';
-        $studentsList .= '<th><a  id="save'.$value->student_id.'"  data-id="'.$value->student_id.'" class="btn btn-primary btn-xs">Save</a></tr>';
+        $studentsList .= '<th><a  id="save'.$value->student_id.'"  data-id="'.$value->student_id.'" class="btn btn-primary btn-sm">Save</a></tr>';
         $studentsList .= '<script type="text/javascript">
 	                $("#vehicle_id'.$value->student_id.'").change(function(){
 	                

@@ -15,6 +15,7 @@ class StudentsEarlyLeft extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
+        helper('school');
         check_permission('admin-add-student-earlyleft');
     }
 
@@ -96,10 +97,12 @@ class StudentsEarlyLeft extends BaseController
                 ->where(['student_id' => $student_id, 'status' => 1])
                 ->get()->getRow();
 
-            $schooltimings = $this->db->query("SELECT *,(checkout_timing-checkin_timing) AS duration FROM school_timings WHERE
-                cls_sec_id = ? AND dayname = ? AND type_id = (
-                    SELECT type_id FROM school_timing_types WHERE status = 1 AND campus_id = ?
-                )", [$classSecinfo->cls_sec_id, $day, $campusid])->getRow();
+            $schoolTimingsRow = getSchoolTimingForSectionDay(
+                (int) $classSecinfo->cls_sec_id,
+                $day,
+                (int) $campusid
+            );
+            $schooltimings = $schoolTimingsRow !== null ? (object) $schoolTimingsRow : null;
 
             $checkoutTime = $this->request->getPost($student_id . '_checkout_date');
 

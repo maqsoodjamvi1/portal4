@@ -1,32 +1,31 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <h1>
-        Bill Amount
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li class="active">Bill Amount</li>
-      </ol>
-    </section>
+    <?= view('components/page_header', [
+    'title' => 'Bill Amount',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Bill Amount', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
 					<li class="active"><a href="<?= base_url('admin/bill_amount') ?>">Bill Amount</a></li>
 					<li><a href="<?= base_url('admin/bill_amount/add') ?>">Add Bill Amount</a></li>
 				</ul>
-				<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+				<div class="tab-content table-responsive no-padding"><div class="col-12">
               <table class="table table-striped table-bordered table-hover" id="users-datatable" width="100%">
 					<thead>
 						<tr>
 							<th nowrap>#</th>
-							<th nowrap>Bill Type</th>
+							<th nowrap>Plan</th>
 							<th nowrap>Campus</th>
 							<th nowrap>Bill Amount</th>
 							<th nowrap>Operation</th>
@@ -78,7 +77,7 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/bill_amount?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-edit icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/bill_amount?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
 					html += '</div>';
 
 					return html;

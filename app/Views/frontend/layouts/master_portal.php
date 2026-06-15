@@ -1,5 +1,10 @@
-<!doctype html>ddddddddd
-<html lang="<?= session('language') ?? 'en' ?>" dir="<?= in_array(session('language'), ['ar', 'ur']) ? 'rtl' : 'ltr' ?>">
+<?php
+$__authNav = session('auth') ?? [];
+$portalHubParent = $portalHubParent ?? false;
+$__isParentPortal = $portalHubParent || (($__authNav['role'] ?? '') === 'parent');
+$__langNav = session('language') ?? 'en';
+?><!doctype html>
+<html lang="<?= session('language') ?? 'en' ?>" dir="<?= in_array(session('language'), ['ar', 'ur']) ? 'rtl' : 'ltr' ?>" class="<?= $__isParentPortal ? 'parent-portal-html' : '' ?>">
 <head>
   <meta charset="utf-8">
   <title><?= esc($title ?? 'Portal') ?></title>
@@ -13,8 +18,8 @@
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
   <!-- Ionicons -->
   <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-  <!-- Tempusdominus Bootstrap 4 -->
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') ?>">
+  <!-- Tempusdominus Bootstrap adapter -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
   <!-- jQuery UI theme (for datepicker etc.) -->
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <!-- iCheck -->
@@ -26,25 +31,49 @@
   <!-- Daterange picker -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/daterangepicker/daterangepicker.css') ?>">
   <!-- Summernote -->
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-bs4.min.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/summernote/summernote-lite.min.css') ?>">
   <!-- DataTables -->
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') ?>">
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') ?>">
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') ?>">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
   <!-- Select2 -->
-  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/select2/css/select2.min.css') ?>">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
   <!-- Toastr -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/plugins/toastr/toastr.min.css') ?>">
 
   <!-- AdminLTE core -->
   <link rel="stylesheet" href="<?= base_url('resource/adminlte/dist/css/adminlte.min.css') ?>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
 
   <link rel="stylesheet" href="<?= base_url('assets/js/sweetalert/sweetalert.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260604') ?>">
   <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260614b') ?>">
+  <?php if ($portalHubParent): ?>
+  <link rel="stylesheet" href="<?= base_url('assets/css/parent-portal-hub.css?v=20260608') ?>">
+  <?php endif; ?>
 
   <!-- Custom portal layout styling -->
   <style>
-
+    body.quiz-attempt-page .main-header,
+    body.quiz-attempt-page .main-sidebar,
+    body.quiz-attempt-page .parent-portal-bottomnav {
+      display: none !important;
+    }
+    body.quiz-attempt-page .content-wrapper {
+      margin-left: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    @media (max-width: 767.98px) {
+      body.quiz-attempt-page .content-wrapper {
+        padding-bottom: 0 !important;
+      }
+    }
 
     /* Custom Language Dropdown */
 #langMenu a:hover {
@@ -163,17 +192,17 @@
         text-align: right;
     }
 
-    .rtl-support .ml-auto {
+    .rtl-support .ms-auto {
         margin-left: 0 !important;
         margin-right: auto !important;
     }
 
-    .rtl-support .mr-3 {
+    .rtl-support .me-3 {
         margin-right: 0 !important;
         margin-left: 1rem !important;
     }
 
-    .rtl-support .mr-1 {
+    .rtl-support .me-1 {
         margin-right: 0 !important;
         margin-left: 0.25rem !important;
     }
@@ -183,7 +212,7 @@
         margin-left: 6px !important;
     }
 
-    .rtl-support .dropdown-menu-right {
+    .rtl-support .dropdown-menu-end {
         left: 0;
         right: auto;
     }
@@ -193,11 +222,11 @@
         margin-right: auto;
     }
 
-    .rtl-support .float-right {
+    .rtl-support .float-end {
         float: left !important;
     }
 
-    .rtl-support .text-right {
+    .rtl-support .text-end {
         text-align: left !important;
     }
 
@@ -315,24 +344,38 @@
   <script>
     $.widget.bridge('uibutton', $.ui.button);
   </script>
-  <!-- Bootstrap 4 -->
-  <script src="<?= base_url('resource/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+  <!-- Bootstrap 5 + legacy compatibility bridge -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
   <!-- AdminLTE App -->
   <script src="<?= base_url('resource/adminlte/dist/js/adminlte.js') ?>"></script>
 </head>
 
-<body class="hold-transition sidebar-mini layout-fixed <?= in_array(session('language'), ['ar', 'ur']) ? 'rtl-support' : '' ?>">
+<body class="hold-transition sidebar-mini layout-fixed <?= in_array(session('language'), ['ar', 'ur']) ? 'rtl-support' : '' ?> <?= $__isParentPortal ? 'parent-portal-client' : '' ?><?= $portalHubParent ? ' parent-hub-mobile' : '' ?>">
 <div class="wrapper">
 
   <!-- TOP NAVBAR -->
-  <nav class="main-header navbar navbar-expand portal-navbar">
+  <nav class="main-header navbar navbar-expand portal-navbar<?= $portalHubParent ? ' portal-navbar--compact' : '' ?>">
     <!-- Left side: menu toggle + title -->
     <ul class="navbar-nav">
+      <?php if (! $portalHubParent): ?>
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="#" role="button">
           <i class="fas fa-bars"></i>
         </a>
       </li>
+      <?php else: ?>
+      <li class="nav-item d-md-none">
+        <span class="nav-link portal-nav-school-short text-white mb-0">
+          <?= esc($school_name ?? 'School Portal') ?>
+        </span>
+      </li>
+      <li class="nav-item d-none d-md-inline-block">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+          <i class="fas fa-bars"></i>
+        </a>
+      </li>
+      <?php endif; ?>
       <li class="nav-item d-none d-sm-inline-block">
         <span class="nav-link navbar-brand-text">
           <?= esc($school_name ?? 'School Portal') ?>
@@ -340,7 +383,7 @@
       </li>
     </ul>
 <!-- Language Switcher - Custom Dropdown (No Bootstrap) -->
-<li class="nav-item mr-2" style="position: relative;">
+<li class="nav-item me-2" style="position: relative;">
     <a class="nav-link" href="#" onclick="toggleLangMenu(event);" style="color: #ffffff !important;">
         <i class="fa fa-language"></i>
         <span class="d-none d-sm-inline-block">
@@ -388,15 +431,22 @@ function toggleLangMenu(event) {
     }
 }
 </script>
-      <li class="nav-item d-flex align-items-center">
-        <span class="mr-3">
-          <i class="far fa-user-circle mr-1"></i>
+      <li class="nav-item d-flex align-items-center portal-nav-hide-mobile">
+        <span class="me-3">
+          <i class="far fa-user-circle me-1"></i>
           <?= esc($name ?? '') ?>
         </span>
         <a class="btn btn-sm btn-outline-light" href="<?= route_to('logout') ?>">
-          <i class="fas fa-sign-out-alt mr-1"></i> Logout
+          <i class="fas fa-sign-out-alt me-1"></i> Logout
         </a>
       </li>
+      <?php if ($portalHubParent): ?>
+      <li class="nav-item d-md-none">
+        <a class="nav-link" href="<?= base_url('student/profile') ?>" title="Profile">
+          <i class="far fa-user-circle fa-lg"></i>
+        </a>
+      </li>
+      <?php endif; ?>
     </ul>
   </nav>
 
@@ -404,7 +454,7 @@ function toggleLangMenu(event) {
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand -->
     <a href="<?= base_url() ?>" class="brand-link">
-        <span class="brand-text font-weight-light">
+        <span class="brand-text fw-light">
             <?= esc($school_name ?? 'School Name') ?>
         </span>
     </a>
@@ -422,6 +472,8 @@ function toggleLangMenu(event) {
         $isAttendance = (strpos($path, '/student/attendance') === 0);
         $isDatesheet  = (strpos($path, '/student/datesheet') === 0);
         $isVocabulary = (strpos($path, '/student/vocabbank') === 0);
+        $isCrossword  = (strpos($path, '/student/crossword') === 0);
+        $isWordSearch = (strpos($path, '/student/word-search') === 0);
         
         // Quizzes variables
         $pendingPath   = '/student/quizzes/pending';
@@ -486,6 +538,22 @@ function toggleLangMenu(event) {
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a href="<?= base_url('student/crossword') ?>"
+                       class="nav-link <?= $isCrossword ? 'active' : '' ?>">
+                        <i class="fas fa-th nav-icon"></i>
+                        <p>Crossword</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="<?= base_url('student/word-search') ?>"
+                       class="nav-link <?= $isWordSearch ? 'active' : '' ?>">
+                        <i class="fas fa-search nav-icon"></i>
+                        <p>Word Puzzle</p>
+                    </a>
+                </li>
+
                 <!-- Quizzes tree -->
                 <li class="nav-item has-treeview <?= $isQuizzesTree ? 'menu-open' : '' ?>">
                     <a href="<?= base_url('student/quizzes') ?>"
@@ -526,6 +594,12 @@ function toggleLangMenu(event) {
   </div>
 
 </div><!-- /.wrapper -->
+
+<?php if ($portalHubParent): ?>
+<?= view('frontend/layouts/partials/parent_hub_bottom_nav') ?>
+<?php else: ?>
+<?= view('frontend/layouts/partials/portal_bottom_nav') ?>
+<?php endif; ?>
 
 <!-- Language Switching Script -->
 <script>

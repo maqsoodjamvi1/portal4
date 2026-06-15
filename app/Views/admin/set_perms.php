@@ -7,22 +7,20 @@ ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 </style>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/ztree/css/zTreeStyle/zTreeStyle.css" />
 <script type="text/javascript" src="<?php echo base_url();?>resource/ztree/js/jquery.ztree.core-3.5.js"></script>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <h1>
-        Users
-        <small></small>
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li class="active">Users</li>
-      </ol>
-    </section>
+<?= view('components/page_header', [
+    'title' => 'User Permissions',
+    'icon' => 'fas fa-user-shield',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Users', 'url' => base_url('admin/users')],
+        ['label' => 'Permissions', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
 		
 		  <div class="nav-tabs-custom">
 			<ul class="nav nav-tabs">
@@ -55,8 +53,8 @@ ul.ztree {margin-top: 10px;overflow-y:none;overflow-x:auto;}
 
               <div class="form-group">
                 <button type="submit" class="btn btn-primary">Save</button>
-				<button type="reset" class="btn btn-default">Reset</button>
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
               </div>
             <?php echo form_close();?>
 			</div>

@@ -12,7 +12,7 @@
     <div class="card-header p-0 pt-1 border-bottom-0">
       <div class="card-body">
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
           <h2 class="page-header">
            
           </h2>
@@ -25,7 +25,7 @@
 
       <!-- Table row -->
       <div class="row">
-        <div class="col-xs-12 table-responsive">
+        <div class="col-12 table-responsive">
           <div class="btn btn-primary" style="cursor: pointer;"  onclick="copyDivToClipboard()"> Click to copy </div>
         <div id="copytxt">
           Mobile Application For Parents: <br>
@@ -82,7 +82,7 @@
          
         </div>
         <!-- /.col -->
-        <div class="col-lg-6 pull-right" style="width: 40%;float: right;">
+        <div class="col-lg-6 float-end" style="width: 40%;float: right;">
           <p class="lead">Amount Due <?php echo $campusbillinfo->campus_expiry; ?></p>
 
         </div>

@@ -66,7 +66,7 @@ final class FeeChalanDisplayRows
                     'net_amount'           => $netAmount,
                     'fee_month_label'      => $chalan['fee_month_label'] ?? '',
                     'amount_formatted'     => number_format($amount, 0),
-                    'discount_formatted'   => $discount > 0 ? number_format($discount, 0) : '',
+                    'discount_formatted'   => number_format($discount, 0),
                     'net_amount_formatted' => number_format($netAmount, 0),
                 ];
             } else {
@@ -117,7 +117,7 @@ final class FeeChalanDisplayRows
             'net_amount'           => $remNet,
             'fee_month_label'      => '',
             'amount_formatted'     => number_format($remAmt, 0),
-            'discount_formatted'   => $remDisc > 0 ? number_format($remDisc, 0) : '',
+            'discount_formatted'   => number_format($remDisc, 0),
             'net_amount_formatted' => number_format($remNet, 0),
         ];
 
@@ -172,7 +172,7 @@ final class FeeChalanDisplayRows
                     'discount'             => $discount,
                     'net_amount'           => $netAmount,
                     'amount_formatted'     => number_format($amount, 0),
-                    'discount_formatted'   => $discount > 0 ? number_format($discount, 0) : '',
+                    'discount_formatted'   => number_format($discount, 0),
                     'net_amount_formatted' => number_format($netAmount, 0),
                     'month_display'        => $row['month_display'] ?? '',
                 ];
@@ -229,7 +229,7 @@ final class FeeChalanDisplayRows
             'discount'             => $arrearsDiscount,
             'net_amount'           => $arrearsNet,
             'amount_formatted'     => number_format($arrearsAmount, 0),
-            'discount_formatted'   => $arrearsDiscount > 0 ? number_format($arrearsDiscount, 0) : '',
+            'discount_formatted'   => number_format($arrearsDiscount, 0),
             'net_amount_formatted' => number_format($arrearsNet, 0),
             'month_display'        => '',
         ];

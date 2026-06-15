@@ -23,24 +23,14 @@
 		$session_id = $sessionData['sessionid'];
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Award List Results
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Award List Results</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Award List Results',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Award List Results', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -79,7 +69,7 @@
 			</div>
 		</div>
           <div class="col-lg-3">
-            <div class="form-group pull-left">
+            <div class="form-group float-start">
 	              <label for="class">Sections</label>
 	              <select class="form-control select2" name="cls_sec_id" id="cls_sec_id">
 	              	 <option value="0">Select Section</option>
@@ -96,7 +86,7 @@
 		    <button type="button" onclick="getstudents();" class="btn btn-primary" style="margin-top: 18px;line-height: 10px;height: 25px;">View</button>
           </div>
 		  </div> -->
-		  <!--  <div class="col-lg-1 pull-right">
+		  <!--  <div class="col-lg-1 float-end">
 		   <div class="form-group">
 		    <button type="button" onclick="printout();" class="btn btn-primary" style="margin-top: 18px;line-height: 10px;height: 25px;">Print</button>
           </div>
@@ -109,8 +99,8 @@
 		  <div class="col-lg-12">
           <div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-            <button type="reset" class="btn btn-default">Reset</button>
-            <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+            <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
 		  </div>
 		  </div>

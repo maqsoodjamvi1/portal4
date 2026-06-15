@@ -2,7 +2,9 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
-use CodeIgniter\HTTP\ResponseInterface;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Writer\SvgWriter;
 
 class StudentIdCard extends BaseController
 {
@@ -19,447 +21,775 @@ class StudentIdCard extends BaseController
 
     public function index()
     {
-        $campus_id = $this->session->get('member_campusid');
-        $sessionid = $this->session->get('member_sessionid');
-        $schoolinfo = getSchoolInfo();
+        $campusId = (int) $this->session->get('member_campusid');
 
-        $currentrole = currentUserRoles();
+        // Keep same reliable source as class diary page: class_section.
+        $qb = $this->db->table('class_section cs')
+            ->select('cs.cls_sec_id, cs.class_id, c.class_name, CONCAT(c.class_name, " - ", s.section_name) AS sectionclassname', false)
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections s', 's.section_id = cs.section_id', 'left')
+            ->where('cs.status', 1);
 
-        if (in_array(5, $currentrole)) {
-            $sectionsclassinfo = teacherSubjectSections();
-        } else {
-            $sectionsclassinfo = userClassSections();
+        if ($campusId > 0) {
+            $qb->where('cs.campus_id', $campusId);
         }
 
-        $data = [
-            'sectionsclassinfo' => $sectionsclassinfo,
-        ];
+        $sectionsclassinfo = $qb->orderBy('c.class_name', 'ASC')
+            ->orderBy('s.section_name', 'ASC')
+            ->get()
+            ->getResultArray();
 
-        return view('admin/student_id_card', $data);
+        $classes = [];
+        foreach ($sectionsclassinfo as $row) {
+            $cid = (int) ($row['class_id'] ?? 0);
+            if ($cid > 0) {
+                $classes[$cid] = $row['class_name'] ?? ('Class ' . $cid);
+            }
+        }
+        ksort($classes);
+
+        return view('admin/student_id_card', [
+            'sectionsclassinfo' => $sectionsclassinfo,
+            'classes' => $classes,
+        ]);
+    }
+
+    public function vertical()
+    {
+        return $this->index();
+    }
+
+    public function data()
+    {
+        return $this->data_vertical();
     }
 
     public function data_vertical()
     {
-        $cls_sec_id = $this->request->getPost('cls_sec_id');
-        $statusFilter = $this->request->getPost('status');
-        $schoolinfo = getSchoolInfo();
-        $campus_id = $this->session->get('member_campusid');
-        $sessionid = $this->session->get('member_sessionid');
+        $campusId = (int) $this->session->get('member_campusid');
+        $sessionId = (int) $this->session->get('member_sessionid');
+        $classId = (int) $this->request->getPost('class_id');
+        $clsSecId = (int) $this->request->getPost('cls_sec_id');
+        $statusFilter = strtolower(trim((string) $this->request->getPost('status')));
+        $studentIds = $this->parseStudentIds((string) $this->request->getPost('student_ids'));
 
-        // Get current academic session dates
+        if ($statusFilter === '') {
+            $statusFilter = 'active';
+        }
+
+        $school = getSchoolInfo();
+        $campus = $this->db->table('campus')
+            ->select('campus_name, landline, location')
+            ->where('campus_id', $campusId)
+            ->get()
+            ->getRow();
+
         $sessionDates = $this->db->table('academic_session')
             ->select('start_date, end_date')
-            ->where('session_id', $sessionid)
+            ->where('session_id', $sessionId)
             ->get()
             ->getRow();
 
-        $builder = $this->db->table('student_class sc');
-        $builder->select('sc.*, s.first_name, s.last_name, s.reg_no, s.date_of_birth, 
-                          s.profile_photo, s.parent_id, s.date_of_admission, s.status,
-                          p.f_name, p.father_contact, p.mother_contact, p.emergency_contact, p.address_line1,
-                          cs.class_id, cs.section_id, c.class_name, sec.section_name');
-        $builder->join('students s', 's.student_id = sc.student_id');
-        $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
-        $builder->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id');
-        $builder->join('classes c', 'c.class_id = cs.class_id');
-        $builder->join('sections sec', 'sec.section_id = cs.section_id');
-        $builder->where('s.campus_id', $campus_id);
-        $builder->where('sc.session_id', $sessionid);
+        $debug = [];
+        $students = $this->fetchStudents($campusId, $sessionId, $classId, $clsSecId, $statusFilter, $sessionDates, $studentIds, $debug);
 
-        // Apply class filter
-        if ($cls_sec_id) {
-            $builder->where('sc.cls_sec_id', $cls_sec_id);
-        }
+        $schoolName = trim((string) ($school->system_name ?? 'School'));
+        $schoolAddress = trim((string) ($campus->location ?? $school->address ?? ''));
+        $schoolPhone = trim((string) ($campus->landline ?? ''));
+        $logoUrl = $this->logoUrl((string) ($school->logo ?? ''));
+        $fallbackAvatar = $this->defaultAvatarUrl();
 
-        // Apply status filter
-        switch ($statusFilter) {
-            case 'active':
-                $builder->where('s.status', 1);
-                break;
-            case 'new':
-                $builder->where('s.status', 1);
-                if ($sessionDates) {
-                    $builder->where('s.date_of_admission >=', $sessionDates->start_date);
-                    $builder->where('s.date_of_admission <=', $sessionDates->end_date);
-                }
-                break;
-            case 'all':
-                // No additional filter
-                break;
-            default:
-                $builder->where('s.status', 1);
-        }
+        $html = $this->stylesBlock();
+        $html .= '<div class="no-print mb-2 p-2" style="background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;font-size:12px;">
+            <strong>ID Card Debug</strong> | Campus: ' . (int) ($debug['campus_id'] ?? 0) .
+            ' | Session: ' . (int) ($debug['session_id'] ?? 0) .
+            ' | Selected class_id: ' . (int) ($debug['selected_class_id'] ?? 0) .
+            ' | Selected cls_sec_id: ' . (int) ($debug['selected_cls_sec_id'] ?? 0) .
+            ' | Resolved: ' . esc(implode(',', $debug['resolved_cls_sec_ids'] ?? [])) .
+            ' | SC any-session: ' . (int) ($debug['sc_any_session'] ?? 0) .
+            ' | SC this-session: ' . (int) ($debug['sc_this_session'] ?? 0) .
+            ' | Strict count: ' . (int) ($debug['strict_count'] ?? 0) .
+            ' | Fallback count: ' . (int) ($debug['fallback_count'] ?? 0) .
+            ' | Legacy count: ' . (int) ($debug['legacy_count'] ?? 0) .
+        '</div>';
+        $html .= '<div class="id-cards-grid">';
 
-        $builder->orderBy('sc.cls_sec_id', 'asc');
-        $student_data = $builder->get()->getResult();
+        foreach ($students as $student) {
+            $studentName = trim((string) (($student->first_name ?? '') . ' ' . ($student->last_name ?? '')));
+            $fatherName = trim((string) ($student->f_name ?? ''));
+            $classSection = trim((string) (($student->class_name ?? '') . ' - ' . ($student->section_name ?? '')));
+            $regNo = trim((string) ($student->reg_no ?? ''));
+            $photoUrl = $this->studentPhotoUrl((string) ($student->profile_photo ?? ''), $fallbackAvatar);
+            $qrText = 'SID:' . (int) ($student->student_id ?? 0) . '|REG:' . $regNo . '|CLS:' . $classSection;
+            $qrSvg = $this->qrSvg($qrText);
 
-        $campus_info = $this->db->table('campus')
-            ->select('campus_name, landline')
-            ->where('campus_id', $campus_id)
-            ->get()
-            ->getRow();
-
-        $strResultCard = '
-<style>
-/* Card container */
-.id-card {
-  display: flex;
-  flex-direction: column;   /* header | content | footer */
-  overflow: hidden;
-}
-
-/* Header */
-.id-card .card-header.school {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-}
-
-/* Content: photo left, details right */
-.id-card .card-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 10px;
-  flex: 1 1 auto;           /* grows but does not push footer */
-  min-height: 110px;
-}
-
-/* Photo fixed size */
-.photo-container { flex: 0 0 auto; }
-.student-photo,
-.photo-placeholder {
-  width: 80px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #e8ecf3;
-  background: #f9fbff;
-}
-.photo-placeholder {
-  display: flex; align-items: center; justify-content: center;
-}
-.photo-placeholder i { font-size: 22px; color: #a0aec0; }
-
-/* Details: compact 6 rows */
-.details-container {
-  display: grid;
-  grid-auto-rows: minmax(16px, auto);  /* ↓ row height */
-  row-gap: 2px;                        /* ↓ space between rows */
-  width: 100%;
-  align-content: start;
-}
-
-/* ID row */
-.student-id {
-  font-size: 11px;
-  color: #4a5568;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* Row layout: icon + text */
-.detail-row {
-  display: grid;
-  grid-template-columns: 16px 1fr; /* compact icon/text ratio */
-  align-items: center;
-  column-gap: 5px;
-  min-height: 16px;
-  line-height: 1.1;
-}
-
-/* Icons smaller */
-.icon-badge {
-  width: 16px; height: 16px;
-  border-radius: 4px;
-  background: #edf2f7;
-  color: #2b6cb0;
-  font-size: 10px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Text compact */
-.detail-value {
-  font-size: 11.5px;
-  color: #2d3748;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* Allow name + father to wrap to 2 lines if long */
-.detail-value.name,
-.detail-value.father {
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Footer always pinned */
-.id-card .card-footer {
-  flex: 0 0 auto;
-  text-align: center;
-  font-size: 11px;
-  padding: 4px 6px;
-  border-top: 1px solid #e8ecf3;
-  background: #f9fafb;
-}
-
-.smart-btn {
-  font-size: 13px;       /* smaller text */
-  padding: 4px 8px;      /* tighter button height */
-  border-radius: 4px;    /* more compact rounded corners */
-}
-.smart-btn i { font-size: 12px; } /* smaller icon */
-</style>
-<div class="id-card-container clearfix">';
-        $i = 1;
-
-        foreach ($student_data as $student) {
-            // Determine student status
-            $status = 'Active';
-            $statusClass = 'badge-success';
-            if ($student->status != 1) {
-                $status = 'Inactive';
-                $statusClass = 'badge-danger';
-            } elseif ($sessionDates && 
-                     $student->date_of_admission >= $sessionDates->start_date && 
-                     $student->date_of_admission <= $sessionDates->end_date) {
-                $status = 'New';
-                $statusClass = 'badge-info';
-            }
-            
-            // Calculate font sizes based on name lengths
-           // Calculate font sizes
-            $studentName = trim($student->first_name . ' ' . $student->last_name);
-            $studentNameClass = $this->getFontSizeClass(strlen($studentName));
-            
-            $fatherName = trim($student->f_name);
-            $fatherNameClass = $this->getFontSizeClass(strlen($fatherName));
-            
-            // Contact number with reduced font size
-            $contactNumber = $student->father_contact ?? '';
-            
-
-            $profile_photo = !empty($student->profile_photo)
-                ? '<img class="student-photo" src="' . base_url('uploads/' . $student->profile_photo) . '">'
-                : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
-
-            $date_of_birth = isset($student->date_of_birth) ? date_create($student->date_of_birth) : null;
-            $date_of_birthFormated = $date_of_birth ? date_format($date_of_birth, "d M Y") : '';
-            $class_section = ($student->class_name ?? '') . ' - ' . ($student->section_name ?? '');
-
-             $strResultCard .= '<div class="id-card">
-                
-                
-                <div class="card-header school">
-                    <div class="school-logo">
-                        <img src="' . base_url('system-logo/' . $schoolinfo->logo) . '" alt="School Logo">
+            $html .= '
+            <div class="id-card-pair">
+                <div class="id-side front-side">
+                    <div class="front-header">
+                        <div class="front-logo"><img src="' . esc($logoUrl) . '" alt="Logo"></div>
+                        <div class="front-school">' . esc($schoolName) . '</div>
                     </div>
-                    ' . $schoolinfo->system_name . '
-                </div>
-                
-                <div class="card-content">
-                    <div class="photo-container">
-                        ' . $profile_photo . '
-                    </div>
-                    
-                    <div class="details-container">
-                        <div class="student-id">
-                            ID: ' . ($student->reg_no ?? '') . '
-                        </div>
-                        
-                        <div class="detail-row">
-                            <div class="icon-badge" title="Student Name">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="detail-value ' . $studentNameClass . '">' 
-                                . $studentName . 
-                            '</div>
-                        </div>
-                        
-                        <div class="detail-row">
-                            <div class="icon-badge" title="Father\'s Name">
-                                <i class="fas fa-user-friends"></i>
-                            </div>
-                            <div class="detail-value ' . $fatherNameClass . '">' . $fatherName . '</div>
-                        </div>
-                        
-                        <div class="detail-row">
-                            <div class="icon-badge contact-badge" title="Contact Number">
-                                <i class="fas fa-phone"></i>
-                            </div>
-                            <div class="detail-value font-size-13">' . $contactNumber . '</div>
-                        </div>
-                        
-                        <div class="detail-row">
-                            <div class="icon-badge class-badge" title="Class & Section">
-                                <i class="fas fa-graduation-cap"></i>
-                            </div>
-                            <div class="detail-value">' . $class_section . '</div>
-                        </div>
-                        
-                        <div class="detail-row">
-                            <div class="icon-badge dob-badge" title="Date of Birth">
-                                <i class="fas fa-birthday-cake"></i>
-                            </div>
-                            <div class="detail-value">' . $date_of_birthFormated . '</div>
+                    <div class="front-body">
+                        <div class="photo-wrap"><img src="' . esc($photoUrl) . '" alt="Student"></div>
+                        <div class="front-details">
+                            <div class="row-item"><span class="label">Name</span><span class="value">' . esc($studentName) . '</span></div>
+                            <div class="row-item"><span class="label">Father</span><span class="value">' . esc($fatherName) . '</span></div>
+                            <div class="row-item"><span class="label">Class</span><span class="value">' . esc($classSection) . '</span></div>
+                            <div class="row-item"><span class="label">Reg #</span><span class="value">' . esc($regNo) . '</span></div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="card-footer">
-                    ' . ($campus_info->campus_name ?? '') . ' | ' . ($campus_info->landline ?? '') . '
+                <div class="id-side back-side">
+                    <div class="back-header">Student ID Card</div>
+                    <div class="back-body">
+                        <div class="qr-box">' . $qrSvg . '</div>
+                        <div class="back-school">' . esc($schoolName) . '</div>
+                        <div class="back-address">' . esc($schoolAddress !== '' ? $schoolAddress : 'Address not set') . '</div>
+                    </div>
+                    <div class="back-footer">Contact: ' . esc($schoolPhone !== '' ? $schoolPhone : 'N/A') . '</div>
                 </div>
             </div>';
         }
-        $strResultCard .= '</div>';
 
-        return $this->response->setContentType('text/html')->setBody($strResultCard);
+        $html .= '</div>';
+
+        return $this->response->setContentType('text/html')->setBody($html);
     }
-    
-    /**
-     * Get font size class based on name length
-     */
-    private function getFontSizeClass($length)
+
+    private function fetchStudents(
+        int $campusId,
+        int $sessionId,
+        int $classId,
+        int $clsSecId,
+        string $statusFilter,
+        ?object $sessionDates,
+        array $studentIds,
+        array &$debug = []
+    ): array {
+        // Use same student lookup pattern as StudentsAbsentees page.
+        if ($clsSecId > 0 || $classId > 0) {
+            $selectedStudentIds = [];
+            $resolvedForDebug = [];
+            $studentSectionMap = [];
+            if ($clsSecId > 0) {
+                $lookupIds = [$clsSecId];
+                $mappedSectionId = (int) ($this->db->table('class_section')
+                    ->select('section_id')
+                    ->where('cls_sec_id', $clsSecId)
+                    ->where('campus_id', $campusId)
+                    ->get()
+                    ->getRow('section_id') ?? 0);
+                if ($mappedSectionId > 0) {
+                    $lookupIds[] = $mappedSectionId;
+                }
+                $lookupIds = array_values(array_unique(array_filter($lookupIds)));
+                $resolvedForDebug = $lookupIds;
+
+                $rows = $this->db->table('student_class')
+                    ->select('student_id, cls_sec_id')
+                    ->where('status', 1)
+                    ->whereIn('cls_sec_id', $lookupIds)
+                    ->get()
+                    ->getResultArray();
+            } else {
+                $classSectionRows = $this->db->table('class_section')
+                    ->select('cls_sec_id, section_id')
+                    ->where('class_id', $classId)
+                    ->where('campus_id', $campusId)
+                    ->where('status', 1)
+                    ->get()
+                    ->getResultArray();
+                foreach ($classSectionRows as $csr) {
+                    $resolvedForDebug[] = (int) ($csr['cls_sec_id'] ?? 0);
+                    $resolvedForDebug[] = (int) ($csr['section_id'] ?? 0);
+                }
+                $resolvedForDebug = array_values(array_unique(array_filter($resolvedForDebug)));
+
+                $rows = $this->db->table('student_class sc')
+                    ->select('sc.student_id, sc.cls_sec_id')
+                    ->join('class_section cs', '(cs.cls_sec_id = sc.cls_sec_id OR cs.section_id = sc.cls_sec_id)', 'inner')
+                    ->where('sc.status', 1)
+                    ->where('cs.class_id', $classId)
+                    ->where('cs.campus_id', $campusId)
+                    ->get()
+                    ->getResultArray();
+            }
+
+            foreach ($rows as $r) {
+                $sid = (int) ($r['student_id'] ?? 0);
+                $scid = (int) ($r['cls_sec_id'] ?? 0);
+                if ($sid > 0) {
+                    $selectedStudentIds[] = $sid;
+                    if (!isset($studentSectionMap[$sid]) && $scid > 0) {
+                        $studentSectionMap[$sid] = $scid;
+                    }
+                }
+            }
+            $selectedStudentIds = array_values(array_unique(array_filter($selectedStudentIds)));
+
+            if (!empty($studentIds)) {
+                $selectedStudentIds = array_values(array_intersect($selectedStudentIds, $studentIds));
+            }
+
+            $debug = [
+                'campus_id' => $campusId,
+                'session_id' => $sessionId,
+                'selected_class_id' => $classId,
+                'selected_cls_sec_id' => $clsSecId,
+                'resolved_cls_sec_ids' => $resolvedForDebug,
+                'strict_count' => 0,
+                'fallback_count' => 0,
+                'legacy_count' => 0,
+                'sc_any_session' => count($selectedStudentIds),
+                'sc_this_session' => 0,
+            ];
+
+            if (empty($selectedStudentIds)) {
+                return [];
+            }
+
+            $builder = $this->db->table('students s');
+            $builder->select('
+                s.student_id, s.first_name, s.last_name, s.reg_no, s.profile_photo, s.date_of_admission, s.status,
+                p.f_name
+            ');
+            $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
+            $builder->whereIn('s.student_id', $selectedStudentIds);
+
+            if ($statusFilter === 'new' && $sessionDates && !empty($sessionDates->start_date) && !empty($sessionDates->end_date)) {
+                $builder->where('s.date_of_admission >=', $sessionDates->start_date);
+                $builder->where('s.date_of_admission <=', $sessionDates->end_date);
+            }
+
+            $students = $builder
+                ->orderBy('s.first_name', 'ASC')
+                ->orderBy('s.last_name', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            $out = [];
+            foreach ($students as $row) {
+                $sid = (int) ($row['student_id'] ?? 0);
+                $mappedClsSec = (int) ($studentSectionMap[$sid] ?? 0);
+                $row['class_name'] = '';
+                $row['section_name'] = '';
+                if ($mappedClsSec > 0) {
+                    $secInfo = getClassSection($mappedClsSec);
+                    if (!empty($secInfo)) {
+                        $row['class_name'] = (string) ($secInfo['class_name'] ?? '');
+                        $row['section_name'] = (string) ($secInfo['section_name'] ?? '');
+                    }
+                }
+                $out[] = (object) $row;
+            }
+
+            usort($out, static function ($a, $b) {
+                $ka = (($a->class_name ?? '') . '|' . ($a->section_name ?? '') . '|' . ($a->first_name ?? '') . '|' . ($a->last_name ?? ''));
+                $kb = (($b->class_name ?? '') . '|' . ($b->section_name ?? '') . '|' . ($b->first_name ?? '') . '|' . ($b->last_name ?? ''));
+                return strcmp($ka, $kb);
+            });
+
+            return $out;
+        }
+
+        $resolvedClsSecIds = $this->resolveClassSectionIds($campusId, $clsSecId, $classId);
+        $debug = [
+            'campus_id' => $campusId,
+            'session_id' => $sessionId,
+            'selected_class_id' => $classId,
+            'selected_cls_sec_id' => $clsSecId,
+            'resolved_cls_sec_ids' => $resolvedClsSecIds,
+            'strict_count' => 0,
+            'fallback_count' => 0,
+            'legacy_count' => 0,
+            'sc_any_session' => 0,
+            'sc_this_session' => 0,
+        ];
+
+        if (!empty($resolvedClsSecIds)) {
+            $debug['sc_any_session'] = (int) $this->db->table('student_class')
+                ->whereIn('cls_sec_id', $resolvedClsSecIds)
+                ->where('status', 1)
+                ->countAllResults();
+            if ($sessionId > 0) {
+                $debug['sc_this_session'] = (int) $this->db->table('student_class')
+                    ->whereIn('cls_sec_id', $resolvedClsSecIds)
+                    ->where('session_id', $sessionId)
+                    ->where('status', 1)
+                    ->countAllResults();
+            }
+        }
+
+        // Pass 1: strict current session mapping.
+        $rows = $this->runStudentsQuery($campusId, $sessionId, true, $clsSecId, $resolvedClsSecIds, $statusFilter, $sessionDates, $studentIds);
+        $debug['strict_count'] = count($rows);
+        if (!empty($rows) || $sessionId <= 0) {
+            return $rows;
+        }
+
+        // Pass 2 (fallback): campus + active class mapping without session lock.
+        $fallbackRows = $this->runStudentsQuery($campusId, $sessionId, false, $clsSecId, $resolvedClsSecIds, $statusFilter, $sessionDates, $studentIds);
+        $debug['fallback_count'] = count($fallbackRows);
+        if (!empty($fallbackRows)) {
+            return $fallbackRows;
+        }
+
+        // Pass 3 (legacy fallback): some campuses keep class mapping directly on students.cls_sec_id.
+        $legacyRows = $this->runStudentsLegacyQuery($campusId, $resolvedClsSecIds, $statusFilter, $sessionDates, $studentIds);
+        $debug['legacy_count'] = count($legacyRows);
+        return $legacyRows;
+    }
+
+    private function runStudentsQuery(
+        int $campusId,
+        int $sessionId,
+        bool $enforceSession,
+        int $selectedClsSecId,
+        array $resolvedClsSecIds,
+        string $statusFilter,
+        ?object $sessionDates,
+        array $studentIds
+    ): array {
+        $builder = $this->db->table('student_class sc');
+        $builder->select('
+            s.student_id, s.first_name, s.last_name, s.reg_no, s.profile_photo, s.date_of_admission, s.status,
+            p.f_name,
+            c.class_name, sec.section_name
+        ');
+        $builder->join('students s', 's.student_id = sc.student_id', 'inner');
+        $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
+        $builder->join('class_section cs', '(cs.cls_sec_id = sc.cls_sec_id OR cs.section_id = sc.cls_sec_id)', 'left');
+        $builder->join('classes c', 'c.class_id = cs.class_id', 'left');
+        $builder->join('sections sec', 'sec.section_id = cs.section_id', 'left');
+        if ($campusId > 0) {
+            $builder->groupStart()
+                ->where('s.campus_id', $campusId)
+                ->orWhere('cs.campus_id', $campusId)
+                ->groupEnd();
+        }
+        if ($enforceSession && $sessionId > 0) {
+            $builder->where('sc.session_id', $sessionId);
+        }
+        $builder->where('sc.status', 1);
+
+        if ($selectedClsSecId > 0) {
+            if (!empty($resolvedClsSecIds)) {
+                $builder->whereIn('sc.cls_sec_id', $resolvedClsSecIds);
+            } else {
+                $builder->where('sc.cls_sec_id', $selectedClsSecId);
+            }
+        }
+
+        if (!empty($studentIds)) {
+            $builder->whereIn('s.student_id', $studentIds);
+        }
+
+        if ($statusFilter === 'new') {
+            if ($sessionDates && !empty($sessionDates->start_date) && !empty($sessionDates->end_date)) {
+                $builder->where('s.date_of_admission >=', $sessionDates->start_date);
+                $builder->where('s.date_of_admission <=', $sessionDates->end_date);
+            }
+        }
+
+        return $builder
+            ->orderBy('c.class_name', 'ASC')
+            ->orderBy('sec.section_name', 'ASC')
+            ->orderBy('s.first_name', 'ASC')
+            ->orderBy('s.last_name', 'ASC')
+            ->groupBy('s.student_id')
+            ->get()
+            ->getResult();
+    }
+
+    private function resolveClassSectionIds(int $campusId, int $clsSecId, int $classId = 0): array
     {
-        if ($length > 21) {
-            return 'font-size-11';
-        } elseif ($length > 20) {
-            return 'font-size-13';
-        } elseif ($length > 15) {
-            return 'font-size-13';
-        } else {
-            return 'font-size-13';
+        $resolvedClsSecIds = [];
+
+        if ($clsSecId > 0) {
+            $rowByClsSecId = $this->db->table('class_section')
+                ->select('cls_sec_id, section_id, class_id')
+                ->where('cls_sec_id', $clsSecId)
+                ->where('campus_id', $campusId)
+                ->get()
+                ->getRow();
+
+            if ($rowByClsSecId) {
+                $resolvedClsSecIds[] = (int) $rowByClsSecId->cls_sec_id;
+            } else {
+                $rowsBySectionId = $this->db->table('class_section')
+                    ->select('cls_sec_id, section_id')
+                    ->where('section_id', $clsSecId)
+                    ->where('campus_id', $campusId)
+                    ->get()
+                    ->getResult();
+
+                foreach ($rowsBySectionId as $sectionRow) {
+                    $resolvedClsSecIds[] = (int) $sectionRow->cls_sec_id;
+                }
+            }
+        } elseif ($classId > 0) {
+            $rowsByClass = $this->db->table('class_section')
+                ->select('cls_sec_id, section_id')
+                ->where('class_id', $classId)
+                ->where('campus_id', $campusId)
+                ->where('status', 1)
+                ->get()
+                ->getResult();
+            foreach ($rowsByClass as $sectionRow) {
+                $resolvedClsSecIds[] = (int) $sectionRow->cls_sec_id;
+            }
+        }
+
+        return array_values(array_unique(array_filter($resolvedClsSecIds)));
+    }
+
+    private function runStudentsLegacyQuery(
+        int $campusId,
+        array $resolvedClsSecIds,
+        string $statusFilter,
+        ?object $sessionDates,
+        array $studentIds
+    ): array {
+        $builder = $this->db->table('students s');
+        $builder->select('
+            s.student_id, s.first_name, s.last_name, s.reg_no, s.profile_photo, s.date_of_admission, s.status,
+            p.f_name,
+            c.class_name, sec.section_name
+        ');
+        $builder->join('parents p', 'p.parent_id = s.parent_id', 'left');
+        $builder->join('class_section cs', '(cs.cls_sec_id = s.cls_sec_id OR cs.section_id = s.cls_sec_id)', 'left');
+        $builder->join('classes c', 'c.class_id = cs.class_id', 'left');
+        $builder->join('sections sec', 'sec.section_id = cs.section_id', 'left');
+        $builder->where('s.campus_id', $campusId);
+
+        if (!empty($resolvedClsSecIds)) {
+            $builder->whereIn('s.cls_sec_id', $resolvedClsSecIds);
+        }
+
+        if (!empty($studentIds)) {
+            $builder->whereIn('s.student_id', $studentIds);
+        }
+
+        if ($statusFilter === 'new' && $sessionDates && !empty($sessionDates->start_date) && !empty($sessionDates->end_date)) {
+            $builder->where('s.date_of_admission >=', $sessionDates->start_date);
+            $builder->where('s.date_of_admission <=', $sessionDates->end_date);
+        }
+
+        return $builder
+            ->orderBy('c.class_name', 'ASC')
+            ->orderBy('sec.section_name', 'ASC')
+            ->orderBy('s.first_name', 'ASC')
+            ->orderBy('s.last_name', 'ASC')
+            ->groupBy('s.student_id')
+            ->get()
+            ->getResult();
+    }
+
+    private function parseStudentIds(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[\s,]+/', $raw);
+        $ids = [];
+        foreach ($parts as $part) {
+            if ($part !== '' && ctype_digit($part)) {
+                $ids[] = (int) $part;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function qrDataUri(string $text): string
+    {
+        try {
+            $qrCode = QrCode::create($text)->setSize(220)->setMargin(8);
+            return (new PngWriter())->write($qrCode)->getDataUri();
+        } catch (\Throwable $e) {
+            return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><rect width="220" height="220" fill="#fff"/><text x="110" y="110" dominant-baseline="middle" text-anchor="middle" fill="#999" font-size="18">QR</text></svg>'
+            );
         }
     }
+
+    private function qrSvg(string $text): string
+    {
+        try {
+            $qrCode = QrCode::create($text)->setSize(220)->setMargin(8);
+            $svg = (new SvgWriter())->write($qrCode)->getString();
+            // Keep markup compact for card rendering.
+            return '<div class="qr-svg">' . $svg . '</div>';
+        } catch (\Throwable $e) {
+            return '<div class="qr-fallback">QR</div>';
+        }
+    }
+
+    private function defaultAvatarUrl(): string
+    {
+        $candidates = ['assets/img/avatar-student.png', 'assets/img/avatar.png', 'assets/images/avatar.png'];
+        foreach ($candidates as $rel) {
+            $disk = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $rel);
+            if (is_file($disk)) {
+                return base_url($rel);
+            }
+        }
+
+        return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><rect width="100" height="120" fill="#eef2f7"/><circle cx="50" cy="38" r="18" fill="#c9d1dc"/><rect x="18" y="65" width="64" height="40" rx="10" fill="#dbe2ec"/></svg>'
+        );
+    }
+
+    private function studentPhotoUrl(string $photo, string $fallback): string
+    {
+        $photo = trim($photo);
+        if ($photo === '') {
+            return $fallback;
+        }
+
+        if (preg_match('~^https?://~i', $photo)) {
+            return $photo;
+        }
+
+        $path = ltrim($photo, '/\\');
+        if (stripos($path, 'uploads/') !== 0) {
+            $path = 'uploads/' . $path;
+        }
+
+        $disk = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        return is_file($disk) ? base_url(str_replace('\\', '/', $path)) : $fallback;
+    }
+
+    private function logoUrl(string $logo): string
+    {
+        $logo = trim($logo);
+        if ($logo !== '') {
+            $path = 'system-logo/' . ltrim($logo, '/\\');
+            $disk = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+            if (is_file($disk)) {
+                return base_url($path);
+            }
+        }
+
+        return $this->defaultAvatarUrl();
+    }
+
+    private function stylesBlock(): string
+    {
+        return '<style>
+.id-cards-grid{
+  display:grid;
+  grid-template-columns:repeat(2,85.6mm);
+  gap:6mm 6mm;
+  justify-content:center;
 }
+.id-card-pair{
+  width:85.6mm;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:1mm;
+  break-inside:avoid;
+  page-break-inside:avoid;
+}
+.id-side{
+  width:42.8mm;
+  height:54mm;
+  border:1px solid #1f2937;
+  border-radius:2mm;
+  overflow:hidden;
+  background:#fff;
+  position:relative;
+}
+.front-header{
+  height:10mm;
+  background:#0f4c81;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:2mm;
+  padding:1.2mm 1.4mm;
+}
+.front-logo{
+  width:7mm;
+  height:7mm;
+  border-radius:50%;
+  background:#fff;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.front-logo img{width:100%;height:100%;object-fit:cover;}
+.front-school{
+  font-size:2.35mm;
+  font-weight:700;
+  line-height:1.15;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.front-body{
+  display:grid;
+  grid-template-columns:14mm 1fr;
+  gap:1.3mm;
+  padding:1.4mm;
+}
+.photo-wrap{
+  width:14mm;
+  height:18mm;
+  border:1px solid #e5e7eb;
+  border-radius:1mm;
+  overflow:hidden;
+  background:#f8fafc;
+}
+.photo-wrap img{width:100%;height:100%;object-fit:cover;}
+.front-details{font-size:2.15mm;line-height:1.2;}
+.row-item{margin-bottom:1.1mm;overflow:hidden;}
+.row-item .label{display:block;font-weight:700;color:#334155;}
+.row-item .value{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  color:#111827;
+}
+.back-header{
+  height:8mm;
+  background:#0f4c81;
+  color:#fff;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:0 1.2mm;
+  font-size:2.35mm;
+}
+.back-body{padding:2mm 1.2mm;text-align:center;}
+.qr-box{
+  width:18mm;
+  height:18mm;
+  border:1px solid #d1d5db;
+  border-radius:1mm;
+  margin:0 auto 1.7mm;
+  padding:0.6mm;
+}
+.qr-box img{width:100%;height:100%;object-fit:contain;}
+.qr-box .qr-svg, .qr-box .qr-svg svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.qr-box .qr-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#777;
+  font-size:2.3mm;
+  font-weight:600;
+}
+.back-school{font-size:2.2mm;font-weight:700;margin-bottom:0.8mm;}
+.back-address{font-size:1.9mm;line-height:1.25;color:#374151;min-height:8mm;}
+.back-footer{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  border-top:1px solid #e5e7eb;
+  background:#f8fafc;
+  text-align:center;
+  font-size:1.9mm;
+  padding:1mm;
+}
+@media print{
+  .id-cards-grid{
+    grid-template-columns:repeat(2,85.6mm);
+    gap:5mm 6mm;
+    justify-content:start;
+  }
+}
+</style>';
+    }
 
+    private function normalizeSectionOptions(array $rows, int $campusId): array
+    {
+        $normalized = [];
+        $seen = [];
 
-    // public function data()
-    // {
-    //     $cls_sec_id = $this->request->getPost('cls_sec_id');
-    //     $schoolinfo = getSchoolInfo();
-    //     $campus_id = $this->session->get('member_campusid');
-    //     $sessionid = $this->session->get('member_sessionid');
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
 
-    //     // Main query
-    //     if ($cls_sec_id) {
-    //         $student_class = $this->db->query(
-    //             'SELECT * FROM student_class WHERE student_id IN(SELECT student_id FROM students WHERE status=1 AND campus_id=?) AND session_id = ? AND cls_sec_id = ? ORDER BY cls_sec_id ASC',
-    //             [$campus_id, $sessionid, $cls_sec_id]
-    //         )->getResult();
-    //     } else {
-    //         $student_class = $this->db->query(
-    //             'SELECT * FROM student_class WHERE student_id IN(SELECT student_id FROM students WHERE status=1 AND campus_id=?) AND session_id = ? ORDER BY cls_sec_id ASC',
-    //             [$campus_id, $sessionid]
-    //         )->getResult();
-    //     }
+            $clsSecId = (int) ($row['cls_sec_id'] ?? 0);
+            $sectionId = (int) ($row['section_id'] ?? 0);
+            $classId = (int) ($row['class_id'] ?? 0);
+            $label = trim((string) ($row['sectionclassname'] ?? ''));
 
-    //     $strResultCard = '<div class="row"><page>';
-    //     $i = 1;
+            // If cls_sec_id missing, try mapping from class+section in this campus.
+            if ($clsSecId <= 0 && $classId > 0 && $sectionId > 0) {
+                $clsSecId = (int) ($this->db->table('class_section')
+                    ->select('cls_sec_id')
+                    ->where('campus_id', $campusId)
+                    ->where('class_id', $classId)
+                    ->where('section_id', $sectionId)
+                    ->where('status', 1)
+                    ->get()
+                    ->getRow('cls_sec_id') ?? 0);
+            }
 
-    //     foreach ($student_class as $studentinfo) {
-    //         $student_info = $this->db->table('students')
-    //             ->where('student_id', $studentinfo->student_id)
-    //             ->get()
-    //             ->getRow();
+            // Legacy helpers sometimes provide section_id but actually store cls_sec_id.
+            if ($clsSecId <= 0 && $sectionId > 0) {
+                $maybeClsSec = (int) ($this->db->table('class_section')
+                    ->select('cls_sec_id')
+                    ->where('campus_id', $campusId)
+                    ->where('cls_sec_id', $sectionId)
+                    ->where('status', 1)
+                    ->get()
+                    ->getRow('cls_sec_id') ?? 0);
+                if ($maybeClsSec > 0) {
+                    $clsSecId = $maybeClsSec;
+                }
+            }
 
-    //         $campus_info = $this->db->table('campus')
-    //             ->where('campus_id', $campus_id)
-    //             ->get()
-    //             ->getRow();
+            if ($clsSecId <= 0) {
+                continue;
+            }
 
-    //         if ($student_info) {
-    //             $parent_info = $this->db->table('parents')
-    //                 ->where('parent_id', $student_info->parent_id)
-    //                 ->get()
-    //                 ->getRow();
-    //             $f_name = $father_contact = $mother_contact = $emergency_contact = $address = '';
-    //             if ($parent_info) {
-    //                 $f_name = $parent_info->f_name;
-    //                 $father_contact = $parent_info->father_contact;
-    //                 $address = $parent_info->address_line1;
-    //                 $mother_contact = $parent_info->mother_contact;
-    //                 $emergency_contact = $parent_info->emergency_contact;
-    //             }
+            // Fill label from DB if helper label is missing.
+            if ($label === '') {
+                $dbRow = $this->db->table('class_section cs')
+                    ->select('CONCAT(c.class_name, " - ", s.section_name) AS sectionclassname')
+                    ->join('classes c', 'c.class_id = cs.class_id', 'left')
+                    ->join('sections s', 's.section_id = cs.section_id', 'left')
+                    ->where('cs.cls_sec_id', $clsSecId)
+                    ->where('cs.campus_id', $campusId)
+                    ->get()
+                    ->getRowArray();
+                $label = trim((string) ($dbRow['sectionclassname'] ?? ''));
+            }
 
-    //             $class_info = getClassSection($studentinfo->cls_sec_id);
-    //         }
+            if ($label === '') {
+                $label = 'Section ' . $clsSecId;
+            }
 
-    //         $strResultCard .= '<div class="card-block" style="border: 2px dashed #000;">
-    //             <div class="card-top">
-    //                 <div class="card-logo">
-    //                     <img src="' . base_url('system-logo/' . $schoolinfo->logo) . '" alt="">
-    //                 </div>
-    //                 <div class="card-school">
-    //                     <h2>' . $schoolinfo->system_name . '</h2>
-    //                     <p>' . ($campus_info->campus_name ?? '') . '</p>
-    //                     <p>' . ($campus_info->landline ?? '') . '</p>
-    //                 </div>
-    //             </div>
-    //             <div class="std-id">
-    //                 <h3><span>' . ($student_info->reg_no ?? '') . '</span></h3>
-    //             </div>
-    //             <div class="card-main">
-    //                 <div class="card-photo">';
-    //         if (!empty($student_info->profile_photo)) {
-    //             $strResultCard .= '<img style="width: 94px;margin-top: -20px;border-radius: 8px;" src="' . base_url('uploads/' . $student_info->profile_photo) . '">';
-    //         } else {
-    //             $strResultCard .= '<i style="font-size: 94px;margin-top: -20px;margin-bottom:13px;text-align: center;display: block;" class="fa fa-user"></i>';
-    //         }
+            if (isset($seen[$clsSecId])) {
+                continue;
+            }
+            $seen[$clsSecId] = true;
 
-    //         $date_of_birth = isset($student_info->date_of_birth) ? date_create($student_info->date_of_birth) : null;
-    //         $date_of_birthFormated = $date_of_birth ? date_format($date_of_birth, "F j, Y") : '';
+            $normalized[] = [
+                'cls_sec_id' => $clsSecId,
+                'sectionclassname' => $label,
+            ];
+        }
 
-    //         $strResultCard .= '</div>
-    //                 <div class="card-info">
-    //                     <p><span class="card-title">Name</span><span class="card-value">: ' . ($student_info->first_name ?? '') . ' ' . ($student_info->last_name ?? '') . '</span></p>
-    //                     <p><span class="card-title">Father Name</span><span class="card-value">: ' . $f_name . '</span></p>
-    //                     <p><span class="card-title">Father Contact</span><span class="card-value">: ' . $father_contact . '</span></p>
-    //                     <p><span class="card-title">Class</span><span class="card-value">: ' . ($class_info['sectionclassname'] ?? '') . '</span></p>
-    //                     <p><span class="card-title">Date of Birth</span><span class="card-value">: ' . $date_of_birthFormated . '</span></p>
-    //                 </div>
-    //             </div>
-    //             <div class="card-bottom">
-    //                 <p>Student ID Card</p>
-    //             </div>
-    //         </div>';
+        usort($normalized, static function ($a, $b) {
+            return strcmp((string) $a['sectionclassname'], (string) $b['sectionclassname']);
+        });
 
-    //         if ($i == 4) {
-    //             $strResultCard .= '</page><p style="clear:both;page-break-before: always;">&nbsp;</p><page style="margin-top:10px;">';
-    //             $i = 0;
-    //         }
-    //         $i++;
-    //     }
-    //     $strResultCard .= '</div>';
-    //     return $this->response->setContentType('text/html')->setBody($strResultCard);
-    // }
-
-    // public function vertical()
-    // {
-    //     $campus_id = $this->session->get('member_campusid');
-    //     $sessionid = $this->session->get('member_sessionid');
-    //     $schoolinfo = getSchoolInfo();
-
-    //     $test_series = $this->db->table('test_series')
-    //         ->where(['session_id' => $sessionid, 'campus_id' => $campus_id])
-    //         ->get()
-    //         ->getResult();
-
-    //     $currentrole = currentUserRoles();
-
-    //     if (in_array(5, $currentrole)) {
-    //         $sectionsclassinfo = teacherSubjectSections();
-    //     } else {
-    //         $sectionsclassinfo = userClassSections();
-    //     }
-
-    //     $data = [
-    //         'sectionsclassinfo' => $sectionsclassinfo,
-    //         'test_series'       => $test_series
-    //     ];
-
-    //     return view('student_id_card', $data);
-    // }
-
+        return $normalized;
+    }
+}

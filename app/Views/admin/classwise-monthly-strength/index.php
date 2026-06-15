@@ -2,12 +2,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <h1 class="mb-0">Monthly Student Strength (by Session)</h1>
-    <div class="text-muted small">Campus ID: <?= esc($campusId ?? '-') ?></div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Monthly Student Strength (by Session)',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Monthly Student Strength (by Session)', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <?php if (!empty($error)): ?>
@@ -18,7 +20,7 @@
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-striped table-bordered mb-0" id="strength-grid" style="min-width: 720px;">
-            <thead class="thead-dark">
+            <thead class="table-dark">
               <tr>
                 <th class="sticky-col" style="min-width:160px;">Month</th>
                 <?php foreach ($sessions as $s): ?>
@@ -27,7 +29,7 @@
                     $label = $s['label'] ?? ($s['session_name'] ?? ('Session '.$sid));
                     $title = trim(($s['session_name'] ?? '').' | '.($s['start_date'] ?? '').' → '.($s['end_date'] ?? ''));
                   ?>
-                  <th class="text-right" title="<?= esc($title) ?>"><?= esc($label) ?></th>
+                  <th class="text-end" title="<?= esc($title) ?>"><?= esc($label) ?></th>
                 <?php endforeach; ?>
               </tr>
             </thead>
@@ -43,25 +45,25 @@
 
               <?php foreach ($labels as $i => $monthName): ?>
                 <tr>
-                  <td class="sticky-col font-weight-bold"><?= esc($monthName) ?></td>
+                  <td class="sticky-col fw-bold"><?= esc($monthName) ?></td>
                   <?php foreach ($sessions as $s): ?>
                     <?php
                       $sid = (int) $s['session_id'];
                       $val = (int) ($grid[$i][$sid] ?? 0);
                       $colTotals[$sid] += $val;
                     ?>
-                    <td class="text-right"><?= number_format($val) ?></td>
+                    <td class="text-end"><?= number_format($val) ?></td>
                   <?php endforeach; ?>
                 </tr>
               <?php endforeach; ?>
             </tbody>
 
             <tfoot>
-              <tr class="bg-light font-weight-bold">
+              <tr class="bg-light fw-bold">
                 <td class="sticky-col">Totals</td>
                 <?php foreach ($sessions as $s): ?>
                   <?php $sid = (int) $s['session_id']; ?>
-                  <td class="text-right"><?= number_format($colTotals[$sid] ?? 0) ?></td>
+                  <td class="text-end"><?= number_format($colTotals[$sid] ?? 0) ?></td>
                 <?php endforeach; ?>
               </tr>
             </tfoot>

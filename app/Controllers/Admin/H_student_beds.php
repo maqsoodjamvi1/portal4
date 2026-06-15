@@ -165,7 +165,7 @@ class H_student_beds extends MY_Controller {
 							if(!empty($parentInfo->father_contact)){
 							$data .= '<p style="float: left;width:100%;margin-top: 10px;margin-left: 0px;">'.$parentInfo->father_contact.'<a href="/admin.php#/students?m=edit&id='.$h_student_beds->student_id.'"><i class="fas fa-edit" style="font-size:16px;color:red;display:block;margin-left: 10px;float:right;cursor:pointer;"></i></a> </p>';
 							}
-							$data .= '<p style="float: left;width:100%;margin-top:10px;">Bed Fee: '.$bed_fee.'/- <a data-toggle="modal" id="#update_fee'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-target="#update_fee'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'" ><i style="font-size:16px;color:red;display:block;margin-left: 10px;float:right;cursor:pointer;" class="fa fa-edit"></i></a></p>';
+							$data .= '<p style="float: left;width:100%;margin-top:10px;">Bed Fee: '.$bed_fee.'/- <a data-bs-toggle="modal" id="#update_fee'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-bs-target="#update_fee'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'" ><i style="font-size:16px;color:red;display:block;margin-left: 10px;float:right;cursor:pointer;" class="fa fa-edit"></i></a></p>';
 							if(!empty($unpaidFee->total)){
 								$data .= '<p style="float: left;width:100%;margin-top:10px;">Balance: '.$unpaidFee->total.'/- <a href="/admin.php#/fee_chalan_pay"><i style="font-size:16px;color:red;display:block;margin-left: 10px;float:right;cursor:pointer;" class="far fa-money-bill-alt" aria-hidden="true"></i></a></p>';
 							}
@@ -175,19 +175,19 @@ class H_student_beds extends MY_Controller {
 							if(!empty($studentInfo->notice_date)){
 								$data .= '<p style="float: left;width:100%;margin-top:10px;">Notice: '.$studentInfo->notice_date.'</p>';
 							}
-							$data .= '<p style="margin-top:15px;float:left;"><a id="de_allocate'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'"  class="btn btn-xs btn-danger"><i class="fa fa-trash"></i> De Allocate</a></p><p style="float: right;margin-top: 14px;"><a data-toggle="modal" id="#update_detail'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-target="#update_detail'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'"  class="btn btn-xs btn-success" ><i style="font-size:14px;cursor:pointer;" class="fa fa-edit"></i> Detail</a></p>';
+							$data .= '<p style="margin-top:15px;float:left;"><a id="de_allocate'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'"  class="btn btn-sm btn-danger"><i class="fa fa-trash"></i> De Allocate</a></p><p style="float: right;margin-top: 14px;"><a data-bs-toggle="modal" id="#update_detail'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-bs-target="#update_detail'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'"  class="btn btn-sm btn-success" ><i style="font-size:14px;cursor:pointer;" class="fa fa-edit"></i> Detail</a></p>';
 							$data .= '<p style="margin-top:15px;float:right;"></p><div class="modal fade" id="update_fee'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 							      <div class="modal-dialog" role="document">
 							        <div class="modal-content"><div class="modal-header">
-							          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Fee</h5>
-							          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							          <h5 class="modal-title float-start" id="exampleModalLabel">Update Fee</h5>
+							          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 							        </div>
 							        <div class="modal-body">
 							          <div id="FeeInfo'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'">
 							          </div>
 							          </div>
 							          <div class="modal-footer">
-							            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             							<button type="button" id="updateFee_'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" class="btn btn-primary">Submit</button>
 							          </div>
 							        </div>
@@ -195,15 +195,15 @@ class H_student_beds extends MY_Controller {
 							    </div><div class="modal fade" id="update_detail'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 							      <div class="modal-dialog" role="document">
 							        <div class="modal-content"><div class="modal-header">
-							          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Fee</h5>
-							          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							          <h5 class="modal-title float-start" id="exampleModalLabel">Update Fee</h5>
+							          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 							        </div>
 							        <div class="modal-body">
 							        <div id="DetailInfo'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'">
 							        </div>
 							        </div>
 							          <div class="modal-footer">
-							            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             							<button type="button" id="updateDetail_'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" class="btn btn-primary">Submit</button>
 							          </div>
 							        </div>
@@ -329,7 +329,7 @@ class H_student_beds extends MY_Controller {
 							
 						$data .= '<select class="form-control select2" name="student_id" id="student_id_'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" ><option value="0">Select Student</option></select>
 						<input placeholder="Bed Fee" type="text" id="student_h_discount_'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" name="student_h_discount_'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" value="'.$bed_fee.'"  class="form-control">
-						<a id="save'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'" class="btn btn-primary btn-xs">Assign Bed</a>
+						<a id="save'.$roomvalue["block_room_id"].'_'.$bedvalue->bed_id.'" data-room_id="'.$roomvalue["block_room_id"].'" data-bed_id="'.$bedvalue->bed_id.'" class="btn btn-primary btn-sm">Assign Bed</a>
 						<script type="text/javascript">
 							$(document).ready(function(){
 

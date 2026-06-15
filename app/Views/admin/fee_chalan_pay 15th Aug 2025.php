@@ -95,7 +95,7 @@
         padding: 3px 6px;
     }
     
-    [data-toggle="tooltip"] {
+    [data-bs-toggle="tooltip"] {
         cursor: pointer;
         border-bottom: 1px dotted #999;
     }
@@ -116,7 +116,7 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1><i class="fas fa-money-bill-wave mr-2"></i>Fee Payments</h1>
+                <h1><i class="fas fa-money-bill-wave me-2"></i>Fee Payments</h1>
             </div>
         </div>
     </div>
@@ -133,17 +133,15 @@
                     <div class="card-body p-3">
                         <div class="form-group row align-items-end mb-2">
                             <div class="col-md-4">
-                                <label data-toggle="tooltip" title="Payment date"><i class="far fa-calendar-alt mr-1"></i> Date</label>
+                                <label data-bs-toggle="tooltip" title="Payment date"><i class="far fa-calendar-alt me-1"></i> Date</label>
                                 <div class="input-group date" id="datepicker2">
                                     <input type="text" id="datePaid" class="form-control" 
                                         placeholder="Date" value="<?= date('Y-m-d') ?>"/>
-                                    <div class="input-group-append">
-                                        <span class="input-group-text"><i class="fa fa-calendar"></i></span>
-                                    </div>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
                                 </div>
                             </div>
                             <div class="col-md-8">
-                                <label data-toggle="tooltip" title="Search by name or ID"><i class="fas fa-search mr-1"></i> Student</label>
+                                <label data-bs-toggle="tooltip" title="Search by name or ID"><i class="fas fa-search me-1"></i> Student</label>
                                 <select class="form-control select2" id="student_id" style="width: 100%">
                                     <option value="0">Search student...</option>
                                 </select>
@@ -166,10 +164,10 @@
                 <div class="card shadow-sm" id="parentSummary" style="display: none;">
                     <div class="card-header bg-primary text-white py-2">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-users mr-1"></i> Family</span>
-                            <div class="text-right small">
-                                <span data-toggle="tooltip" title="Today's payments"><i class="far fa-calendar-day mr-1"></i> <span id="todayPaidAmount">0</span></span>
-                                <span class="ml-2" data-toggle="tooltip" title="This month's payments"><i class="far fa-calendar mr-1"></i> <span id="monthPaidAmount">0</span></span>
+                            <span><i class="fas fa-users me-1"></i> Family</span>
+                            <div class="text-end small">
+                                <span data-bs-toggle="tooltip" title="Today's payments"><i class="far fa-calendar-day me-1"></i> <span id="todayPaidAmount">0</span></span>
+                                <span class="ms-2" data-bs-toggle="tooltip" title="This month's payments"><i class="far fa-calendar me-1"></i> <span id="monthPaidAmount">0</span></span>
                             </div>
                         </div>
                     </div>
@@ -179,9 +177,9 @@
                             <table class="table table-sm mb-0">  
                                 <thead>
                                     <tr>
-                                        <th data-toggle="tooltip" title="Student">Std</th>
-                                        <th data-toggle="tooltip" title="Fee details">Fee</th>
-                                        <th data-toggle="tooltip" title="Amount">Amt</th>
+                                        <th data-bs-toggle="tooltip" title="Student">Std</th>
+                                        <th data-bs-toggle="tooltip" title="Fee details">Fee</th>
+                                        <th data-bs-toggle="tooltip" title="Amount">Amt</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -195,8 +193,8 @@
                 <div class="card payment-pool-card" id="paymentPoolCard" style="display: none;">
                     <div class="card-header py-2">
                         <div class="d-flex justify-content-between align-items-center">
-                            <strong><i class="fas fa-shopping-basket mr-1"></i> Pool</strong>
-                            <span class="badge badge-light"><span id="poolItemCount">0</span> items</span>
+                            <strong><i class="fas fa-shopping-basket me-1"></i> Pool</strong>
+                            <span class="badge text-bg-light"><span id="poolItemCount">0</span> items</span>
                         </div>
                     </div>
                     <div class="card-body p-2">
@@ -204,9 +202,9 @@
                             <table class="table table-sm mb-2" id="paymentPoolTable">
                                 <thead>
                                     <tr>
-                                        <th data-toggle="tooltip" title="Student">Std</th>
-                                        <th data-toggle="tooltip" title="Fee type">Fee</th>
-                                        <th data-toggle="tooltip" title="Amount">Amt</th>
+                                        <th data-bs-toggle="tooltip" title="Student">Std</th>
+                                        <th data-bs-toggle="tooltip" title="Fee type">Fee</th>
+                                        <th data-bs-toggle="tooltip" title="Amount">Amt</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -219,13 +217,13 @@
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-outline-danger btn-xs" id="clearPoolBtn" onclick="clearFeePool()" style="display: none;">
+                            <button class="btn btn-outline-danger btn-sm" id="clearPoolBtn" onclick="clearFeePool()" style="display: none;">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
 
-                            <div class="text-right">
-                                <span class="font-weight-bold">Rs <span id="poolTotalAmount">0.00</span></span>
-                                <button id="confirmPaymentBtn" class="btn btn-success btn-sm ml-2" style="display:none;">
+                            <div class="text-end">
+                                <span class="fw-bold">Rs <span id="poolTotalAmount">0.00</span></span>
+                                <button id="confirmPaymentBtn" class="btn btn-success btn-sm ms-2" style="display:none;">
                                     <i class="fas fa-check"></i> Pay
                                 </button>
                             </div>
@@ -241,8 +239,8 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white py-2">
-                    <h5 class="modal-title"><i class="fas fa-edit mr-1"></i> Edit Fees</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    <h5 class="modal-title"><i class="fas fa-edit me-1"></i> Edit Fees</h5>
+                    <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body p-2">
                     <table class="table table-sm">
@@ -257,7 +255,7 @@
                     </table>
                 </div>
                 <div class="modal-footer py-1">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
                     <button class="btn btn-success btn-sm" onclick="saveUpdatedStudentFees()"><i class="fas fa-save"></i></button>
                 </div>
             </div>
@@ -270,7 +268,7 @@
 
 <script>
 $(function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="tooltip"]').tooltip();
 });
 </script>
 

@@ -1,25 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Topic Skills 
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Topic Skills</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+    <?= view('components/page_header', [
+    'title' => 'Topic Skills',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Topic Skills', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -110,19 +101,19 @@ $(function(){
 				render:function(data, type, row){
 					var html = '';
 					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/topic_skills?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-pencil icon-pencil"></i></a>';
+						  html += '<a href="<?php echo '#/topic_skills?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-pencil icon-pencil"></i></a>';
 
-						   html += '<a target="_blank" href="<?php echo '#/question_text_mcqs?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">MCQS Eng</a>'; 
+						   html += '<a target="_blank" href="<?php echo '#/question_text_mcqs?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">MCQS Eng</a>'; 
 
-						     html += '<a target="_blank" href="<?php echo '#/eng_text_tf?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">Eng Text T/F</a>'; 
+						     html += '<a target="_blank" href="<?php echo '#/eng_text_tf?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">Eng Text T/F</a>'; 
 
-						   html += '<a target="_blank" href="<?php echo '#/eng_text_fb?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">Eng F/B</a>'; 
+						   html += '<a target="_blank" href="<?php echo '#/eng_text_fb?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">Eng F/B</a>'; 
 
-						   html += '<a target="_blank" href="<?php echo '#/urdu_text_mcqs?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">MCQS Urdu</a>'; 
+						   html += '<a target="_blank" href="<?php echo '#/urdu_text_mcqs?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">MCQS Urdu</a>'; 
 
-						   html += '<a target="_blank" href="<?php echo '#/urdu_text_fb?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">Urdu F/B</a>'; 
+						   html += '<a target="_blank" href="<?php echo '#/urdu_text_fb?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">Urdu F/B</a>'; 
 
-						   html += '<a target="_blank" href="<?php echo '#/urdu_text_tf?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-default btn-xs">Urdu T/F</a>'; 
+						   html += '<a target="_blank" href="<?php echo '#/urdu_text_tf?m=add&topic_skill_id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm">Urdu T/F</a>'; 
 
 						  
 
@@ -132,7 +123,7 @@ $(function(){
 
 						  }else{
 
-							  //html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php //echo site_url('c=subject_cat&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+							  //html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php //echo site_url('c=subject_cat&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
 
 						  }
 

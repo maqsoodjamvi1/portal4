@@ -10,8 +10,21 @@ class LocalizationFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        $locale = $request->getLocale();
-        service('request')->setLocale($locale);
+        $supported = config('App')->supportedLocales ?? ['en', 'ur', 'ar'];
+        $language  = session('language');
+
+        if (! $language && $request->getCookie('lang')) {
+            $language = $request->getCookie('lang');
+        }
+        if (! $language && $request->getCookie('preferred_language')) {
+            $language = $request->getCookie('preferred_language');
+        }
+        if (! $language || ! in_array($language, $supported, true)) {
+            $language = config('App')->defaultLocale ?? 'en';
+        }
+
+        service('request')->setLocale($language);
+
         return $request;
     }
 

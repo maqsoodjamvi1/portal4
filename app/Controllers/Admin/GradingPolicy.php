@@ -19,7 +19,7 @@ class GradingPolicy extends BaseController
     public function index()
     {
         check_permission('admin-grading-policy');
-        return view('admin/grading_policy', []);
+        return redirect()->to(base_url('admin/grades'));
     }
 
     public function data()
@@ -105,8 +105,8 @@ class GradingPolicy extends BaseController
             }
 
             $data .= '<tr><th>' . $grade->name . '<input type="hidden" name="rowscount[]" value="1" /><input type="hidden" name="gid[]" value="' . $grade->gid . '"><input type="hidden" name="gp_id[]" value="' . $grading_policy_id . '"></th>';
-            $data .= '<td><div class="form-group"><input type="number" class="form-control pull-right" readonly id="mark_from' . $i . '" value="' . $mark_from . '" name="mark_from[]"></td>';
-            $data .= '<td><input type="number" class="form-control pull-right" autocomplete="off" id="marks_to' . $i . '" name="marks_to[]" value="' . $marks_to . '" ';
+            $data .= '<td><div class="form-group"><input type="number" class="form-control float-end" readonly id="mark_from' . $i . '" value="' . $mark_from . '" name="mark_from[]"></td>';
+            $data .= '<td><input type="number" class="form-control float-end" autocomplete="off" id="marks_to' . $i . '" name="marks_to[]" value="' . $marks_to . '" ';
             $data .= '></td>';
             $data .= '</tr><script>
             $(function(){
@@ -124,31 +124,12 @@ class GradingPolicy extends BaseController
 
     public function add()
     {
-        check_permission('admin-add-grading-policy');
-        $schoolinfo = getSchoolInfo();
-
-        $termsinfo = $this->db->table('terms')->get()->getResult();
-        $data['termsinfo'] = $termsinfo;
-
-        $academic_session = $this->db->table('academic_session')->where('system_id', $schoolinfo->system_id)->get()->getResult();
-        $data['academic_session'] = $academic_session;
-
-        return view('admin/grading_policy_edit', $data);
+        return redirect()->to(base_url('admin/grades/setup'));
     }
 
     public function edit()
     {
-        check_permission('admin-edit-grading-policy');
-        $schoolinfo = getSchoolInfo();
-
-        $id = (int) $this->request->getGet('id');
-        $info = $this->db->table('terms_session')->where('term_session_id', $id)->get()->getRow();
-        $termsinfo = $this->db->table('terms')->get()->getResult();
-        $data['termsinfo'] = $termsinfo;
-        $academic_session = $this->db->table('academic_session')->where('system_id', $schoolinfo->system_id)->get()->getResult();
-        $data['academic_session'] = $academic_session;
-        $data['info'] = $info;
-        return view('admin/grading_policy_edit', $data);
+        return redirect()->to(base_url('admin/grades/setup'));
     }
 
     public function save()

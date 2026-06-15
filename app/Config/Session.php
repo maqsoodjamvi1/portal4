@@ -40,7 +40,8 @@ class Session extends BaseConfig
      * The number of SECONDS you want the session to last.
      * Setting to 0 (zero) means expire when the browser is closed.
      */
-    public int $expiration = 315360000;
+    /** 8 hours — override via .env session.expiration if needed */
+    public int $expiration = 28800;
 
     /**
      * --------------------------------------------------------------------------
@@ -78,7 +79,8 @@ class Session extends BaseConfig
      *
      * How many seconds between CI regenerating the session ID.
      */
-    public int $timeToUpdate = 300;
+    /** Regenerate session ID at most every 30 minutes (reduces cookie churn / race on parallel requests). */
+    public int $timeToUpdate = 1800;
 
     /**
      * --------------------------------------------------------------------------
@@ -124,4 +126,25 @@ class Session extends BaseConfig
      * seconds.
      */
     public int $lockMaxRetries = 300;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Keep PHP's session GC aligned with CI session lifetime (default php.ini is often 24 min).
+        if ($this->expiration > 0) {
+            ini_set('session.gc_maxlifetime', (string) $this->expiration);
+        }
+
+        $envExpiration = env('session.expiration');
+        if ($envExpiration !== null && $envExpiration !== '' && is_numeric($envExpiration)) {
+            $this->expiration = (int) $envExpiration;
+            ini_set('session.gc_maxlifetime', (string) $this->expiration);
+        }
+
+        $envTimeToUpdate = env('session.timeToUpdate');
+        if ($envTimeToUpdate !== null && $envTimeToUpdate !== '' && is_numeric($envTimeToUpdate)) {
+            $this->timeToUpdate = (int) $envTimeToUpdate;
+        }
+    }
 }

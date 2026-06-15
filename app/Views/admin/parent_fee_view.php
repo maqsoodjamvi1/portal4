@@ -21,7 +21,7 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
         <button class="btn btn-primary" onclick="payAll()">Pay All</button>
-        <button class="btn btn-secondary" data-toggle="modal" data-target="#updateDiscountModal">
+        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateDiscountModal">
             Update Discounts
         </button>
         <button class="btn btn-info" onclick="sendSMS()">Send Reminder SMS</button>

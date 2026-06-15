@@ -8,7 +8,6 @@
   }
 ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
   @media print
   {
@@ -16,23 +15,14 @@
   }
   .table-bordered td, .table-bordered th {font-size: 11px !important;}
 </style>
-<section class="content-header">
-  <div class="container-fluid">
-  <div class="row mb-2">
-    <div class="col-sm-6">
-      <h1>
-         Student Data Verification Form
-      </h1>
-    </div>
-    <div class="col-sm-6">
-      <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-        <li class="breadcrumb-item active">Student Data Verification Form</li>
-      </ol>
-    </div>
-  </div>
-</div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Data Verification',
+    'icon' => 'fas fa-clipboard-check',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Data Verification', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
     <div class="row">
@@ -73,19 +63,22 @@
     <!-- /.content -->
 <script type="text/javascript">
 $(function(){
-  //$('#cls_sec_id').on('change', function() {  
-  $("#loader-1").css("display", "block"); 
-  //var cls_sec_id = $('#cls_sec_id').val();
+  $("#loader-1").css("display", "block");
   $.ajax({
-            url: 'admin.php?c=student_data_verification_form&m=data', 
-            type: "POST",
-            data:{},
-            success:function(res){
-             $("#studentsList").html(res);
-             $("#loader-1").css("display", "none");
-          }
-      });
- // });
+    url: '<?= site_url('admin/student_data_verification_form/data') ?>',
+    type: 'POST',
+    data: {
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    },
+    success: function(res) {
+      $("#studentsList").html(res);
+      $("#loader-1").css("display", "none");
+    },
+    error: function() {
+      $("#studentsList").html('<div class="alert alert-danger mb-0">Failed to load verification forms. Please try again.</div>');
+      $("#loader-1").css("display", "none");
+    }
+  });
 });
 </script>
 

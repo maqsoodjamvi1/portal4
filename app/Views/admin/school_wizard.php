@@ -11,7 +11,7 @@
       <form id="schoolWizardForm">
         <div id="schoolStepper" class="bs-stepper">
           <div class="bs-stepper-header" role="tablist">
-            <div class="step" data-target="#step1-classes-edit">
+            <div class="step" data-bs-target="#step1-classes-edit">
               <button type="button" class="step-trigger" role="tab">
                 <span class="bs-stepper-circle">1</span>
                 <span class="bs-stepper-label">Basic Info</span>
@@ -19,7 +19,7 @@
             </div>
             <div class="line"></div>
 
-            <div class="step" data-target="#step-contact">
+            <div class="step" data-bs-target="#step-contact">
               <button type="button" class="step-trigger" role="tab">
                 <span class="bs-stepper-circle">2</span>
                 <span class="bs-stepper-label">Contact Info</span>
@@ -27,7 +27,7 @@
             </div>
             <div class="line"></div>
 
-            <div class="step" data-target="#step-final">
+            <div class="step" data-bs-target="#step-final">
               <button type="button" class="step-trigger" role="tab">
                 <span class="bs-stepper-circle">3</span>
                 <span class="bs-stepper-label">Confirm</span>

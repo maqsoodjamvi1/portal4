@@ -9,21 +9,14 @@
 ?>
 
 <!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1>Student Names</h1>
-      </div>
-      <div class="col-sm-6 text-right">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Student Names</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Names',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Names', 'active' => true],
+    ],
+]) ?>
+
 
 <!-- Main Content -->
 <section class="content">
@@ -37,9 +30,6 @@
           <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/studentsbulk') ?>">Fee Detail</a></li>
           <?php if (!empty($campus_info->a_flag)) : ?>
             <li class="nav-item"><a class="nav-link active" href="#/students_bulk_academy_fee">Academy Fee Detail</a></li>
-          <?php endif; ?>
-          <?php if (!empty($campus_info->h_flag)) : ?>
-            <li class="nav-item"><a class="nav-link" href="#/h_student_beds?m=add">Student Bed</a></li>
           <?php endif; ?>
           <?php if (!empty($campus_info->t_flag)) : ?>
             <li class="nav-item"><a class="nav-link" href="#/students_vehicle">Students Vehicle</a></li>

@@ -17,7 +17,7 @@ class Parents_prevfee extends MY_Controller {
 
 	function __construct(){
 		parent::__construct();
-		check_permission('admin-students');
+		check_permission('admin-defaulter-student-fee-report');
 		$this->load->helper(array('form', 'url'));
 
 	}
@@ -42,7 +42,7 @@ class Parents_prevfee extends MY_Controller {
 
 	$this->template_data['sectionsclassinfo'] = $sectionsclassinfo;
 
-	$campus_info = $this->db->query('select * from campus WHERE campus_id='.$campus_id)->row();
+	$campus_info = $this->db->from('campus')->where('campus_id', (int) $campus_id)->get()->row();
 	$this->template_data['campus_info'] = $campus_info;
 
 	$this->load->view('parents_prevfee', $this->template_data);
@@ -239,11 +239,13 @@ function data() {
     }
 
     // Build HTML table
+    $currentSessionName = $currrentSessions->session_name ?? 'Current Session';
+
     $studentsList = '<table class="table table-striped table-bordered table-hover" id="students-datatable" style="font-size:10px;width:100%;">
         <thead><tr>
             <th nowrap>#</th>
             <th nowrap>Father Name</th>
-            <th>'.$currrentSessions->session_name.'</th>';
+            <th>'.esc($currentSessionName).'</th>';
     
     foreach ($academicSessions as $session) {
         $studentsList .= '<th>'.$session->session_name.'</th>';
@@ -278,7 +280,19 @@ function selectClassFee(){
 		$schoolinfo = getSchoolInfo();
 		$session_id = $this->session->userdata('member_sessionid');
 		$amount = 0;
-		$feemonth_balance = $this->db->query('SELECT amount FROM fee_amount WHERE fee_type_id = (SELECT fee_type_id FROM fee_type WHERE  system_id='.$schoolinfo->system_id.' AND is_monthly_fee=1 AND s_flag=1) AND class_id = (SELECT class_id FROM class_section WHERE cls_sec_id='.$section_id.') AND campus_id='.$campusid.' AND session_id='.$session_id)->row();
+		$monthlyFeeType = $this->db->select('fee_type_id')->from('fee_type')
+			->where('system_id', (int) $schoolinfo->system_id)
+			->where('is_monthly_fee', 1)
+			->where('s_flag', 1)
+			->get()->row();
+		$classSection = $this->db->select('class_id')->from('class_section')->where('cls_sec_id', (int) $section_id)->get()->row();
+		$feemonth_balance = ($monthlyFeeType && $classSection) ? $this->db->from('fee_amount')
+			->select('amount')
+			->where('fee_type_id', (int) $monthlyFeeType->fee_type_id)
+			->where('class_id', (int) $classSection->class_id)
+			->where('campus_id', (int) $campusid)
+			->where('session_id', (int) $session_id)
+			->get()->row() : null;
 		if($feemonth_balance){
 			$amount = $feemonth_balance->amount;
 		}

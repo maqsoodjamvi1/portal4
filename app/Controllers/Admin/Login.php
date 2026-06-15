@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\AdminPasswordResetMailer;
 use App\Libraries\MemberCurrentUser;
 
 class Login extends BaseController
@@ -114,19 +115,14 @@ class Login extends BaseController
     private function getRedirectAfterLogin()
     {
         $session = session();
-        
-        // Debug: Create a debug file to see what's happening
-        $debug = [
-            'time' => date('Y-m-d H:i:s'),
-            'step' => 'start'
-        ];
-        
-        // 1) Profile not set
+
+        if ($this->currentUserHasRoleNameId(5)) {
+            return base_url('admin/dashboard');
+        }
+
         $regText = $session->get('member_reg_text');
         if (empty($regText)) {
-            $debug['redirect'] = 'profile_system';
-            $this->writeDebug($debug);
-            return base_url('admin/profile_system');
+            return base_url('admin/profile-system');
         }
         
         // Get school info
@@ -152,161 +148,71 @@ class Login extends BaseController
             $campusId = (int)$schoolinfo->campus_id;
         }
         
-        $debug['system_id'] = $systemId;
-        $debug['campus_id'] = $campusId;
-        
         if ($systemId > 0) {
             try {
-                $db = db_connect();
-                
-                // Check classes table
-                $classesCount = $db->table('classes')
-                    ->where('system_id', $systemId)
-                    ->where('status', 1)
-                    ->countAllResults();
-                $debug['classes_count'] = $classesCount;
-                
-                // Check sections table
-                $sectionsCount = $db->table('sections')
-                    ->where('system_id', $systemId)
-                    ->where('status', 1)
-                    ->countAllResults();
-                $debug['sections_count'] = $sectionsCount;
-                
-                // Check subjects table
-                $subjectsCount = $db->table('allsubject')
-                    ->where('system_id', $systemId)
-                    ->where('status', 1)
-                    ->countAllResults();
-                $debug['subjects_count'] = $subjectsCount;
-                
-                // Check class_section table
-                $classSectionCount = 0;
-                if ($campusId > 0) {
-                    $classSectionCount = $db->table('class_section')
-                        ->where('campus_id', $campusId)
-                        ->where('status', 1)
-                        ->countAllResults();
+                $nextUrl = \App\Libraries\SchoolSetupProgress::nextStepUrl($systemId, $campusId);
+                if ($nextUrl !== null) {
+                    return $nextUrl;
                 }
-                $debug['class_section_count'] = $classSectionCount;
-                
-                // Check section_subjects table
-                $sectionSubjectsCount = 0;
-                if ($campusId > 0 && $subjectsCount > 0) {
-                    $subjectIds = $db->table('allsubject')
-                        ->select('sid')
-                        ->where('system_id', $systemId)
-                        ->where('status', 1)
-                        ->get()->getResultArray();
-                    
-                    if (!empty($subjectIds)) {
-                        $subjectIdArray = array_column($subjectIds, 'sid');
-                        $sectionSubjectsCount = $db->table('section_subjects')
-                            ->whereIn('subject_id', $subjectIdArray)
-                            ->countAllResults();
-                    }
-                }
-                $debug['section_subjects_count'] = $sectionSubjectsCount;
-                
-                // If any academic setup table is empty, redirect to academic setup
-                if ($classesCount == 0 || $sectionsCount == 0 || $subjectsCount == 0 || 
-                    $classSectionCount == 0 || $sectionSubjectsCount == 0) {
-                    $debug['redirect'] = 'academic-setup';
-                    $debug['reason'] = 'Missing academic data';
-                    $this->writeDebug($debug);
-                    return base_url('admin/academic-setup');
-                }
-                
-                // Check fee types
-                $feeTypesCount = $db->table('fee_type')
-                    ->where('system_id', $systemId)
-                    ->where('status', 1)
-                    ->countAllResults();
-                $debug['fee_types_count'] = $feeTypesCount;
-                
-                if ($feeTypesCount == 0) {
-                    $debug['redirect'] = 'fee_type';
-                    $debug['reason'] = 'No fee types';
-                    $this->writeDebug($debug);
-                    return base_url('admin/fee_type');
-                }
-                
-                // Check fee amounts
-                if ($campusId > 0) {
-                    $feeAmountsCount = $db->table('fee_amount')
-                        ->where('campus_id', $campusId)
-                        ->countAllResults();
-                    $debug['fee_amounts_count'] = $feeAmountsCount;
-                    
-                    if ($feeAmountsCount == 0) {
-                        $debug['redirect'] = 'fee_amount/add';
-                        $debug['reason'] = 'No fee amounts';
-                        $this->writeDebug($debug);
-                        return base_url('admin/fee_amount/add');
-                    }
-                }
-                
-                // Check students
-                if ($campusId > 0) {
-                    $studentsCount = $db->table('students')
-                        ->where('campus_id', $campusId)
-                        ->countAllResults();
-                    $debug['students_count'] = $studentsCount;
-                    
-                    if ($studentsCount == 0) {
-                        $debug['redirect'] = 'addbulkstudents/add';
-                        $debug['reason'] = 'No students';
-                        $this->writeDebug($debug);
-                        return base_url('admin/addbulkstudents/add');
-                    }
-                }
-                
-                // Check active academic session
-                $today = date('Y-m-d');
-                $activeSession = $db->query(
-                    'SELECT * FROM academic_session 
-                     WHERE system_id = ? 
-                       AND ? BETWEEN start_date AND end_date',
-                    [$systemId, $today]
-                )->getRow();
-                
-                $debug['active_session_exists'] = ($activeSession ? 'Yes' : 'No');
-                
-                if (! $activeSession) {
-                    $debug['redirect'] = 'academic-calendar/builder';
-                    $debug['reason'] = 'No active session';
-                    $this->writeDebug($debug);
-                    return base_url('admin/academic-calendar/builder');
-                }
-                
             } catch (\Exception $e) {
-                log_message('error', 'Database error in getRedirectAfterLogin: ' . $e->getMessage());
-                $debug['error'] = $e->getMessage();
-                $this->writeDebug($debug);
-                // On database error, redirect to dashboard
+                log_message('error', 'SchoolSetupProgress error in getRedirectAfterLogin: ' . $e->getMessage());
+
                 return base_url('admin/dashboard');
             }
-        } else {
-            $debug['redirect'] = 'dashboard (no system_id)';
-            $debug['reason'] = 'System ID is 0';
-            $this->writeDebug($debug);
         }
-        
-        $debug['redirect'] = 'dashboard';
-        $debug['reason'] = 'All checks passed';
-        $this->writeDebug($debug);
-        
+
         return base_url('admin/dashboard');
     }
 
-    /**
-     * Write debug information to a file
-     */
-    private function writeDebug($data)
+    private function currentUserHasRoleNameId(int $roleNameId): bool
     {
-        $file = WRITEPATH . 'login_debug_' . date('Y-m-d') . '.log';
-        $logEntry = date('Y-m-d H:i:s') . " - " . json_encode($data) . PHP_EOL;
-        @file_put_contents($file, $logEntry, FILE_APPEND);
+        $session = session();
+        $userId = (int) $session->get('member_userid');
+        $campusId = (int) $session->get('member_campusid');
+
+        if ($userId <= 0 || $roleNameId <= 0) {
+            return false;
+        }
+
+        $db = db_connect();
+        $planId = $this->getCampusPlanId($campusId);
+
+        // Current mapping: user_roles.roleID stores roles.id.
+        $primary = $db->table('user_roles ur')
+            ->join('roles r', 'r.id = ur.roleID' . ($planId > 0 ? ' AND r.plan_id = ' . $planId : ''), 'inner')
+            ->where('ur.userID', $userId)
+            ->where('r.role_name_id', $roleNameId)
+            ->countAllResults();
+
+        if ($primary > 0) {
+            return true;
+        }
+
+        // Legacy mapping: user_roles.roleID stores roles.role_name_id.
+        $legacy = $db->table('user_roles ur')
+            ->join('roles r', 'r.role_name_id = ur.roleID' . ($planId > 0 ? ' AND r.plan_id = ' . $planId : ''), 'inner')
+            ->where('ur.userID', $userId)
+            ->where('r.role_name_id', $roleNameId)
+            ->countAllResults();
+
+        return $legacy > 0;
+    }
+
+    private function getCampusPlanId(int $campusId): int
+    {
+        if ($campusId <= 0) {
+            return 0;
+        }
+
+        $row = db_connect()->table('campus_bills')
+            ->select('plan_id')
+            ->where('status', 1)
+            ->where('campus_id', $campusId)
+            ->orderBy('campus_expiry', 'DESC')
+            ->get()
+            ->getRow();
+
+        return (int) ($row->plan_id ?? 0);
     }
 
     /**
@@ -347,7 +253,29 @@ class Login extends BaseController
             $row = $builder->get()->getRow();
 
             if ($row) {
-                // TODO: generate token, send email, etc.
+                $token = bin2hex(random_bytes(32));
+                $db->table('forget_pwd')->where('user_id', (int) $row->id)->delete();
+                $db->table('forget_pwd')->insert([
+                    'user_id'       => (int) $row->id,
+                    'random_string' => $token,
+                ]);
+
+                $resetUrl = base_url('admin/login/change_password')
+                    . '?user_id=' . (int) $row->id
+                    . '&token_code=' . rawurlencode($token);
+
+                $email = trim((string) ($row->email ?? ''));
+                if ($email !== '') {
+                    $mailer = new AdminPasswordResetMailer();
+                    $mailer->sendResetLink(
+                        $email,
+                        $resetUrl,
+                        trim((string) ($row->name ?? $row->username ?? ''))
+                    );
+                } else {
+                    log_message('warning', 'Password reset requested for user id {id} with no email.', ['id' => $row->id]);
+                }
+
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'If this account exists, password reset instructions have been sent.',
@@ -401,15 +329,29 @@ class Login extends BaseController
             $user_id  = (int) $request->getPost('user_id');
             $password = password_hash($request->getPost('password'), PASSWORD_BCRYPT);
 
-            if ($user_id > 0) {
+            $resetUserId = (int) session()->get('password_reset_user_id');
+            $resetOk     = (bool) session()->get('password_reset_verified');
+            $resetExpiry = (int) session()->get('password_reset_expires');
+
+            if ($user_id > 0 && $resetOk && $resetUserId === $user_id && $resetExpiry > time()) {
                 $db->table('users')
                     ->where('id', $user_id)
                     ->update(['password' => $password]);
+
+                session()->remove(['password_reset_user_id', 'password_reset_verified', 'password_reset_expires']);
 
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Your password has been updated successfully.',
                     'code'    => 'password_updated',
+                ]);
+            }
+
+            if ($user_id > 0) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Your reset session has expired. Please request a new password reset link.',
+                    'code'    => 'reset_expired',
                 ]);
             }
 
@@ -434,8 +376,13 @@ class Login extends BaseController
             $row = $builder->get()->getRow();
 
             if ($row) {
-                // delete token so it can't be reused
                 $db->table('forget_pwd')->delete(['id' => $row->id]);
+
+                session()->set([
+                    'password_reset_user_id'    => (int) $row->user_id,
+                    'password_reset_verified'   => true,
+                    'password_reset_expires'    => time() + 3600,
+                ]);
 
                 $data = [
                     'success' => true,

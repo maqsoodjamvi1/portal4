@@ -1,5 +1,4 @@
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 @media print
 {
@@ -40,7 +39,7 @@ td{ text-align:left; padding-left:10px;}
     border-radius: 0px;
     border: 1px solid blue;
 }
-.input-group-addon {
+.input-group-text {
     padding: 1px 8px !important;
   }
 .select2-container--default .select2-selection--single, .select2-selection .select2-selection--single {
@@ -98,13 +97,13 @@ td{ text-align:left; padding-left:10px;}
 <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
 <div class="chalanwrapper">
 <div class="row">
-  <div class="col-sm-3 ml-2 mt-2"></div>
+  <div class="col-sm-3 ms-2 mt-2"></div>
   <div class="col-sm-8" style="font-weight:bold;">Student Copy</div><br />
-  <div class="col-sm-3 ml-2 mt-2" style="width: 25%;float: left;padding-left: 25px;"><img style="width: 70px;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+  <div class="col-sm-3 ms-2 mt-2" style="width: 25%;float: left;padding-left: 25px;"><img style="width: 70px;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
   <div class="col-sm-8"  style="width: 75%;float: left;"><?php echo $student_info['system_name']; ?><br />
   <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
 </div>  
-<div class="ml-2 mt-2" style="text-align: left;">
+<div class="ms-2 mt-2" style="text-align: left;">
 <?php 
   if($student_info['bank_name']){
     echo $student_info['bank_name'].', '; 

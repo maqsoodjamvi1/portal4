@@ -14,6 +14,7 @@ class HealthBmi extends BaseController
         $this->db = \Config\Database::connect();
         $this->session = \Config\Services::session();
         helper(['form', 'url', 'alert']);
+        check_permission('admin-students');
     }
     
 

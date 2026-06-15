@@ -3,6 +3,8 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\CampusFinanceInstaller;
+use App\Libraries\CampusFinanceService;
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Services;
 
@@ -17,6 +19,7 @@ class FeeChalanPay extends BaseController
  helper(['form', 'url']);
         $this->db = \Config\Database::connect();
         $this->session = \Config\Services::session();
+        check_any_permission(['admin-fee-chalan-pay', 'admin-fee-chalan']);
     }
 
    public function index()
@@ -26,20 +29,30 @@ class FeeChalanPay extends BaseController
 
         $campus_id = (int) (session('member_campusid') ?? 1);
 
+        $finance = new CampusFinanceService($this->db);
+        if (! $finance->tablesReady()) {
+            (new CampusFinanceInstaller($this->db))->ensureAll();
+        }
+        if ($finance->tablesReady()) {
+            $finance->ensureCampusCashAccount($campus_id, (int) session('member_userid'));
+        }
+
+        $userId   = (int) session('member_userid');
+        $financePayload = $finance->getAccountsPayload($campus_id, $userId);
+
         $data = [
             'sectionsclassinfo' => $sectionsClassInfo,
             'payFeeModal'       => $this->generatePayFeeModal(),
             'campus_info'       => session('member_campusid'),
             'session_id'        => session('member_sessionid'),
-            'paidTotals'        => $this->getPaidTotals($campus_id), // <-- totals for header badges
+            'paidTotals'        => $this->getPaidTotals($campus_id),
+            'finance_enabled'   => (bool) ($financePayload['enabled'] ?? false),
+            'finance_accounts'  => $financePayload['accounts'] ?? [],
+            'default_collection_account_id' => (int) ($financePayload['default_account_id'] ?? 0),
+            'received_by_name'  => (string) ($financePayload['received_by'] ?? ''),
         ];
 
-        // If fee_scripts is a separate partial you want on this page, render both:
-        return view('admin/fee_chalan_pay', $data)
-             . view('admin/fee_scripts');
-
-        // If you don't need the second view, just:
-        // return view('admin/fee_chalan_pay', $data);
+        return view('admin/fee_chalan_pay', $data);
     }
 
 
@@ -51,11 +64,14 @@ private function getPaidTotals(int $campus_id): array
     $today      = date('Y-m-d');
 
     // --- This Month ---
+    $advanceTypeId = advance_fee_type_id();
+
     $monthRow = $this->db->table('fee_chalan fc')
         ->select('SUM(fc.amount - fc.discount) AS total', false)
         ->join('students s', 's.student_id = fc.student_id', 'inner')
         ->where('s.campus_id', $campus_id)
         ->where('fc.status', 'paid')
+        ->where('fc.fee_type_id !=', $advanceTypeId)
         ->where('fc.updated_date >=', $monthStart)
         ->where('fc.updated_date <=', $monthEnd)
         ->get()
@@ -67,6 +83,7 @@ private function getPaidTotals(int $campus_id): array
         ->join('students s', 's.student_id = fc.student_id', 'inner')
         ->where('s.campus_id', $campus_id)
         ->where('fc.status', 'paid')
+        ->where('fc.fee_type_id !=', $advanceTypeId)
         ->where('DATE(fc.updated_date)', $today)
         ->get()
         ->getRow();
@@ -93,7 +110,78 @@ public function familyHistory($parentId)
     return view('fee/family_history_report', ['records' => $records]);
 }
 
+/**
+ * Get class monthly fee directly
+ * 
+ * @param int $class_id
+ * @param int $campus_id  
+ * @param int $session_id
+ * @return float
+ */
+protected function getClassMonthlyFee($class_id, $campus_id, $session_id)
+{
+    if (empty($class_id) || empty($campus_id) || empty($session_id)) {
+        return 0.0;
+    }
+    
+    $result = $this->db->table('fee_amount fa')
+        ->select('fa.amount')
+        ->join('fee_type ft', 'ft.fee_type_id = fa.fee_type_id')
+        ->where('fa.class_id', $class_id)
+        ->where('fa.campus_id', $campus_id)
+        ->where('fa.session_id', $session_id)
+        ->where('ft.is_monthly_fee', 1)
+        ->where('ft.status', 1)  // Only active fee types
+        ->get()
+        ->getRow();
+    
+    return (float)($result->amount ?? 0.0);
+}
 
+/**
+ * Get student's monthly fee (class fee - discount)
+ */
+protected function getStudentMonthlyFee($student_id, $session_id, $campus_id)
+{
+    // Get student's discount
+    $student = $this->db->table('students')
+        ->select('discounted_amount')
+        ->where('student_id', $student_id)
+        ->get()
+        ->getRow();
+    
+    $discountAmount = (float)($student->discounted_amount ?? 0);
+    
+    // Get student's current class
+    $classId = $this->getStudentCurrentClassId($student_id, $session_id);
+    
+    if ($classId == 0) {
+        return 0.0;
+    }
+    
+    // Get class monthly fee
+    $classFee = $this->getClassMonthlyFee($classId, $campus_id, $session_id);
+    
+    // Calculate: Class Fee - Discount
+    return max(0, $classFee - $discountAmount);
+}
+
+/**
+ * Helper: Get student's current class ID
+ */
+protected function getStudentCurrentClassId($student_id, $session_id)
+{
+    $result = $this->db->table('student_class sc')
+        ->select('cs.class_id')
+        ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+        ->where('sc.student_id', $student_id)
+        ->where('sc.session_id', $session_id)
+        ->where('sc.status', 1)
+        ->get()
+        ->getRow();
+    
+    return (int)($result->class_id ?? 0);
+}
 
 public function getStudentCardAjax()
 {
@@ -185,12 +273,12 @@ foreach ($siblings as $sibling) {
     $parentHeader = '<div class="parent-header bg-light p-2 mb-2 rounded">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div>
-                                <h5 class="mb-1" data-toggle="tooltip" title="Family head"><i class="fas fa-user-friends text-primary"></i> ' . esc($parent->f_name ?? 'N/A') . '</h5>
+                                <h5 class="mb-1" data-bs-toggle="tooltip" title="Family head"><i class="fas fa-user-friends text-primary"></i> ' . esc($parent->f_name ?? 'N/A') . '</h5>
                                 <div class="d-flex">
-                                 <span class="badge badge-info" data-toggle="tooltip" title="Monthly family fee">
+                                 <span class="badge text-bg-info" data-bs-toggle="tooltip" title="Monthly family fee">
                                         <i class="fas fa-calendar-alt"></i> Rs ' . number_format($totalStudentMonthlyFee, 0) . '
                                     </span>
-                                    <span class="badge badge-danger mr-2" data-toggle="tooltip" title="Total family dues">
+                                    <span class="badge text-bg-danger me-2" data-bs-toggle="tooltip" title="Total family dues">
                                         <i class="fas fa-exclamation-circle"></i> Rs ' . number_format($familyTotalDue, 0) . '
                                     </span>
                                    
@@ -200,35 +288,35 @@ foreach ($siblings as $sibling) {
                             <div class="mt-2 mt-md-0">
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-primary" onclick="multiCurrencyFeeModal(' . $student->student_id . ')" 
-                                        data-toggle="tooltip" title="Multi Currency">
+                                        data-bs-toggle="tooltip" title="Multi Currency">
                                         <i class="fas fa-money"></i> Multi Currency
                                     </button>
 
-                                    <div class="custom-control custom-switch d-inline-block ml-2" data-toggle="tooltip" title="Toggle partial payment mode">
-                                        <input type="checkbox" class="custom-control-input" id="partialToggle">
-                                        <label class="custom-control-label" for="partialToggle"></label>
+                                    <div class="form-check form-switch d-inline-block ms-2" data-bs-toggle="tooltip" title="Toggle partial payment mode">
+                                        <input type="checkbox" class="form-check-input" id="partialToggle">
+                                        <label class="form-check-label" for="partialToggle"></label>
                                     </div>
                                     <button class="btn btn-outline-primary" onclick="showEditStudentFeeModal(' . $student->student_id . ')" 
-                                        data-toggle="tooltip" title="Edit monthly fees">
+                                        data-bs-toggle="tooltip" title="Edit monthly fees">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button class="btn btn-outline-info" onclick="showAdvanceFeeStudentModal(' . $student->student_id . ')" 
-                                        data-toggle="tooltip" title="Pay advance fees">
+                                        data-bs-toggle="tooltip" title="Pay advance fees">
                                         <i class="fas fa-forward"></i>
                                     </button>
                                     <button class="btn btn-primary btn-icon-only" onclick="addFamilyUnpaidFeesToPool(' . $student->parent_id . ')" 
-                                        data-toggle="tooltip" title="Add all family fees to cart">
+                                        data-bs-toggle="tooltip" title="Add all family fees to cart">
                                         <i class="fas fa-cart-plus"></i>
                                     </button>
 
                                   <button type="button" class="btn btn-warning btn-icon-only"
                         onclick="showFamilyFeeHistoryPage(' . (int)$student->parent_id . ')"
-                        data-toggle="tooltip" title="Family payment history">
+                        data-bs-toggle="tooltip" title="Family payment history">
                   <i class="fas fa-file-invoice-dollar"></i>
                 </button>
                                     <button type="button" class="btn btn-outline-secondary btn-icon-only"
                         onclick="openChalanEditForPay(' . (int)$student->parent_id . ', 0)"
-                        data-toggle="tooltip" title="Edit challan / add fee lines">
+                        data-bs-toggle="tooltip" title="Edit challan / add fee lines">
                   <i class="fas fa-plus-circle"></i>
                 </button>
                 </div>
@@ -319,10 +407,11 @@ if ($classSectionLabel !== '') {
     // Unpaid fees
   $fee_chalan = $this->db->table('fee_chalan fc')
     ->select('fc.*, ft.fee_type_name, CONCAT(s.first_name, " ", COALESCE(s.last_name,"")) AS student_name')
-    ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id')
+    ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id', 'left')
     ->join('students s', 's.student_id = fc.student_id')
     ->where('fc.student_id', $student->student_id)
     ->where('fc.status', 'unpaid')
+    ->where('fc.fee_type_id !=', advance_fee_type_id())
     ->orderBy('fc.due_date', 'ASC')
     ->get()
     ->getResult();
@@ -364,7 +453,7 @@ if ($classSectionLabel !== '') {
             <strong class="d-block">' . esc($row->fee_type_name) . '</strong>
             <small class="text-muted d-block">' . esc($feeMonth) . '</small>
         </div>
-        <span class="badge badge-light">Rs ' . number_format($net_amount, 0) . '</span>
+        <span class="badge text-bg-light">Rs ' . number_format($net_amount, 0) . '</span>
     </button>
 </div>';
 
@@ -413,21 +502,21 @@ return '
         <!-- Header -->
         <div class="card-header bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-                <div class="mr-3">' . $profile_photo . '</div>
+                <div class="me-3">' . $profile_photo . '</div>
                 <div>
                     <h5 class="mb-0">' . esc($student_display_name) . '</h5>
                     <div class="d-inline-flex align-items-center mt-1">
                         <!-- Monthly Fee -->
-                        <span class="badge badge-info mr-2"
-                              data-toggle="tooltip" data-placement="top"
+                        <span class="badge text-bg-info me-2"
+                              data-bs-toggle="tooltip" data-bs-placement="top"
                               title="Monthly Student Fee: Rs ' . number_format($monthlyFee, 0) . '">
                             <i class="fas fa-calendar-alt"></i>
                             Rs ' . number_format($monthlyFee, 0) . '
                         </span>
 
                         <!-- Total Dues -->
-                        <span class="badge badge-danger mr-2"
-                              data-toggle="tooltip" data-placement="top"
+                        <span class="badge text-bg-danger me-2"
+                              data-bs-toggle="tooltip" data-bs-placement="top"
                               title="Total student dues">
                             <i class="fas fa-exclamation-circle"></i>
                             <span id="student-dues-' . esc($student->student_id) . '">' . number_format($student_total, 0) . '</span>
@@ -436,14 +525,14 @@ return '
                 </div>
             </div>
 
-            <div class="ml-auto mt-2 mt-md-0 d-flex justify-content-end">
+            <div class="ms-auto mt-2 mt-md-0 d-flex justify-content-end">
                 <div class="btn-group btn-group-sm">
                     <!-- Icon-only: Move to Cart -->
                     <button type="button"
                             class="btn btn-primary btn-icon-only"
                             onclick="addAllUnpaidFeesToPool(this)"
                             data-student-id="' . esc($student->student_id) . '"
-                            data-toggle="tooltip" data-placement="bottom"
+                            data-bs-toggle="tooltip" data-bs-placement="bottom"
                             title="Move all unpaid fees to cart" aria-label="Move to cart">
                         <i class="fas fa-cart-plus"></i>
                     </button>
@@ -475,6 +564,7 @@ protected function calculateStudentTotalDue($student_id, $session_id, $campus_id
         ->select('fc.amount, fc.discount')
         ->where('fc.student_id', $student_id)
         ->where('fc.status', 'unpaid')
+        ->where('fc.fee_type_id !=', advance_fee_type_id())
         ->get()
         ->getResult();
 
@@ -539,91 +629,165 @@ public function updateStudentDiscount()
 
 
 
-protected function getStudentMonthlyFee($student_id, $session_id, $campus_id)
-{
-    // Get student discount
-    $discount = $this->db->table('students')
-        ->select('discounted_amount')
-        ->where('student_id', $student_id)
-        ->get()
-        ->getRow();
+// protected function getStudentMonthlyFee($student_id, $session_id, $campus_id)
+// {
+//     // Get student discount
+//     $discount = $this->db->table('students')
+//         ->select('discounted_amount')
+//         ->where('student_id', $student_id)
+//         ->get()
+//         ->getRow();
     
-    $discountAmount = $discount->discounted_amount ?? 0;
+//     $discountAmount = $discount->discounted_amount ?? 0;
 
-    // Get class fee amount
-    $feeAmount = $this->db->table('fee_amount fa')
-        ->select('fa.amount')
-        ->join('fee_type ft', 'ft.fee_type_id = fa.fee_type_id')
-        ->where('ft.system_id', 1)
-        ->where('ft.is_monthly_fee', 1)
-        ->where('fa.class_id', function($query) use ($student_id, $session_id) {
-            $query->select('cs.class_id')
-                ->from('student_class sc')
-                ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-                ->where('sc.student_id', $student_id)
-                ->where('sc.session_id', $session_id);
-        })
-        ->where('fa.session_id', $session_id)
-        ->where('fa.campus_id', $campus_id)
-        ->get()
-        ->getRow();
+//     // Get class fee amount
+//     $feeAmount = $this->db->table('fee_amount fa')
+//         ->select('fa.amount')
+//         ->join('fee_type ft', 'ft.fee_type_id = fa.fee_type_id')
+//         ->where('ft.system_id', 1)
+//         ->where('ft.is_monthly_fee', 1)
+//         ->where('fa.class_id', function($query) use ($student_id, $session_id) {
+//             $query->select('cs.class_id')
+//                 ->from('student_class sc')
+//                 ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
+//                 ->where('sc.student_id', $student_id)
+//                 ->where('sc.session_id', $session_id);
+//         })
+//         ->where('fa.session_id', $session_id)
+//         ->where('fa.campus_id', $campus_id)
+//         ->get()
+//         ->getRow();
 
-    $classFee = $feeAmount->amount ?? 0;
+//     $classFee = $feeAmount->amount ?? 0;
 
-    // Calculate student's monthly fee (class fee - discount)
-    return max(0, $classFee - $discountAmount);
+//     // Calculate student's monthly fee (class fee - discount)
+//     return max(0, $classFee - $discountAmount);
+// }
+
+
+
+/**
+ * Select2 student search (fee pay). Alias for route definitions using camelCase.
+ */
+public function getStudentinfo()
+{
+    return $this->get_studentinfo();
 }
-
-
 
 public function get_studentinfo()
 {
-    $search_term = trim($this->request->getPost('term') ?? '');
+    $termRaw = $this->request->getPost('term') ?? $this->request->getPost('q');
+    if (is_array($termRaw)) {
+        $search_term = trim((string) ($termRaw['term'] ?? $termRaw['q'] ?? ''));
+    } else {
+        $search_term = trim((string) $termRaw);
+    }
+
     $cls_sec_id  = $this->request->getPost('flag');
-    $campusid    = session('member_campusid');
+    $campusid    = (int) session('member_campusid');
+    $session_id  = (int) session('member_sessionid');
 
-    $builder = $this->db->table('students')
-        ->select('
-            students.student_id,
-            CONCAT(students.first_name, " ", COALESCE(students.last_name, "")) AS student_name,
-            parents.f_name AS father_name,
-            CONCAT(classes.class_name, " ", sections.section_name) AS section_name
-        ')
-        ->join('parents', 'parents.parent_id = students.parent_id', 'left')
-        ->join('student_class', 'student_class.student_id = students.student_id AND student_class.status = 1', 'left')
-        ->join('class_section', 'class_section.cls_sec_id = student_class.cls_sec_id', 'left')
-        ->join('classes', 'classes.class_id = class_section.class_id', 'left')
-        ->join('sections', 'sections.section_id = class_section.section_id', 'left')
-        ->where('students.status', 1)
-        ->where('students.campus_id', $campusid);
-
-    // Faster search using FULLTEXT
-    if ($search_term !== '') {
-        $escaped = $this->db->escapeString($search_term) . '*'; // partial match
-        $builder->groupStart()
-            ->where("MATCH(students.first_name, students.last_name) AGAINST ('{$escaped}' IN BOOLEAN MODE)")
-            ->orWhere("MATCH(parents.f_name) AGAINST ('{$escaped}' IN BOOLEAN MODE)")
-        ->groupEnd();
+    if ($search_term !== '' && strlen($search_term) < 2) {
+        return $this->response->setJSON([]);
     }
 
-    // Optional filter by class-section
-    if ($cls_sec_id && is_numeric($cls_sec_id)) {
-        $builder->where('student_class.cls_sec_id', $cls_sec_id);
+    if ($campusid <= 0) {
+        return $this->response->setJSON([]);
     }
 
-    $query = $builder->groupBy('students.student_id')->get();
+    try {
+        $builder = $this->db->table('students s')
+            ->select('
+                s.student_id,
+                s.reg_no,
+                s.first_name,
+                s.last_name,
+                CONCAT(s.first_name, " ", COALESCE(s.last_name, "")) AS student_name,
+                p.f_name AS father_name,
+                TRIM(CONCAT(
+                    COALESCE(c.class_short_name, c.class_name, ""),
+                    " ",
+                    COALESCE(sec.short_name, sec.section_name, "")
+                )) AS section_name
+            ', false)
+            ->join('parents p', 'p.parent_id = s.parent_id', 'left')
+            ->join('student_class sc', 'sc.student_id = s.student_id AND sc.status = 1', 'inner')
+            ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id', 'left')
+            ->join('classes c', 'c.class_id = cs.class_id', 'left')
+            ->join('sections sec', 'sec.section_id = cs.section_id', 'left')
+            ->where('s.status', 1)
+            ->where('s.campus_id', $campusid);
 
-    $data = array_map(function ($row) {
-        return [
-            'id'   => $row['student_id'],
-            'text' => "{$row['student_name']} c/o {$row['father_name']} {$row['section_name']}"
-        ];
-    }, $query->getResultArray());
+        $currentRole = currentUserRoles();
+        if (in_array(5, $currentRole, true)) {
+            $teacherSections = teacherSubjectSections();
+            $clsSecIds = [];
+            foreach ($teacherSections as $sec) {
+                if (! empty($sec['cls_sec_id'])) {
+                    $clsSecIds[] = (int) $sec['cls_sec_id'];
+                }
+            }
+            if ($clsSecIds === []) {
+                return $this->response->setJSON([]);
+            }
+            $builder->whereIn('sc.cls_sec_id', $clsSecIds);
+        }
 
-    return $this->response->setJSON($data);
+        if ($search_term !== '') {
+            $builder->groupStart()
+                ->like('s.first_name', $search_term)
+                ->orLike('s.last_name', $search_term)
+                ->orLike('s.reg_no', $search_term)
+                ->orLike('p.f_name', $search_term)
+                ->orLike("CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))", $search_term)
+                ->groupEnd();
+        }
+
+        if ($cls_sec_id && is_numeric($cls_sec_id)) {
+            $builder->where('sc.cls_sec_id', (int) $cls_sec_id);
+        }
+
+        if ($session_id > 0) {
+            $builder->orderBy(
+                'CASE WHEN sc.session_id = ' . (int) $session_id . ' THEN 0 ELSE 1 END',
+                'ASC',
+                false
+            );
+        }
+        $builder->orderBy('s.first_name', 'ASC');
+
+        $rows = $builder->groupBy('s.student_id')->limit(40)->get()->getResultArray();
+
+        if ($search_term !== '') {
+            $rows = (new \App\Libraries\FeeChalanSearchService())->rankResults($rows, $search_term);
+            $rows = array_slice($rows, 0, 25);
+        }
+
+        $data = array_map(static function ($row) {
+            $studentName = trim($row['student_name'] ?? '');
+            $fatherName  = trim($row['father_name'] ?? '');
+            $sectionName = trim($row['section_name'] ?? '');
+            $text        = $studentName;
+            if ($fatherName !== '') {
+                $text .= ' c/o ' . $fatherName;
+            }
+            if ($sectionName !== '') {
+                $text .= ' ' . $sectionName;
+            }
+
+            return [
+                'id'   => (int) ($row['student_id'] ?? 0),
+                'text' => $text,
+            ];
+        }, $rows);
+
+        return $this->response->setJSON($data);
+    } catch (\Throwable $e) {
+        log_message('error', 'FeeChalanPay::get_studentinfo failed: ' . $e->getMessage());
+
+        return $this->response->setJSON([]);
+    }
 }
-
-
 
 public function getParentFeeSummary()
 {
@@ -646,7 +810,8 @@ public function getParentFeeSummary()
     if (empty($student_ids)) {
         return $this->response->setJSON([
             'success' => false,
-            'message' => 'No active students found for this parent.'
+            'message' => 'No active students found for this parent.',
+            'last_payments' => [],
         ]);
     }
 
@@ -655,7 +820,7 @@ public function getParentFeeSummary()
     ->select('SUM(amount - discount) AS total_paid')
     ->whereIn('student_id', $student_ids)
     ->where('DATE(updated_date)', date('Y-m-d'))
-    ->where('status', 'paid')
+    ->whereIn('status', ['paid', 'discounted'])
     ->get()
     ->getRow()->total_paid ?? 0;
 
@@ -664,7 +829,7 @@ public function getParentFeeSummary()
         ->select('SUM(amount - discount) AS total_paid')
         ->whereIn('student_id', $student_ids)
         ->where('updated_date >=', $month_start)
-        ->where('status', 'paid')
+        ->whereIn('status', ['paid', 'discounted'])
         ->get()
         ->getRow()->total_paid ?? 0;
 
@@ -678,6 +843,28 @@ public function getParentFeeSummary()
 
     $parentName = $students[0]->father_name ?? 'Unknown';
 
+    $lastPayments = $db->table('fee_chalan fc')
+        ->select('DATE(COALESCE(fc.paid_date, fc.updated_date)) AS payment_date, SUM(fc.amount - fc.discount) AS total_received', false)
+        ->whereIn('fc.student_id', $student_ids)
+        ->where('fc.status', 'paid')
+        ->groupBy('DATE(COALESCE(fc.paid_date, fc.updated_date))', false)
+        ->orderBy('payment_date', 'DESC')
+        ->limit(3)
+        ->get()
+        ->getResult();
+
+    $lastPaymentsFormatted = [];
+    foreach ($lastPayments as $payment) {
+        $paymentDate = $payment->payment_date ?? '';
+        $lastPaymentsFormatted[] = [
+            'payment_date' => $paymentDate,
+            'payment_date_label' => $paymentDate !== ''
+                ? date('d M Y', strtotime($paymentDate))
+                : 'Date not recorded',
+            'total_received' => floatval($payment->total_received ?? 0),
+        ];
+    }
+
     return $this->response->setJSON([
         'success' => true,
         'totalToday' => floatval($todayPaid),
@@ -686,7 +873,8 @@ public function getParentFeeSummary()
         'parent_name' => $parentName,
         'student_count' => $student_count,
         'today_label' => date('l, d M Y'),
-        'month_label' => date('F Y')
+        'month_label' => date('F Y'),
+        'last_payments' => $lastPaymentsFormatted,
     ]);
 }
 
@@ -714,65 +902,279 @@ public function getMonthlyPaidFees()
         ]);
     }
 
-    // Step 2: Get all paid fees for this month's records of those students
+    // Paid + discount adjustments this month (discount-only rows included for undo)
     $paidFees = $this->db->table('fee_chalan fc')
-        ->select('fc.*, s.first_name, s.last_name, ft.fee_type_name')
+        ->select('fc.*, s.first_name, s.last_name, s.parent_id, ft.fee_type_name')
         ->join('students s', 's.student_id = fc.student_id')
         ->join('fee_type ft', 'ft.fee_type_id = fc.fee_type_id')
         ->whereIn('fc.student_id', $student_ids)
-        ->where('fc.status', 'paid')
         ->where('fc.updated_date >=', $month_start)
+        ->groupStart()
+            ->whereIn('fc.status', ['paid', 'discounted'])
+            ->orGroupStart()
+                ->where('fc.status', 'unpaid')
+                ->where('fc.discount >', 0)
+                ->where('DATE(fc.updated_date)', $today)
+            ->groupEnd()
+        ->groupEnd()
         ->orderBy('fc.updated_date', 'DESC')
         ->get()
         ->getResult();
 
+    $rows = [];
+    foreach ($paidFees as $fee) {
+        $rows[] = $this->enrichFeeHistoryRow($fee, $today);
+    }
+
     return $this->response->setJSON([
         'success' => true,
-        'data' => $paidFees,
-        'today' => $today
+        'data'    => $rows,
+        'today'   => $today,
     ]);
 }
 
 
 public function makeUnpaid()
 {
-    $chalan_id = $this->request->getPost('chalan_id');
-    $today = date('Y-m-d');
+    $chalan_id = (int) $this->request->getPost('chalan_id');
+    $today     = date('Y-m-d');
+    $reverseDiscount = in_array(
+        $this->request->getPost('reverse_discount'),
+        ['1', 1, true, 'true'],
+        true
+    );
 
-    if (!$chalan_id) {
+    if ($chalan_id <= 0) {
         return $this->response->setJSON(['success' => false, 'message' => 'Missing chalan ID']);
     }
 
-    $db = \Config\Database::connect();
-    $builder = $db->table('fee_chalan');
+    $db      = \Config\Database::connect();
+    $chalan  = $db->table('fee_chalan')->where('chalan_id', $chalan_id)->get()->getRow();
 
-    // Fetch chalan to validate
-    $chalan = $builder->where('chalan_id', $chalan_id)->get()->getRow();
-
-    if (!$chalan) {
+    if (! $chalan) {
         return $this->response->setJSON(['success' => false, 'message' => 'Fee record not found']);
     }
 
-    // ✅ Check if updated_date is today
-    $updatedDate = $chalan->updated_date ? date('Y-m-d', strtotime($chalan->updated_date)) : null;
+    $updatedDate = $chalan->updated_date ? date('Y-m-d', strtotime((string) $chalan->updated_date)) : null;
     if ($updatedDate !== $today) {
         return $this->response->setJSON([
             'success' => false,
-            'message' => 'Only records updated today can be marked unpaid'
+            'message' => 'Only records updated today can be reversed',
         ]);
     }
 
-    $user_id = session('member_userid');
+    $user_id   = (int) session('member_userid');
+    $campus_id = (int) session('member_campusid');
+    $status    = strtolower((string) ($chalan->status ?? ''));
 
-    // ✅ Update the record
-    $builder->where('chalan_id', $chalan_id)->update([
+    $db->transStart();
+
+    try {
+        if ($status === 'discounted') {
+            $this->reverseDiscountedChalan($chalan);
+            $db->transComplete();
+
+            return $this->response->setJSON([
+                'success' => $db->transStatus() !== false,
+                'message' => $db->transStatus() !== false ? 'Discount reversed' : 'Failed to reverse discount',
+            ]);
+        }
+
+        $this->mergeSplitChalans($chalan_id, $reverseDiscount);
+        $chalan = $db->table('fee_chalan')->where('chalan_id', $chalan_id)->get()->getRow();
+
+        if (! $chalan) {
+            $db->transComplete();
+
+            return $this->response->setJSON(['success' => false, 'message' => 'Fee record not found after merge']);
+        }
+
+        $finance = new CampusFinanceService($db);
+        if ($finance->campusHasFinanceAccounts($campus_id) && ! empty($chalan->finance_transaction_id)) {
+            $rev = $finance->reverseFeeReceipt($chalan_id, $campus_id, $user_id);
+
+            if (($rev['success'] ?? false) && $reverseDiscount) {
+                $this->db->table('fee_chalan')->where('chalan_id', $chalan_id)->update([
+                    'discount'     => 0,
+                    'updated_date' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            $db->transComplete();
+
+            return $this->response->setJSON($rev);
+        }
+
+        $update = [
+            'status'       => 'unpaid',
+            'paid_date'    => null,
+            'user_id'      => $user_id,
+            'updated_date' => date('Y-m-d H:i:s'),
+        ];
+
+        if ($reverseDiscount && (float) ($chalan->discount ?? 0) > 0) {
+            $update['discount'] = 0;
+        }
+
+        $db->table('fee_chalan')->where('chalan_id', $chalan_id)->update($update);
+        $db->transComplete();
+
+        return $this->response->setJSON([
+            'success' => $db->transStatus() !== false,
+            'message' => $db->transStatus() !== false
+                ? ($reverseDiscount ? 'Discount reversed' : 'Marked unpaid')
+                : 'Failed to update fee',
+        ]);
+    } catch (\Throwable $e) {
+        $db->transComplete();
+
+        log_message('error', 'makeUnpaid failed: ' . $e->getMessage());
+
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Could not reverse fee: ' . $e->getMessage(),
+        ]);
+    }
+}
+
+/**
+ * Classify a fee row for the payment history panel (payment vs discount).
+ */
+protected function enrichFeeHistoryRow(object $fee, string $today): array
+{
+    $amount   = (float) ($fee->amount ?? 0);
+    $discount = (float) ($fee->discount ?? 0);
+    $net      = $amount - $discount;
+    $status   = strtolower((string) ($fee->status ?? ''));
+    $updated  = $fee->updated_date ? date('Y-m-d', strtotime((string) $fee->updated_date)) : null;
+
+    $entryType = 'payment';
+    if ($status === 'discounted') {
+        $entryType = 'discount';
+    } elseif ($status === 'unpaid' && $discount > 0 && $updated === $today) {
+        $entryType = 'discount_pending';
+    } elseif ($discount > 0 && $net <= 0) {
+        $entryType = 'discount';
+    } elseif ($discount > 0 && $net < $amount) {
+        $entryType = 'payment_with_discount';
+    }
+
+    return [
+        'chalan_id'          => (int) ($fee->chalan_id ?? 0),
+        'student_id'         => (int) ($fee->student_id ?? 0),
+        'parent_id'          => (int) ($fee->parent_id ?? 0),
+        'first_name'         => (string) ($fee->first_name ?? ''),
+        'last_name'          => (string) ($fee->last_name ?? ''),
+        'fee_type_name'      => (string) ($fee->fee_type_name ?? ''),
+        'fee_month'          => (string) ($fee->fee_month ?? ''),
+        'amount'             => $amount,
+        'discount'           => $discount,
+        'net_amount'         => $net,
+        'status'             => $status,
+        'paid_date'          => $fee->paid_date ?? null,
+        'updated_date'       => $fee->updated_date ?? null,
+        'entry_type'         => $entryType,
+        'can_reverse_today'  => $updated === $today,
+    ];
+}
+
+/**
+ * Merge fee_chalan rows split by a partial payment/discount (addPartialFeeToPool).
+ */
+protected function mergeSplitChalans(int $chalanId, bool $clearAppliedDiscount = false): void
+{
+    $chalan = $this->db->table('fee_chalan')->where('chalan_id', $chalanId)->get()->getRow();
+    if (! $chalan) {
+        return;
+    }
+
+    $siblingQuery = $this->db->table('fee_chalan')
+        ->where('student_id', $chalan->student_id)
+        ->where('fee_type_id', $chalan->fee_type_id)
+        ->where('fee_month', $chalan->fee_month)
+        ->where('status', 'unpaid')
+        ->where('chalan_id !=', $chalanId);
+
+    if (! empty($chalan->invoice_no)) {
+        $siblingQuery->where('invoice_no', $chalan->invoice_no);
+    } elseif (! empty($chalan->issue_date) && $chalan->issue_date !== '0000-00-00') {
+        $siblingQuery->where('issue_date', $chalan->issue_date);
+    }
+
+    $siblings = $siblingQuery->get()->getResult();
+
+    if ($siblings === []) {
+        if ($clearAppliedDiscount) {
+            $this->db->table('fee_chalan')->where('chalan_id', $chalanId)->update([
+                'discount'     => 0,
+                'updated_date' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return;
+    }
+
+    $totalAmount    = (float) $chalan->amount;
+    $restoredDiscount = 0.0;
+
+    foreach ($siblings as $sibling) {
+        $totalAmount += (float) $sibling->amount;
+        if ((float) $sibling->discount > 0) {
+            $restoredDiscount = (float) $sibling->discount;
+        }
+        $this->db->table('fee_chalan')->where('chalan_id', $sibling->chalan_id)->delete();
+    }
+
+    if ($clearAppliedDiscount) {
+        $newDiscount = $restoredDiscount;
+    } else {
+        $newDiscount = max((float) $chalan->discount, $restoredDiscount);
+    }
+
+    $this->db->table('fee_chalan')->where('chalan_id', $chalanId)->update([
+        'amount'       => round($totalAmount, 2),
+        'discount'     => round($newDiscount, 2),
+        'updated_date' => date('Y-m-d H:i:s'),
+    ]);
+}
+
+/**
+ * Reverse a standalone discounted fee row (legacy pay_fee discount insert).
+ */
+protected function reverseDiscountedChalan(object $discounted): void
+{
+    $chalanId   = (int) ($discounted->chalan_id ?? 0);
+    $amount     = (float) ($discounted->amount ?? 0);
+    $studentId  = (int) ($discounted->student_id ?? 0);
+    $feeTypeId  = (int) ($discounted->fee_type_id ?? 0);
+    $feeMonth   = (string) ($discounted->fee_month ?? '');
+
+    $sibling = $this->db->table('fee_chalan')
+        ->where('student_id', $studentId)
+        ->where('fee_type_id', $feeTypeId)
+        ->where('fee_month', $feeMonth)
+        ->where('status', 'unpaid')
+        ->where('chalan_id !=', $chalanId)
+        ->orderBy('chalan_id', 'ASC')
+        ->get()
+        ->getRow();
+
+    if ($sibling) {
+        $this->db->table('fee_chalan')->where('chalan_id', $sibling->chalan_id)->update([
+            'amount'       => round((float) $sibling->amount + $amount, 2),
+            'updated_date' => date('Y-m-d H:i:s'),
+        ]);
+        $this->db->table('fee_chalan')->where('chalan_id', $chalanId)->delete();
+
+        return;
+    }
+
+    $this->db->table('fee_chalan')->where('chalan_id', $chalanId)->update([
         'status'       => 'unpaid',
         'paid_date'    => null,
-        'user_id'      => $user_id,
-        'updated_date' => date('Y-m-d H:i:s') // refresh update timestamp
+        'discount'     => 0,
+        'updated_date' => date('Y-m-d H:i:s'),
     ]);
-
-    return $this->response->setJSON(['success' => true]);
 }
 
 
@@ -1032,7 +1434,7 @@ public function makeUnpaid()
 
             $linesHtml .= '
             <li class="fph-fee-item d-flex flex-wrap justify-content-between align-items-baseline' . $liExtraClass . '">
-                <div class="fph-fee-item-left pr-2">
+                <div class="fph-fee-item-left pe-2">
                     ' . $studentPrefix . '
                     <span class="fph-fee-type-pill">' . esc($r->fee_type_name ?? 'N/A') . '</span>
                     <span class="fph-fee-period text-muted">' . esc($feeMonth) . '</span>
@@ -1040,7 +1442,7 @@ public function makeUnpaid()
                     ' . ($paidAt !== '' ? $paidAt : '') . '
                     ' . ($amtDetail !== '' ? '<div class="fph-fee-amt-note-wrap">' . $amtDetail . '</div>' : '') . '
                 </div>
-                <div class="fph-fee-item-net text-success font-weight-bold text-nowrap">Rs ' . number_format($net, 0) . '</div>
+                <div class="fph-fee-item-net text-success fw-bold text-nowrap">Rs ' . number_format($net, 0) . '</div>
             </li>';
         }
 
@@ -1050,11 +1452,11 @@ public function makeUnpaid()
         <div class="fph-day-card card mb-3 shadow-sm border-0">
             <div class="card-header fph-day-header d-flex flex-wrap justify-content-between align-items-center py-2">
                 <div>
-                    <div class="fph-day-title mb-0 font-weight-bold">' . esc($titleMain) . '</div>
+                    <div class="fph-day-title mb-0 fw-bold">' . esc($titleMain) . '</div>
                     ' . ($titleSub !== '' ? '<div class="fph-day-weekday small text-muted">' . esc($titleSub) . '</div>' : '') . '
                 </div>
-                <div class="text-right mt-2 mt-sm-0">
-                    <span class="badge badge-success badge-pill fph-day-total-pill">Day total: Rs ' . number_format($dayTotal, 0) . '</span>
+                <div class="text-end mt-2 mt-sm-0">
+                    <span class="badge text-bg-success rounded-pill fph-day-total-pill">Day total: Rs ' . number_format($dayTotal, 0) . '</span>
                     <div class="small text-muted mt-1">' . esc($dayMeta) . '</div>
                 </div>
             </div>
@@ -1070,12 +1472,12 @@ public function makeUnpaid()
         <div class="fph-summary alert alert-light border mb-3 py-2 px-3">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <div>
-                    <span class="font-weight-bold text-dark">Overall in this view</span>
+                    <span class="fw-bold text-dark">Overall in this view</span>
                     <div class="small text-muted">' . count($rows) . ' fee payment line(s) across ' . $daysCount . ' payment day(s)</div>
                 </div>
-                <div class="text-right mt-2 mt-md-0">
+                <div class="text-end mt-2 mt-md-0">
                     <div class="small text-muted">Combined net paid</div>
-                    <div class="h5 mb-0 text-success font-weight-bold">Rs ' . number_format($family_total, 0) . '</div>
+                    <div class="h5 mb-0 text-success fw-bold">Rs ' . number_format($family_total, 0) . '</div>
                 </div>
             </div>
         </div>
@@ -1098,10 +1500,11 @@ public function makeUnpaid()
     public function markMultipleFeesAsPaid()
     {
         $student_id = $this->request->getPost('student_id');
-        $campus_id = session('member_campusid');
+        $campus_id = (int) session('member_campusid');
         $fees = json_decode($this->request->getPost('fees'), true);
         $paid_date = $this->request->getPost('paid_date');
-        $user_id = session('member_userid');
+        $user_id = (int) session('member_userid');
+        $account_id = (int) $this->request->getPost('account_id');
         $student = $this->db->table('students')->where('student_id', $student_id)->get()->getRow();
         $session_id = session('member_sessionid');
 
@@ -1113,16 +1516,47 @@ if (!$student) {
             return $this->response->setJSON(['success' => false, 'message' => 'Invalid fee data']);
         }
 
-        $builder = $this->db->table('fee_chalan');
-        $updateData = [
-            'status' => 'paid',
-            'updated_date' => date('Y-m-d H:i:s'),
-            'user_id' => $user_id,
-            'paid_date' => $paid_date
-        ];
+        $finance = new CampusFinanceService($this->db);
 
-        foreach ($fees as $fee) {
-            $builder->where('chalan_id', $fee['chalan_id'])->update($updateData);
+        if ($finance->campusHasFinanceAccounts($campus_id)) {
+            $result = $finance->recordFeeReceipt(
+                $campus_id,
+                (int) $student_id,
+                $fees,
+                (string) $paid_date,
+                $user_id,
+                $account_id,
+                $user_id
+            );
+
+            if (! ($result['success'] ?? false)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Payment failed',
+                ]);
+            }
+
+            $last_paid_chalan_id = $result['last_chalan_id'] ?? null;
+        } else {
+            $builder = $this->db->table('fee_chalan');
+            $updateData = [
+                'status' => 'paid',
+                'updated_date' => date('Y-m-d H:i:s'),
+                'user_id' => $user_id,
+                'paid_date' => $paid_date,
+            ];
+
+            foreach ($fees as $fee) {
+                $builder->where('chalan_id', $fee['chalan_id'])->update($updateData);
+            }
+
+            $last_paid_chalan_id = $this->db->table('fee_chalan')
+                ->select('chalan_id')
+                ->where('status', 'paid')
+                ->orderBy('paid_date', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRow('chalan_id');
         }
 
          $siblings = $this->db->table('students')
@@ -1146,17 +1580,9 @@ foreach ($siblings as $sibling) {
 }
 
 
-$last_paid_chalan_id = $this->db->table('fee_chalan')
-    ->select('chalan_id')
-    ->where('status', 'paid')
-    ->orderBy('paid_date', 'DESC')
-    ->limit(1)
-    ->get()
-    ->getRow('chalan_id');
-
 return $this->response->setJSON([
     'success' => true,
-    'last_chalan_id' => $last_paid_chalan_id, // the latest fee paid
+    'last_chalan_id' => $last_paid_chalan_id ?? null,
     'student_dues_all' => $allStudentDues,
     'family_dues' => [
         'amount' => $familyTotalDue
@@ -1266,7 +1692,7 @@ return $this->response->setJSON([
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Pay Fee</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
@@ -1305,7 +1731,7 @@ return $this->response->setJSON([
                 </form>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" id="payFee" class="btn btn-primary">Submit</button>
               </div>
             </div>
@@ -1337,6 +1763,8 @@ public function getAdvanceFeeStudentsAjax()
     $parent_id = $student->parent_id;
 
     // Fetch all students under this parent
+    $advanceTypeId = advance_fee_type_id();
+
     $students = $this->db->table('students s')
         ->select("
             s.student_id,
@@ -1344,12 +1772,17 @@ public function getAdvanceFeeStudentsAjax()
             COALESCE((
                 SELECT SUM(fc.amount - fc.discount)
                 FROM fee_chalan fc
-                WHERE fc.student_id = s.student_id AND fc.status = 'unpaid' AND fc.fee_type_id != 194
+                WHERE fc.student_id = s.student_id
+                  AND fc.status = 'unpaid'
+                  AND fc.fee_type_id != {$advanceTypeId}
             ), 0) AS total_due,
             COALESCE((
                 SELECT amount
                 FROM fee_chalan
-                WHERE student_id = s.student_id AND fee_type_id = 194 AND status = 'paid'
+                WHERE student_id = s.student_id
+                  AND fee_type_id = {$advanceTypeId}
+                  AND status = 'paid'
+                  AND amount > 0
                 ORDER BY chalan_id DESC
                 LIMIT 1
             ), 0) AS advance_fee
@@ -1369,52 +1802,190 @@ public function getAdvanceFeeStudentsAjax()
 public function saveAdvanceFee()
 {
     $fees = json_decode($this->request->getPost('fees'), true);
-    $campus_id = session('member_campusid');
-    $session_id = session('member_sessionid');
-     $user_id = session('member_userid');
-    
+    $campus_id = (int) session('member_campusid');
+    $user_id   = (int) session('member_userid');
+    $account_id = (int) $this->request->getPost('account_id');
+    $paid_date = (string) ($this->request->getPost('paid_date') ?: date('Y-m-d'));
 
-    if (!$fees || !is_array($fees)) {
+    if (! $fees || ! is_array($fees)) {
         return $this->response->setJSON(['success' => false, 'message' => 'Invalid input']);
     }
 
     $db = \Config\Database::connect();
-    $builder = $db->table('fee_chalan');
+    $finance = new CampusFinanceService($db);
+    $db->transStart();
+    $saved = [];
 
     foreach ($fees as $student_id => $amount) {
-        $amount = floatval($amount);
-        if ($amount <= 0) continue;
+        $student_id = (int) $student_id;
+        $amount     = round((float) $amount, 2);
 
-        
+        if ($student_id <= 0 || $amount <= 0) {
+            continue;
+        }
 
-        $existing = $builder->where([
-            'student_id' => $student_id,
-            'fee_type_id' => 194
-            
-        ])->get()->getRow();
+        $belongs = $db->table('students')
+            ->where('student_id', $student_id)
+            ->where('campus_id', $campus_id)
+            ->where('status', 1)
+            ->countAllResults();
 
-        $data = [
-            'amount' => $amount,
-            'discount' => 0,
-            'fee_type_id' => 194,
-            'status' => 'paid',
-            'student_id' => $student_id,        
-            'fee_month' => date('Y-m'), // Format like "2025-07"
-            'user_id' => $user_id,
-            'created_date' => date('Y-m-d H:i:s'),
-            'paid_date' => date('Y-m-d'),
-        ];
+        if ($belongs < 1) {
+            continue;
+        }
 
-        if ($existing) {
-            $builder->where('chalan_id', $existing->chalan_id)->update($data);
-        } else {
-            $builder->insert($data);
+        $result = add_student_advance_payment($db, $student_id, $amount, $user_id, $paid_date);
+        $saved[$student_id] = $result;
+
+        if ($finance->campusHasFinanceAccounts($campus_id) && ($result['chalan_id'] ?? 0) > 0) {
+            $finance->recordStandaloneCredit(
+                $campus_id,
+                $account_id,
+                $amount,
+                $paid_date,
+                $user_id,
+                'advance_payment',
+                $student_id,
+                (int) $result['chalan_id']
+            );
         }
     }
 
-    return $this->response->setJSON(['success' => true]);
+    $db->transComplete();
+
+    if ($saved === []) {
+        return $this->response->setJSON(['success' => false, 'message' => 'No valid advance payments to save.']);
+    }
+
+    return $this->response->setJSON(['success' => true, 'balances' => $saved]);
 }
 
+    /**
+     * Manage / update advance fee balances (list students with balance > 0).
+     */
+    public function advanceFee()
+    {
+        helper('school');
+        $campus_id  = (int) session('member_campusid');
+        $session_id = (int) session('member_sessionid');
 
+        return view('admin/advance_fee/index', [
+            'rows' => $this->fetchAdvanceBalanceRows($campus_id, $session_id),
+        ]);
+    }
 
+    /**
+     * POST balances: { "student_id": "amount", ... } — set exact balance per student.
+     */
+    public function saveAdvanceBalances(): ResponseInterface
+    {
+        helper('school');
+
+        if (! $this->request->is('post')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request.']);
+        }
+
+        $raw = $this->request->getPost('balances');
+        if (is_string($raw)) {
+            $balances = json_decode($raw, true);
+        } else {
+            $balances = is_array($raw) ? $raw : [];
+        }
+
+        if ($balances === [] || ! is_array($balances)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'No balances submitted.']);
+        }
+
+        $campus_id = (int) session('member_campusid');
+        $user_id   = (int) session('member_userid');
+        $updated   = 0;
+        $errors    = [];
+
+        $this->db->transStart();
+
+        foreach ($balances as $studentId => $amount) {
+            $studentId = (int) $studentId;
+            $amount    = round((float) $amount, 2);
+
+            if ($studentId <= 0) {
+                continue;
+            }
+
+            $belongs = $this->db->table('students')
+                ->where('student_id', $studentId)
+                ->where('campus_id', $campus_id)
+                ->where('status', 1)
+                ->countAllResults();
+
+            if ($belongs < 1) {
+                $errors[] = 'Student #' . $studentId . ' not found.';
+                continue;
+            }
+
+            set_student_advance_balance($this->db, $studentId, $amount, $user_id);
+            $updated++;
+        }
+
+        $this->db->transComplete();
+
+        if (! $this->db->transStatus()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Could not save advance balances.',
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => $updated . ' record(s) updated.',
+            'updated' => $updated,
+            'errors'  => $errors,
+        ]);
+    }
+
+    /**
+     * @return list<object>
+     */
+    private function fetchAdvanceBalanceRows(int $campus_id, int $session_id): array
+    {
+        if ($campus_id <= 0) {
+            return [];
+        }
+
+        $advanceId = advance_fee_type_id();
+
+        $sql = '
+            SELECT
+                fc.chalan_id,
+                fc.student_id,
+                fc.amount,
+                fc.paid_date,
+                s.reg_no,
+                TRIM(CONCAT(s.first_name, " ", COALESCE(s.last_name, ""))) AS student_name,
+                COALESCE(c.class_name, "") AS class_name,
+                COALESCE(sec.section_name, "") AS section_name
+            FROM fee_chalan fc
+            INNER JOIN (
+                SELECT student_id, MAX(chalan_id) AS chalan_id
+                FROM fee_chalan
+                WHERE fee_type_id = ?
+                  AND status = "paid"
+                  AND amount > 0
+                GROUP BY student_id
+            ) latest ON latest.chalan_id = fc.chalan_id
+            INNER JOIN students s ON s.student_id = fc.student_id
+            LEFT JOIN student_class sc
+                ON sc.student_id = s.student_id AND sc.session_id = ?
+            LEFT JOIN class_section cs ON cs.cls_sec_id = sc.cls_sec_id
+            LEFT JOIN classes c ON c.class_id = cs.class_id
+            LEFT JOIN sections sec ON sec.section_id = cs.section_id
+            WHERE s.campus_id = ?
+              AND s.status = 1
+            ORDER BY student_name ASC, s.reg_no ASC
+        ';
+
+        $result = $this->db->query($sql, [$advanceId, $session_id, $campus_id]);
+
+        return $result ? $result->getResult() : [];
+    }
 }

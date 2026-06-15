@@ -99,6 +99,8 @@ class Campus_chalan_pay extends MY_Controller {
 
 	function get_campus_list(){
 		$campus_id = $this->input->post('campus_id');
+		$payBase   = base_url('admin/campus_chalan_pay');
+		$chalanBase = base_url('admin/campus_chalan');
 		
 		$schoolinfo = getSchoolInfo();
 		$this->db->where('campus_id', $campus_id);
@@ -134,7 +136,7 @@ class Campus_chalan_pay extends MY_Controller {
 	
 	if(isset($campuslistinfo)){
 
-		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary pull-right' id='payAllFee' data-parentID=".$campus_id."  href='#'>Pay All</a>";
+		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary float-end' id='payAllFee' data-parentID=".$campus_id."  href='#'>Pay All</a>";
 
 		$feeList .= "<script>
 		$('#payAllFee').click(function(){
@@ -143,7 +145,7 @@ class Campus_chalan_pay extends MY_Controller {
 				var datePaid = $('#datePaid').val();
 				
 		         $.ajax({
-		            url: 'admin.php?c=campus_chalan&m=payFeeAll',
+		            url: '{$payBase}/payFeeAll',
 		            type: 'POST',
 		            data:{parent_id: parentID,datePaid:datePaid},
 		            success:function(res){
@@ -160,7 +162,7 @@ class Campus_chalan_pay extends MY_Controller {
 		</script>";
 	
 
-		$feeList .= '<table class="table table-bordered" style="width:100%;margin-bottom:20px;"><tr style="background: #367fa9;color: #fff;font-weight: normal;"><th>Bill Type</th><th>Amount</th><th colspan="1">Operation</th></tr>';
+		$feeList .= '<table class="table table-bordered" style="width:100%;margin-bottom:20px;"><tr style="background: #367fa9;color: #fff;font-weight: normal;"><th>Plan</th><th>Amount</th><th colspan="1">Operation</th></tr>';
 		$total=0;
 		$totalfine=0;
 		$subtotal =0;
@@ -175,17 +177,18 @@ class Campus_chalan_pay extends MY_Controller {
 
 		foreach($campus_chalan as $row){
 		
-		$this->db->where('bill_type_id', $row->bill_type_id);
-		$bill_type = $this->db->get('bill_type')->row();
+		$this->db->where('plan_id', $row->plan_id);
+		$plan_info = $this->db->get('bill_plans')->row();
+		$planLabel = $plan_info ? $plan_info->plan_name : 'Campus Bill';
 		
 		$total = $total + $row->bill_amount;
 			
 		$nmonth = date("d M Y", strtotime($row->due_date));
 		$profile_photo = '';
 					
-		$feeList .= "<tr id='feepaid'><th class='leftdate'>".$campus_info->campus_name."<br> ".$bill_type->bill_type_name."<br>Due Date: ".$nmonth."</th><th class='rightdata'><input type='hidden' id='campus_id".$i."' name='student_id' value='".$campus_info->campus_id."' />".($row->bill_amount)."/-</th>";
+		$feeList .= "<tr id='feepaid'><th class='leftdate'>".$campus_info->campus_name."<br> ".$planLabel."<br>Due Date: ".$nmonth."</th><th class='rightdata'><input type='hidden' id='campus_id".$i."' name='student_id' value='".$campus_info->campus_id."' />".($row->bill_amount)."/-</th>";
 		
-		$feeList .= '<td><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#payfee" data-feeamount="'.($row->bill_amount).'" data-whatever="'.$row->bill_id.'" data-fine="" data-campus_id="'.$campus_info->campus_id.'">Pay</button> <a class="btn btn-primary" href="/admin.php#/campus_chalan?id='.$campus_info->campus_id.'">Generate Chalan</a></td>';
+		$feeList .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payfee" data-feeamount="'.($row->bill_amount).'" data-whatever="'.$row->bill_id.'" data-fine="" data-campus_id="'.$campus_info->campus_id.'">Pay</button> <a class="btn btn-primary" href="'.$chalanBase.'?id='.$campus_info->campus_id.'">Generate Chalan</a></td>';
 
 		
 		$feeList .= '</tr>';
@@ -205,17 +208,18 @@ $paidfee = $this->db->query("SELECT * from campus_chalan where campus_id=".$camp
 			$profile_photo = '';
 		
 			
-			$this->db->where('bill_type_id', $value->bill_type_id);
-			$bill_type = $this->db->get('bill_type')->row();
+			$this->db->where('plan_id', $value->plan_id);
+			$plan_info = $this->db->get('bill_plans')->row();
+			$planLabel = $plan_info ? $plan_info->plan_name : 'Campus Bill';
 
-			$feeList .= "<tr><th class='leftdate' style='text-transform: capitalize;'>".$campus_info->campus_name."<br>".$bill_type->bill_type_name." ".$value->bill_status." At: ".$pmonth."</th><th class='rightdata'>".($value->bill_amount)."/-</th>";
+			$feeList .= "<tr><th class='leftdate' style='text-transform: capitalize;'>".$campus_info->campus_name."<br>".$planLabel." ".$value->bill_status." At: ".$pmonth."</th><th class='rightdata'>".($value->bill_amount)."/-</th>";
 		if($value->paid_date == date('Y-m-d')){
-			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-toggle="modal" id="unpayfee'.$value->bill_id.'" data-feeamount="'.($value->bill_amount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-campus_id="'.$campus_info->campus_id.'">Make UnPaid</button></td>';
+			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-bs-toggle="modal" id="unpayfee'.$value->bill_id.'" data-feeamount="'.($value->bill_amount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-campus_id="'.$campus_info->campus_id.'">Make UnPaid</button></td>';
 			$feeList .= "<script>
 				$('#unpayfee".$value->bill_id."').click(function(){		
 				    if(confirm('Are you sure you want to update this?')){
 				        $.ajax({
-				            url: 'admin.php?c=fee_chalan_pay&m=updatePaidFee',
+				            url: '{$payBase}/updatePaidFee',
 				            type: 'POST',
 				            data:{challan_id:$value->chalan_id},
 				            success:function(res){
@@ -248,7 +252,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Pay Fee</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -278,7 +282,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         <button type="button" id="payFee" class="btn btn-primary">Submit</button>
       </div>
     </div>
@@ -323,7 +327,7 @@ $feeList .= " <script>
  	
 	if (confirm('Are you sure you want to pay?')) {	
  	      $.ajax({
-            url: 'admin.php?c=campus_chalan_pay&m=pay_fee',
+            url: '{$payBase}/pay_fee',
             type: 'POST',
             data:{chalan_id: chalan_id,campusid:campusid,paid_date:paid_date,fee_amount:fee_amount,paid_amount:paid_amount}, 
     success:function(res){
@@ -331,7 +335,7 @@ $feeList .= " <script>
  		$('#payFee').prop('disabled', true);  
         var campus_id = $( '#campusID' ).val();
          $.ajax({
-            url: 'admin.php?c=campus_chalan_pay&m=get_campus_list',
+            url: '{$payBase}/get_campus_list',
             type: 'POST',
             data:{campus_id: campus_id},
             success:function(res){
@@ -530,16 +534,30 @@ function updatePaidFee(){
 	$this->db->update('campus_chalan', $data);
 }
 function get_campusinfo(){
+		$termPost = $this->input->post('term');
+		$search   = '';
 
-		$campusid = $this->session->userdata('member_campusid');
-		$term = $this->input->post('term');		
-		$campusinfo = $this->db->query("select * from campus where (campus_name like '%".$term['term']."%')")->result_array();
-		// Initialize Array with fetched data
-	    $data = array();
-	    foreach($campusinfo as $campus){
-	     	$data[] = array("id"=>$campus['campus_id'], "text"=>$campus['campus_name']);
-	    }
-		return json_response($data);	 
+		if (is_array($termPost)) {
+			$search = trim((string) ($termPost['term'] ?? ''));
+		} else {
+			$search = trim((string) $termPost);
+		}
+
+		$builder = \Config\Database::connect()->table('campus');
+		if ($search !== '') {
+			$builder->like('campus_name', $search);
+		}
+		$campusinfo = $builder->orderBy('campus_name', 'ASC')->limit(25)->get()->getResultArray();
+
+		$data = [];
+		foreach ($campusinfo as $campus) {
+			$data[] = [
+				'id'   => $campus['campus_id'],
+				'text' => $campus['campus_name'],
+			];
+		}
+
+		json_response($data);
 }
 }
 

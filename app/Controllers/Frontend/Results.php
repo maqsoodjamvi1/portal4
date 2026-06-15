@@ -7,7 +7,12 @@ use Config\Database;
 class Results extends BaseController
 {
     protected $db; protected $session;
-    public function __construct(){ $this->db=Database::connect(); $this->session=session(); helper(['url']); }
+    public function __construct()
+    {
+        $this->db      = Database::connect();
+        $this->session = session();
+        helper(['url', 'server', 'parent_portal']);
+    }
 
     public function index()
     {
@@ -18,13 +23,42 @@ class Results extends BaseController
         }
 
         $sid = (int) (session('active_student_id') ?? 0);
-        if (!$sid) {
+        $role = $auth['role'] ?? '';
+
+        if ($role === 'parent' && $sid <= 0) {
+            $kids = \parent_portal_get_children((int) $auth['user_id']);
+            if (! empty($kids)) {
+                $sid = (int) $kids[0]['student_id'];
+                $this->session->set('active_student_id', $sid);
+            }
+        }
+
+        if (! $sid) {
             return redirect()->route('dashboard')->with('error', 'No active student selected.');
         }
 
         $this->assertParentOwnsStudentOrFail($sid);
 
-       
+        $c = $this->db;
+        $table = null;
+        foreach (['exam_results', 'student_exam_results', 'd_exam_results'] as $t) {
+            if ($c->tableExists($t)) {
+                $table = $t;
+                break;
+            }
+        }
+        if ($table === null) {
+            log_message('error', 'Results: no exam results table found.');
+
+            return redirect()->route('dashboard')->with('error', 'Results are not available yet.');
+        }
+        try {
+            $fields = $c->getFieldNames($table);
+        } catch (\Throwable $e) {
+            log_message('error', 'Results: cannot read table fields: ' . $e->getMessage());
+
+            return redirect()->route('dashboard')->with('error', 'Unable to load results.');
+        }
 
         $has = static function (string $name) use ($fields): bool {
             return in_array($name, $fields, true);
@@ -106,11 +140,14 @@ class Results extends BaseController
 
         $rows = $q->getResultArray();
 
+        $children = ($role === 'parent') ? \parent_portal_get_children((int) $auth['user_id']) : [];
+
         return view('frontend/results/index', [
             'role'      => $auth['role'],
             'name'      => $auth['name'] ?? '',
             'studentId' => $sid,
             'results'   => $rows,
+            'children'  => $children,
         ]);
     }
 

@@ -1,12 +1,16 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-    <h1 class="mb-0">Quizzes</h1>
-    <a href="<?= base_url('admin/quizzes/create') ?>" class="btn btn-primary btn-sm">+ Create Quiz</a>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Quizzes',
+    'icon' => 'fas fa-clipboard-check',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quizzes', 'active' => true],
+    ],
+    'actionsHtml' => '<a href="' . esc(base_url('admin/quizzes/create-board-prep'), 'attr') . '" class="btn btn-success btn-sm float-sm-right ms-1"><i class="fas fa-book-reader me-1"></i> Board Prep Quizzes</a>'
+        . '<a href="' . esc(base_url('admin/quizzes/create'), 'attr') . '" class="btn btn-primary btn-sm float-sm-right"><i class="fas fa-plus me-1"></i> Create Quiz</a>',
+]) ?>
 
 <section class="content">
 
@@ -152,10 +156,10 @@
 
     /* ===== Nested quiz cards grid inside each class (initially hidden) ===== */
     .nested-quiz-grid{
-      padding: 1rem;
+      padding: .75rem;
       display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:1rem;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap:.65rem;
       max-height: 0;
       overflow: hidden;
       opacity: 0;
@@ -168,7 +172,9 @@
       overflow: visible;
     }
 
-    @media (max-width: 1400px){ .nested-quiz-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 1700px){ .nested-quiz-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (max-width: 1400px){ .nested-quiz-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 1100px){ .nested-quiz-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 768px){ .nested-quiz-grid{ grid-template-columns: 1fr; } }
 
     /* ===== Quiz Card ===== */
@@ -189,7 +195,7 @@
     }
 
     .quiz-card .card-head{
-      padding:.7rem .9rem;
+      padding:.55rem .65rem;
       background:#fbfcfe;
       border-bottom:1px solid #eef1f4;
       display:flex;
@@ -201,7 +207,7 @@
     .subj-title{
       margin:0;
       font-weight:700;
-      font-size:.95rem;
+      font-size:.85rem;
       line-height:1.2;
       display:flex;
       align-items:center;
@@ -212,7 +218,7 @@
 
     /* ===== Compact quiz card body ===== */
     .quiz-card .card-body{
-      padding:.7rem .85rem;
+      padding:.55rem .65rem;
       display:flex;
       flex-direction: column;
       gap:.5rem;
@@ -221,7 +227,7 @@
 
     .quiz-title{
       font-weight:700;
-      font-size:1rem;
+      font-size:.9rem;
       margin:0;
       line-height:1.3;
       color:#2d3748;
@@ -243,7 +249,7 @@
       border-radius:999px;
       background:#f6f7f9;
       border:1px solid #eef1f4;
-      font-size:.78rem;
+      font-size:.72rem;
       line-height:1;
       white-space:nowrap;
       transition: all 0.2s;
@@ -267,7 +273,7 @@
     .qtype-summary{
       display:flex;
       flex-wrap:wrap;
-      gap:.4rem;
+      gap:.3rem;
       margin-top:.1rem;
     }
     .qtype-item{
@@ -277,7 +283,7 @@
       padding:.15rem .5rem;
       border-radius:6px;
       background:#f1f3f5;
-      font-size:.75rem;
+      font-size:.7rem;
       border:1px solid rgba(0,0,0,.04);
       white-space:nowrap;
     }
@@ -290,7 +296,7 @@
       flex-wrap:wrap;
       gap:.4rem;
       align-items:center;
-      font-size:.82rem;
+      font-size:.74rem;
       color:#4a5568;
       margin:.1rem 0;
     }
@@ -306,7 +312,7 @@
       flex-wrap:wrap;
       gap:.6rem;
       align-items:center;
-      font-size:.82rem;
+      font-size:.74rem;
       margin:.1rem 0;
     }
     .stat-item{
@@ -320,9 +326,9 @@
       display: flex;
       align-items: center;
       gap: .5rem;
-      font-size: .82rem;
+      font-size: .74rem;
       margin-top: .2rem;
-      padding: .4rem .6rem;
+      padding: .3rem .45rem;
       background: #f8f9fa;
       border-radius: .5rem;
       border: 1px solid #e9ecef;
@@ -414,10 +420,10 @@
     }
 
     .card-foot{
-      padding:.75rem .9rem;
+      padding:.5rem .65rem;
       border-top:1px solid #eef1f4;
       display:flex;
-      gap:.5rem;
+      gap:.35rem;
       justify-content:flex-end;
       background:#fff;
       flex-wrap: wrap;
@@ -425,10 +431,24 @@
 
     .hidden{ display:none !important; }
 
-    /* ===== Difficulty badges ===== */
-    .diff-easy{ background:#e8f7ee; color:#1e7e34; border:1px solid #b6e2c6; }
-    .diff-medium{ background:#fff3cd; color:#856404; border:1px solid #ffeeba; }
-    .diff-hard{ background:#fdecea; color:#a71d2a; border:1px solid #f5c6cb; }
+    /* Publish toggle (looks like a badge, acts like a button) */
+    .pub-toggle-badge{
+      cursor:pointer;
+      border:0;
+      font-size:.72rem;
+      font-weight:600;
+      padding:.28rem .45rem;
+      line-height:1.2;
+      vertical-align:middle;
+    }
+    .pub-toggle-badge:hover{
+      filter:brightness(0.95);
+    }
+    .pub-toggle-badge:disabled{
+      opacity:.65;
+      cursor:wait;
+      pointer-events:none;
+    }
 
     /* ===== Keyboard navigation focus ===== */
     .quiz-card.kb-active{
@@ -548,6 +568,19 @@
       padding: .25rem .5rem;
       font-size: .75rem;
     }
+    .quiz-action-dropdown .dropdown-toggle{
+      min-width: 94px;
+    }
+    .quiz-action-dropdown .dropdown-menu{
+      min-width: 185px;
+      font-size: .82rem;
+    }
+    .quiz-action-dropdown .dropdown-item{
+      display:flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.38rem .7rem;
+    }
   </style>
 
   <?php
@@ -621,7 +654,6 @@
     // ---------- Build filter options from filtered quizzes ----------
     $clsOptions  = [];
     $subjOptions = [];
-    $termOptions = [];
 
     if (!empty($filteredQuizzes)) {
       foreach ($filteredQuizzes as $q) {
@@ -631,15 +663,14 @@
 
         $subLbl = trim($q->sec_sub_name ?? 'Subject');
         if ($subLbl !== '') $subjOptions[$subLbl] = $subLbl;
-
-        $tsid = (int)($q->term_session_id ?? 0);
-        $tsName = trim($q->term_session_name ?? 'Term Session #'.$tsid);
-        if ($tsid) $termOptions[$tsid] = $tsName;
       }
     }
     ksort($clsOptions);
     ksort($subjOptions);
-    ksort($termOptions);
+
+    $termOptions = $termOptions ?? [];
+    $selectedTermSessionId = (int)($selectedTermSessionId ?? 0);
+    $currentTermSessionId  = (int)($currentTermSessionId ?? 0);
 
     // ---------- Group filtered quizzes by class-section ----------
     $byClass = [];
@@ -672,17 +703,17 @@
 
   <!-- ===== Pin / shortcuts bar ===== -->
   <div class="pin-bar">
-    <span class="pin-indicator" id="openOnlyIndicator" data-toggle="tooltip" title="Toggle only open quizzes (Shortcut: O)">
-      <i class="fas fa-bolt"></i> Open Only <span class="ml-1">(O)</span>
+    <span class="pin-indicator" id="openOnlyIndicator" data-bs-toggle="tooltip" title="Toggle only open quizzes (Shortcut: O)">
+      <i class="fas fa-bolt"></i> Open Only <span class="ms-1">(O)</span>
     </span>
 
     <div class="pin-hints">
-      <span class="mr-2"><kbd>/</kbd> Search</span>
-      <span class="mr-2"><kbd>←</kbd><kbd>→</kbd> Navigate</span>
-      <span class="mr-2"><kbd>Enter</kbd> Edit</span>
-      <span class="mr-2"><kbd>R</kbd> Results</span>
-      <span class="mr-2"><kbd>P</kbd> Print</span>
-      <span class="mr-2"><kbd>?</kbd> Help</span>
+      <span class="me-2"><kbd>/</kbd> Search</span>
+      <span class="me-2"><kbd>←</kbd><kbd>→</kbd> Navigate</span>
+      <span class="me-2"><kbd>Enter</kbd> Edit</span>
+      <span class="me-2"><kbd>R</kbd> Results</span>
+      <span class="me-2"><kbd>P</kbd> Print</span>
+      <span class="me-2"><kbd>?</kbd> Help</span>
       <span><kbd>Esc</kbd> Reset</span>
     </div>
   </div>
@@ -712,9 +743,9 @@
     <div>
       <label class="small text-muted d-block mb-1">Term (Session)</label>
       <select id="fTerm" class="form-control form-control-sm">
-        <option value="">All</option>
+        <option value="" <?= $selectedTermSessionId === 0 ? 'selected' : '' ?>>All</option>
         <?php foreach ($termOptions as $tsid => $lbl): ?>
-          <option value="<?= (int)$tsid ?>"><?= esc($lbl) ?></option>
+          <option value="<?= (int)$tsid ?>" <?= $selectedTermSessionId === (int)$tsid ? 'selected' : '' ?>><?= esc($lbl) ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -722,7 +753,7 @@
     <div class="d-flex align-items-end">
       <div class="w-100 d-flex gap-2">
         <input id="fSearch" type="text" class="form-control form-control-sm" placeholder="Search title/instructions...">
-        <button id="fReset" class="btn btn-light btn-sm ml-2" type="button">Reset</button>
+        <button id="fReset" class="btn btn-light btn-sm ms-2" type="button">Reset</button>
       </div>
     </div>
   </div>
@@ -746,20 +777,20 @@
 
           <div class="class-head" onclick="toggleClassExpand(<?= (int)$clsId ?>)">
             <h3 class="class-title">
-              <i class="fas fa-chevron-down mr-1"></i>
+              <i class="fas fa-chevron-down me-1"></i>
               <i class="fas fa-layer-group text-muted"></i>
               <?= esc($clsName) ?>
             </h3>
 
             <div class="d-flex align-items-center gap-3">
               <div class="class-metrics">
-                <span class="metric-pill" data-toggle="tooltip" title="Total quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Total quizzes in this class-section">
                   <span class="text-muted">Total:</span> <strong><?= (int)$total ?></strong>
                 </span>
-                <span class="metric-pill" data-toggle="tooltip" title="Open quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Open quizzes in this class-section">
                   <span class="text-muted">Open:</span> <strong><?= (int)$open ?></strong>
                 </span>
-                <span class="metric-pill" data-toggle="tooltip" title="Closed quizzes in this class-section">
+                <span class="metric-pill" data-bs-toggle="tooltip" title="Closed quizzes in this class-section">
                   <span class="text-muted">Closed:</span> <strong><?= (int)$closed ?></strong>
                 </span>
               </div>
@@ -767,7 +798,7 @@
               <a href="<?= base_url('admin/quizzes/class-results/' . (int)$clsId) ?>" 
                  class="btn btn-outline-primary btn-sm report-btn"
                  target="_blank">
-                <i class="fas fa-chart-bar mr-1"></i> View Report
+                <i class="fas fa-chart-bar me-1"></i> View Report
               </a>
             </div>
           </div>
@@ -788,9 +819,8 @@
   $sameWindow = ($startAt && $endAt && (string)$startAt === (string)$endAt);
   $showWindow = (!$sameWindow) && ($startAt || $endAt);
 
-  // Topics
-  $topicsCsv = (string)($q->topic_names ?? '');
-  $topics    = $topicsCsv !== '' ? array_filter(array_map('trim', explode(',', $topicsCsv))) : [];
+  $createdAt = $q->created_date ?? null;
+  $createdLabel = $createdAt ? date('M d, Y', strtotime((string) $createdAt)) : '';
 
   // ✅ ACTUAL question counts from qb_questions (not planned!)
   $mcqSingle = (int)($q->actual_mcq ?? 0);
@@ -837,11 +867,6 @@
 
   $openNow = $isOpenQuiz($q);
 
-  // ✅ Difficulty based on ACTUAL total (not planned)
-  if ($actualTotal <= 10)      $diff = ['Easy','diff-easy','Difficulty: Easy (≤ 10 questions)'];
-  elseif ($actualTotal <= 25)  $diff = ['Medium','diff-medium','Difficulty: Medium (11–25 questions)'];
-  else                         $diff = ['Hard','diff-hard','Difficulty: Hard (≥ 26 questions)'];
-
   // Overall attempt percentage
   $pct = 0;
   if ($classStudents > 0) {
@@ -868,6 +893,7 @@
                    data-title="<?= esc(strtolower($title)) ?>"
                    data-instructions="<?= esc(strtolower((string)($q->instructions ?? ''))) ?>"
                    data-open="<?= $openNow ? 1 : 0 ?>"
+                   data-published="<?= $pub ? 1 : 0 ?>"
               >
 
                 <div class="card-head">
@@ -877,24 +903,17 @@
                   </h4>
 
                   <div class="quiz-badges">
-                    <?php if ($openNow): ?>
-                      <span class="badge badge-success" data-toggle="tooltip" title="Quiz is currently open">Open</span>
-                    <?php else: ?>
-                      <span class="badge badge-danger" data-toggle="tooltip" title="Quiz is closed">Closed</span>
-                    <?php endif; ?>
-
-                    <span class="badge <?= $diff[1] ?>" data-toggle="tooltip" title="<?= esc($diff[2]) ?>">
-                      <?= esc($diff[0]) ?>
-                    </span>
-
-                    <?php if ($pub): ?>
-                      <span class="badge badge-primary" data-toggle="tooltip" title="Published and visible to students">Published</span>
-                    <?php else: ?>
-                      <span class="badge badge-secondary" data-toggle="tooltip" title="Draft (not visible to students)">Draft</span>
-                    <?php endif; ?>
+                    <button type="button"
+                            class="badge pub-toggle-badge <?= $pub ? 'text-bg-primary' : 'text-bg-secondary' ?>"
+                            data-quiz-id="<?= $qid ?>"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="bottom"
+                            title="<?= $pub ? 'Click to unpublish (hide from students)' : 'Click to publish (visible to students)' ?>">
+                      <?= $pub ? 'Published' : 'Unpublished' ?>
+                    </button>
 
                     <?php if ($mins): ?>
-                      <span class="badge badge-info" data-toggle="tooltip" title="Time limit"><?= (int)$mins ?> min</span>
+                      <span class="badge text-bg-info" data-bs-toggle="tooltip" title="Time limit"><?= (int)$mins ?> min</span>
                     <?php endif; ?>
                   </div>
                 </div>
@@ -904,7 +923,7 @@
                   <div class="d-flex justify-content-between align-items-start mb-1">
                     <h3 class="quiz-title"><?= esc($title) ?></h3>
                     <span class="qpill"
-                          data-toggle="tooltip"
+                          data-bs-toggle="tooltip"
                           title="Actual questions: <?= (int)$actualTotal ?> | Planned questions: <?= (int)$plannedTotal ?>">
                       <i class="fas fa-list-ol"></i>
                       <span class="val"><?= (int)$actualTotal ?></span>
@@ -912,60 +931,18 @@
                     </span>
                   </div>
 
-                  <!-- Row 2: Start/End Date Time + Student Count + Max Attempts -->
-                  <div class="datetime-row">
-                    <?php if ($showWindow): ?>
-                      <span class="datetime-item" data-toggle="tooltip" title="Start Date">
-                        <i class="far fa-calendar-alt"></i>
-                        <?= $startAt ? date('M d, Y', strtotime($startAt)) : '—' ?>
-                      </span>
-                      <span class="muted">→</span>
-                      <span class="datetime-item" data-toggle="tooltip" title="End Date">
-                        <i class="far fa-calendar-alt"></i>
-                        <?= $endAt ? date('M d, Y', strtotime($endAt)) : '—' ?>
-                      </span>
-                    <?php else: ?>
-                      <span class="datetime-item" data-toggle="tooltip" title="Always open">
-                        <i class="fas fa-infinity"></i>
-                        Always Open
-                      </span>
-                    <?php endif; ?>
-                  </div>
-
                   <div class="stats-row">
-                    <span class="stat-item" data-toggle="tooltip" title="Students in this class">
-                      <i class="fas fa-user-graduate"></i>
-                      <strong><?= (int)$classStudents ?></strong> Students
-                    </span>
-                    <span class="stat-item" data-toggle="tooltip" title="Max attempts allowed per student">
-                      <i class="fas fa-redo"></i>
-                      <strong><?= (int)$attemptsAllowed ?></strong> Max Attempts
+                    <span class="stat-item" data-bs-toggle="tooltip" title="Students who attempted this quiz">
+                      <i class="fas fa-user-check"></i>
+                      <strong><?= (int) $attemptedStd ?></strong>
+                      <?= (int) $attemptedStd === 1 ? 'student attempted' : 'students attempted' ?>
                     </span>
                   </div>
 
-                  <!-- Row 3: Compact Attempt Stats (instead of detailed progress bars) -->
-                  <?php if ($attemptsAllowed > 0 && $classStudents > 0): ?>
-                    <div class="attempt-stats-compact">
-                      <span class="attempt-stat-item" data-toggle="tooltip" title="Attempted students">
-                        <i class="fas fa-users"></i>
-                        <span class="attempt-stat-label">Attempted:</span>
-                        <span class="attempt-stat-value"><?= $attemptedStd ?>/<?= $classStudents ?></span>
-                      </span>
-                      <span class="muted">|</span>
-                      <span class="attempt-stat-item" data-toggle="tooltip" title="Total attempts made">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span class="attempt-stat-label">Total Attempts:</span>
-                        <span class="attempt-stat-value"><?= $totalAttempts ?></span>
-                      </span>
-                    </div>
-                  <?php endif; ?>
-
-                  <!-- Row 4: Question Type Summary (non-zero only) -->
                   <?php if (!empty($qtypeItems)): ?>
-                    <div class="qsection-title">Question Summary</div>
-                    <div class="qtype-summary">
+                    <div class="qtype-summary mt-1">
                       <?php foreach ($qtypeItems as $item): ?>
-                        <span class="qtype-item" data-toggle="tooltip" title="<?= esc($item['label']) ?> questions">
+                        <span class="qtype-item" data-bs-toggle="tooltip" title="<?= esc($item['label']) ?> questions">
                           <i class="<?= $item['icon'] ?>"></i>
                           <span class="qtype-count"><?= $item['count'] ?></span>
                           <span class="muted"><?= esc($item['label']) ?></span>
@@ -987,7 +964,7 @@
                             <span class="attempt-label-detailed">Attempt <?= $i ?></span>
                             <span class="attempt-count-detailed"><?= $attemptCounts[$i] ?>/<?= $classStudents ?></span>
                           </div>
-                          <div class="progress-bar-container" data-toggle="tooltip" title="<?= $attemptPct ?>% of students completed attempt <?= $i ?>">
+                          <div class="progress-bar-container" data-bs-toggle="tooltip" title="<?= $attemptPct ?>% of students completed attempt <?= $i ?>">
                             <div class="progress-bar-fill" style="width: <?= $attemptPct ?>%"></div>
                           </div>
                           <div class="progress-percentage"><?= $attemptPct ?>%</div>
@@ -996,100 +973,77 @@
                     <?php endif; ?>
                   </div>
 
-                  <!-- Term Session Name -->
-                  <div class="text-muted small mt-2" data-toggle="tooltip" title="Term session">
-                    <i class="fas fa-calendar-alt"></i> <?= esc($tsName) ?>
+                  <div class="text-muted small mt-2" data-bs-toggle="tooltip" title="Term session and quiz creation date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <?= esc($tsName) ?>
+                    <?php if ($createdLabel !== ''): ?>
+                      <span class="muted">·</span> Created <?= esc($createdLabel) ?>
+                    <?php endif; ?>
                   </div>
-
-                  <!-- Topics (if any) -->
-                  <?php if (!empty($topics)): ?>
-                    <div class="mt-2">
-                      <div class="qsection-title">Topics</div>
-                      <div class="qtype-summary">
-                        <?php foreach ($topics as $topic): ?>
-                          <span class="qtype-item" data-toggle="tooltip" title="Topic: <?= esc($topic) ?>">
-                            <i class="fas fa-tag"></i>
-                            <?= esc($topic) ?>
-                          </span>
-                        <?php endforeach; ?>
-                      </div>
-                    </div>
-                  <?php endif; ?>
                 </div>
 
-                <!-- Action Buttons (Now includes Detail button) -->
+                <!-- Compact action menu -->
                 <div class="card-foot">
-                  <!-- New Detail Button -->
-                  <button class="btn btn-detail btn-sm btn-detail-modal"
-                          data-toggle="tooltip"
-                          title="View detailed attempt progress"
-                          data-quiz-id="<?= $qid ?>"
-                          data-quiz-title="<?= esc($title) ?>"
-                          data-subject-name="<?= esc($subName) ?>"
-                          data-class-students="<?= $classStudents ?>"
-                          data-attempted-students="<?= $attemptedStd ?>"
-                          data-total-attempts="<?= $totalAttempts ?>"
-                          data-max-attempts="<?= $attemptsAllowed ?>">
-                    <i class="fas fa-chart-bar"></i> Detail
-                  </button>
-
-                  <a class="btn btn-outline-secondary btn-sm btn-results"
-                     href="<?= site_url('admin/quizzes/'.$qid.'/results') ?>"
-                     data-toggle="tooltip" title="View results (R)">
-                    Results
-                  </a>
-
-<a class="btn btn-outline-danger btn-sm btn-delete-quiz"
-   href="javascript:void(0);"
-   data-quiz-id="<?= $qid ?>"
-   data-quiz-title="<?= htmlspecialchars($title) ?>"
-   data-toggle="tooltip" 
-   title="Delete Quiz">
-  <i class="fas fa-trash-alt"></i> Delete Quiz
-</a>
-
-
-                  <a class="btn btn-outline-info btn-sm btn-print"
-                     href="<?= site_url('admin/quizzes/print/'.$qid) ?>"
-                     target="_blank"
-                     data-toggle="tooltip" title="Print single version (P)">
-                    Print (Single)
-                  </a>
-
-                    <a href="<?= site_url('admin/quizzes/edit-questions/' . $qid) ?>" 
-       class="btn btn-warning btn-sm btn-edit-questions"
-       data-toggle="tooltip" 
-       title="Edit quiz questions">
-        <i class="fas fa-edit"></i> Edit Questions
-    </a>
-
-                  <a class="btn btn-outline-info btn-sm btn-print"
-                     href="<?= site_url('admin/quizzes/print-all/'.$qid) ?>"
-                     target="_blank">
-                    Print (All)
-                  </a>
-
- <a class="btn btn-outline-info btn-sm btn-print"
-                     href="<?= site_url('admin/quizzes/print-all-key/'.$qid) ?>"
-                     target="_blank">
-                    Print (All Key)
-                  </a>
-                  
-
-                  <a class="btn btn-outline-info btn-sm btn-print-all"
-                     href="<?= site_url('admin/quizzes/print-versions/'.$qid) ?>"
-                     target="_blank"
-                     data-toggle="tooltip" title="Print all versions">
-                    Print All Versions
-                  </a>
-
-
-
-                  <a class="btn btn-outline-primary btn-sm btn-edit"
-                     href="<?= site_url('admin/quizzes/edit/'.$qid) ?>"
-                     data-toggle="tooltip" title="Edit quiz (Enter)">
-                    Edit
-                  </a>
+                  <div class="dropdown quiz-action-dropdown">
+                    <button class="btn btn-outline-primary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                      <i class="fas fa-ellipsis-v me-1"></i> Actions
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                      <button class="dropdown-item btn-detail-modal"
+                              type="button"
+                              data-quiz-id="<?= $qid ?>"
+                              data-quiz-title="<?= esc($title) ?>"
+                              data-subject-name="<?= esc($subName) ?>"
+                              data-class-students="<?= $classStudents ?>"
+                              data-attempted-students="<?= $attemptedStd ?>"
+                              data-total-attempts="<?= $totalAttempts ?>"
+                              data-max-attempts="<?= $attemptsAllowed ?>">
+                        <i class="fas fa-chart-bar text-muted"></i> Detail
+                      </button>
+                      <a class="dropdown-item btn-results"
+                         href="<?= site_url('admin/quizzes/'.$qid.'/results') ?>">
+                        <i class="fas fa-poll text-muted"></i> Results
+                      </a>
+                      <a class="dropdown-item btn-print"
+                         href="<?= site_url('admin/quizzes/print/'.$qid) ?>"
+                         target="_blank">
+                        <i class="fas fa-print text-muted"></i> Print (Single)
+                      </a>
+                      <a class="dropdown-item btn-edit-questions"
+                         href="<?= site_url('admin/quizzes/edit-questions/' . $qid) ?>">
+                        <i class="fas fa-edit text-muted"></i> Edit Questions
+                      </a>
+                      <a class="dropdown-item btn-print"
+                         href="<?= site_url('admin/quizzes/print-all/'.$qid) ?>"
+                         target="_blank">
+                        <i class="fas fa-print text-muted"></i> Print (All)
+                      </a>
+                      <a class="dropdown-item btn-print"
+                         href="<?= site_url('admin/quizzes/print-all-key/'.$qid) ?>"
+                         target="_blank">
+                        <i class="fas fa-key text-muted"></i> Print (All Key)
+                      </a>
+                      <a class="dropdown-item btn-print-all"
+                         href="<?= site_url('admin/quizzes/print-versions/'.$qid) ?>"
+                         target="_blank">
+                        <i class="fas fa-copy text-muted"></i> Print All Versions
+                      </a>
+                      <a class="dropdown-item btn-edit"
+                         href="<?= site_url('admin/quizzes/edit/'.$qid) ?>">
+                        <i class="fas fa-pen text-muted"></i> Edit
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-danger btn-delete-quiz"
+                         href="javascript:void(0);"
+                         data-quiz-id="<?= $qid ?>"
+                         data-quiz-title="<?= htmlspecialchars($title) ?>">
+                        <i class="fas fa-trash-alt"></i> Delete Quiz
+                      </a>
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -1112,7 +1066,7 @@
           <?php endif; ?>
         </p>
         <a href="<?= base_url('admin/quizzes/create') ?>" class="btn btn-primary mt-2">
-          <i class="fas fa-plus mr-1"></i> Create Quiz
+          <i class="fas fa-plus me-1"></i> Create Quiz
         </a>
       </div>
     <?php endif; ?>
@@ -1124,7 +1078,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="attemptModalTitle">Attempt Progress</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -1135,7 +1089,7 @@
               <span id="modalSubject"></span> | 
               Students: <strong><span id="modalTotalStudents"></span></strong>
             </div>
-            <div class="text-right">
+            <div class="text-end">
               <small class="text-muted">
                 Attempted: <strong><span id="modalAttemptedStudents"></span></strong> | 
                 Total Attempts: <strong><span id="modalTotalAttempts"></span></strong>
@@ -1151,13 +1105,13 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="alert alert-light small mb-0">
-                  <i class="fas fa-info-circle text-primary mr-1"></i>
+                  <i class="fas fa-info-circle text-primary me-1"></i>
                   <strong>Note:</strong> Each bar shows the percentage of students who completed that specific attempt.
                 </div>
               </div>
-              <div class="col-md-6 text-right">
+              <div class="col-md-6 text-end">
                 <small class="text-muted">
-                  <i class="fas fa-chart-line mr-1"></i>
+                  <i class="fas fa-chart-line me-1"></i>
                   Progress as of <?= date('M d, Y H:i') ?>
                 </small>
               </div>
@@ -1165,9 +1119,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <a href="#" id="modalResultsLink" class="btn btn-primary">
-            <i class="fas fa-chart-bar mr-1"></i> View Full Results
+            <i class="fas fa-chart-bar me-1"></i> View Full Results
           </a>
         </div>
       </div>
@@ -1180,7 +1134,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Keyboard & Icons</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body small">
           <div class="mb-2">
@@ -1219,7 +1173,7 @@
 
   <!-- Floating help button -->
   <button class="btn btn-primary help-btn"
-          data-toggle="tooltip"
+          data-bs-toggle="tooltip"
           title="Help & shortcuts (?)"
           type="button"
           onclick="$('#iconLegendModal').modal('show')">
@@ -1252,13 +1206,41 @@
   // Expand/collapse state
   let expandedClassId = null;
 
+  /* Full toggle URL from CI (includes index.php / base path — matches server routing) */
+  const QUIZ_TOGGLE_PUBLISHED_TMPL = <?= json_encode(site_url('admin/quizzes/__QUIZ__/toggle-published')) ?>;
+  let quizCsrfName = <?= json_encode(csrf_token()) ?>;
+  let quizCsrfHash = <?= json_encode(csrf_hash()) ?>;
+  const currentTermSessionId = <?= json_encode($currentTermSessionId) ?>;
+
+  function quizTogglePublishedUrl(quizId){
+    return QUIZ_TOGGLE_PUBLISHED_TMPL.replace('__QUIZ__', String(quizId));
+  }
+
   function normalize(s){ return (s || '').toString().trim().toLowerCase(); }
+
+  function getUrlStatusFilter(){
+    const p = new URLSearchParams(window.location.search);
+    const s = p.get('status');
+    if (s === 'all' || s === 'unpublished' || s === 'published') return s;
+    return 'published';
+  }
+
+  function buildQuizzesListUrl(status, termSessionId){
+    let url = window.location.pathname + '?status=' + encodeURIComponent(status || getUrlStatusFilter());
+    if (termSessionId === 'all' || termSessionId === 0 || termSessionId === '0' || termSessionId === '') {
+      url += '&term_session_id=all';
+    } else if (termSessionId != null && termSessionId !== '') {
+      url += '&term_session_id=' + encodeURIComponent(String(termSessionId));
+    }
+    return url;
+  }
 
   function applyFilters(){
     const clsVal  = $fClsSec.value;
     const subVal  = $fSubject.value;
     const termVal = $fTerm.value;
     const q = normalize($fSearch.value);
+    const urlStatus = getUrlStatusFilter();
 
     const quizCards  = $classGrid.querySelectorAll('.quiz-card');
     const classWraps = $classGrid.querySelectorAll('.class-wrap');
@@ -1279,6 +1261,13 @@
         ok = (cTitle && cTitle.indexOf(q) !== -1) || (cInstr && cInstr.indexOf(q) !== -1);
       }
 
+      if (ok && urlStatus === 'published') {
+        if (card.getAttribute('data-published') !== '1') ok = false;
+      }
+      if (ok && urlStatus === 'unpublished') {
+        if (card.getAttribute('data-published') !== '0') ok = false;
+      }
+
       card.classList.toggle('hidden', !ok);
     });
 
@@ -1291,26 +1280,94 @@
     window.__kbNavRefresh && window.__kbNavRefresh();
   }
 
-  [$fClsSec, $fSubject, $fTerm].forEach(sel => sel && sel.addEventListener('change', applyFilters));
+  [$fClsSec, $fSubject].forEach(sel => sel && sel.addEventListener('change', applyFilters));
   $fSearch && $fSearch.addEventListener('input', applyFilters);
+
+  $fTerm && $fTerm.addEventListener('change', function(){
+    const termVal = this.value;
+    const status = getUrlStatusFilter();
+    window.location.href = buildQuizzesListUrl(status, termVal === '' ? 'all' : termVal);
+  });
+
   $fReset && $fReset.addEventListener('click', function(){
     if ($fClsSec)  $fClsSec.value = '';
     if ($fSubject) $fSubject.value = '';
-    if ($fTerm)    $fTerm.value = '';
     if ($fSearch)  $fSearch.value = '';
     if ($openOnlyIndicator){
       $openOnlyIndicator.classList.remove('active');
       $openOnlyIndicator.dataset.openOnly = '0';
     }
-    $classGrid.querySelectorAll('.quiz-card').forEach(c => c.classList.remove('hidden'));
-    applyFilters();
-    window.__kbNavRefresh && window.__kbNavRefresh();
+
+    const status = getUrlStatusFilter();
+    const defaultTerm = currentTermSessionId > 0 ? currentTermSessionId : 'all';
+    window.location.href = buildQuizzesListUrl(status, defaultTerm);
   });
 
   // Status filter change
   $statusFilter && $statusFilter.addEventListener('change', function() {
     const status = this.value;
-    window.location.href = window.location.pathname + '?status=' + status;
+    const termVal = $fTerm ? $fTerm.value : '';
+    window.location.href = buildQuizzesListUrl(status, termVal === '' ? 'all' : termVal);
+  });
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.pub-toggle-badge');
+    if (!btn || !$classGrid.contains(btn)) return;
+    e.preventDefault();
+    const quizId = btn.getAttribute('data-quiz-id');
+    if (!quizId) return;
+
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append(quizCsrfName, quizCsrfHash);
+
+    fetch(quizTogglePublishedUrl(quizId), {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(function(r){
+        if (!r.ok) {
+          if (r.status === 404) {
+            throw new Error('Route not found (404). Deploy app/Config/Routes.php and ensure Quizzes::togglePublished exists, then clear opcode cache.');
+          }
+          throw new Error('HTTP ' + r.status);
+        }
+        var ct = r.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          throw new Error('Unexpected response (not JSON).');
+        }
+        return r.json();
+      })
+      .then(function(data){
+        btn.disabled = false;
+        if (!data || !data.ok) {
+          window.alert((data && data.error) ? data.error : 'Could not update publish status.');
+          return;
+        }
+        if (data.csrf_hash) {
+          quizCsrfHash = data.csrf_hash;
+        }
+        var published = parseInt(data.is_published, 10) === 1;
+        var card = btn.closest('.quiz-card');
+        if (card) {
+          card.setAttribute('data-published', published ? '1' : '0');
+        }
+        btn.textContent = published ? 'Published' : 'Unpublished';
+        btn.classList.remove('text-bg-primary', 'text-bg-secondary');
+        btn.classList.add(published ? 'text-bg-primary' : 'text-bg-secondary');
+        btn.setAttribute('title', published ? 'Click to unpublish (hide from students)' : 'Click to publish (visible to students)');
+        if (window.jQuery) {
+          window.jQuery(btn).tooltip('dispose');
+          window.jQuery(btn).tooltip({ container: 'body', boundary: 'window', delay: { show: 300, hide: 100 } });
+        }
+        applyFilters();
+      })
+      .catch(function(err){
+        btn.disabled = false;
+        window.alert(err && err.message ? err.message : 'Network error. Please try again.');
+      });
   });
 
   applyFilters();
@@ -1512,7 +1569,7 @@
 
 <script>
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip({
+  $('[data-bs-toggle="tooltip"]').tooltip({
     container: 'body',
     boundary: 'window',
     delay: { show: 300, hide: 100 }

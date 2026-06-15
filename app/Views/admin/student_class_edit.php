@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -5,31 +6,42 @@
   // From controller
   $academic_sessioninfo = $academic_sessioninfo ?? [];
   $sectionsclassinfo    = $sectionsclassinfo ?? [];
+  $defaultRunningSessionId = (int) ($defaultRunningSessionId ?? 0);
+  $defaultNewSessionId     = (int) ($defaultNewSessionId ?? 0);
+
+  $classSectionGroups = [];
+  foreach ($sectionsclassinfo as $sec) {
+      $classId = (int) ($sec['class_id'] ?? 0);
+      if ($classId <= 0) {
+          continue;
+      }
+      if (! isset($classSectionGroups[$classId])) {
+          $classSectionGroups[$classId] = [
+              'class_name' => (string) ($sec['class_name'] ?? ('Class ' . $classId)),
+              'sections'   => [],
+          ];
+      }
+      $classSectionGroups[$classId]['sections'][] = $sec;
+  }
 
   // CSRF
   $csrfTokenName = csrf_token();
   $csrfHash      = csrf_hash();
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-7">
-        <h1 class="h4 mb-0">Class Promotion</h1>
-        <div class="text-muted small">Click or drag students to promote; changes save immediately.</div>
-      </div>
-      <div class="col-sm-5">
-        <ol class="breadcrumb float-sm-right mb-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Class Promotion</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Class Promotion',
+    'icon' => 'fas fa-arrow-up',
+    'subtitle' => 'Click or drag students to promote; changes save immediately.',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Class', 'url' => base_url('admin/student_class')],
+        ['label' => 'Class Promotion', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
-  <div class="card card-primary card-outline">
+  <div class="card sms-card card-primary card-outline">
     <div class="card-header py-2">
       <div class="d-flex flex-wrap align-items-end" style="gap:.75rem;">
         <!-- Running (Current) -->
@@ -38,7 +50,9 @@
           <select id="running_session" class="form-control form-control-sm" style="min-width:180px;">
             <option value="">Select session</option>
             <?php foreach ($academic_sessioninfo as $s): ?>
-              <option value="<?= (int)$s->session_id ?>"><?= esc($s->session_name) ?></option>
+              <option value="<?= (int)$s->session_id ?>" <?= (int) $s->session_id === $defaultRunningSessionId ? 'selected' : '' ?>>
+                <?= esc($s->session_name) ?>
+              </option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -48,8 +62,13 @@
           <label class="small mb-1">Running Class</label>
           <select id="running_class" class="form-control form-control-sm" style="min-width:220px;">
             <option value="">Select class → section</option>
-            <?php foreach ($sectionsclassinfo as $sec): ?>
-              <option value="<?= (int)$sec['cls_sec_id'] ?>"><?= esc($sec['sectionclassname']) ?></option>
+            <?php foreach ($classSectionGroups as $classId => $group): ?>
+              <optgroup label="<?= esc($group['class_name']) ?>">
+                <option value="class:<?= (int) $classId ?>"><?= esc($group['class_name']) ?> - All Sections</option>
+                <?php foreach ($group['sections'] as $sec): ?>
+                  <option value="<?= (int) $sec['cls_sec_id'] ?>"><?= esc($sec['sectionclassname']) ?></option>
+                <?php endforeach; ?>
+              </optgroup>
             <?php endforeach; ?>
           </select>
         </div>
@@ -62,7 +81,9 @@
           <select id="new_session" class="form-control form-control-sm" style="min-width:180px;">
             <option value="">Select session</option>
             <?php foreach ($academic_sessioninfo as $s): ?>
-              <option value="<?= (int)$s->session_id ?>"><?= esc($s->session_name) ?></option>
+              <option value="<?= (int)$s->session_id ?>" <?= (int) $s->session_id === $defaultNewSessionId ? 'selected' : '' ?>>
+                <?= esc($s->session_name) ?>
+              </option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -72,8 +93,13 @@
           <label class="small mb-1">New Class</label>
           <select id="new_class" class="form-control form-control-sm" style="min-width:220px;">
             <option value="">Select class → section</option>
-            <?php foreach ($sectionsclassinfo as $sec): ?>
-              <option value="<?= (int)$sec['cls_sec_id'] ?>"><?= esc($sec['sectionclassname']) ?></option>
+            <?php foreach ($classSectionGroups as $classId => $group): ?>
+              <optgroup label="<?= esc($group['class_name']) ?>">
+                <option value="class:<?= (int) $classId ?>"><?= esc($group['class_name']) ?> - All Sections</option>
+                <?php foreach ($group['sections'] as $sec): ?>
+                  <option value="<?= (int) $sec['cls_sec_id'] ?>"><?= esc($sec['sectionclassname']) ?></option>
+                <?php endforeach; ?>
+              </optgroup>
             <?php endforeach; ?>
           </select>
         </div>
@@ -83,21 +109,24 @@
           <span class="spinner-border spinner-border-sm d-none ms-1" role="status" aria-hidden="true"></span>
         </button>
       </div>
+      <div class="small text-muted mt-2">
+        Students Print uses the header session. For Running Session, pick the session where students are currently enrolled, or use <strong>All Sections</strong> to include every section of a class.
+      </div>
     </div>
 
     <div class="card-body">
       <!-- Top tools -->
       <div class="d-flex flex-wrap align-items-center mb-2" style="gap:.5rem;">
         <div class="input-group input-group-sm" style="max-width:260px;">
-          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
           <input id="search_left" type="text" class="form-control" placeholder="Search current class…">
         </div>
         <div class="input-group input-group-sm" style="max-width:260px;">
-          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
           <input id="search_right" type="text" class="form-control" placeholder="Search new class…">
         </div>
 
-        <div class="ml-auto d-flex" style="gap:.5rem;">
+        <div class="ms-auto d-flex" style="gap:.5rem;">
           <button id="btnMoveAll" class="btn btn-success btn-sm" disabled>
             <i class="fas fa-angle-double-right"></i> Move All
           </button>
@@ -191,6 +220,22 @@
   }
   function canLoad(v){ return v.running_session && v.running_class && v.new_session && v.new_class; }
 
+  function targetClsSecId(raw){
+    const value = String(raw || '');
+    if (!value || value.indexOf('class:') === 0) {
+      return 0;
+    }
+    return parseInt(value, 10) || 0;
+  }
+
+  function pillClsSecId($pill, fallbackRaw){
+    const fromPill = parseInt($pill.data('cls-sec-id'), 10);
+    if (fromPill > 0) {
+      return fromPill;
+    }
+    return targetClsSecId(fallbackRaw);
+  }
+
   function setLoading(on){
     $btnLoad.prop('disabled', on);
     $btnLoadSpin.toggleClass('d-none', !on);
@@ -207,13 +252,15 @@
 
   function pillHtml(s){
     const initials = (s.name || '').split(' ').map(x => x.trim()[0] || '').join('').substring(0,2).toUpperCase() || 'S';
+    const sectionLine = s.section_name ? `<div class="pill-sub">${s.section_name}</div>` : '';
     return `
-      <div class="student-pill" data-id="${s.id}">
+      <div class="student-pill" data-id="${s.id}" data-cls-sec-id="${s.cls_sec_id || 0}">
         <div class="pill-main">
           <span class="avatar" title="${s.reg_no || ''}">${initials}</span>
           <div>
             <div class="pill-name" title="${s.name || ''}">${s.name || ''}</div>
             ${s.reg_no ? `<div class="pill-sub">${s.reg_no}</div>` : ``}
+            ${sectionLine}
           </div>
         </div>
         <div class="pill-actions">
@@ -261,7 +308,11 @@
       (data.students || []).forEach(s => $left.append(pillHtml(s)));
       (data.promoted || []).forEach(s => $right.append(pillHtml(s)));
       decorateButtons();
-      $load.empty();
+      if ((data.students || []).length === 0 && (data.promoted || []).length === 0) {
+        $load.html('<div class="alert alert-info mb-0">' + (data.hint || 'No students found for the selected session/class.') + '</div>');
+      } else {
+        $load.empty();
+      }
       countUpdate();
     })
     .fail(function () {
@@ -289,13 +340,31 @@
   // Persist a single move
   function moveOne(toRight, $pill){
     const v = selVals();
+    const toClsSecId = targetClsSecId(v.new_class);
+
+    if (toRight && toClsSecId <= 0) {
+      alert('Please select a specific target section under New Class before promoting.');
+      return $.Deferred().reject().promise();
+    }
+
+    const fromClsSecId = toRight
+      ? pillClsSecId($pill, v.running_class)
+      : pillClsSecId($pill, v.new_class);
+    const undoTargetClsSecId = parseInt($pill.attr('data-origin-cls-sec-id'), 10)
+      || pillClsSecId($pill, v.running_class);
+
+    if (!toRight && undoTargetClsSecId <= 0) {
+      alert('Unable to determine the original class section for undo.');
+      return $.Deferred().reject().promise();
+    }
+
     const payload = {
       [csrfName]: csrfHash,
       student_id: $pill.data('id'),
       from_session_id: toRight ? v.running_session : v.new_session,
       to_session_id:   toRight ? v.new_session     : v.running_session,
-      from_cls_sec_id: toRight ? v.running_class   : v.new_class,
-      to_cls_sec_id:   toRight ? v.new_class       : v.running_class
+      from_cls_sec_id: fromClsSecId,
+      to_cls_sec_id:   toRight ? toClsSecId : undoTargetClsSecId
     };
     return $.ajax({ url: routes.move, method: 'POST', dataType: 'json', data: payload });
   }
@@ -306,13 +375,36 @@
     const ids = $pills.map(function(){ return $(this).data('id'); }).get();
     if(ids.length === 0) return $.Deferred().resolve({success:true}).promise();
 
+    const toClsSecId = targetClsSecId(v.new_class);
+    if (toRight && toClsSecId <= 0) {
+      alert('Please select a specific target section under New Class before promoting.');
+      return $.Deferred().reject().promise();
+    }
+
+    const fromClsSecMap = {};
+    const toClsSecMap = {};
+    $pills.each(function(){
+      const $pill = $(this);
+      const sid = $pill.data('id');
+      fromClsSecMap[sid] = pillClsSecId(
+        $pill,
+        toRight ? v.running_class : v.new_class
+      );
+      if (!toRight) {
+        toClsSecMap[sid] = parseInt($pill.attr('data-origin-cls-sec-id'), 10)
+          || pillClsSecId($pill, v.running_class);
+      }
+    });
+
     const payload = {
       [csrfName]: csrfHash,
       student_ids: ids,
       from_session_id: toRight ? v.running_session : v.new_session,
       to_session_id:   toRight ? v.new_session     : v.running_session,
-      from_cls_sec_id: toRight ? v.running_class   : v.new_class,
-      to_cls_sec_id:   toRight ? v.new_class       : v.running_class
+      from_cls_sec_id: toRight ? targetClsSecId(v.running_class) : toClsSecId,
+      to_cls_sec_id:   toRight ? toClsSecId : targetClsSecId(v.running_class),
+      from_cls_sec_ids: fromClsSecMap,
+      to_cls_sec_ids: toClsSecMap
     };
     return $.ajax({ url: routes.moveBulk, method: 'POST', dataType: 'json', data: payload });
   }
@@ -329,14 +421,21 @@
     moveOne(toRight, $pill).done(function(r){
       const ok = r && r.success === true;
       if(ok){
+        if (toRight) {
+          $pill.attr('data-origin-cls-sec-id', pillClsSecId($pill, selVals().running_class));
+          $pill.attr('data-cls-sec-id', targetClsSecId(selVals().new_class));
+        } else {
+          $pill.attr('data-cls-sec-id', parseInt($pill.attr('data-origin-cls-sec-id'), 10) || pillClsSecId($pill, selVals().running_class));
+        }
         (toRight ? $right : $left).prepend($pill);
         decorateButtons();
         countUpdate();
       } else {
         alert((r && r.message) ? r.message : 'Move failed.');
       }
-    }).fail(function(){
-      alert('Server error.');
+    }).fail(function(xhr){
+      const msg = xhr && xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Server error.';
+      alert(msg);
     }).always(function(){
       $btn.prop('disabled', false);
       decorateButtons();
@@ -411,7 +510,7 @@
   });
 
   // Initial state
-  $btnLoad.prop('disabled', true);
+  $btnLoad.prop('disabled', !canLoad(selVals()));
 })();
 </script>
 

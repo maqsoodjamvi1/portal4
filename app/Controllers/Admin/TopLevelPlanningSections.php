@@ -433,10 +433,10 @@ public function save()
                .     '</textarea>'
                .   '</td>'
                .   '<td class="text-center align-middle">'
-               .     '<div class="custom-control custom-switch">'
-               .       '<input type="checkbox" class="custom-control-input" id="lock_' . $subject_id . '" '
+               .     '<div class="form-check form-switch">'
+               .       '<input type="checkbox" class="form-check-input" id="lock_' . $subject_id . '" '
                .              'name="lock_' . $subject_id . '" value="1" '. ($locked ? 'checked' : '') .'>'
-               .       '<label class="custom-control-label" for="lock_' . $subject_id . '"></label>'
+               .       '<label class="form-check-label" for="lock_' . $subject_id . '"></label>'
                .     '</div>'
                .   '</td>'
                . '</tr>';

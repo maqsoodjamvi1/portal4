@@ -178,18 +178,18 @@ function checkfathercnic() {
 
         <ul class="nav nav-tabs nav-fill mb-3" id="custom-tabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="tab-basic" data-toggle="tab" href="#tab-basic-pane" role="tab">
-              <i class="fas fa-user-graduate mr-2"></i> Basic Info
+            <a class="nav-link active" id="tab-basic" data-bs-toggle="tab" href="#tab-basic-pane" role="tab">
+              <i class="fas fa-user-graduate me-2"></i> Basic Info
             </a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link <?= !isset($info) ? 'disabled' : '' ?>" id="tab-contact" data-toggle="tab" href="#tab-contact-pane" role="tab">
-              <i class="fas fa-address-book mr-2"></i> Contact Info
+            <a class="nav-link <?= !isset($info) ? 'disabled' : '' ?>" id="tab-contact" data-bs-toggle="tab" href="#tab-contact-pane" role="tab">
+              <i class="fas fa-address-book me-2"></i> Contact Info
             </a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link <?= !isset($info) ? 'disabled' : '' ?>" id="tab-general" data-toggle="tab" href="#tab-general-pane" role="tab">
-              <i class="fas fa-info-circle mr-2"></i> General Info
+            <a class="nav-link <?= !isset($info) ? 'disabled' : '' ?>" id="tab-general" data-bs-toggle="tab" href="#tab-general-pane" role="tab">
+              <i class="fas fa-info-circle me-2"></i> General Info
             </a>
           </li>
        

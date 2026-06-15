@@ -1,29 +1,22 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Attendance Report</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/attendance/scan') ?>">QR Scanner</a></li>
-                    <li class="breadcrumb-item active">Report</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Attendance Report',
+    'icon' => 'fas fa-chart-bar',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'QR Scanner', 'url' => base_url('admin/attendance/scan')],
+        ['label' => 'Report', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="container-fluid">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-chart-bar mr-2"></i>
+                    <i class="fas fa-chart-bar me-2"></i>
                     Attendance Records
                 </h3>
                 <div class="card-tools">
@@ -65,8 +58,8 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="submit" class="btn btn-primary btn-block">
-                                    <i class="fas fa-search mr-1"></i> Filter
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> Filter
                                 </button>
                             </div>
                         </div>
@@ -76,10 +69,10 @@
                 <!-- Export Buttons -->
                 <div class="mb-3">
                     <button onclick="exportToExcel()" class="btn btn-success btn-sm">
-                        <i class="fas fa-file-excel mr-1"></i> Export to Excel
+                        <i class="fas fa-file-excel me-1"></i> Export to Excel
                     </button>
                     <button onclick="window.print()" class="btn btn-info btn-sm">
-                        <i class="fas fa-print mr-1"></i> Print
+                        <i class="fas fa-print me-1"></i> Print
                     </button>
                 </div>
                 
@@ -112,7 +105,7 @@
                                         </td>
                                         <td>
                                             <?php if ($att->checkin): ?>
-                                                <i class="fas fa-clock text-success mr-1"></i>
+                                                <i class="fas fa-clock text-success me-1"></i>
                                                 <?= date('h:i A', strtotime($att->checkin)) ?>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
@@ -120,7 +113,7 @@
                                         </td>
                                         <td>
                                             <?php if ($att->checkout): ?>
-                                                <i class="fas fa-clock text-danger mr-1"></i>
+                                                <i class="fas fa-clock text-danger me-1"></i>
                                                 <?= date('h:i A', strtotime($att->checkout)) ?>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
@@ -144,17 +137,17 @@
                                             elseif ($att->status == 'late') $statusClass = 'warning';
                                             elseif ($att->status == 'absent') $statusClass = 'danger';
                                             ?>
-                                            <span class="badge badge-<?= $statusClass ?>">
+                                            <span class="badge text-bg-<?=  $statusClass ?>">
                                                 <?= ucfirst($att->status ?? 'unknown') ?>
                                             </span>
                                         </td>
                                         <td>
                                             <?php if ($att->check_in_method == 'qr'): ?>
-                                                <span class="badge badge-info"><i class="fas fa-qrcode mr-1"></i> QR</span>
+                                                <span class="badge text-bg-info"><i class="fas fa-qrcode me-1"></i> QR</span>
                                             <?php elseif ($att->check_in_method == 'manual'): ?>
-                                                <span class="badge badge-secondary"><i class="fas fa-pen mr-1"></i> Manual</span>
+                                                <span class="badge text-bg-secondary"><i class="fas fa-pen me-1"></i> Manual</span>
                                             <?php else: ?>
-                                                <span class="badge badge-secondary">-</span>
+                                                <span class="badge text-bg-secondary">-</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
@@ -165,7 +158,7 @@
                             <?php else: ?>
                                 <tr>
                                     <td colspan="9" class="text-center text-muted">
-                                        <i class="fas fa-info-circle mr-1"></i> No attendance records found for the selected criteria.
+                                        <i class="fas fa-info-circle me-1"></i> No attendance records found for the selected criteria.
                                     </td>
                                 </tr>
                             <?php endif; ?>

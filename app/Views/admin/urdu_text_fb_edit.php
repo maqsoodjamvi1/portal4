@@ -26,24 +26,14 @@
 
 			}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-    <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Urdu Fill in The Blanks
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active">Urdu Fill in The Blanks</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Urdu Fill in The Blanks',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Urdu Fill in The Blanks', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -114,22 +104,22 @@ topic_id" href="<?php echo '#/urdu_text_fb?m=add&topic_id='.$_GET['topic_id'];?>
     </thead>
     <tbody>
         <tr>
-		    <td style="border: 4px solid blue; border-right: 0 none !important;">
+		    <td style="border: 4px solid blue; border-end: 0 none !important;">
           <input type="hidden" name="optionscount[]" value="1" />
 	            <textarea class="form-control editor" name="question_text0" placeholder="Question" id="question_text" style="margin-bottom: 4px;"></textarea>
          <div class="col-sm-12"><input type="text" name="option_text00" id="option_text0" class="form-control" placeholder="Correct Option" style="margin-bottom: 5px;" /></div> 
              
          </td>     
-         <td  style="border: 4px solid blue;border-left: 0 none !important;border-right: 0 none !important;"> <textarea class="form-control editor" name="hint_text0" placeholder="Hint" id="hint_text"></textarea>
+         <td  style="border: 4px solid blue;border-start: 0 none !important;border-end: 0 none !important;"> <textarea class="form-control editor" name="hint_text0" placeholder="Hint" id="hint_text"></textarea>
           
          </td>
-         <td style="border: 4px solid blue; border-left: 0 none !important;"><a class="deleteRow"></a></td>
+         <td style="border: 4px solid blue; border-start: 0 none !important;"><a class="deleteRow"></a></td>
         </tr>
     </tbody>
     <tfoot>
         <tr>
         <td colspan="5" style="text-align: left;">
-              <input type="button" class="btn btn-lg btn-block btn-primary"  id="addrow" value="Add Question" />
+              <input type="button" class="btn btn-lg w-100 btn-primary"  id="addrow" value="Add Question" />
          </td>
         </tr>
         <tr>
@@ -142,8 +132,8 @@ topic_id" href="<?php echo '#/urdu_text_fb?m=add&topic_id='.$_GET['topic_id'];?>
 		 <div class="col-lg-3">
          <div class="form-group">
            <button type="submit" class="btn btn-primary">Save</button>
-           <button type="reset" class="btn btn-default">Reset</button>
-           <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+           <button type="reset" class="btn btn-secondary">Reset</button>
+           <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
          </div>	 
 		 </div>
 		 </div>
@@ -285,9 +275,9 @@ $(document).ready(function () {
     $("#addrow").on("click", function () {
         var newRow = $("<tr>");
         var cols = "";
-        cols += '<td style="border: 4px solid blue; border-right: 0 none !important;"><input type="hidden" name="optionscount[]" value="1" /> <textarea class="form-control editor2" name="question_text'+ counter +'" placeholder="Question" id="question_text" style="margin-bottom: 4px;"></textarea><div class="col-sm-12"><input type="text" name="option_text0'+ counter +'" id="option_text0" class="form-control" placeholder="Correct Option" style="margin-bottom: 5px;" /></div>></td><td style="border: 4px solid blue; border-right: 0 none !important;border-left: 0 none !important;"><textarea class="form-control editor2" name="hint_text'+ counter +'" placeholder="Hint" id="hint_text"></textarea></td>';
+        cols += '<td style="border: 4px solid blue; border-end: 0 none !important;"><input type="hidden" name="optionscount[]" value="1" /> <textarea class="form-control editor2" name="question_text'+ counter +'" placeholder="Question" id="question_text" style="margin-bottom: 4px;"></textarea><div class="col-sm-12"><input type="text" name="option_text0'+ counter +'" id="option_text0" class="form-control" placeholder="Correct Option" style="margin-bottom: 5px;" /></div>></td><td style="border: 4px solid blue; border-end: 0 none !important;border-start: 0 none !important;"><textarea class="form-control editor2" name="hint_text'+ counter +'" placeholder="Hint" id="hint_text"></textarea></td>';
 	   
-        cols += '<td style="border: 4px solid blue; border-left: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
+        cols += '<td style="border: 4px solid blue; border-start: 0 none !important;"><input type="button" class="ibtnDel btn btn-md btn-danger "  value="Delete"></td>';
         newRow.append(cols);
         $("table.order-list").append(newRow);
 		

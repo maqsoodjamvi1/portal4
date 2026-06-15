@@ -214,14 +214,14 @@ private function generateReportHTML($groupedData)
     foreach ($groupedData as $classKey => $classData) {
         $html .= '<div class="card mb-4">';
         $html .= '<div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
-        $html .= '<h4 class="mb-0"><i class="fas fa-graduation-cap mr-2"></i> ' . htmlspecialchars($classData['class_name']) . '</h4>';
+        $html .= '<h4 class="mb-0"><i class="fas fa-graduation-cap me-2"></i> ' . htmlspecialchars($classData['class_name']) . '</h4>';
         $html .= '</div>';
         $html .= '<div class="card-body">';
         
         foreach ($classData['subjects'] as $subjectKey => $subjectData) {
             $html .= '<div class="subject-section mb-4">';
             $html .= '<h5 class="border-bottom pb-2" style="color: #4a5568;">';
-            $html .= '<i class="fas fa-book text-primary mr-2"></i> ' . htmlspecialchars($subjectData['subject_name']);
+            $html .= '<i class="fas fa-book text-primary me-2"></i> ' . htmlspecialchars($subjectData['subject_name']);
             $html .= '</h5>';
             $html .= '<div class="row">';
             
@@ -234,7 +234,7 @@ private function generateReportHTML($groupedData)
                 $html .= '<div class="card h-100 week-card">';
                 $html .= '<div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
                 $html .= '<div class="d-flex justify-content-between align-items-center">';
-                $html .= '<strong><i class="fas fa-calendar-week mr-2"></i> ' . htmlspecialchars($weekDisplay) . '</strong>';
+                $html .= '<strong><i class="fas fa-calendar-week me-2"></i> ' . htmlspecialchars($weekDisplay) . '</strong>';
                 $html .= '</div>';
                 $html .= '<div class="mt-1" style="font-size: 11px; opacity: 0.9;">' . $weekDates . '</div>';
                 $html .= '</div>';
@@ -244,7 +244,7 @@ private function generateReportHTML($groupedData)
                 $html .= '</div>';
                 $html .= '</div>';
                 $html .= '<div class="card-footer bg-light text-muted small">';
-                $html .= '<i class="fas fa-clock mr-1"></i> ' . $weekDisplay;
+                $html .= '<i class="fas fa-clock me-1"></i> ' . $weekDisplay;
                 $html .= '</div>';
                 $html .= '</div>';
                 $html .= '</div>';

@@ -1,28 +1,21 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Delete Fee Chalan</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Delete Fee Chalan</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Delete Fee Chalan',
+    'icon' => 'fas fa-trash-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee_chalan')],
+        ['label' => 'Delete', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-      <div class="card card-primary card-outline card-tabs">
+      <div class="card sms-card card-primary card-outline card-tabs">
         <div class="card-header p-0 pt-1 border-bottom-0">
           <ul class="nav nav-tabs">
             <li class="nav-item">
@@ -57,7 +50,7 @@
                           <td><?= $row['chalan_id'] ?></td>
                           <td><?= esc($row['student_name']) ?></td>
                           <td>
-                            <span class="badge badge-info">
+                            <span class="badge text-bg-info">
                               <?= esc($row['fee_type_name'] ?? 'N/A') ?>
                             </span>
                           </td>
@@ -84,7 +77,7 @@
                             }
                             ?>
                           </td>
-                          <td class="text-right"><?= number_format($row['amount'], 0) ?></td>
+                          <td class="text-end"><?= number_format($row['amount'], 0) ?></td>
                           <td><?= date('d-m-Y H:i', strtotime($row['created_date'])) ?></td>
                         </tr>
                       <?php endforeach; ?>
@@ -99,14 +92,14 @@
                       <strong>Total Selected:</strong> <span id="selected-count">0</span> chalans
                     </div>
                   </div>
-                  <div class="col-md-6 text-right">
+                  <div class="col-md-6 text-end">
                     <button type="submit" id="submitBtn" class="btn btn-danger">
                       <i class="fas fa-trash"></i> Delete Selected Fee Chalans
                     </button>
-                    <button type="button" class="btn btn-default" onclick="window.location.href='<?= base_url('admin/delete-fee-chalan') ?>'">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='<?= base_url('admin/delete-fee-chalan') ?>'">
                       <i class="fas fa-sync-alt"></i> Refresh
                     </button>
-                    <button type="button" class="btn btn-default" onclick="history.go(-1);">
+                    <button type="button" class="btn btn-secondary" onclick="history.go(-1);">
                       <i class="fas fa-times"></i> Cancel
                     </button>
                   </div>
@@ -114,7 +107,7 @@
               <?= form_close() ?>
             <?php else: ?>
               <div class="alert alert-info">
-                <i class="fas fa-info-circle fa-2x float-left mr-3"></i>
+                <i class="fas fa-info-circle fa-2x float-start me-3"></i>
                 <h5>No Fee Chalans Found</h5>
                 <p class="mb-0">
                   No unpaid fee chalans found for today's date (<?= date('d-m-Y') ?>). 
@@ -125,7 +118,7 @@
                 <a href="<?= base_url('admin/delete-fee-chalan') ?>" class="btn btn-primary">
                   <i class="fas fa-sync-alt"></i> Refresh
                 </a>
-                <a href="<?= base_url('admin/fee-chalan') ?>" class="btn btn-default">
+                <a href="<?= base_url('admin/fee-chalan') ?>" class="btn btn-secondary">
                   <i class="fas fa-arrow-left"></i> Back to Fee Chalan
                 </a>
               </div>
@@ -216,7 +209,7 @@ $(function() {
   color: white;
   font-weight: 600;
 }
-.badge-info {
+.text-bg-info {
   background-color: #17a2b8;
   color: white;
   padding: 5px 10px;

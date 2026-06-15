@@ -1,21 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-list-ul"></i> Vocabulary Words List</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Vocabulary Words List</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Vocabulary Words List',
+    'icon' => 'fas fa-list-ul',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Vocabulary Words List', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
 
@@ -26,7 +20,7 @@
     </div>
 
     <div class="card-body">
-      <div class="form-row">
+      <div class="row">
         <!-- Class -->
         <div class="form-group col-md-4">
           <label for="class_id">Class</label>
@@ -58,50 +52,50 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-2">
-        <div class="form-inline" style="flex-wrap: wrap; gap: 10px;">
-          <label class="mr-2 mb-0"><strong>Show/Hide:</strong></label>
+        <div class="d-flex flex-wrap align-items-center" style="flex-wrap: wrap; gap: 10px;">
+          <label class="me-2 mb-0"><strong>Show/Hide:</strong></label>
           
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showPartOfSpeech" checked>
             <label class="form-check-label" for="showPartOfSpeech">POS</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showEnglishMeaning" checked>
             <label class="form-check-label" for="showEnglishMeaning">EN</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showUrduMeaning" checked>
             <label class="form-check-label" for="showUrduMeaning">UR</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showExample" checked>
             <label class="form-check-label" for="showExample">Ex</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showSynonyms" checked>
             <label class="form-check-label" for="showSynonyms">Syn</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showAntonyms" checked>
             <label class="form-check-label" for="showAntonyms">Ant</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showRelated" checked>
             <label class="form-check-label" for="showRelated">Rel</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showSyllables" checked>
             <label class="form-check-label" for="showSyllables">Syll</label>
           </div>
 
-          <div class="form-check mr-2">
+          <div class="form-check me-2">
             <input class="form-check-input column-toggle" type="checkbox" id="showConfusing" checked>
             <label class="form-check-label" for="showConfusing">Con</label>
           </div>
@@ -111,7 +105,7 @@
           <button type="button" id="btnShowReport" class="btn btn-primary">
             <i class="fas fa-search"></i> Show Words
           </button>
-          <button type="button" id="btnCopyAll" class="btn btn-success ml-2" style="display:none;">
+          <button type="button" id="btnCopyAll" class="btn btn-success ms-2" style="display:none;">
             <i class="fas fa-copy"></i> Copy All Words
           </button>
         </div>
@@ -389,9 +383,9 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-              <span class="badge badge-primary mr-2">${index + 1}</span>
+              <span class="badge text-bg-primary me-2">${index + 1}</span>
               ${escapeHtml(topicName)}
-              <span class="badge badge-info ml-2">${items.length} words</span>
+              <span class="badge text-bg-info ms-2">${items.length} words</span>
             </h5>
             <button class="btn btn-sm btn-outline-success copy-topic-btn" data-topic="${escapeHtml(topicName)}">
               <i class="fas fa-copy"></i> Copy Words
@@ -665,7 +659,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
 /* Words List Styling */
 .topic-word-card {
-  border-left: 4px solid #007bff;
+  border-start: 4px solid #007bff;
   transition: all 0.3s ease;
   page-break-inside: avoid;
   margin-bottom: 20px;
@@ -685,14 +679,14 @@ document.addEventListener('DOMContentLoaded', function () {
   color: white;
 }
 
-.topic-word-card .badge-primary {
+.topic-word-card .text-bg-primary {
   background: white;
   color: #667eea;
   font-size: 14px;
   padding: 5px 10px;
 }
 
-.topic-word-card .badge-info {
+.topic-word-card .text-bg-info {
   background: rgba(255,255,255,0.3);
   color: white;
 }
@@ -798,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function () {
   .topic-word-card {
     break-inside: avoid;
     page-break-inside: avoid;
-    border-left: 2px solid #000;
+    border-start: 2px solid #000;
   }
   
   .topic-word-card .card-header {

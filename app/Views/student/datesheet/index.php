@@ -32,11 +32,11 @@
                         </h3>
                         <?php if (!empty($class_info)): ?>
                             <div class="card-tools">
-                                <span class="badge badge-info">
+                                <span class="badge text-bg-info">
                                     <?= esc($class_info['sectionclassname'] ?? '') ?>
                                 </span>
                                 <?php if (!empty($student_name)): ?>
-                                    <span class="badge badge-secondary ml-2">
+                                    <span class="badge text-bg-secondary ms-2">
                                         <?= esc($student_name) ?>
                                     </span>
                                 <?php endif; ?>
@@ -105,7 +105,7 @@
                                                     <?php endif; ?>
                                                     <?php if (!empty($row['start_time'])): ?>
                                                         <small class="text-muted d-block mt-1">
-                                                            <i class="far fa-clock mr-1"></i>
+                                                            <i class="far fa-clock me-1"></i>
                                                             <?= esc($row['start_time']) ?> - <?= esc($row['end_time'] ?? '') ?>
                                                         </small>
                                                     <?php endif; ?>
@@ -148,13 +148,13 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <small class="text-muted">
-                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <i class="fas fa-info-circle me-1"></i>
                                         All dates and times are subject to change. Please verify with your teacher.
                                     </small>
                                 </div>
-                                <div class="col-md-6 text-right">
+                                <div class="col-md-6 text-end">
                                     <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
-                                        <i class="fas fa-print mr-1"></i> Print Datesheet
+                                        <i class="fas fa-print me-1"></i> Print Datesheet
                                     </button>
                                 </div>
                             </div>

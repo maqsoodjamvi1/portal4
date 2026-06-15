@@ -1,45 +1,27 @@
-<!-- admin_template.php - CORRECTED (wrapper removed) -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <!-- Your head content here -->
-</head>
-<body class="hold-transition sidebar-mini">
-    <?= $this->include('layouts/header') ?>  
-    
-    
-    <!-- Per-page styles (load ONLY what you need for this page) -->
-    <?= $this->renderSection('pageStyles') ?>
+<?= $this->include('layouts/header') ?>
 
-    <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper">
+<?= $this->renderSection('pageStyles') ?>
 
-      <!-- Optional content header (breadcrumbs, titles set by each page) -->
-      <?php if ($this->renderSection('content_header')): ?>
-        <section class="content-header">
-          <div class="container-fluid">
-            <?= $this->renderSection('content_header') ?>
-          </div>
-        </section>
-      <?php endif; ?>
+<div class="content-wrapper">
+  <?php if ($this->renderSection('content_header')): ?>
+    <section class="content-header">
+      <div class="container-fluid">
+        <?= $this->renderSection('content_header') ?>
+      </div>
+    </section>
+  <?php endif; ?>
 
-      <!-- Main content -->
-      <section class="content">
-        <div class="container-fluid pt-3">
-          <?= $this->renderSection('content') ?>
-        </div>
-      </section>
-      <!-- /.content -->
+  <section class="content">
+    <div class="container-fluid pt-3">
+      <?= $this->renderSection('content') ?>
     </div>
-    <!-- /.content-wrapper -->
+  </section>
+</div>
 
-    <!-- Page-level modals -->
-    <?= $this->renderSection('modals') ?>
+<?= $this->renderSection('modals') ?>
+<?= $this->renderSection('pageScripts') ?>
 
-    <!-- Per-page scripts (load ONLY what you need for this page) -->
-    <?= $this->renderSection('pageScripts') ?>
+<?= view('layouts/partials/legacy_sammy_shim') ?>
+<script type="text/javascript" src="<?= base_url('resource/js/server.js?v=20260610') ?>"></script>
 
-    <?= $this->include('layouts/footer') ?>
-    <!-- wrapper is closed in footer.php -->
-</body>
-</html>
+<?= $this->include('layouts/footer') ?>

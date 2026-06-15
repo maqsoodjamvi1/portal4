@@ -2,7 +2,6 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 @media print
 {
@@ -17,25 +16,16 @@ td{ text-align:left; padding-left:10px;}
 .chalancolright{border-bottom:1px solid #000000;width:50%;float:left;padding-left: 10px;text-align:left;}
 .feetable{margin:3px;line-height:25px; text-align:left; padding-left:10px; font-size:13px;}
 </style>
- <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-4">
-            <h1>
-               Fee Chalan     
-            </h1>
-          </div>
-          <div class="col-sm-4"><a  class="btn btn-primary" href="<?php echo '#/fee_chalan_pay';?>">Click here to pay fee</a></div>
-          <div class="col-sm-4">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?php echo '#/';?>">Dashboard</a></li>
-
-              <li class="breadcrumb-item active">Fee Chalan</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Fee Chalan PDF',
+    'icon' => 'fas fa-file-pdf',
+    'actionsHtml' => '<div class="text-sm-right">'
+        . '<a href="' . esc(base_url('admin/fee_chalan_pay'), 'attr') . '" class="btn btn-primary btn-sm">Pay fee</a></div>',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -50,13 +40,13 @@ td{ text-align:left; padding-left:10px;}
                 <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
                 <div class="chalanwrapper">
                   <div class="row">
-                    <div class="col-sm-3 ml-2 mt-2"></div>
+                    <div class="col-sm-3 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">Bank Copy</div><br />
-                    <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                    <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                     <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
                   </div>  
-                 <div class="ml-2 mt-2" style="text-align: left;">
+                 <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     if($student_info['bank_name']){
                       echo $student_info['bank_name'].', '; 
@@ -152,13 +142,13 @@ td{ text-align:left; padding-left:10px;}
                   <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
                   <div class="chalanwrapper"> 
                     <div class="row">
-                      <div class="col-sm-3 ml-2 mt-2"></div>
+                      <div class="col-sm-3 ms-2 mt-2"></div>
                       <div class="col-sm-8" style="font-weight:bold;">School Copy</div><br />
-                      <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                      <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                       <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
                       <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
                     </div>  
-                    <div class="ml-2 mt-2" style="text-align: left;">
+                    <div class="ms-2 mt-2" style="text-align: left;">
                     <?php 
                       if($student_info['bank_name']){
                         echo $student_info['bank_name'].', '; 
@@ -256,13 +246,13 @@ td{ text-align:left; padding-left:10px;}
 <div dir="rtl" lang="ur"> <?php echo $student_info['chalan_h_msg']; ?></div>
 <div class="chalanwrapper">
 <div class="row">
-  <div class="col-sm-3 ml-2 mt-2"></div>
+  <div class="col-sm-3 ms-2 mt-2"></div>
   <div class="col-sm-8" style="font-weight:bold;">Student Copy</div><br />
-  <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+  <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
   <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
   <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
 </div>  
-<div class="ml-2 mt-2" style="text-align: left;">
+<div class="ms-2 mt-2" style="text-align: left;">
 <?php 
   if($student_info['bank_name']){
     echo $student_info['bank_name'].', '; 
@@ -405,10 +395,10 @@ sortable:false,
 render:function(data, type, row){
 	var html = '';
 	html += '<div class="btn-group">';
-		html += '<a href="<?php echo '#/fee_chalan?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fa fa-pencil icon-pencil"></i></a>';
+		html += '<a href="<?php echo '#/fee_chalan?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-pencil icon-pencil"></i></a>';
 		if(row.issys == '1'){
     }else{
-      html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo site_url('c=users&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-default btn-xs"><i class="fa fa-trash icon-trash"></i></a>';
+      html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo site_url('c=users&m=delete&id=');?>' + data + '\',\'users-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
     }
       html += '</div>';
 	     return html;

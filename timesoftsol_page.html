@@ -1,0 +1,170 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TIME Soft Solution | IT Services &amp; Software Development</title>
+    <meta name="description" content="TIME Soft Solution delivers custom software development, cloud solutions, cybersecurity, and IT consulting services for enterprises worldwide.">
+    <meta name="author" content="TIME Soft Solution" />
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/370b69b8-fd6a-4650-9060-04428e8edf98/id-preview-c4b23158--a33a9e2f-cc32-47dd-8aa2-80a1746e9222.lovable.app-1779183737801.png">
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/370b69b8-fd6a-4650-9060-04428e8edf98/id-preview-c4b23158--a33a9e2f-cc32-47dd-8aa2-80a1746e9222.lovable.app-1779183737801.png">
+    <meta property="og:title" content="TIME Soft Solution | IT Services &amp; Software Development">
+    <meta name="twitter:title" content="TIME Soft Solution | IT Services &amp; Software Development">
+    <meta property="og:description" content="TIME Soft Solution delivers custom software development, cloud solutions, cybersecurity, and IT consulting services for enterprises worldwide.">
+    <meta name="twitter:description" content="TIME Soft Solution delivers custom software development, cloud solutions, cybersecurity, and IT consulting services for enterprises worldwide.">
+    <script type="module" crossorigin src="/assets/index-73TW-QWZ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-00MkBCEo.css">
+    <style>
+      /* TIME Soft Solution — wrapper fixes (no fixed overlay on React app) */
+      :root {
+        --tss-announce-h: 44px;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      /* Single trial strip — scrolls with page (not position:fixed) */
+      #tss-announce {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem 1.25rem;
+        flex-wrap: wrap;
+        min-height: var(--tss-announce-h);
+        padding: 0.5rem 1rem;
+        background: linear-gradient(90deg, #0d2137 0%, #1a365d 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.875rem;
+        color: #e2e8f0;
+        box-sizing: border-box;
+      }
+
+      #tss-announce .tss-announce-text {
+        opacity: 0.95;
+        text-align: center;
+      }
+
+      #tss-announce .tss-announce-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      #tss-announce a {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-decoration: none !important;
+        white-space: nowrap;
+        transition: background 0.2s, border-color 0.2s;
+      }
+
+      #tss-announce a.tss-cta-primary {
+        background: #dc3545;
+        color: #fff !important;
+      }
+
+      #tss-announce a.tss-cta-primary:hover {
+        background: #c82333;
+      }
+
+      #tss-announce a.tss-cta-secondary {
+        background: transparent;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+      }
+
+      #tss-announce a.tss-cta-secondary:hover {
+        border-color: #fff;
+      }
+
+      #tss-announce button.tss-dismiss {
+        margin-left: 0.25rem;
+        padding: 0.2rem 0.5rem;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      #tss-announce button.tss-dismiss:hover {
+        color: #fff;
+      }
+
+      /* React app fills remaining viewport; no extra body padding */
+      #root {
+        display: block;
+        min-height: calc(100vh - var(--tss-announce-h));
+        position: relative;
+        z-index: 0;
+      }
+
+      /* When banner dismissed */
+      body.tss-announce-hidden #tss-announce {
+        display: none;
+      }
+
+      body.tss-announce-hidden #root {
+        min-height: 100vh;
+      }
+
+      /* Avoid our wrapper fighting React sticky header — do not force top offsets */
+      #root header,
+      #root [class*="header"] {
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 640px) {
+        #tss-announce .tss-announce-text {
+          font-size: 0.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tss-announce" role="region" aria-label="Product announcement">
+      <span class="tss-announce-text">TLive Education — 30-day free trial for schools</span>
+      <div class="tss-announce-actions">
+        <a class="tss-cta-primary" href="https://portal4.timesoftsol.com/signup">Start Free Trial</a>
+        <a class="tss-cta-secondary" href="https://portal4.timesoftsol.com/admin/login">School Login</a>
+      </div>
+      <button type="button" class="tss-dismiss" aria-label="Dismiss announcement" title="Dismiss">&times;</button>
+    </div>
+    <div id="root"></div>
+    <script>
+      (function () {
+        if (sessionStorage.getItem('tss_announce_dismissed') === '1') {
+          document.body.classList.add('tss-announce-hidden');
+        }
+        var btn = document.querySelector('#tss-announce .tss-dismiss');
+        if (btn) {
+          btn.addEventListener('click', function () {
+            document.body.classList.add('tss-announce-hidden');
+            sessionStorage.setItem('tss_announce_dismissed', '1');
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

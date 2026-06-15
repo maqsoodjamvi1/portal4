@@ -162,8 +162,11 @@ class Currency
         // Helpers
         $hasCol = function (string $table, string $col): bool {
             try {
-                $q = $this->db->query("SHOW COLUMNS FROM `{$table}` LIKE ?", [$col]);
-                return $q && $q->getNumRows() > 0;
+                if (! preg_match('/^[a-z][a-z0-9_]*$/', $table) || ! preg_match('/^[a-z][a-z0-9_]*$/', $col)) {
+                    return false;
+                }
+
+                return $this->db->fieldExists($col, $table);
             } catch (\Throwable $e) {
                 return false;
             }

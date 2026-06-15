@@ -179,6 +179,6 @@
     
     <div class="no-print text-center mt-4">
         <button onclick="window.print()" class="btn btn-primary">
-            <i class="fas fa-print mr-2"></i> Print Report
+            <i class="fas fa-print me-2"></i> Print Report
         </button>
     </div>

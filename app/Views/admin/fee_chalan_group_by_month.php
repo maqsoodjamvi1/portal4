@@ -5,7 +5,7 @@
   <div class="container-fluid">
     <div class="row mb-2">
       <div class="col-sm-6">
-        <h1><i class="fas fa-calendar-alt mr-2"></i> Fee Dues - Grouped by Month</h1>
+        <h1><i class="fas fa-calendar-alt me-2"></i> Fee Dues - Grouped by Month</h1>
       </div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
@@ -20,9 +20,9 @@
 <section class="content">
   <div class="card card-primary card-outline">
     <div class="card-header">
-      <form id="groupByMonthForm" class="form-inline">
-        <div class="form-group mr-3">
-          <label for="parent_id" class="mr-2">Select Parent</label>
+      <form id="groupByMonthForm" class="d-flex flex-wrap align-items-center">
+        <div class="form-group me-3">
+          <label for="parent_id" class="me-2">Select Parent</label>
           <select class="form-control select2" name="parent_id" id="parent_id" style="width: 300px;">
             <option value="">-- Select Parent --</option>
           </select>

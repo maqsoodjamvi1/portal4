@@ -2,7 +2,7 @@
 <?= $this->section('content') ?>
 
 <footer class="main-footer">
-        <div class="pull-right hidden-xs">
+        <div class="float-end d-none d-sm-inline-block">
           <b>Version</b> 2.3.1
         </div>
         <strong>Copyright &copy; 2008- <?php echo date('Y'); ?> <a href="#">TIME Soft Solution</a>.</strong>
@@ -11,7 +11,7 @@
   <!-- Control Sidebar -->
   <aside class="control-sidebar control-sidebar-dark">
     <ul class="nav nav-tabs nav-justified control-sidebar-tabs">
-		<li><a href="#control-sidebar-sites-tab" data-toggle="tab"><i class="fa fa-home"></i></a></li>
+		<li><a href="#control-sidebar-sites-tab" data-bs-toggle="tab"><i class="fa fa-home"></i></a></li>
 	</ul>
 	
   </aside>

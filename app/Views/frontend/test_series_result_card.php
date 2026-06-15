@@ -1,12 +1,11 @@
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 	.list-group-item{
 	  	width: 33% !important;
 	    float: left !important;
 	    padding: 1px 10px !important;
-	    border-right: 0 none;
-	    border-left: 0 none;
+	    border-end: 0 none;
+	    border-start: 0 none;
 	}
 	table{
 	background-color: transparent;
@@ -56,23 +55,14 @@
 		$this->db->where($where);	
 		$test_series = $this->db->get('test_series')->result();
 ?>
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Test Results
-        </h1>
-      </div>
-      <!-- <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?php echo '#/';?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Test Results</li>
-        </ol>
-      </div> -->
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Test Results',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('student/dashboard')],
+        ['label' => 'Test Results', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content"> 
 <div class="row">
@@ -91,7 +81,7 @@
 					<?php } ?>
 					</select>
 				</div> 
-				<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary pull-right" value="View Result Card " name="View" id="ViewResutlt"></div>
+				<div class="col-lg-12"><input style="line-height: 19px;margin: 10px 0px;" type="button" class="btn btn-primary float-end" value="View Result Card " name="View" id="ViewResutlt"></div>
 				</form>
 	
 	</div> -->

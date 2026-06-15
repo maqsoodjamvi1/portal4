@@ -1,4 +1,4 @@
-<?= $this->extend('frontend/layouts/master_portal') ?>
+<?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <style>
@@ -134,9 +134,16 @@ body{background:var(--bg)}
 
 .student-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* ← FIXED 5 CARDS PER ROW */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
   margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+.student-list-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Section titles for groups */
@@ -153,11 +160,16 @@ body{background:var(--bg)}
   border-radius: 18px;
   padding: 18px;
   width: 100%;
+  min-width: 0;
   box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   transition: .25s ease;
   display: flex;
   flex-direction: column;
   position: relative;
+}
+.student-card .meta-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .student-card:hover {
@@ -237,17 +249,25 @@ body{background:var(--bg)}
 /* Score badge */
 .score-badge {
   background: #d1f7d6;
-  padding: 4px 10px;
+  padding: 6px 8px;
   color: #0a8f2f;
   margin-top: 8px;
   border-radius: 8px;
   font-weight: 700;
   text-align: center;
-  font-size: 14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.score-badge .score-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  width: 100%;
 }
 .score-badge i{
   color:#0a8f2f;
@@ -273,6 +293,25 @@ body{background:var(--bg)}
 }
 .btn-view-attempt:hover {
   background: #0a8f2f;
+  color: #ffffff;
+}
+
+.btn-retake-attempt {
+  background: #ffffff;
+  border: 1px solid #c45a00;
+  color: #c45a00;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  margin-left: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: .2s;
+}
+.btn-retake-attempt:hover {
+  background: #c45a00;
   color: #ffffff;
 }
 
@@ -404,25 +443,23 @@ body{background:var(--bg)}
   opacity: 0.8;
 }
 
-@media (max-width: 1199px) {
-  .student-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.quiz-assign-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
 }
-@media (max-width: 991px) {
-  .student-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.quiz-assign-toolbar .btn {
+  font-weight: 600;
 }
-@media (max-width: 767px) {
-  .student-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+#marksListModal .table th {
+  white-space: nowrap;
+  font-size: 13px;
 }
-@media (max-width: 500px) {
-  .student-grid {
-    grid-template-columns: 1fr;
-  }
+#marksListModal .table td {
+  font-size: 13px;
+  vertical-align: middle;
 }
 
 /* Reduce CNIC font and prevent wrapping */
@@ -438,7 +475,28 @@ body{background:var(--bg)}
   <h1 class="sel-title">🎯 Play Quiz for a Student</h1>
 </section>
 
-<div class="container mt-4" style="max-width:900px">
+<div class="container-fluid mt-4 quiz-assign-page" style="max-width:1280px;padding-left:16px;padding-right:16px;">
+
+  <?php if (!empty($examQuizColumnReady) && !empty($unannouncedExam)): ?>
+  <div class="sel-card mb-3">
+    <label class="fw-bold d-block mb-2">Quiz type</label>
+    <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
+      <label class="btn btn-outline-primary active" id="modeRegularLabel">
+        <input type="radio" name="quizPlayMode" id="modeRegular" value="regular" autocomplete="off" checked>
+        Regular quizzes
+      </label>
+      <label class="btn btn-outline-warning" id="modeExamLabel">
+        <input type="radio" name="quizPlayMode" id="modeExam" value="exam" autocomplete="off">
+        Online exam (unannounced)
+      </label>
+    </div>
+    <small class="text-muted d-block mt-2">
+      Exam mode lists admin-only quizzes linked to
+      <strong><?= esc($unannouncedExam['exam_name'] ?? 'current exam') ?></strong>
+      — hidden from student/parent portals until the exam is announced.
+    </small>
+  </div>
+  <?php endif; ?>
 
   <!-- Step 1: Class → Section -->
   <div class="sel-card">
@@ -468,10 +526,60 @@ body{background:var(--bg)}
 
   <!-- Step 3: Students -->
   <div class="sel-card d-none" id="studentBox">
-    <h5 class="mb-3" style="font-weight:700;color:var(--brand)">
-      Step 3 — Select Student to Play Quiz
-    </h5>
-    <div id="studentList"></div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+      <h5 class="mb-0" style="font-weight:700;color:var(--brand)">
+        Step 3 — Select Student to Play Quiz
+      </h5>
+      <div class="quiz-assign-toolbar d-none" id="marksToolbar">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnMarksList">
+          <i class="fa fa-list"></i> Marks list
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success" id="btnMarksCsv">
+          <i class="fa fa-download"></i> Download CSV
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnMarksPrint">
+          <i class="fa fa-print"></i> Print list
+        </button>
+      </div>
+    </div>
+    <div class="student-list-wrap">
+      <div id="studentList"></div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="marksListModal" tabindex="-1" role="dialog" aria-labelledby="marksListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="marksListModalLabel">Quiz marks</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-2" id="marksListSubtitle"></p>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered table-striped mb-0" id="marksListTable">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Subject</th>
+                  <th>Topic</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- (Optional global play button, not used now) -->
@@ -486,6 +594,176 @@ body{background:var(--bg)}
 
 let selectedClsSec  = null;
 let selectedQuiz    = null;
+let lastQuizMarksData = null;
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+
+function subjectTopicLine(stu) {
+  const subject = (stu.subject_name || '').trim();
+  const topic   = (stu.topic_display || stu.topic_name || '').trim();
+  if (subject && topic) {
+    return `<div class="meta-row"><i class="fa fa-book"></i><span>${escHtml(subject)} — ${escHtml(topic)}</span></div>`;
+  }
+  if (subject) {
+    return `<div class="meta-row"><i class="fa fa-book"></i><span>${escHtml(subject)}</span></div>`;
+  }
+  if (topic) {
+    return `<div class="meta-row"><i class="fa fa-book"></i><span>${escHtml(topic)}</span></div>`;
+  }
+  return '';
+}
+
+function buildMarksRows(data) {
+  const quiz = data.quiz || {};
+  const subject = quiz.subject_name || '';
+  const topic   = quiz.topic_name || '';
+  const rows    = [];
+
+  (data.attempted || []).forEach(stu => {
+    rows.push({
+      name: stu.full_name || '',
+      class_name: [stu.class_name, stu.section_name].filter(Boolean).join(' '),
+      subject: stu.subject_name || subject,
+      topic: stu.topic_display || stu.topic_name || topic,
+      score: stu.score_obtained != null ? stu.score_obtained : '',
+      status: 'Attempted',
+    });
+  });
+
+  (data.not_attempted || []).forEach(stu => {
+    rows.push({
+      name: stu.full_name || '',
+      class_name: [stu.class_name, stu.section_name].filter(Boolean).join(' '),
+      subject: stu.subject_name || subject,
+      topic: stu.topic_display || stu.topic_name || topic,
+      score: '—',
+      status: 'Not attempted',
+    });
+  });
+
+  rows.sort((a, b) => {
+    if (a.status !== b.status) {
+      return a.status === 'Attempted' ? -1 : 1;
+    }
+    const sa = parseFloat(a.score);
+    const sb = parseFloat(b.score);
+    if (!isNaN(sa) && !isNaN(sb)) return sb - sa;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  return rows;
+}
+
+function openMarksListModal() {
+  if (!lastQuizMarksData) return;
+  const quiz = lastQuizMarksData.quiz || {};
+  const rows = buildMarksRows(lastQuizMarksData);
+  const subtitle = [
+    quiz.title || 'Quiz',
+    quiz.subject_name || '',
+    quiz.topic_name || '',
+  ].filter(Boolean).join(' · ');
+
+  document.getElementById('marksListSubtitle').textContent = subtitle;
+  const tbody = document.querySelector('#marksListTable tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach((r, i) => {
+    tbody.innerHTML += `<tr>
+      <td>${i + 1}</td>
+      <td>${escHtml(r.name)}</td>
+      <td>${escHtml(r.class_name)}</td>
+      <td>${escHtml(r.subject)}</td>
+      <td>${escHtml(r.topic)}</td>
+      <td>${escHtml(r.score)}</td>
+      <td>${escHtml(r.status)}</td>
+    </tr>`;
+  });
+
+  $('#marksListModal').modal('show');
+}
+
+function downloadMarksCsv() {
+  if (!lastQuizMarksData) return;
+  const quiz = lastQuizMarksData.quiz || {};
+  const rows = buildMarksRows(lastQuizMarksData);
+  const header = ['#', 'Student', 'Class', 'Subject', 'Topic', 'Score', 'Status'];
+  const lines  = [header.join(',')];
+
+  rows.forEach((r, i) => {
+    const cells = [
+      i + 1,
+      r.name,
+      r.class_name,
+      r.subject,
+      r.topic,
+      r.score,
+      r.status,
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`);
+    lines.push(cells.join(','));
+  });
+
+  const title = (quiz.title || 'quiz_marks').replace(/[^\w\-]+/g, '_');
+  const blob  = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href      = url;
+  a.download  = title + '_marks.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function printMarksList() {
+  if (!lastQuizMarksData) return;
+  const quiz = lastQuizMarksData.quiz || {};
+  const rows = buildMarksRows(lastQuizMarksData);
+  const subtitle = [
+    quiz.title || 'Quiz',
+    quiz.subject_name || '',
+    quiz.topic_name || '',
+  ].filter(Boolean).join(' · ');
+
+  let tableRows = '';
+  rows.forEach((r, i) => {
+    tableRows += `<tr>
+      <td>${i + 1}</td>
+      <td>${escHtml(r.name)}</td>
+      <td>${escHtml(r.class_name)}</td>
+      <td>${escHtml(r.subject)}</td>
+      <td>${escHtml(r.topic)}</td>
+      <td>${escHtml(r.score)}</td>
+      <td>${escHtml(r.status)}</td>
+    </tr>`;
+  });
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Quiz marks</title>
+    <style>body{font-family:Arial,sans-serif;padding:16px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px 8px;font-size:12px}th{background:#f0f0f0}</style>
+    </head><body><h2>Quiz marks</h2><p>${escHtml(subtitle)}</p>
+    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Subject</th><th>Topic</th><th>Score</th><th>Status</th></tr></thead>
+    <tbody>${tableRows}</tbody></table></body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function getQuizPlayMode(){
+  const examRadio = document.getElementById('modeExam');
+  if (examRadio && examRadio.checked) return 'exam';
+  return 'regular';
+}
+
+document.querySelectorAll('input[name="quizPlayMode"]').forEach(function(radio){
+  radio.addEventListener('change', function(){
+    if (selectedClsSec) {
+      loadQuizzesForClassSection(selectedClsSec);
+    }
+  });
+});
 
 const clsSecSelect = document.getElementById('clsSecSelect');
 
@@ -528,14 +806,18 @@ clsSecSelect.addEventListener('change', () => {
 
 
 function loadQuizzesForClassSection(clsSecId){
-  fetch(`<?= site_url('admin/load_quizzes_by_clssec/') ?>${clsSecId}`)
+  const mode = getQuizPlayMode();
+  fetch(`<?= site_url('admin/load_quizzes_by_clssec/') ?>${clsSecId}?mode=${encodeURIComponent(mode)}`)
     .then(r => r.json())
     .then(data => {
       const box = document.getElementById('quizList');
       box.innerHTML = '';
 
       if (!data || !data.length) {
-        box.innerHTML = '<p class="text-muted mb-0">No active quizzes found for this class-section.</p>';
+        const emptyMsg = mode === 'exam'
+          ? 'No online exam quizzes found for this class. Create one from Quizzes → Create and link it to the current unannounced exam.'
+          : 'No active quizzes found for this class-section.';
+        box.innerHTML = '<p class="text-muted mb-0">' + emptyMsg + '</p>';
       } else {
         box.innerHTML = '<div class="quiz-grid" id="quizGrid"></div>';
         const grid = document.getElementById('quizGrid');
@@ -575,7 +857,8 @@ const cardExtraClass = status === 'closed' ? ' closed' : '';
 grid.innerHTML += `
   <div class="quiz-card${cardExtraClass}" data-id="${q.quiz_id}">
     
-    <div class="status-chip ${statusClass}" data-toggle="tooltip" title="${status === 'closed' ? 'Quiz has ended' : 'Quiz is live / accepting attempts'}">
+    ${q.is_exam_quiz ? '<div class="status-chip" style="top:auto;bottom:10px;right:12px;background:#fff3cd;color:#856404;"><i class="fa fa-user-shield"></i> Exam prep</div>' : ''}
+    <div class="status-chip ${statusClass}" data-bs-toggle="tooltip" title="${status === 'closed' ? 'Quiz has ended' : 'Quiz is live / accepting attempts'}">
       <i class="fa ${statusIcon}"></i> ${statusLabel}
     </div>
 
@@ -598,34 +881,34 @@ grid.innerHTML += `
 
     <div class="stat-badges">
     
-      <div class="stat-badge" data-toggle="tooltip" title="Remaining time before quiz closes">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Remaining time before quiz closes">
         <i class="fa fa-hourglass-half"></i> ${remTime}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Quiz duration in minutes">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Quiz duration in minutes">
         <i class="fa fa-stopwatch"></i> ${duration}m
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Total number of questions">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Total number of questions">
         <i class="fa fa-question-circle"></i> ${qTotal}
       </div>
     </div>
 
     <div class="stat-badges">
-      <div class="stat-badge" data-toggle="tooltip" title="Multiple Choice (Single Answer)">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Multiple Choice (Single Answer)">
         <i class="fa fa-dot-circle"></i> ${qMcqS}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Multiple Choice (Multiple Answers)">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Multiple Choice (Multiple Answers)">
         <i class="fa fa-tasks"></i> ${qMcqM}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="True/False Questions">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="True/False Questions">
         <i class="fa fa-check"></i> ${qTf}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Short Answer Questions">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Short Answer Questions">
         <i class="fa fa-pencil-alt"></i> ${qShort}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Fill in the blanks">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Fill in the blanks">
         <i class="fa fa-pen-fancy"></i> ${qFill}
       </div>
-      <div class="stat-badge" data-toggle="tooltip" title="Match the columns">
+      <div class="stat-badge" data-bs-toggle="tooltip" title="Match the columns">
         <i class="fa fa-random"></i> ${qMatch}
       </div>
     </div>
@@ -649,7 +932,7 @@ grid.innerHTML += `
           aria-valuenow="${attemptPct}"
           aria-valuemin="0"
           aria-valuemax="100"
-          data-toggle="tooltip"
+          data-bs-toggle="tooltip"
           title="Attempted: ${att} student(s)"
         ></div>
         <div
@@ -659,7 +942,7 @@ grid.innerHTML += `
           aria-valuenow="${remainPct}"
           aria-valuemin="0"
           aria-valuemax="100"
-          data-toggle="tooltip"
+          data-bs-toggle="tooltip"
           title="Remaining: ${remain} student(s)"
         ></div>
       </div>
@@ -701,10 +984,17 @@ function loadStudentsForQuiz(clsSecId){
       const hasNotAtt = data.not_attempted && data.not_attempted.length;
       const hasAtt    = data.attempted && data.attempted.length;
 
+      const toolbar = document.getElementById('marksToolbar');
+
       if (!hasNotAtt && !hasAtt) {
+        lastQuizMarksData = null;
+        if (toolbar) toolbar.classList.add('d-none');
         box.innerHTML = '<p class="text-muted mb-0">No students found for this class-section.</p>';
         return;
       }
+
+      lastQuizMarksData = data;
+      if (toolbar) toolbar.classList.remove('d-none');
 
       if (hasNotAtt) {
         box.innerHTML += `<div class="divider-title">Students (Not Attempted)</div>`;
@@ -727,34 +1017,18 @@ function loadStudentsForQuiz(clsSecId){
 
           notAtt.innerHTML += `
             <div class="student-card">
-
-              <span class="subject-badge">
-                ${stu.subject_name || ''}
-              </span>
-
-              <div class="student-photo">
-                ${avatar}
-              </div>
-
-              <div class="student-name">${stu.full_name}</div>
-
-                         <div class="meta-row cnic-row">
-    <i class="fa fa-id-card"></i>
-    <span>${stu.father_cnic || ''}</span>
-</div>
-
-
+              <span class="subject-badge">${escHtml(stu.subject_name || '')}</span>
+              <div class="student-photo">${avatar}</div>
+              <div class="student-name">${escHtml(stu.full_name)}</div>
               <div class="meta-row">
-                <i class="fa fa-phone"></i>
-                <span>${stu.whatsapp || ''}</span>
+                <i class="fa fa-school"></i>
+                <span>${escHtml([stu.class_name, stu.section_name].filter(Boolean).join(' '))}</span>
               </div>
-
-
+              ${subjectTopicLine(stu)}
               <button class="play-btn-bottom"
                 onclick="playQuiz(${stu.student_id}, ${selectedQuiz})">
                 ▶ Play
               </button>
-
             </div>
           `;
         });
@@ -769,48 +1043,28 @@ function loadStudentsForQuiz(clsSecId){
 
           att.innerHTML += `
             <div class="student-card">
-
-              <span class="subject-badge">
-                ${stu.subject_name || ''}
-              </span>
-
-              <div class="student-photo">
-                ${avatar}
-              </div>
-
-              <div class="student-name">${stu.full_name}</div>
-
+              <span class="subject-badge">${escHtml(stu.subject_name || '')}</span>
+              <div class="student-photo">${avatar}</div>
+              <div class="student-name">${escHtml(stu.full_name)}</div>
               <div class="meta-row">
                 <i class="fa fa-school"></i>
-                <span>${stu.class_name} ${stu.section_name}</span>
+                <span>${escHtml([stu.class_name, stu.section_name].filter(Boolean).join(' '))}</span>
               </div>
-
-              <div class="meta-row">
-                <i class="fa fa-book"></i>
-                <span>${stu.topic_name || ''}</span>
-              </div>
-
-              <div class="meta-row">
-                <i class="fa fa-venus-mars"></i>
-                <span>${stu.gender || ''}</span>
-              </div>
-
-              <div class="meta-row">
-                <i class="fa fa-phone"></i>
-                <span>${stu.whatsapp || ''}</span>
-              </div>
-
+              ${subjectTopicLine(stu)}
               <div class="score-badge">
-                <i class="fa fa-star"></i>
-                <span>Score: ${stu.score_obtained}</span>
-
-                <button type="button" class="btn-view-attempt"
-                  onclick="viewAttempt(${stu.attempt_id})">
-                  <i class="fa fa-print"></i>
-                  <span>Review</span>
-                </button>
+                <span><i class="fa fa-star"></i> Score: ${escHtml(stu.score_obtained)}</span>
+                <div class="score-actions">
+                  <button type="button" class="btn-view-attempt"
+                    onclick="viewAttempt(${stu.attempt_id})">
+                    <i class="fa fa-print"></i><span>Review</span>
+                  </button>
+                  <button type="button" class="btn-retake-attempt"
+                    onclick="retakeQuiz(${stu.student_id}, ${selectedQuiz}, ${stu.attempt_id})"
+                    title="Remove this attempt so the student can take the quiz again">
+                    <i class="fa fa-redo"></i><span>Retake</span>
+                  </button>
+                </div>
               </div>
-
             </div>
           `;
         });
@@ -818,6 +1072,46 @@ function loadStudentsForQuiz(clsSecId){
 
       document.getElementById('studentBox').classList.remove('d-none');
     });
+}
+
+function retakeQuiz(studentId, quizId, attemptId) {
+  if (!studentId || !quizId || !attemptId) {
+    alert('Missing student or attempt information.');
+    return;
+  }
+
+  if (!confirm('Remove this quiz attempt? The student will be able to start the quiz again from Quiz Assign.')) {
+    return;
+  }
+
+  $.ajax({
+    url: "<?= site_url('admin/reset-quiz-attempt') ?>",
+    type: "POST",
+    dataType: "json",
+    data: {
+      attempt_id: attemptId,
+      quiz_id: quizId,
+      student_id: studentId,
+      '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+    },
+    success: function(res) {
+      if (!res.success) {
+        alert(res.message || 'Could not reset attempt.');
+        return;
+      }
+
+      if (selectedClsSec) {
+        loadStudentsForQuiz(selectedClsSec);
+      }
+
+      if (confirm('Attempt removed. Open a new quiz session for this student now?')) {
+        playQuiz(studentId, quizId);
+      }
+    },
+    error: function() {
+      alert('Server error while resetting attempt.');
+    }
+  });
 }
 
 // Play quiz for student
@@ -845,7 +1139,14 @@ function playQuiz(studentId, quizId){
 }
 
 document.addEventListener("DOMContentLoaded", function(){
-  $('[data-toggle="tooltip"]').tooltip();
+  $('[data-bs-toggle="tooltip"]').tooltip();
+
+  const btnMarksList = document.getElementById('btnMarksList');
+  const btnMarksCsv  = document.getElementById('btnMarksCsv');
+  const btnMarksPrint = document.getElementById('btnMarksPrint');
+  if (btnMarksList) btnMarksList.addEventListener('click', openMarksListModal);
+  if (btnMarksCsv) btnMarksCsv.addEventListener('click', downloadMarksCsv);
+  if (btnMarksPrint) btnMarksPrint.addEventListener('click', printMarksList);
 });
 </script>
 

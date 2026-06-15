@@ -36,7 +36,7 @@
   }
   .header-logo {
     display: flex; align-items: center; justify-content: center;
-    padding: 0 6px; border-right: 0;    /* no vertical divider */
+    padding: 0 6px; border-end: 0;    /* no vertical divider */
   }
   .header-logo img { max-width: 64px; height: auto; }
 
@@ -98,7 +98,7 @@
     padding: 0 var(--pad-x);
     display: flex; align-items: center;
     min-height: var(--row-h); line-height: var(--row-h);
-    border-right: 0;                      /* no vertical line */
+    border-end: 0;                      /* no vertical line */
   }
 
   /* Force left alignment (inside RTL page) where needed */
@@ -139,9 +139,9 @@
   .feetable thead tr th{ border-top: 0; }
   .feetable tbody tr:last-child td{ border-bottom: 0; }
   .feetable tr th:first-child,
-  .feetable tr td:first-child{ border-left: 0; }
+  .feetable tr td:first-child{ border-start: 0; }
   .feetable tr th:last-child,
-  .feetable tr td:last-child{ border-right: 0; }
+  .feetable tr td:last-child{ border-end: 0; }
 
   .feetable thead th{ font-weight: 600; }
 
@@ -335,7 +335,6 @@ $show_line2 = $show_line2 ?? '';
                       <div class="info-row left-ltr meta-row">
                         <div>Ch: <?= esc($hdr_chalan_id) ?></div>
                         <div class="meta-inline">
-                          <span>Reg: <?= esc($student_info['reg_no'] ?? '') ?></span>
                           <span>F. id: <?= esc($student_info['parent_id'] ?? '') ?></span>
                         </div>
                       </div>

@@ -1,29 +1,16 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-
-    <!-- Content Header (Page header) -->
-
-    <section class="content-header">
-
-      <h1>
-
-        Question Bank GK
-
-        <small></small>
-
-      </h1>
-
-      <ol class="breadcrumb">
-
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-        <li class="active"> Question Bank GK</li>
-
-      </ol>
-
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Question Bank GK',
+    'icon' => 'fas fa-book',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Question Bank GK', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
 
@@ -31,11 +18,11 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
           <div class="nav-tabs-custom">
 
-			<div class="tab-content table-responsive no-padding"><div class="col-xs-12">
+			<div class="tab-content table-responsive no-padding"><div class="col-12">
 
         <table class="table">
 

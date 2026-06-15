@@ -246,7 +246,7 @@ class ParentsPaidfee extends BaseController
             $rowsHtml .= '<tr>';
             $rowsHtml .= '<td>' . $count . '</td>';
             $rowsHtml .= '<td>' . $p->parent_id . '</td>';
-            $rowsHtml .= '<td>' . $p->f_name . '<br><small>' . $p->students . '</small></td>';
+            $rowsHtml .= '<td class="text-start">' . esc($p->f_name) . '<br><small>' . esc($p->students) . '</small></td>';
 
             if ($show_monthly_balance) {
                 $rowsHtml .= '<td>' . number_format($monthly_balance) . '</td>';
@@ -271,11 +271,11 @@ class ParentsPaidfee extends BaseController
         }
 
         // Table Header
-        $output = '<table class="table table-striped table-bordered table-hover" style="font-size:12px;width:100%;">
+        $output = '<table class="table table-striped table-bordered table-hover fee-table paid-fee-table" style="font-size:12px;width:100%;">
             <thead><tr>
                 <th>#</th>
                 <th>F ID</th>
-                <th style="text-align: left;">Parent/Students</th>';
+                <th class="text-start">Parent/Students</th>';
 
         if ($show_monthly_balance) $output .= '<th>Monthly Bal.</th>';
         if ($show_other_balance) $output .= '<th>Other Bal.</th>';
@@ -290,7 +290,7 @@ class ParentsPaidfee extends BaseController
 
         // Grand Total Row
         if ($show_grand_total) {
-            $output .= '<tr class="total-row"><td colspan="3" class="text-right font-weight-bold">Grand Total</td>';
+            $output .= '<tr class="total-row"><td colspan="3" class="text-end fw-bold">Grand Total</td>';
 
             if ($show_monthly_balance) $output .= '<td>' . number_format($total_monthly_balance) . '</td>';
             if ($show_other_balance) $output .= '<td>' . number_format($total_other_balance) . '</td>';

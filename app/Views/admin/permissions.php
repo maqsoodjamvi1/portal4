@@ -10,7 +10,7 @@
     }
     .permission-side {
         background: #f8fafc;
-        border-right: 1px solid #e5e7eb;
+        border-end: 1px solid #e5e7eb;
         min-height: 650px;
         padding: 14px;
     }
@@ -79,21 +79,14 @@
 <script type="text/javascript" src="<?= base_url('resource/ztree/js/jquery.ztree.exhide.js') ?>"></script>
 
 <!-- Content Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Permissions</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('/') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Permissions</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Permissions',
+    'icon' => 'fas fa-key',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Permissions', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main content -->
 <section class="content">
@@ -116,7 +109,7 @@
                 </div>
                 <div class="card-body">
                     <div class="permission-layout-card">
-                        <div class="row no-gutters">
+                        <div class="row g-0">
                             <div class="col-md-3">
                                 <div class="permission-side">
                                     <div class="tree-actions">
@@ -124,18 +117,16 @@
                                             <label class="small text-muted mb-1">Find Permission</label>
                                             <div class="input-group input-group-sm">
                                                 <input type="text" class="form-control" id="searchPermission" placeholder="Name or key...">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-primary" type="button" id="searchBtn"><i class="fas fa-search"></i></button>
-                                                    <button class="btn btn-default" type="button" id="searchClearBtn">Clear</button>
-                                                </div>
+                                                <button class="btn btn-primary" type="button" id="searchBtn"><i class="fas fa-search"></i></button>
+                                                    <button class="btn btn-secondary" type="button" id="searchClearBtn">Clear</button>
                                             </div>
                                             <div id="searchResultInfo" class="tree-stat"></div>
                                         </div>
                                         <div class="btn-group w-100">
-                                            <button type="button" class="btn btn-default" id="expandAllBtn">
+                                            <button type="button" class="btn btn-secondary" id="expandAllBtn">
                                                 <i class="fas fa-expand-alt"></i> Expand
                                             </button>
-                                            <button type="button" class="btn btn-default" id="collapseAllBtn">
+                                            <button type="button" class="btn btn-secondary" id="collapseAllBtn">
                                                 <i class="fas fa-compress-alt"></i> Collapse
                                             </button>
                                         </div>

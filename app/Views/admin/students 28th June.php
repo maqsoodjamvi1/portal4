@@ -48,7 +48,7 @@
 		</ul>
       <div class="card-body">
       <div class="row">
-            <form id="form-filter" class="form-inline col-lg-12">
+            <form id="form-filter" class="d-flex flex-wrap align-items-center col-lg-12">
                 <div class="col-lg-2">
                     <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
 		               <option value="0">Select Student</option>   
@@ -78,14 +78,14 @@
                </div>
               	<div class="col-lg-2">
                   <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
+                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-secondary">Reset</button>
                 </div>
             </form>
         </div>
         </div>
         <br>
         <div class="col-lg-12">
-            <div id="totalStudents" class="text-right" style="font-size: 12px;color: #000;font-weight: bold;"></div>
+            <div id="totalStudents" class="text-end" style="font-size: 12px;color: #000;font-weight: bold;"></div>
         <table class="table table-striped table-bordered table-hover" id="students-datatable"  style="font-size:10px !important;width: 100%;">
 			<thead>
 				<tr>
@@ -118,8 +118,8 @@
     <div class="modal fade" id="viewSibling" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Sibling</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Sibling</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <div id="SiblingInfo">
@@ -135,8 +135,8 @@
     <div class="modal fade" id="makeCurrent" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Status</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Update Status</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form>
@@ -160,7 +160,7 @@
  		       </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -240,29 +240,29 @@ $(function(){
 				render:function(data, type, row){
 					//console.log(row);
 					var html = '';
-          html += '<div class="btn-group"><button type="button" class="btn btn-default btn-sm">Action</button><button type="button" class="btn btn-default dropdown-toggle dropdown-icon" data-toggle="dropdown"><span class="sr-only">Toggle Dropdown</span></button><div class="dropdown-menu" role="menu">';
+          html += '<div class="btn-group"><button type="button" class="btn btn-secondary btn-sm">Action</button><button type="button" class="btn btn-secondary dropdown-toggle dropdown-icon" data-bs-toggle="dropdown"><span class="visually-hidden">Toggle Dropdown</span></button><div class="dropdown-menu" role="menu">';
           if(<?php echo $_GET['status']; ?> == 1){
-                html += '<a href="<?php echo base_url('admin/students/edit?id=');?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-pencil-alt"></i> Edit</a>';
+                html += '<a href="<?php echo base_url('admin/students/edit?id=');?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-pencil-alt"></i> Edit</a>';
             }
 
-          html += '<a href="<?php echo base_url('admin/profile-student?id='); ?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-pencil-alt"></i> Profile</a>';
+          html += '<a href="<?php echo base_url('admin/profile-student?id='); ?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-pencil-alt"></i> Profile</a>';
 
-          html += '<a href="<?php echo base_url('admin/leaving-certificate/edit?id='); ?>' + data + '" title="School Leaving Certificate" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-certificate"></i> SLC </a>';
+          html += '<a href="<?php echo base_url('admin/leaving-certificate/edit?id='); ?>' + data + '" title="School Leaving Certificate" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-certificate"></i> SLC </a>';
 
-          html += '<a href="<?php echo base_url('admin/leaving-certificate2/edit?id='); ?>' + data + '" title="School Leaving Certificate" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-certificate"></i> SLC 2 </a>';
+          html += '<a href="<?php echo base_url('admin/leaving-certificate2/edit?id='); ?>' + data + '" title="School Leaving Certificate" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-certificate"></i> SLC 2 </a>';
 
-          html += '<a href="<?php echo base_url('admin/fee-chalan-single/add?id=');?>' + data + '" title="Fee Chalan" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-file-invoice"></i> Chalan</a>';
+          html += '<a href="<?php echo base_url('admin/fee-chalan-single/add?id=');?>' + data + '" title="Fee Chalan" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-file-invoice"></i> Chalan</a>';
 
-          html += '<a href="<?php echo base_url('admin/fee-chalan-sibling?parent_id='); ?>' + row.parent_id + '" title="Fee Chalan" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-file-invoice"></i> Sibling Chalan</a>';
+          html += '<a href="<?php echo base_url('admin/fee-chalan-sibling?parent_id='); ?>' + row.parent_id + '" title="Fee Chalan" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-file-invoice"></i> Sibling Chalan</a>';
 
-           html += '<a href="#" data-toggle="modal" style="font-size: .75rem !important;" class="btn btn-default btn-xs dropdown-item" id="#viewSibling' + data + '" data-target="#viewSibling" data-discount="' + row.discounted_amount + '"  data-id="' + row.parent_id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> View Sibling</a>';
+           html += '<a href="#" data-bs-toggle="modal" style="font-size: .75rem !important;" class="btn btn-secondary btn-sm dropdown-item" id="#viewSibling' + data + '" data-bs-target="#viewSibling" data-discount="' + row.discounted_amount + '"  data-id="' + row.parent_id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> View Sibling</a>';
 
-           // html += '<a href="<?php echo '#/students?m=delete&id=';?>' + data + '" title="Delete" class="btn btn-danger btn-xs dropdown-item"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-           html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/students/delete&id='); ?>' + data + '\',\'students-datatable\');" title=" delete" class="btn btn-danger btn-xs dropdown-item"><i class="fa fa-trash icon-trash"></i> Delete</a>';
+           // html += '<a href="<?php echo '#/students?m=delete&id=';?>' + data + '" title="Delete" class="btn btn-danger btn-sm dropdown-item"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
+           html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/students/delete&id='); ?>' + data + '\',\'students-datatable\');" title=" delete" class="btn btn-danger btn-sm dropdown-item"><i class="fa fa-trash icon-trash"></i> Delete</a>';
          
           html += '</div></div>'; 
 		if(<?php echo $_GET['status']; ?> == 3){
-			html += '<button data-toggle="modal" class="btn btn-primary btn-xs makeCurrent" id="#makeCurrent' + data + '" data-target="#makeCurrent" data-classfee ="' + row.class_fee + '"  data-id="' + row.id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Make Current</button>';
+			html += '<button data-bs-toggle="modal" class="btn btn-primary btn-sm makeCurrent" id="#makeCurrent' + data + '" data-bs-target="#makeCurrent" data-classfee ="' + row.class_fee + '"  data-id="' + row.id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Make Current</button>';
 		}
 
         html += '<div></div>';

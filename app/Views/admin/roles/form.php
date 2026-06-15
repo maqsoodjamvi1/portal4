@@ -1,3 +1,7 @@
+<?php
+$uiNeedsDataTables = false;
+$uiNeedsSummernote = false;
+?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -132,7 +136,7 @@
     }
     .role-info-box {
         background: #e3f2fd;
-        border-left: 4px solid #2196f3;
+        border-start: 4px solid #2196f3;
         padding: 10px 15px;
         margin-bottom: 15px;
         border-radius: 4px;
@@ -146,15 +150,15 @@
     }
     .permission-item.perm-nested { max-width: 100%; }
     .permission-item[data-depth="0"] {
-        border-left: 3px solid #17a2b8;
+        border-start: 3px solid #17a2b8;
     }
     .permission-item[data-depth="1"] {
-        border-left: 3px solid #6f42c1;
+        border-start: 3px solid #6f42c1;
     }
     .permission-item[data-depth="2"],
     .permission-item[data-depth="3"],
     .permission-item[data-depth="4"] {
-        border-left: 3px solid #6c757d;
+        border-start: 3px solid #6c757d;
     }
     @media (max-width: 1600px) {
         .permission-group-body.show {
@@ -182,13 +186,105 @@
     .permission-item.no-search-match {
         display: none !important;
     }
+    .menu-access-section {
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+    }
+    .menu-access-section-header {
+        background: #f8f9fa;
+        padding: 10px 14px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        gap: 12px;
+    }
+    .menu-access-section-title {
+        flex: 1;
+        cursor: pointer;
+        min-width: 0;
+    }
+    .menu-access-section-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .menu-access-section-actions .form-switch {
+        padding-left: 2.25rem;
+    }
+    .menu-save-status {
+        font-size: 12px;
+        color: #6c757d;
+        margin-left: 8px;
+    }
+    .menu-save-status.is-saving {
+        color: #007bff;
+    }
+    .menu-save-status.is-saved {
+        color: #28a745;
+    }
+    .menu-save-status.is-error {
+        color: #dc3545;
+    }
+    .menu-access-section-body {
+        display: none;
+        padding: 8px 12px 12px;
+    }
+    .menu-access-section-body.show {
+        display: block;
+    }
+    .menu-access-header-row {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6c757d;
+        padding: 8px 4px 4px;
+        letter-spacing: 0.04em;
+    }
+    .menu-access-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 6px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .menu-access-item:last-child {
+        border-bottom: none;
+    }
+    .menu-access-item-label {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+    }
+    .menu-access-item-label i {
+        width: 18px;
+        text-align: center;
+        margin-right: 6px;
+        color: #6c757d;
+    }
+    .menu-access-shared {
+        display: block;
+        font-size: 10px;
+        color: #856404;
+        margin-top: 2px;
+    }
+    .menu-access-section.no-search-match,
+    .menu-access-item.no-search-match {
+        display: none !important;
+    }
 </style>
 
 <?php 
 $header = isset($role) ? 'Edit Role' : 'Add Role';
 $id = isset($role) ? $role->id : 0;
 $role_name_id = isset($role) ? $role->role_name_id : '';
-$plan_id = isset($role) ? $role->plan_id : '';
+helper('role');
+$plan_id = isset($plan_id) ? (int) $plan_id : getRolePlanId();
 $current_role_name = '';
 
 // Get current role name if editing
@@ -202,22 +298,15 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
 }
 ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-user-tag"></i> <?= $header ?></h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/roles') ?>">Roles</a></li>
-                    <li class="breadcrumb-item active"><?= $header ?></li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => $header,
+    'icon' => 'fas fa-user-tag',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Roles', 'url' => base_url('admin/roles')],
+        ['label' => $header, 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -228,12 +317,12 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
                 </div>
                 
                 <div class="card-body">
-                    <form id="roleForm" method="post" action="<?= base_url('admin/roles/save') ?>">
+                    <form id="roleForm" class="needs-validation" novalidate method="post" action="<?= base_url('admin/roles/save') ?>">
                         <?= csrf_field() ?>
                         <input type="hidden" name="id" id="roleId" value="<?= $id ?>">
                         
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="role_name_id">Role Name <span class="text-danger">*</span></label>
                                     <select class="form-control" name="role_name_id" id="role_name_id" required>
@@ -250,77 +339,106 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
                                 </div>
                             </div>
                             
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="plan_id">Plan</label>
-                                    <select class="form-control" name="plan_id" id="plan_id">
-                                        <option value="">No Plan</option>
-                                        <?php if (isset($plans) && !empty($plans)): ?>
-                                            <?php foreach ($plans as $plan): ?>
-                                                <option value="<?= $plan->plan_id ?>" 
-                                                    <?= ($plan_id == $plan->plan_id) ? 'selected' : '' ?>>
-                                                    <?= $plan->plan_name ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
-                        
+
+                        <input type="hidden" name="plan_id" id="plan_id" value="<?= (int) $plan_id ?>">
+
                         <div class="role-info-box">
                             <i class="fas fa-info-circle"></i> 
                             <strong>Editing Role:</strong> <span id="editingRoleNameText"><?= $current_role_name ?: '-' ?></span>
-                            <span class="float-right">
+                            <span class="float-end">
                                 <i class="fas fa-key"></i> Role ID: <span id="editingRoleIdText"><?= $id ?: 0 ?></span>
                             </span>
-                            <div class="mt-2 text-muted" id="switchRoleHint">Change Role Name + Plan to load another existing role on this page.</div>
+                            <div class="mt-2 text-muted" id="switchRoleHint">Change Role Name to load another existing role on this page.</div>
                         </div>
                         
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> Role Permissions</label>
-                            <div class="perm-search-wrap">
-                                <div class="input-group input-group-sm">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <ul class="nav nav-tabs mb-3" id="permTabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="menu-access-tab" data-bs-toggle="tab" href="#menuAccessPanel" role="tab">
+                                        <i class="fas fa-bars"></i> Menu Access
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="advanced-perm-tab" data-bs-toggle="tab" href="#advancedPermPanel" role="tab">
+                                        <i class="fas fa-key"></i> Advanced Permissions
+                                    </a>
+                                </li>
+                            </ul>
+                            <div class="tab-content" id="permTabContent">
+                                <div class="tab-pane fade show active" id="menuAccessPanel" role="tabpanel">
+                                    <p class="text-muted small mb-2">Toggle sidebar menu items this role can see. Changes save automatically — no Save button needed.</p>
+                                    <div class="perm-search-wrap">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="search" class="form-control" id="menuSearchInput"
+                                                   placeholder="Search menu items…" autocomplete="off">
+                                            <button type="button" class="btn btn-outline-secondary" id="menuSearchClear">Clear</button>
+                                        </div>
+                                        <small class="text-muted" id="menuSearchHint"></small>
                                     </div>
-                                    <input type="search" class="form-control" id="permSearchInput"
-                                           placeholder="Search by permission name or key…" autocomplete="off">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-outline-secondary" id="permSearchClear" title="Clear search">Clear</button>
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-sm btn-success" id="menuShowAllBtn">
+                                            <i class="fas fa-eye"></i> Show All Menus
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning" id="menuHideAllBtn">
+                                            <i class="fas fa-eye-slash"></i> Hide All Menus
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-info" id="menuExpandAllBtn">
+                                            <i class="fas fa-expand-alt"></i> Expand All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-info" id="menuCollapseAllBtn">
+                                            <i class="fas fa-compress-alt"></i> Collapse All
+                                        </button>
+                                        <span class="stats-info" id="menuStats"></span>
+                                        <span class="menu-save-status" id="menuSaveStatus"></span>
+                                    </div>
+                                    <div id="menuAccessContainer">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p>Loading menu access...</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <small class="text-muted" id="permSearchHint"></small>
-                            </div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-sm btn-success" id="allowAllBtn">
-                                    <i class="fas fa-check-double"></i> Allow All
-                                </button>
-                                <button type="button" class="btn btn-sm btn-warning" id="denyAllBtn">
-                                    <i class="fas fa-times-circle"></i> Deny All
-                                </button>
-                                <button type="button" class="btn btn-sm btn-info" id="expandAllBtn">
-                                    <i class="fas fa-expand-alt"></i> Expand All
-                                </button>
-                                <button type="button" class="btn btn-sm btn-info" id="collapseAllBtn">
-                                    <i class="fas fa-compress-alt"></i> Collapse All
-                                </button>
-                                <span class="stats-info" id="permStats"></span>
-                            </div>
-                            <div id="permissionsContainer">
-                                <div class="loading-spinner">
-                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                                    <p>Loading permissions...</p>
+                                <div class="tab-pane fade" id="advancedPermPanel" role="tabpanel">
+                                    <div class="perm-search-wrap">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="search" class="form-control" id="permSearchInput"
+                                                   placeholder="Search by permission name or key…" autocomplete="off">
+                                            <button type="button" class="btn btn-outline-secondary" id="permSearchClear" title="Clear search">Clear</button>
+                                        </div>
+                                        <small class="text-muted" id="permSearchHint"></small>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-sm btn-success" id="allowAllBtn">
+                                            <i class="fas fa-check-double"></i> Allow All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning" id="denyAllBtn">
+                                            <i class="fas fa-times-circle"></i> Deny All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-info" id="expandAllBtn">
+                                            <i class="fas fa-expand-alt"></i> Expand All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-info" id="collapseAllBtn">
+                                            <i class="fas fa-compress-alt"></i> Collapse All
+                                        </button>
+                                        <span class="stats-info" id="permStats"></span>
+                                    </div>
+                                    <div id="permissionsContainer">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p>Loading permissions...</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
-                                <i class="fas fa-save"></i> Save Role
-                            </button>
-                            <a href="<?= base_url('admin/roles') ?>" class="btn btn-default">
-                                <i class="fas fa-times"></i> Cancel
+                            <a href="<?= base_url('admin/roles') ?>" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Roles
                             </a>
                         </div>
                     </form>
@@ -331,6 +449,18 @@ if (isset($role) && $role->role_name_id && isset($role_names)) {
 </section>
 
 <script>
+var menuCatalogData = [];
+var menuItemsIndex = {};
+var menuEnabledState = {};
+var menuSyncLock = false;
+var menuSaveTimer = null;
+var menuSaveInFlight = false;
+var menuSaveQueued = false;
+var menuAccessHasOverrides = false;
+var menuPermissionsReady = false;
+var permSaveTimer = null;
+var permSaveInFlight = false;
+
 /** Always use the role row id from the form (editing), not role_name_id / plan. */
 function getEditingRoleId() {
     var v = parseInt($('#roleId').val(), 10);
@@ -383,13 +513,16 @@ function loadPermissions(roleId) {
         data: {
             roleid: roleId,
             action: roleId > 0 ? 'edit' : 'add',
-            <?= json_encode(csrf_token()) ?>: <?= json_encode(csrf_hash()) ?>
+            <?= json_encode(csrf_token()) ?>: $('input[name="<?= csrf_token() ?>"]').val() || <?= json_encode(csrf_hash()) ?>
         },
         dataType: 'json',
         success: function(data) {
             if ($.isArray(data) && data.length > 0) {
                 renderPermissions(data);
                 updateStats();
+                if (menuPermissionsReady) {
+                    syncPermsToMenu();
+                }
                 clearPermissionDirty();
             } else if ($.isArray(data)) {
                 $('#permissionsContainer').html('<div class="alert alert-warning">No permissions found in the system.</div>');
@@ -422,7 +555,7 @@ function renderPermissionItem(node, depth) {
     var selectedValue = (node.chk == '1') ? '1' : '0';
     var pad = Math.min(depth, 2) * 8;
     var searchBlob = escapeAttr(permSearchText(node));
-    var html = '<div class="permission-item perm-nested" data-depth="' + depth + '" data-perm-id="' + node.id + '" data-perm-search="' + searchBlob + '">';
+    var html = '<div class="permission-item perm-nested" data-depth="' + depth + '" data-perm-id="' + node.id + '" data-perm-key="' + escapeAttr((node.permKey || '').toLowerCase()) + '" data-perm-search="' + searchBlob + '">';
     html += '<div class="permission-main" style="padding-left:' + pad + 'px">';
     html += '<label>' + (depth === 0 ? '<strong><i class="fas fa-cog"></i> ' : '') + escapeHtml(node.name) + (depth === 0 ? '</strong>' : '') + '</label>';
     if (node.permKey) {
@@ -460,8 +593,9 @@ function setAllPermissionChoices(value) {
     $('.permission-item[data-perm-id]').each(function () {
         setPermissionChoice($(this), value);
     });
-    markPermissionDirty();
     updateStats();
+    syncPermsToMenu();
+    saveRolePermissionsNow();
 }
 
 function bindPermissionChoiceEvents() {
@@ -470,9 +604,532 @@ function bindPermissionChoiceEvents() {
         var $item = $btn.closest('.permission-item[data-perm-id]');
         var value = $btn.attr('data-value');
         setPermissionChoice($item, value);
-        markPermissionDirty();
         updateStats();
+        syncPermsToMenu();
+        saveRolePermissionsNow();
     });
+}
+
+function isPermKeyAllowed(permKey) {
+    if (!permKey) return false;
+    var key = String(permKey).toLowerCase();
+    var allowed = false;
+    $('.permission-item[data-perm-key]').each(function () {
+        if (($(this).attr('data-perm-key') || '') === key) {
+            if ($(this).find('input.perm-input').val() === '1') {
+                allowed = true;
+            }
+        }
+    });
+    return allowed;
+}
+
+function setPermIdsValue(permIds, value) {
+    (permIds || []).forEach(function (id) {
+        var $item = $('.permission-item[data-perm-id="' + id + '"]');
+        if ($item.length) {
+            setPermissionChoice($item, value);
+        }
+    });
+}
+
+function computeMenuEnabledFromPerms(item) {
+    if (!item || !item.permKeys || item.permKeys.length === 0) {
+        return true;
+    }
+    for (var i = 0; i < item.permKeys.length; i++) {
+        if (isPermKeyAllowed(item.permKeys[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getEnabledMenuKeys() {
+    var enabled = {};
+    Object.keys(menuItemsIndex).forEach(function (key) {
+        var item = menuItemsIndex[key];
+        if (item.permKeys && item.permKeys.length === 0) {
+            enabled[key] = true;
+            return;
+        }
+        if (menuEnabledState[key]) {
+            enabled[key] = true;
+        }
+    });
+    return enabled;
+}
+
+function isPermKeyRequiredByOtherMenus(permKey, excludeMenuKey) {
+    var needed = false;
+    Object.keys(menuItemsIndex).forEach(function (key) {
+        if (key === excludeMenuKey) return;
+        if (!menuEnabledState[key]) return;
+        var item = menuItemsIndex[key];
+        (item.permKeys || []).forEach(function (pk) {
+            if (pk === permKey) {
+                needed = true;
+            }
+        });
+    });
+    return needed;
+}
+
+function applyMenuToggle(menuKey, enabled, options) {
+    options = options || {};
+    if (menuSyncLock) return;
+    menuSyncLock = true;
+
+    var item = menuItemsIndex[menuKey];
+    if (!item) {
+        menuSyncLock = false;
+        return;
+    }
+
+    if (item.permKeys && item.permKeys.length === 0) {
+        menuEnabledState[menuKey] = true;
+        menuSyncLock = false;
+        return;
+    }
+
+    menuEnabledState[menuKey] = !!enabled;
+
+    if (!menuAccessHasOverrides) {
+        if (enabled) {
+            setPermIdsValue(item.permIds, '1');
+        } else {
+            (item.permKeys || []).forEach(function (pk) {
+                if (!isPermKeyRequiredByOtherMenus(pk, menuKey)) {
+                    $('.permission-item[data-perm-key="' + pk + '"]').each(function () {
+                        setPermissionChoice($(this), '0');
+                    });
+                }
+            });
+        }
+        updateStats();
+    }
+    updateMenuStats();
+    updateSectionToggleUiForMenuKey(menuKey);
+    menuSyncLock = false;
+
+    if (!options.skipSave) {
+        saveMenuAccessNow();
+    }
+}
+
+function sectionEnabledFor(sec) {
+    var sectionKey = sec.key || '';
+    if (sectionKey && menuEnabledState[sectionKey] !== undefined) {
+        return !!menuEnabledState[sectionKey];
+    }
+    var any = false;
+    if (!sec.children) {
+        return false;
+    }
+    for (var j = 0; j < sec.children.length; j++) {
+        var child = sec.children[j];
+        if (child.header || !child.key) {
+            continue;
+        }
+        if (menuEnabledState[child.key]) {
+            any = true;
+            break;
+        }
+    }
+    return any;
+}
+
+function updateSectionToggleUiForMenuKey(menuKey) {
+    var $item = $('.menu-access-item').has('.menu-access-toggle[data-menu-key="' + menuKey + '"]');
+    var $section = $item.closest('.menu-access-section[data-section-key]');
+    if (!$section.length) {
+        return;
+    }
+    var sectionKey = $section.attr('data-section-key') || '';
+    if (!sectionKey) {
+        return;
+    }
+    var anyEnabled = false;
+    $section.find('.menu-access-toggle:not(:disabled)').each(function () {
+        if ($(this).is(':checked')) {
+            anyEnabled = true;
+        }
+    });
+    menuEnabledState[sectionKey] = anyEnabled;
+    var $toggle = $section.find('.menu-section-toggle');
+    $toggle.prop('checked', anyEnabled);
+    $toggle.next('label').text(anyEnabled ? 'Show' : 'Hide');
+}
+
+function applySectionToggle(sectionKey, enabled) {
+    menuEnabledState[sectionKey] = !!enabled;
+    var $section = $('.menu-access-section[data-section-key="' + sectionKey + '"]');
+    $section.find('.menu-access-toggle:not(:disabled)').each(function () {
+        var childKey = $(this).data('menu-key');
+        $(this).prop('checked', enabled);
+        $(this).next('label').text(enabled ? 'Show' : 'Hide');
+        applyMenuToggle(childKey, enabled, { skipSave: true });
+    });
+    var $toggle = $section.find('.menu-section-toggle');
+    $toggle.prop('checked', enabled);
+    $toggle.next('label').text(enabled ? 'Show' : 'Hide');
+    saveMenuAccessNow();
+}
+
+function collectMenuAccessPayload() {
+    var payload = {};
+    Object.keys(menuItemsIndex).forEach(function (key) {
+        var item = menuItemsIndex[key];
+        if (item.permKeys && item.permKeys.length === 0) {
+            payload[key] = '1';
+            return;
+        }
+        payload[key] = menuEnabledState[key] ? '1' : '0';
+    });
+    $('.menu-section-toggle').each(function () {
+        var sk = $(this).data('section-key');
+        if (sk) {
+            payload[sk] = $(this).is(':checked') ? '1' : '0';
+        }
+    });
+    return payload;
+}
+
+function setMenuSaveStatus(state, message) {
+    var $el = $('#menuSaveStatus');
+    $el.removeClass('is-saving is-saved is-error');
+    if (state) {
+        $el.addClass('is-' + state);
+    }
+    $el.text(message || '');
+}
+
+function buildMenuAccessPostBody(roleId, menuAccess) {
+    var parts = [
+        'roleid=' + encodeURIComponent(roleId),
+        encodeURIComponent('<?= csrf_token() ?>') + '=' + encodeURIComponent($('input[name="<?= csrf_token() ?>"]').val() || '')
+    ];
+    Object.keys(menuAccess).forEach(function (key) {
+        parts.push(
+            'menu_access[' + encodeURIComponent(key) + ']=' + encodeURIComponent(menuAccess[key])
+        );
+    });
+    return parts.join('&');
+}
+
+function doSaveMenuAccess(roleId) {
+    if (menuSaveInFlight) {
+        menuSaveQueued = true;
+        return;
+    }
+    if (roleId <= 0) {
+        return;
+    }
+
+    menuSaveInFlight = true;
+    setMenuSaveStatus('saving', 'Saving...');
+
+    $.ajax({
+        url: '<?= base_url('admin/roles/save_menu_access') ?>',
+        type: 'POST',
+        data: buildMenuAccessPostBody(roleId, collectMenuAccessPayload()),
+        dataType: 'json',
+        success: function (resp) {
+            if (resp && resp.success) {
+                menuAccessHasOverrides = true;
+                setMenuSaveStatus('saved', 'Saved');
+                clearPermissionDirty();
+            } else {
+                setMenuSaveStatus('error', 'Save failed — reload page');
+                toastr.error((resp && resp.msg) ? resp.msg : 'Failed to save menu access');
+            }
+            if (resp && resp.csrf_hash) {
+                $('input[name="<?= csrf_token() ?>"]').val(resp.csrf_hash);
+            }
+        },
+        error: function (xhr) {
+            setMenuSaveStatus('error', 'Save failed — reload page');
+            var msg = 'Failed to save menu access';
+            if (xhr && xhr.status === 403) {
+                msg = 'Session expired. Please reload the page and try again.';
+            }
+            toastr.error(msg);
+        },
+        complete: function () {
+            menuSaveInFlight = false;
+            if (menuSaveQueued) {
+                menuSaveQueued = false;
+                doSaveMenuAccess(roleId);
+            }
+        }
+    });
+}
+
+function saveMenuAccessNow() {
+    var roleId = getEditingRoleId();
+    if (roleId <= 0) {
+        return;
+    }
+    clearTimeout(menuSaveTimer);
+    menuSaveTimer = setTimeout(function () {
+        doSaveMenuAccess(roleId);
+    }, 250);
+}
+
+function collectPermsPayload() {
+    var perms = {};
+    $('input.perm-input').each(function () {
+        var match = (this.name || '').match(/^perms\[(\d+)\]$/);
+        if (match) {
+            perms[match[1]] = $(this).val();
+        }
+    });
+    return perms;
+}
+
+function buildPermsPostBody(roleId, perms) {
+    var parts = [
+        'id=' + encodeURIComponent(roleId),
+        'role_name_id=' + encodeURIComponent($('#role_name_id').val() || ''),
+        'plan_id=' + encodeURIComponent($('#plan_id').val() || ''),
+        encodeURIComponent('<?= csrf_token() ?>') + '=' + encodeURIComponent($('input[name="<?= csrf_token() ?>"]').val() || '')
+    ];
+    Object.keys(perms).forEach(function (permId) {
+        parts.push('perms[' + encodeURIComponent(permId) + ']=' + encodeURIComponent(perms[permId]));
+    });
+    return parts.join('&');
+}
+
+function saveRolePermissionsNow() {
+    var roleId = getEditingRoleId();
+    if (roleId <= 0 || permSaveInFlight) {
+        return;
+    }
+    clearTimeout(permSaveTimer);
+    permSaveTimer = setTimeout(function () {
+        permSaveInFlight = true;
+        $.ajax({
+            url: '<?= base_url('admin/roles/save') ?>',
+            type: 'POST',
+            data: buildPermsPostBody(roleId, collectPermsPayload()),
+            dataType: 'json',
+            success: function (resp) {
+                if (resp && resp.success) {
+                    clearPermissionDirty();
+                } else {
+                    toastr.error((resp && resp.msg) ? resp.msg : 'Failed to save permissions');
+                }
+            },
+            error: function () {
+                toastr.error('Failed to save permissions');
+            },
+            complete: function () {
+                permSaveInFlight = false;
+            }
+        });
+    }, 400);
+}
+
+function syncPermsToMenu() {
+    if (menuSyncLock || !menuItemsIndex) return;
+    menuSyncLock = true;
+
+    if (!menuAccessHasOverrides) {
+        Object.keys(menuItemsIndex).forEach(function (key) {
+            var item = menuItemsIndex[key];
+            if (item.permKeys && item.permKeys.length === 0) {
+                menuEnabledState[key] = true;
+                return;
+            }
+            menuEnabledState[key] = computeMenuEnabledFromPerms(item);
+        });
+    }
+
+    $('.menu-access-toggle').each(function () {
+        var key = $(this).data('menu-key');
+        var locked = $(this).data('locked') === 1 || $(this).data('locked') === '1';
+        if (locked) {
+            $(this).prop('checked', true).prop('disabled', true);
+            return;
+        }
+        $(this).prop('checked', !!menuEnabledState[key]);
+        $(this).next('label').text(menuEnabledState[key] ? 'Show' : 'Hide');
+    });
+    $('.menu-section-toggle').each(function () {
+        var sectionKey = $(this).data('section-key');
+        var enabled = menuEnabledState[sectionKey];
+        if (enabled === undefined) {
+            enabled = $(this).is(':checked');
+        }
+        $(this).prop('checked', !!enabled);
+        $(this).next('label').text(enabled ? 'Show' : 'Hide');
+    });
+    updateMenuStats();
+    menuSyncLock = false;
+}
+
+function loadMenuPermissions(roleId, onReady) {
+    menuPermissionsReady = false;
+    $('#menuAccessContainer').html('<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading menu access...</p></div>');
+    $.ajax({
+        url: '<?= base_url('admin/roles/menu_perm_data') ?>',
+        type: 'POST',
+        data: {
+            roleid: roleId,
+            <?= json_encode(csrf_token()) ?>: $('input[name="<?= csrf_token() ?>"]').val() || <?= json_encode(csrf_hash()) ?>
+        },
+        dataType: 'json',
+        success: function (data) {
+            menuCatalogData = data.sections || [];
+            menuItemsIndex = data.items || {};
+            menuAccessHasOverrides = !!data.hasOverrides;
+            menuEnabledState = {};
+            Object.keys(data.state || {}).forEach(function (key) {
+                menuEnabledState[key] = !!(data.state[key] && data.state[key].enabled);
+            });
+            Object.keys(menuItemsIndex).forEach(function (key) {
+                if (menuEnabledState[key] === undefined) {
+                    menuEnabledState[key] = false;
+                }
+            });
+            renderMenuAccess(menuCatalogData);
+            updateMenuStats();
+            setMenuSaveStatus('', '');
+            menuPermissionsReady = true;
+            if (typeof onReady === 'function') {
+                onReady();
+            }
+        },
+        error: function () {
+            $('#menuAccessContainer').html('<div class="alert alert-danger">Failed to load menu access.</div>');
+        }
+    });
+}
+
+function loadRolePermissionPanels(roleId) {
+    loadMenuPermissions(roleId, function () {
+        loadPermissions(roleId);
+    });
+}
+
+function renderMenuAccess(sections) {
+    var html = '';
+    for (var i = 0; i < sections.length; i++) {
+        var sec = sections[i];
+        if (!sec.children || sec.children.length === 0) continue;
+        var groupId = 'menu_group_' + i;
+        var sectionKey = sec.key || '';
+        var sectionEnabled = sectionEnabledFor(sec);
+        if (sectionKey) {
+            menuEnabledState[sectionKey] = sectionEnabled;
+        }
+        html += '<div class="menu-access-section" data-section-key="' + escapeAttr(sectionKey) + '" data-menu-search="' + escapeAttr((sec.label || '').toLowerCase()) + '">';
+        html += '<div class="menu-access-section-header">';
+        html += '<span class="menu-access-section-title" onclick="toggleMenuGroup(\'' + groupId + '\')"><i class="' + escapeHtml(sec.icon || 'fas fa-folder') + '"></i> ' + escapeHtml(sec.label) + '</span>';
+        html += '<div class="menu-access-section-actions" onclick="event.stopPropagation()">';
+        if (sectionKey) {
+            var secToggleId = 'menu_section_' + String(sectionKey).replace(/[^a-zA-Z0-9_-]/g, '_');
+            html += '<div class="form-check form-switch">';
+            html += '<input type="checkbox" class="form-check-input menu-section-toggle" id="' + secToggleId + '" data-section-key="' + escapeAttr(sectionKey) + '" ' + (sectionEnabled ? 'checked' : '') + '>';
+            html += '<label class="form-check-label" for="' + secToggleId + '">' + (sectionEnabled ? 'Show' : 'Hide') + '</label>';
+            html += '</div>';
+        }
+        html += '<i class="fas fa-chevron-down" style="cursor:pointer" onclick="toggleMenuGroup(\'' + groupId + '\')"></i>';
+        html += '</div></div>';
+        html += '<div id="' + groupId + '" class="menu-access-section-body">';
+        for (var j = 0; j < sec.children.length; j++) {
+            var child = sec.children[j];
+            if (child.header) {
+                html += '<div class="menu-access-header-row">' + escapeHtml(child.label) + '</div>';
+                continue;
+            }
+            var enabled = !!menuEnabledState[child.key];
+            var locked = !!child.locked;
+            html += '<div class="menu-access-item" data-menu-item-search="' + escapeAttr((child.label || '').toLowerCase()) + '">';
+            html += '<div class="menu-access-item-label">';
+            html += '<i class="' + escapeHtml(child.icon || 'far fa-circle') + '"></i> ' + escapeHtml(child.label);
+            if (child.superAdminOnly) {
+                html += '<span class="menu-access-shared text-muted"><i class="fas fa-user-shield"></i> Super admin sidebar only</span>';
+            } else if (child.directorQuizzesMenu) {
+                html += '<span class="menu-access-shared text-muted"><i class="fas fa-user-tie"></i> Director / principal quizzes</span>';
+            }
+            if (child.sharedWith && child.sharedWith.length > 0) {
+                html += '<span class="menu-access-shared"><i class="fas fa-link"></i> Also affects: ' + escapeHtml(child.sharedWith.join(', ')) + '</span>';
+            }
+            html += '</div>';
+            html += '<div class="form-check form-switch">';
+            var safeToggleId = 'menu_toggle_' + String(child.key).replace(/[^a-zA-Z0-9_-]/g, '_');
+            html += '<input type="checkbox" class="form-check-input menu-access-toggle" id="' + safeToggleId + '" data-menu-key="' + escapeAttr(child.key) + '" data-locked="' + (locked ? '1' : '0') + '" ' + (enabled || locked ? 'checked' : '') + (locked ? ' disabled' : '') + '>';
+            html += '<label class="form-check-label" for="' + safeToggleId + '">' + (locked ? 'Always' : (enabled ? 'Show' : 'Hide')) + '</label>';
+            html += '</div>';
+            html += '</div>';
+        }
+        html += '</div></div>';
+    }
+    $('#menuAccessContainer').html(html || '<div class="alert alert-warning">No menu items found.</div>');
+    $('.menu-access-section-body').first().addClass('show');
+    bindMenuAccessEvents();
+}
+
+function bindMenuAccessEvents() {
+    $('#menuAccessContainer').off('change', '.menu-access-toggle').on('change', '.menu-access-toggle', function () {
+        var key = $(this).data('menu-key');
+        var enabled = $(this).is(':checked');
+        $(this).next('label').text(enabled ? 'Show' : 'Hide');
+        applyMenuToggle(key, enabled);
+    });
+    $('#menuAccessContainer').off('change', '.menu-section-toggle').on('change', '.menu-section-toggle', function () {
+        var sectionKey = $(this).data('section-key');
+        var enabled = $(this).is(':checked');
+        $(this).next('label').text(enabled ? 'Show' : 'Hide');
+        applySectionToggle(sectionKey, enabled);
+    });
+}
+
+function updateMenuStats() {
+    var total = 0;
+    var shown = 0;
+    Object.keys(menuItemsIndex).forEach(function (key) {
+        var item = menuItemsIndex[key];
+        if (!item.permKeys || item.permKeys.length === 0) return;
+        total++;
+        if (menuEnabledState[key]) shown++;
+    });
+    $('#menuStats').html('Menu items: ' + shown + ' shown / ' + total + ' configurable');
+}
+
+function toggleMenuGroup(groupId) {
+    $('#' + groupId).toggleClass('show');
+}
+
+var menuSearchTimer = null;
+function applyMenuSearch(raw) {
+    var q = (raw || '').trim().toLowerCase();
+    if (!q) {
+        $('.menu-access-section, .menu-access-item').removeClass('no-search-match');
+        $('#menuSearchHint').text('');
+        return;
+    }
+    var visibleSections = 0;
+    var visibleItems = 0;
+    $('.menu-access-section').each(function () {
+        var $sec = $(this);
+        var secMatch = (($sec.attr('data-menu-search') || '').indexOf(q) !== -1);
+        var anyItem = false;
+        $sec.find('.menu-access-item').each(function () {
+            var m = (($(this).attr('data-menu-item-search') || '').indexOf(q) !== -1);
+            $(this).toggleClass('no-search-match', !m);
+            if (m) anyItem = true;
+        });
+        var show = secMatch || anyItem;
+        $sec.toggleClass('no-search-match', !show);
+        if (show) {
+            visibleSections++;
+            visibleItems += $sec.find('.menu-access-item:not(.no-search-match)').length;
+            $sec.find('.menu-access-section-body').addClass('show');
+        }
+    });
+    $('#menuSearchHint').text(visibleItems ? ('Showing ' + visibleItems + ' item(s) in ' + visibleSections + ' section(s)') : 'No matching menu items.');
 }
 
 function renderPermissions(data) {
@@ -570,7 +1227,7 @@ function switchToSelectedRole(forceSwitch) {
         return;
     }
     if (!forceSwitch && hasUnsavedPermissionChanges()) {
-        var ok = window.confirm('You have unsaved permission changes. Switch role and discard those unsaved changes?');
+        var ok = window.confirm('Permission changes may still be saving. Switch role anyway?');
         if (!ok) {
             return;
         }
@@ -596,7 +1253,7 @@ function switchToSelectedRole(forceSwitch) {
             }
             $('#roleId').val(newRoleId);
             updateRoleInfoBar(newRoleId);
-            loadPermissions(newRoleId);
+            loadRolePermissionPanels(newRoleId);
             $('#switchRoleHint').text('Loaded role #' + newRoleId + ' permissions.');
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, '', '<?= base_url('admin/roles/edit') ?>/' + newRoleId);
@@ -611,9 +1268,10 @@ function switchToSelectedRole(forceSwitch) {
 $(document).ready(function() {
     clearPermissionDirty();
     updateRoleInfoBar(getEditingRoleId());
-    loadPermissions(getEditingRoleId());
+    var roleId = getEditingRoleId();
+    loadRolePermissionPanels(roleId);
     
-    $('#role_name_id, #plan_id').on('change', function() {
+    $('#role_name_id').on('change', function() {
         switchToSelectedRole(false);
     });
 
@@ -646,54 +1304,55 @@ $(document).ready(function() {
     $('#collapseAllBtn').click(function() {
         $('.permission-group-body').removeClass('show');
     });
-    
-    $('#roleForm').submit(function(e) {
-        e.preventDefault();
-        
-        if (!$('#role_name_id').val()) {
-            toastr.error('Please select a role name');
-            $('#role_name_id').focus();
-            return false;
-        }
-        
-        var formData = $(this).serialize();
-        
-        $.ajax({
-            url: '<?= base_url('admin/roles/save') ?>',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            beforeSend: function() {
-                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
-            },
-            success: function(response) {
-                if (response.success) {
-                    toastr.success(response.msg);
-                    clearPermissionDirty();
-                    setTimeout(function() {
-                        var savedRoleId = parseInt(response.role_id || getEditingRoleId(), 10);
-                        if (!isNaN(savedRoleId) && savedRoleId > 0) {
-                            window.location.href = '<?= base_url('admin/roles/edit') ?>/' + savedRoleId;
-                        } else {
-                            window.location.href = '<?= base_url('admin/roles') ?>';
-                        }
-                    }, 1500);
-                } else {
-                    if (response.errors) {
-                        $.each(response.errors, function(key, value) {
-                            toastr.error(value);
-                        });
-                    } else {
-                        toastr.error(response.msg || 'Failed to save role');
-                    }
-                    $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Save Role');
-                }
-            },
-            error: function() {
-                toastr.error('Failed to save role');
-                $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Save Role');
+
+    $('#menuSearchInput').on('input', function () {
+        clearTimeout(menuSearchTimer);
+        var v = $(this).val();
+        menuSearchTimer = setTimeout(function () { applyMenuSearch(v); }, 200);
+    });
+    $('#menuSearchClear').on('click', function () {
+        $('#menuSearchInput').val('');
+        applyMenuSearch('');
+    });
+    $('#menuShowAllBtn').on('click', function () {
+        Object.keys(menuItemsIndex).forEach(function (key) {
+            var item = menuItemsIndex[key];
+            if (item.permKeys && item.permKeys.length > 0) {
+                applyMenuToggle(key, true, { skipSave: true });
             }
         });
+        $('.menu-access-toggle:not(:disabled)').prop('checked', true).each(function () {
+            $(this).next('label').text('Show');
+        });
+        $('.menu-section-toggle').prop('checked', true).each(function () {
+            $(this).next('label').text('Show');
+        });
+        saveMenuAccessNow();
+    });
+    $('#menuHideAllBtn').on('click', function () {
+        Object.keys(menuItemsIndex).forEach(function (key) {
+            var item = menuItemsIndex[key];
+            if (item.permKeys && item.permKeys.length > 0) {
+                applyMenuToggle(key, false, { skipSave: true });
+            }
+        });
+        $('.menu-access-toggle:not(:disabled)').prop('checked', false).each(function () {
+            $(this).next('label').text('Hide');
+        });
+        $('.menu-section-toggle').prop('checked', false).each(function () {
+            $(this).next('label').text('Hide');
+        });
+        saveMenuAccessNow();
+    });
+    $('#menuExpandAllBtn').on('click', function () {
+        $('.menu-access-section-body').addClass('show');
+    });
+    $('#menuCollapseAllBtn').on('click', function () {
+        $('.menu-access-section-body').removeClass('show');
+    });
+    
+    $('#roleForm').on('submit', function (e) {
+        e.preventDefault();
     });
 });
 </script>

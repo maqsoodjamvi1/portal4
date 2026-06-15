@@ -55,7 +55,7 @@
         margin-bottom: 16px;
         overflow: hidden;
         transition: all 0.3s ease;
-        border-left: 4px solid var(--primary-color);
+        border-start: 4px solid var(--primary-color);
     }
     .student-card:hover {
         box-shadow: 0 4px 15px rgba(0,0,0,0.12);
@@ -84,6 +84,8 @@
         flex-wrap: wrap;
     }
     .student-avatar {
+        position: relative;
+        flex-shrink: 0;
         width: 48px;
         height: 48px;
         background: linear-gradient(135deg, var(--primary-color), var(--info-color));
@@ -94,6 +96,24 @@
         color: white;
         font-weight: bold;
         font-size: 18px;
+        overflow: hidden;
+    }
+    .student-avatar--has-photo img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        z-index: 1;
+    }
+    .student-avatar--has-photo .student-avatar-initials {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        align-items: center;
+        justify-content: center;
     }
     .student-details {
         flex: 1;
@@ -142,7 +162,7 @@
         transition: max-height 0.3s ease-out;
     }
     .student-card.active .student-card-body {
-        max-height: 800px;
+        max-height: 1400px;
         transition: max-height 0.5s ease-in;
     }
     .student-card-body-inner {
@@ -150,19 +170,111 @@
         background: white;
     }
     
-    /* Form Grid - Responsive */
+    /* Form layout: row 1 = both DOBs; row 2 = weight+toggle | height | BMI */
     .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .row-dob,
+    .row-metrics {
         display: grid;
         grid-template-columns: 1fr;
         gap: 16px;
+        align-items: start;
     }
     @media (min-width: 768px) {
-        .form-grid {
-            grid-template-columns: repeat(2, 1fr);
+        .row-dob {
+            grid-template-columns: 1fr 1fr;
         }
-        .form-grid-full {
-            grid-column: span 2;
+        .row-metrics {
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr);
         }
+    }
+    .form-field-weight-db .db-toggle-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+    .form-field-weight-db .db-toggle-row .text-muted {
+        font-size: 12px;
+        line-height: 1.3;
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Profile photo row — stack on small screens, row on larger */
+    .row-photo {
+        width: 100%;
+    }
+    .photo-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 14px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+    }
+    @media (min-width: 576px) {
+        .photo-panel {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+    .photo-thumb {
+        flex-shrink: 0;
+        align-self: center;
+    }
+    .photo-thumb-inner {
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #fff;
+        border: 2px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .photo-thumb-inner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .photo-thumb-placeholder {
+        color: #adb5bd;
+        font-size: 32px;
+    }
+    .photo-actions {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .photo-actions-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    @media (min-width: 400px) {
+        .photo-actions-row {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    }
+    .photo-actions .btn {
+        min-height: 44px;
+        font-size: 14px;
+    }
+    .photo-hint {
+        line-height: 1.35;
     }
     
     .form-field {
@@ -191,23 +303,72 @@
         box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
     }
     
-    /* BMI Display */
+    /* BMI — compact inline strip (same visual weight as inputs) */
     .bmi-display {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px 10px;
+        min-height: 42px;
+        padding: 8px 12px;
         background: #f8f9fa;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: center;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        text-align: left;
     }
     .bmi-value {
-        font-size: 24px;
-        font-weight: bold;
+        font-size: 15px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .bmi-category {
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
         display: inline-block;
-        margin-top: 5px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .bmi-display .age-preview {
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 5px;
+        font-size: 14px;
+        color: #343a40;
+        max-width: 100%;
+    }
+    .bmi-display .age-preview .age-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6c757d;
+    }
+    .bmi-display .age-preview strong.age-value {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: normal;
+        line-height: 1.25;
+    }
+    .bmi-display .age-preview--empty strong {
+        color: #adb5bd;
+        font-weight: 600;
+    }
+    .bmi-display .metrics-dot {
+        color: #ced4da;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1;
+        padding: 0 1px;
+        user-select: none;
     }
     .bmi-underweight { background: #3498db; color: white; }
     .bmi-normal { background: #2ecc71; color: white; }
@@ -325,9 +486,50 @@
         margin-bottom: 15px;
     }
     
-    /* Toast Customizations */
-    .toast-success { background: #28a745 !important; }
-    .toast-error { background: #dc3545 !important; }
+    /* Brief save notices (replaces noisy Toastr on this page) */
+    #dobBulkSnackbar {
+        position: fixed;
+        top: 72px;
+        right: 16px;
+        z-index: 1000000;
+        max-width: min(360px, calc(100vw - 32px));
+        pointer-events: none;
+    }
+    #dobBulkSnackbar .dob-snack {
+        pointer-events: auto;
+        margin-bottom: 8px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.35;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        animation: dobSnackIn 0.2s ease-out;
+    }
+    @keyframes dobSnackIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    #dobBulkSnackbar .dob-snack-out {
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #dobBulkSnackbar .dob-snack-success {
+        background: #fff;
+        color: #155724;
+        border-start: 4px solid #28a745;
+    }
+    #dobBulkSnackbar .dob-snack-warning {
+        background: #fff;
+        color: #856404;
+        border-start: 4px solid #ffc107;
+    }
+    #dobBulkSnackbar .dob-snack-error {
+        background: #fff;
+        color: #721c24;
+        border-start: 4px solid #dc3545;
+    }
     
     /* Responsive Table Fallback (for larger screens) */
     @media (min-width: 992px) {
@@ -403,10 +605,10 @@
                             <input type="text" id="searchStudentInput" class="form-control" placeholder="Type to filter students...">
                         </div>
                         <div class="filter-actions">
-                            <button class="btn btn-primary btn-block" id="expandAllBtn">
+                            <button class="btn btn-primary w-100" id="expandAllBtn">
                                 <i class="fas fa-expand-alt"></i> Expand All
                             </button>
-                            <button class="btn btn-secondary btn-block mt-2" id="collapseAllBtn">
+                            <button class="btn btn-secondary w-100 mt-2" id="collapseAllBtn">
                                 <i class="fas fa-compress-alt"></i> Collapse All
                             </button>
                         </div>
@@ -445,7 +647,7 @@
                 <div id="studentsListContainer">
                     <div id="loaderContainer" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                         <p class="mt-2 text-muted">Loading students...</p>
                     </div>
@@ -455,6 +657,9 @@
         </div>
     </div>
 </section>
+
+<!-- Lightweight notices (single-line, auto-dismiss) -->
+<div id="dobBulkSnackbar" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Save Progress Indicator -->
 <div id="saveProgress" class="save-progress">
@@ -480,6 +685,7 @@
     // Configuration
     const URL_DATA = "<?= base_url('admin/students_bulk_info_date_of_birth/data') ?>";
     const URL_SAVE = "<?= base_url('admin/students_bulk_info_date_of_birth/save_student_info') ?>";
+    const PHOTO_UPLOAD_BASE = "<?= rtrim(base_url('uploads'), '/') ?>/";
     const CSRF_NAME = "<?= csrf_token() ?>";
     let CSRF_HASH = "<?= csrf_hash() ?>";
 
@@ -487,6 +693,10 @@
     let currentStudents = [];
     let saveQueue = [];
     let isSaving = false;
+    const pendingPhotos = new Map();       // student_id -> File (not yet saved)
+    const photoPreviewUrls = new Map();    // student_id -> object URL for preview
+    const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+    const PHOTO_MIME_OK = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
     // ============================================
     // UTILITY FUNCTIONS
@@ -507,6 +717,86 @@
         return { text: 'Obese', class: 'bmi-obese' };
     }
 
+    /** { years, months } completed calendar months after birth date; null if invalid / future. */
+    function ageYearsMonthsFromYmd(ymd) {
+        if (!ymd || ymd === '0000-00-00') return null;
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd).trim());
+        if (!m) return null;
+        const y = parseInt(m[1], 10), mo = parseInt(m[2], 10) - 1, d = parseInt(m[3], 10);
+        const birth = new Date(y, mo, d);
+        if (birth.getFullYear() !== y || birth.getMonth() !== mo || birth.getDate() !== d) return null;
+        const today = new Date();
+        if (birth.getTime() > today.getTime()) return null;
+
+        let years = today.getFullYear() - birth.getFullYear();
+        let months = today.getMonth() - birth.getMonth();
+        if (today.getDate() < birth.getDate()) {
+            months--;
+        }
+        while (months < 0) {
+            years--;
+            months += 12;
+        }
+        if (years < 0 || years > 120) return null;
+        return { years: years, months: months };
+    }
+
+    /** e.g. "8 Yr, 6 M" / "6 M" / "8 Yr" / "&lt; 1 M" */
+    function formatAgeYmLabel(ymd) {
+        const yma = ageYearsMonthsFromYmd(ymd);
+        if (!yma) return null;
+        const yr = yma.years;
+        const mo = yma.months;
+        const parts = [];
+        if (yr > 0) {
+            parts.push(yr + ' Yr');
+        }
+        if (mo > 0) {
+            parts.push(mo + ' M');
+        }
+        if (parts.length > 0) {
+            return parts.join(', ');
+        }
+        return '< 1 M';
+    }
+
+    /** Same rule as save payload: custom age DOB when toggle on, else main DOB. */
+    function effectiveDobYmdFromStudent(student) {
+        if (!student) return null;
+        const dbOn = Number(student.db_status) === 1;
+        const alt = student.date_of_birth_age;
+        const main = student.date_of_birth;
+        if (dbOn && alt && alt !== '0000-00-00') return alt;
+        if (main && main !== '0000-00-00') return main;
+        return null;
+    }
+
+    function effectiveDobYmdFromCard(card) {
+        if (!card) return null;
+        const dbOn = card.querySelector('.db-status-toggle')?.checked;
+        const alt = (card.querySelector('.dob-age-input')?.value || '').trim();
+        const main = (card.querySelector('.dob-input')?.value || '').trim();
+        if (dbOn && alt) return alt;
+        return main || null;
+    }
+
+    function buildAgeBmiStripHtml(ageText, bmi, category) {
+        const ageSafe = (ageText != null && String(ageText).trim() !== '') ? escapeHtml(String(ageText).trim()) : '';
+        const ageBlock = ageSafe
+            ? '<span class="age-preview"><span class="age-label">Age</span><strong class="age-value">' + ageSafe + '</strong></span>'
+            : '<span class="age-preview age-preview--empty"><span class="age-label">Age</span><strong class="age-value">—</strong></span>';
+        const dot = '<span class="metrics-dot" aria-hidden="true">·</span>';
+        let bmiBlock;
+        if (bmi != null && category) {
+            bmiBlock = '<span class="bmi-value">' + bmi + '</span>' +
+                '<span class="bmi-category ' + category.class + '">' + category.text + '</span>';
+        } else {
+            bmiBlock = '<span class="bmi-value">—</span>' +
+                '<span class="bmi-category" style="background:#6c757d;color:white;">Add height &amp; weight</span>';
+        }
+        return ageBlock + ' ' + dot + ' ' + bmiBlock;
+    }
+
     function formatDate(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -514,28 +804,37 @@
         return date.toLocaleDateString('en-PK');
     }
 
-    function updateBMIPreview(card) {
+    /** Short, calm feedback without Toastr’s large green / icon styling */
+    function showBriefNotice(message, variant) {
+        const root = document.getElementById('dobBulkSnackbar');
+        if (!root || !message) return;
+        const el = document.createElement('div');
+        const v = variant === 'error' ? 'error' : (variant === 'warning' ? 'warning' : 'success');
+        el.className = 'dob-snack dob-snack-' + v;
+        el.textContent = message;
+        root.appendChild(el);
+        const ms = v === 'error' ? 3200 : 2000;
+        setTimeout(function() {
+            el.classList.add('dob-snack-out');
+            setTimeout(function() { el.remove(); }, 220);
+        }, ms);
+    }
+
+    function updateAgeBmiStrip(card) {
+        if (!card) return;
+        const bmiDisplay = card.querySelector('.bmi-display');
+        if (!bmiDisplay) return;
+        const dobYmd = effectiveDobYmdFromCard(card);
+        const ageText = dobYmd ? formatAgeYmLabel(dobYmd) : null;
         const height = parseFloat(card.querySelector('.height-input')?.value);
         const weight = parseFloat(card.querySelector('.weight-input')?.value);
-        const bmiDisplay = card.querySelector('.bmi-display');
-        
+        let bmi = null;
+        let category = null;
         if (height && weight && height > 0 && weight > 0) {
-            const bmi = calculateBMI(height, weight);
-            const category = getBMICategory(bmi);
-            if (bmiDisplay) {
-                bmiDisplay.innerHTML = `
-                    <div class="bmi-value">${bmi}</div>
-                    <div class="bmi-category ${category.class}">${category.text}</div>
-                `;
-            }
-        } else {
-            if (bmiDisplay) {
-                bmiDisplay.innerHTML = `
-                    <div class="bmi-value">—</div>
-                    <div class="bmi-category" style="background:#6c757d;color:white;">Not calculated</div>
-                `;
-            }
+            bmi = calculateBMI(height, weight);
+            category = getBMICategory(bmi);
         }
+        bmiDisplay.innerHTML = buildAgeBmiStripHtml(ageText, bmi, category);
     }
 
     function updateStats() {
@@ -584,6 +883,9 @@
             fd.append('weight', data.weight || '');
             fd.append('db_status', data.db_status ? 1 : 0);
             fd.append('date_of_birth_age', data.date_of_birth_age || '');
+            if (data.profilePhotoFile instanceof File) {
+                fd.append('profile_photo', data.profilePhotoFile, data.profilePhotoFile.name);
+            }
             fd.append(CSRF_NAME, CSRF_HASH);
 
             $.ajax({
@@ -617,13 +919,18 @@
         
         for (const student of currentStudents) {
             try {
-                await saveStudent(student.student_id, {
+                const res = await saveStudent(student.student_id, {
                     date_of_birth: student.date_of_birth,
                     height: student.height,
                     weight: student.weight,
                     db_status: student.db_status,
-                    date_of_birth_age: student.date_of_birth_age
+                    date_of_birth_age: student.date_of_birth_age,
+                    profilePhotoFile: pendingPhotos.get(student.student_id) || null
                 });
+                if (res && res.data && typeof res.data.profile_photo === 'string') {
+                    student.profile_photo = res.data.profile_photo;
+                }
+                clearPendingPhotoForStudent(student.student_id);
                 saved++;
                 $('#saveProgress span').text(`Saving... ${saved}/${currentStudents.length}`);
             } catch(e) {
@@ -635,34 +942,179 @@
         $('#saveProgress').removeClass('active');
         
         if (failed === 0) {
-            toastr.success(`Successfully saved ${saved} student records`);
+            showBriefNotice(saved === 1 ? 'Saved.' : 'Saved ' + saved + ' students.');
             loadStudentsByClass();
         } else {
-            toastr.warning(`Saved ${saved} records, ${failed} failed`);
+            showBriefNotice('Saved ' + saved + ', ' + failed + ' failed.', 'warning');
         }
     }
 
     // ============================================
     // RENDER FUNCTIONS
     // ============================================
+
+    function studentProfilePhotoSrc(student) {
+        let photo = (student && student.profile_photo != null ? String(student.profile_photo) : '').trim().replace(/^[/\\]+/, '');
+        if (!photo || photo.indexOf('..') !== -1) {
+            return null;
+        }
+        const path = photo.split('/').map(function(part) { return encodeURIComponent(part); }).join('/');
+        return PHOTO_UPLOAD_BASE + path;
+    }
+
+    /** previewBlobUrl: local object URL before save */
+    function studentAvatarHtml(student, previewBlobUrl) {
+        const rawInitials = (student.first_name?.charAt(0) || 'S') + (student.last_name?.charAt(0) || '');
+        const initials = escapeHtml(rawInitials);
+        if (previewBlobUrl) {
+            return '<div class="student-avatar student-avatar--has-photo">' +
+                '<img src="' + escapeHtml(previewBlobUrl) + '" alt="" decoding="async">' +
+                '<span class="student-avatar-initials" aria-hidden="true" style="display:none">' + initials + '</span>' +
+                '</div>';
+        }
+        const src = studentProfilePhotoSrc(student);
+        if (src) {
+            return '<div class="student-avatar student-avatar--has-photo">' +
+                '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" ' +
+                'onerror="this.style.visibility=\'hidden\';var el=this.parentNode.querySelector(\'.student-avatar-initials\');if(el){el.style.display=\'flex\';}">' +
+                '<span class="student-avatar-initials" aria-hidden="true" style="display:none">' + initials + '</span>' +
+                '</div>';
+        }
+        return '<div class="student-avatar"><span class="student-avatar-initials">' + initials + '</span></div>';
+    }
+
+    function buildPhotoThumbInner(student, previewBlobUrl) {
+        if (previewBlobUrl) {
+            return '<img src="' + escapeHtml(previewBlobUrl) + '" alt="">';
+        }
+        const src = studentProfilePhotoSrc(student);
+        if (src) {
+            return '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" ' +
+                'onerror="this.parentNode.innerHTML=\'<span class=\\\'photo-thumb-placeholder\\\'><i class=\\\'fas fa-user\\\'></i></span>\';">';
+        }
+        return '<span class="photo-thumb-placeholder"><i class="fas fa-user"></i></span>';
+    }
+
+    function clearPendingPhotoForStudent(studentId) {
+        const sid = Number(studentId);
+        if (photoPreviewUrls.has(sid)) {
+            try {
+                URL.revokeObjectURL(photoPreviewUrls.get(sid));
+            } catch (e) { /* ignore */ }
+            photoPreviewUrls.delete(sid);
+        }
+        pendingPhotos.delete(sid);
+    }
+
+    function refreshCardPhotos(card, student) {
+        if (!card || !student) return;
+        const sid = Number(student.student_id);
+        const blobUrl = photoPreviewUrls.get(sid) || null;
+        const av = card.querySelector('.student-info .student-avatar');
+        if (av) {
+            av.outerHTML = studentAvatarHtml(student, blobUrl);
+        }
+        const inner = card.querySelector('.photo-panel .photo-thumb-inner');
+        if (inner) {
+            inner.innerHTML = buildPhotoThumbInner(student, blobUrl);
+        }
+        const clearBtn = card.querySelector('.js-photo-clear');
+        if (clearBtn) {
+            if (pendingPhotos.has(sid)) {
+                clearBtn.classList.remove('d-none');
+            } else {
+                clearBtn.classList.add('d-none');
+            }
+        }
+    }
+
+    function initPhotoDelegation() {
+        const $root = $('#studentsListContainer');
+        $root.off('click.dobPhoto').on('click.dobPhoto', '.js-photo-cam', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).closest('.photo-panel').find('.js-photo-input-camera').trigger('click');
+        });
+        $root.off('click.dobPhoto2').on('click.dobPhoto2', '.js-photo-pick', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).closest('.photo-panel').find('.js-photo-input-pick').trigger('click');
+        });
+        $root.off('click.dobPhoto3').on('click.dobPhoto3', '.js-photo-clear', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const panel = $(this).closest('.photo-panel')[0];
+            if (!panel) return;
+            const sid = Number(panel.getAttribute('data-student-id'));
+            const student = currentStudents.find(function(s) { return Number(s.student_id) === sid; });
+            clearPendingPhotoForStudent(sid);
+            const card = $(panel).closest('.student-card')[0];
+            if (card && student) {
+                refreshCardPhotos(card, student);
+            }
+        });
+        $root.off('change.dobPhoto').on('change.dobPhoto', '.js-photo-input-camera, .js-photo-input-pick', function() {
+            const input = this;
+            const file = input.files && input.files[0];
+            const panel = $(input).closest('.photo-panel')[0];
+            input.value = '';
+            if (!file || !panel) return;
+            if (file.size > MAX_PHOTO_BYTES) {
+                showBriefNotice('Photo too large (max 4 MB).', 'error');
+                return;
+            }
+            if (!PHOTO_MIME_OK.includes(file.type)) {
+                showBriefNotice('Use JPG, PNG, or WebP only.', 'error');
+                return;
+            }
+            const sid = Number(panel.getAttribute('data-student-id'));
+            const student = currentStudents.find(function(s) { return Number(s.student_id) === sid; });
+            if (!student) return;
+            if (photoPreviewUrls.has(sid)) {
+                try {
+                    URL.revokeObjectURL(photoPreviewUrls.get(sid));
+                } catch (e) { /* ignore */ }
+                photoPreviewUrls.delete(sid);
+            }
+            const url = URL.createObjectURL(file);
+            photoPreviewUrls.set(sid, url);
+            pendingPhotos.set(sid, file);
+            const card = $(panel).closest('.student-card')[0];
+            refreshCardPhotos(card, student);
+        });
+    }
+
+    function classSectionLabelHtml(student) {
+        const cn = (student.class_name != null ? String(student.class_name) : '').trim();
+        const sn = (student.section_name != null ? String(student.section_name) : '').trim();
+        if (!cn && !sn) {
+            return '—';
+        }
+        if (cn && sn) {
+            return escapeHtml(cn) + ' - ' + escapeHtml(sn);
+        }
+        return escapeHtml(cn || sn);
+    }
     
     function renderStudentCard(student, index) {
         const hasValidDOB = student.date_of_birth && student.date_of_birth !== '0000-00-00';
         const bmiPreview = (student.height && student.weight) ? calculateBMI(student.height, student.weight) : null;
         const bmiCategory = bmiPreview ? getBMICategory(bmiPreview) : null;
+        const dobForAge = effectiveDobYmdFromStudent(student);
+        const agePreview = dobForAge ? formatAgeYmLabel(dobForAge) : null;
+        const ageBmiInner = buildAgeBmiStripHtml(agePreview, bmiPreview, bmiCategory);
+        const classLineHtml = classSectionLabelHtml(student);
         
         return `
             <div class="student-card" data-student-id="${student.student_id}" data-index="${index}">
                 <div class="student-card-header" onclick="toggleCard(this)">
                     <div class="student-info">
-                        <div class="student-avatar">
-                            ${(student.first_name?.charAt(0) || 'S')}${(student.last_name?.charAt(0) || '')}
-                        </div>
+                        ${studentAvatarHtml(student)}
                         <div class="student-details">
                             <div class="student-name">${escapeHtml(student.first_name || '')} ${escapeHtml(student.last_name || '')}</div>
                             <div class="student-meta">
-                                <i class="fas fa-id-card"></i> ${student.reg_no || 'No Reg'} &nbsp;|&nbsp;
-                                <i class="fas fa-graduation-cap"></i> ${student.class_name || 'N/A'} ${student.section_name ? '-' + student.section_name : ''}
+                                <i class="fas fa-id-card"></i> ${student.reg_no ? escapeHtml(String(student.reg_no)) : 'No Reg'} &nbsp;|&nbsp;
+                                <i class="fas fa-graduation-cap"></i> ${classLineHtml}
                             </div>
                         </div>
                     </div>
@@ -679,54 +1131,71 @@
                 <div class="student-card-body">
                     <div class="student-card-body-inner">
                         <div class="form-grid">
-                            <div class="form-field">
-                                <label><i class="fas fa-calendar"></i> Date of Birth</label>
-                                <input type="date" class="form-control dob-input" 
-                                       value="${student.date_of_birth || ''}"
-                                       data-student-id="${student.student_id}">
-                            </div>
-                            <div class="form-field">
-                                <label><i class="fas fa-ruler"></i> Height (cm)</label>
-                                <input type="number" step="0.1" class="form-control height-input" 
-                                       value="${student.height || ''}"
-                                       data-student-id="${student.student_id}"
-                                       placeholder="e.g., 150.5">
-                            </div>
-                            <div class="form-field">
-                                <label><i class="fas fa-weight"></i> Weight (kg)</label>
-                                <input type="number" step="0.1" class="form-control weight-input" 
-                                       value="${student.weight || ''}"
-                                       data-student-id="${student.student_id}"
-                                       placeholder="e.g., 45.5">
-                            </div>
-                            <div class="form-field">
-                                <label><i class="fas fa-heartbeat"></i> BMI Result</label>
-                                <div class="bmi-display">
-                                    ${bmiPreview ? `
-                                        <div class="bmi-value">${bmiPreview}</div>
-                                        <div class="bmi-category ${bmiCategory.class}">${bmiCategory.text}</div>
-                                    ` : `
-                                        <div class="bmi-value">—</div>
-                                        <div class="bmi-category" style="background:#6c757d;color:white;">Enter height & weight</div>
-                                    `}
+                            <div class="row-dob">
+                                <div class="form-field">
+                                    <label><i class="fas fa-calendar"></i> Date of Birth</label>
+                                    <input type="date" class="form-control dob-input"
+                                           value="${student.date_of_birth || ''}"
+                                           data-student-id="${student.student_id}">
+                                </div>
+                                <div class="form-field">
+                                    <label><i class="fas fa-clock"></i> Actual DOB (if different)</label>
+                                    <input type="date" class="form-control dob-age-input"
+                                           value="${student.date_of_birth_age || ''}"
+                                           ${student.db_status != 1 ? 'disabled' : ''}
+                                           data-student-id="${student.student_id}">
                                 </div>
                             </div>
-                            <div class="form-field">
-                                <label><i class="fas fa-database"></i> DB Status</label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" class="db-status-toggle" ${student.db_status == 1 ? 'checked' : ''}>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <span class="text-muted small">Use custom DOB age</span>
+                            <div class="row-metrics">
+                                <div class="form-field form-field-weight-db">
+                                    <label><i class="fas fa-weight"></i> Weight (kg)</label>
+                                    <input type="number" step="0.1" class="form-control weight-input"
+                                           value="${student.weight || ''}"
+                                           data-student-id="${student.student_id}"
+                                           placeholder="e.g., 45.5">
+                                    <div class="db-toggle-row">
+                                        <label class="toggle-switch" title="Use custom DOB for age display">
+                                            <input type="checkbox" class="db-status-toggle" ${student.db_status == 1 ? 'checked' : ''}>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span class="text-muted">Use custom DOB age</span>
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label><i class="fas fa-ruler"></i> Height (cm)</label>
+                                    <input type="number" step="0.1" class="form-control height-input"
+                                           value="${student.height || ''}"
+                                           data-student-id="${student.student_id}"
+                                           placeholder="e.g., 150.5">
+                                </div>
+                                <div class="form-field">
+                                    <label><i class="fas fa-heartbeat"></i> Age &amp; BMI</label>
+                                    <div class="bmi-display">${ageBmiInner}</div>
                                 </div>
                             </div>
-                            <div class="form-field">
-                                <label><i class="fas fa-clock"></i> Actual DOB (if different)</label>
-                                <input type="date" class="form-control dob-age-input" 
-                                       value="${student.date_of_birth_age || ''}"
-                                       ${student.db_status != 1 ? 'disabled' : ''}
-                                       placeholder="Enter actual DOB for age calculation">
+                            <div class="row-photo">
+                                <div class="form-field form-field-photo">
+                                    <label><i class="fas fa-camera"></i> Profile photo</label>
+                                    <div class="photo-panel" data-student-id="${student.student_id}">
+                                        <div class="photo-thumb">
+                                            <div class="photo-thumb-inner">${buildPhotoThumbInner(student, null)}</div>
+                                        </div>
+                                        <div class="photo-actions">
+                                            <div class="photo-actions-row">
+                                                <button type="button" class="btn btn-outline-primary js-photo-cam">
+                                                    <i class="fas fa-camera"></i> Camera
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary js-photo-pick">
+                                                    <i class="fas fa-images"></i> Gallery
+                                                </button>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-danger btn-sm js-photo-clear d-none">Remove unsaved photo</button>
+                                            <input type="file" class="js-photo-input-camera d-none" accept="image/*" capture="environment" aria-label="Take photo with camera">
+                                            <input type="file" class="js-photo-input-pick d-none" accept="image/jpeg,image/png,image/webp" aria-label="Choose photo from gallery">
+                                            <p class="text-muted small mb-0 photo-hint">JPG, PNG or WebP — max 4 MB. Tap <strong>Save</strong> above to store with DOB, height &amp; weight.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -737,6 +1206,13 @@
 
     function renderStudents(students) {
         currentStudents = students;
+        photoPreviewUrls.forEach(function(url) {
+            try {
+                URL.revokeObjectURL(url);
+            } catch (e) { /* ignore */ }
+        });
+        photoPreviewUrls.clear();
+        pendingPhotos.clear();
         if (!students || students.length === 0) {
             $('#studentsList').html(`
                 <div class="empty-state">
@@ -770,6 +1246,7 @@
             if (student) {
                 student.date_of_birth = $(this).val();
             }
+            updateAgeBmiStrip($(this).closest('.student-card')[0]);
         });
         
         // Height change
@@ -778,7 +1255,7 @@
             const student = currentStudents.find(s => s.student_id == studentId);
             if (student) {
                 student.height = $(this).val();
-                updateBMIPreview($(this).closest('.student-card')[0]);
+                updateAgeBmiStrip($(this).closest('.student-card')[0]);
             }
         });
         
@@ -788,7 +1265,7 @@
             const student = currentStudents.find(s => s.student_id == studentId);
             if (student) {
                 student.weight = $(this).val();
-                updateBMIPreview($(this).closest('.student-card')[0]);
+                updateAgeBmiStrip($(this).closest('.student-card')[0]);
             }
         });
         
@@ -808,6 +1285,7 @@
                 $card.find('.dob-age-input').val('');
                 if (student) student.date_of_birth_age = '';
             }
+            updateAgeBmiStrip($card[0]);
         });
         
         // DOB Age input
@@ -818,6 +1296,7 @@
             if (student) {
                 student.date_of_birth_age = $(this).val();
             }
+            updateAgeBmiStrip($card[0]);
         });
     }
     
@@ -830,22 +1309,31 @@
     window.saveSingleStudent = async function(studentId) {
         const student = currentStudents.find(s => s.student_id == studentId);
         if (!student) return;
+        const card = document.querySelector('.student-card[data-student-id="' + studentId + '"]');
         
         $('#saveProgress').addClass('active');
         $('#saveProgress span').text('Saving...');
         
         try {
-            await saveStudent(studentId, {
+            const res = await saveStudent(studentId, {
                 date_of_birth: student.date_of_birth,
                 height: student.height,
                 weight: student.weight,
                 db_status: student.db_status,
-                date_of_birth_age: student.date_of_birth_age
+                date_of_birth_age: student.date_of_birth_age,
+                profilePhotoFile: pendingPhotos.get(studentId) || null
             });
-            toastr.success('Student information saved successfully');
-          
+            if (res && res.data && typeof res.data.profile_photo === 'string') {
+                student.profile_photo = res.data.profile_photo;
+            }
+            clearPendingPhotoForStudent(studentId);
+            if (card) {
+                refreshCardPhotos(card, student);
+            }
+            showBriefNotice('Saved.');
+
         } catch(e) {
-            toastr.error('Failed to save: ' + e);
+            showBriefNotice('Could not save. ' + (typeof e === 'string' ? e : 'Please try again.'), 'error');
         } finally {
             $('#saveProgress').removeClass('active');
         }
@@ -943,6 +1431,8 @@
 // ============================================
 
 $(function() {
+    initPhotoDelegation();
+
     // Load on class section change only (NOT on page load)
     $('#cls_sec_id').on('change', function() {
         loadStudentsByClass();

@@ -13,7 +13,34 @@ class TopLevelPlanning extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form', 'url', 'server_helper']);
+        helper(['form', 'url', 'server_helper', 'role']);
+    }
+
+    private function isTeacherUser(): bool
+    {
+        return isCurrentUserTeacher();
+    }
+
+    private function teacherCanPlanClassSubject(int $classId, int $subjectId): bool
+    {
+        if (! $this->isTeacherUser()) {
+            return true;
+        }
+
+        $teacherId = (int) session('member_userid');
+        $campusId  = (int) session('member_campusid');
+        if ($teacherId <= 0 || $classId <= 0 || $subjectId <= 0) {
+            return false;
+        }
+
+        foreach (getTeacherSubjectsInClass($classId, $campusId, $teacherId) as $subject) {
+            $sid = (int) ($subject->subject_id ?? $subject->sid ?? 0);
+            if ($sid === $subjectId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
@@ -24,8 +51,7 @@ class TopLevelPlanning extends BaseController
         
         $campus_id = session('member_campusid');
         $sessionid = session('member_sessionid');
-        $userRoles = currentUserRoles();
-        $isTeacher = in_array(5, $userRoles);
+        $isTeacher = $this->isTeacherUser();
         
         // Get all terms for the current session
         $terms = $this->db->table('terms_session ts')
@@ -195,7 +221,7 @@ private function getSubjectWiseView($term_ids, $campus_id, $session_id, $forPrin
         $bodyId = 'subjectBody_' . $subjectId;
         
         $html .= '<div class="subject-main-card" data-card-id="' . $subjectId . '">';
-        $html .= '<div class="subject-main-card-header" data-target="' . $bodyId . '">';
+        $html .= '<div class="subject-main-card-header" data-bs-target="' . $bodyId . '">';
         $html .= '<span><i class="fas fa-book-open" style="margin-right: 10px;"></i> ' . esc($subjectData['subject_name']) . '</span>';
         $html .= '<span style="display:flex; align-items:center; gap:10px;">';
         $html .= '<span class="class-count-badge">' . count($subjectData['classes']) . ' Class(es)</span>';
@@ -354,7 +380,7 @@ private function getClassWiseView($term_ids, $campus_id, $session_id, $forPrint 
         $bodyId = 'classBody_' . $classId;
         
         $html .= '<div class="class-main-card" data-card-id="' . $classId . '">';
-        $html .= '<div class="class-main-card-header" data-target="' . $bodyId . '">';
+        $html .= '<div class="class-main-card-header" data-bs-target="' . $bodyId . '">';
         $html .= '<span><i class="fas fa-users" style="margin-right: 10px;"></i> ' . esc($classData['class_name']) . '</span>';
         $html .= '<span style="display:flex; align-items:center; gap:10px;">';
         $html .= '<span class="subject-count-badge">' . count($classData['subjects']) . ' Subject(s)</span>';
@@ -413,8 +439,7 @@ private function getClassWiseView($term_ids, $campus_id, $session_id, $forPrint 
 public function getSubjectsBySection()
 {
     $section_id = $this->request->getPost('section_id');
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
+    $isTeacher = $this->isTeacherUser();
     
     if (!$section_id) {
         return $this->response->setJSON(['html' => '<option value="">Invalid section</option>']);
@@ -467,28 +492,40 @@ public function getSubjectsBySection()
 
     public function getSubjectsByClass()
     {
-        $class_id = $this->request->getPost('class_id');
-        $campus_id = session('member_campusid');
+        $class_id = (int) $this->request->getPost('class_id');
+        $campus_id = (int) session('member_campusid');
+        $teacher_id = (int) session('member_userid');
         
-        if (!$class_id) {
+        if ($class_id <= 0) {
             return $this->response->setJSON(['html' => '<option value="">Select Subject</option>']);
         }
         
         $options = '<option value="">Select Subject</option>';
-        
-        $subjects = $this->db->table('section_subjects ss')
-            ->select('DISTINCT ss.subject_id, a.subject_name')
-            ->join('allsubject a', 'a.sid = ss.subject_id')
-            ->join('class_section cs', 'cs.cls_sec_id = ss.cls_sec_id')
-            ->where('cs.class_id', $class_id)
-            ->where('cs.campus_id', $campus_id)
-            ->where('ss.status', 1)
-            ->orderBy('a.subject_name', 'ASC')
-            ->get()
-            ->getResult();
+
+        if ($this->isTeacherUser() && $teacher_id > 0) {
+            $subjects = getTeacherSubjectsInClass($class_id, $campus_id, $teacher_id);
+            if ($subjects === []) {
+                $options .= '<option value="" disabled>No subjects assigned in this class</option>';
+            }
+        } else {
+            $subjects = $this->db->table('section_subjects ss')
+                ->select('DISTINCT ss.subject_id, a.subject_name')
+                ->join('allsubject a', 'a.sid = ss.subject_id')
+                ->join('class_section cs', 'cs.cls_sec_id = ss.cls_sec_id')
+                ->where('cs.class_id', $class_id)
+                ->where('cs.campus_id', $campus_id)
+                ->where('ss.status', 1)
+                ->orderBy('a.subject_name', 'ASC')
+                ->get()
+                ->getResult();
+        }
         
         foreach ($subjects as $subject) {
-            $options .= '<option value="' . $subject->subject_id . '">' 
+            $subjectId = (int) ($subject->subject_id ?? $subject->sid ?? 0);
+            if ($subjectId <= 0) {
+                continue;
+            }
+            $options .= '<option value="' . $subjectId . '">' 
                       . esc($subject->subject_name) . '</option>';
         }
         
@@ -499,8 +536,7 @@ public function getSubjectsBySection()
 {
     $subject_id = $this->request->getPost('subject_id');
     $campus_id = session('member_campusid');
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
+    $isTeacher = $this->isTeacherUser();
     
     if (!$subject_id) {
         return $this->response->setJSON(['html' => '<option value="">Select Class</option>']);
@@ -584,6 +620,11 @@ public function getSubjectsBySection()
                 if (!$class_id || !$subject_id || !$term_session_id) {
                     continue;
                 }
+
+                if (! $this->teacherCanPlanClassSubject((int) $class_id, (int) $subject_id)) {
+                    $errors[] = 'You are not assigned to teach this subject in the selected class.';
+                    continue;
+                }
                 
                 // Clean objective - remove excessive whitespace
                 $objective = trim($objective);
@@ -625,7 +666,17 @@ public function getSubjectsBySection()
                 }
             }
             
+            if ($savedCount === 0 && $errors !== []) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg' => $errors[0],
+                ]);
+            }
+
             $message = $isAutoSave ? 'Auto-saved (' . $savedCount . ' updated)' : 'Top Level Planning saved successfully (' . $savedCount . ' records)';
+            if ($errors !== []) {
+                $message .= '. ' . count($errors) . ' item(s) skipped (not your assigned subject/class).';
+            }
             
             return $this->response->setJSON([
                 'success' => true,
@@ -752,7 +803,7 @@ public function getSubjectsBySection()
         // Build HTML
         $html = $forPrint ? '' : '<div class="term-wise-view">';
         
-        $html .= '<div class="report-header" style="background:#f4f7fc; border-left:4px solid #2c5282; padding:1rem; margin-bottom:1.5rem; border-radius:12px;">';
+        $html .= '<div class="report-header" style="background:#f4f7fc; border-start:4px solid #2c5282; padding:1rem; margin-bottom:1.5rem; border-radius:12px;">';
         $html .= '<strong><i class="fas fa-calendar"></i> Term Wise Planning</strong>';
         $html .= '</div>';
         
@@ -762,7 +813,7 @@ public function getSubjectsBySection()
             
             foreach ($termData['classes'] as $classId => $classData) {
                 $html .= '<div class="class-section" style="margin-bottom:20px;">';
-                $html .= '<h4 class="class-title" style="background:#e9f0f5; padding:8px 14px; border-left:4px solid #2c7da0; margin:12px 0 10px 0; font-size:1rem;"><i class="fas fa-chalkboard-user"></i> ' . esc($classData['class_name']) . '</h4>';
+                $html .= '<h4 class="class-title" style="background:#e9f0f5; padding:8px 14px; border-start:4px solid #2c7da0; margin:12px 0 10px 0; font-size:1rem;"><i class="fas fa-chalkboard-user"></i> ' . esc($classData['class_name']) . '</h4>';
                 $html .= '<div class="subjects-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:15px;">';
                 
                 foreach ($classData['subjects'] as $subject) {
@@ -875,7 +926,7 @@ public function printReport()
                 margin-bottom: 25px;
                 padding: 15px;
                 background: #f5f5f5;
-                border-left: 4px solid #2c3e66;
+                border-start: 4px solid #2c3e66;
                 border-radius: 8px;
             }
             
@@ -1396,7 +1447,7 @@ private function getTermWiseViewPrint($term_ids, $campus_id, $session_id, $terms
         $html .= '<div class="print-card-body">';
         
         foreach ($termData['classes'] as $classId => $classData) {
-            $html .= '<h4 style="margin: 18px 0 12px 0; padding: 8px 12px; background: #f0f4f8; border-left: 3px solid #2c7da0; font-size: 15px;">' . esc($classData['class_name']) . '</h4>';
+            $html .= '<h4 style="margin: 18px 0 12px 0; padding: 8px 12px; background: #f0f4f8; border-start: 3px solid #2c7da0; font-size: 15px;">' . esc($classData['class_name']) . '</h4>';
             
             $html .= '<table class="print-table" style="width: 100%; border-collapse: collapse;">';
             $html .= '<thead><tr><th style="width: 30%;">Subject</th><th>Objective</th></tr></thead>';
@@ -1428,8 +1479,7 @@ public function add()
     $campus_id = session('member_campusid');
     $sessionid = session('member_sessionid');
     $schoolinfo = getSchoolInfo();
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
+    $isTeacher = $this->isTeacherUser();
     $teacher_id = session('member_userid');
     
     // Get all terms for the current session
@@ -1513,15 +1563,15 @@ public function add()
             ->getResult();
     }
     
-    $data = [
+    $data = array_merge(ui_asset_defaults(['uiNeedsSummernote' => true]), [
         'title' => 'Top Level Planning',
         'terms' => $terms,
         'classes' => $classes,
         'subjects' => $subjects,
         'current_session_id' => $sessionid,
         'isTeacher' => $isTeacher,
-        'campus_id' => $campus_id
-    ];
+        'campus_id' => $campus_id,
+    ]);
     
     return view('admin/top_level_planning/add', $data);
 }
@@ -1588,9 +1638,7 @@ private function getClassWiseForm($term_session_id, $class_id, $campus_id)
         return $this->response->setJSON(['html' => '<div class="alert alert-warning">Term not found.</div>']);
     }
     
-    // Check if user is teacher
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
+    $isTeacher = $this->isTeacherUser();
     $teacher_id = session('member_userid');
     
     // Get subjects based on user role
@@ -1694,9 +1742,7 @@ private function getSubjectWiseForm($term_session_id, $subject_id, $campus_id)
         return $this->response->setJSON(['html' => '<div class="alert alert-warning">Term not found.</div>']);
     }
     
-    // Check if user is teacher
-    $userRoles = currentUserRoles();
-    $isTeacher = in_array(5, $userRoles);
+    $isTeacher = $this->isTeacherUser();
     $teacher_id = session('member_userid');
     
     // Get classes based on user role
@@ -1773,6 +1819,12 @@ private function getTermWiseForm($term_session_id, $class_id, $subject_id, $camp
     // Validate inputs
     if (!$class_id || !$subject_id || !$campus_id) {
         return $this->response->setJSON(['html' => '<div class="alert alert-warning">Missing required parameters.</div>']);
+    }
+
+    if (! $this->teacherCanPlanClassSubject((int) $class_id, (int) $subject_id)) {
+        return $this->response->setJSON([
+            'html' => '<div class="alert alert-warning">You can only add planning for subjects you teach in the selected class.</div>',
+        ]);
     }
     
     // Get all terms for the session

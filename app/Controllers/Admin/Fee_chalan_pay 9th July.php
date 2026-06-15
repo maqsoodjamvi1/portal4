@@ -187,19 +187,19 @@ class Fee_chalan_pay extends MY_Controller {
 			exit;
 		}
 
-		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' class='btn btn-primary pull-right' target='_blank' href='admin.php#/fee_history_report?parent_id=".$parentinfo->parent_id."'> Fee History of: ".$parentinfo->f_name."</a> &nbsp;<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-toggle='modal' data-target='#updatediscount'  class='btn btn-primary pull-right'  href='#'>Update Student Fee</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary pull-right' id='payAllFee' data-parentID=".$parentinfo->parent_id."  href='#'>Pay All</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary pull-right' id='sendSms' data-parentID=".$parentinfo->parent_id."  href='#'>Send SMS</a>";
+		$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' class='btn btn-primary float-end' target='_blank' href='admin.php#/fee_history_report?parent_id=".$parentinfo->parent_id."'> Fee History of: ".$parentinfo->f_name."</a> &nbsp;<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-bs-toggle='modal' data-bs-target='#updatediscount'  class='btn btn-primary float-end'  href='#'>Update Student Fee</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary float-end' id='payAllFee' data-parentID=".$parentinfo->parent_id."  href='#'>Pay All</a> <a style='margin: 30px 0;margin-bottom: 10px;float:right;'  class='btn btn-primary float-end' id='sendSms' data-parentID=".$parentinfo->parent_id."  href='#'>Send SMS</a>";
 		
 		$studentAmountInfo = $this->db->query('SELECT SUM(amount) AS total FROM fee_chalan WHERE `status`="unpaid" AND student_id IN(select student_id from students where campus_id=".$campus_id." AND parent_id='.$parentinfo->parent_id.')')->row();
 		
 		if(empty($studentAmountInfo->total)){
-			$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-toggle='modal' data-target='#payAdvanceFee'  class='btn btn-primary pull-right'  href='#'>Pay Advance Fee</a>";
+			$feeList .= "<a style='margin: 30px 0;margin-bottom: 10px;float:right;' data-bs-toggle='modal' data-bs-target='#payAdvanceFee'  class='btn btn-primary float-end'  href='#'>Pay Advance Fee</a>";
 		}
 		$feeList .= '<div id="payAdvanceFee" class="modal fade" role="dialog">
 		  <div class="modal-dialog">
 		    <div class="modal-content">
 		      <div class="modal-header">   
 		        <h5 class="modal-title">Student Advance Fee</h5>
-		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 		      </div>
 		      <div class="modal-body"><form id="AdvanceFee"><div class="row">';
 		    $totalFee = 0;
@@ -224,7 +224,7 @@ class Fee_chalan_pay extends MY_Controller {
 
 		       $feeList .= '<div class="col-lg-6 mb-2">'.$value->first_name." ".$value->last_name." ".$ClassesInfo->class_name."</div>";
 		       
-		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="text" class="form-control discounts" value="'.($advanceFeeAmount).'" name="advance_amount[]"></div><div class="col-lg-6 text-left mb-2"></div><div class="col-lg-6 text-left mb-2"></div>';
+		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="text" class="form-control discounts" value="'.($advanceFeeAmount).'" name="advance_amount[]"></div><div class="col-lg-6 text-start mb-2"></div><div class="col-lg-6 text-start mb-2"></div>';
 		       //$totalFee = $totalFee + ($studentClassInfo->amount-$value->discounted_amount);
 		       //$feeList .= '<div class="col-lg-6">Total Fee</div><div class="col-lg-6">'.$totalFee.'</div>';
 		      
@@ -232,7 +232,7 @@ class Fee_chalan_pay extends MY_Controller {
 		   }
 		    $feeList .= '</div></form></div>
 		      <div class="modal-footer">
-		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 		         <button type="button" id="advFeePay" class="btn btn-primary">Pay Advance Fee</button>
 		      </div>
 		    </div>
@@ -244,7 +244,7 @@ class Fee_chalan_pay extends MY_Controller {
 		    <div class="modal-content">
 		      <div class="modal-header">   
 		        <h5 class="modal-title">Update Student Fee</h5>
-		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 		      </div>
 		      <div class="modal-body"><form id="discountUpdate"><div class="row">';
 		    $totalFee = 0;
@@ -263,7 +263,7 @@ class Fee_chalan_pay extends MY_Controller {
 
 		       $feeList .= '<div class="col-lg-6 mb-2">'.$value->first_name." ".$value->last_name." ".$ClassesInfo->class_name."</div>";
 		       
-		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="hidden" class="form-control studentClassFee" value="'.$studentClassInfo->amount.'" name="student_class_fee[]"><input type="text" class="form-control discounts" value="'.($studentClassInfo->amount-$value->discounted_amount).'" name="discounted_amount[]"></div><div class="col-lg-6 text-left mb-2"></div><div class="col-lg-6 text-left mb-2"></div>';
+		       $feeList .= '<div class="col-lg-6 mb-2"><input type="hidden" class="form-control studentIDs" value="'.$value->student_id.'" name="student_id[]"><input type="hidden" class="form-control studentClassFee" value="'.$studentClassInfo->amount.'" name="student_class_fee[]"><input type="text" class="form-control discounts" value="'.($studentClassInfo->amount-$value->discounted_amount).'" name="discounted_amount[]"></div><div class="col-lg-6 text-start mb-2"></div><div class="col-lg-6 text-start mb-2"></div>';
 		       $totalFee = $totalFee + ($studentClassInfo->amount-$value->discounted_amount);
 		       $feeList .= '<div class="col-lg-6">Total Fee</div><div class="col-lg-6">'.$totalFee.'</div>';
 		      
@@ -271,7 +271,7 @@ class Fee_chalan_pay extends MY_Controller {
 		   }
 		    $feeList .= '</div></form></div>
 		      <div class="modal-footer">
-		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 		         <button type="button" id="discUpdate" class="btn btn-primary">Update</button>
 		      </div>
 		    </div>
@@ -440,7 +440,7 @@ class Fee_chalan_pay extends MY_Controller {
 					
 		$feeList .= "<tr id='feepaid'><th class='leftdate'>".$profile_photo."</th><th class='leftdate'>".$students_info->first_name." ".$students_info->last_name."<br> ".$class_name."<br> ".$fee_type->fee_type_name." of ".$feeMonth."<br>Due Date: ".$nmonth."</th><th class='rightdata'><input type='hidden' id='student_id".$i."' name='student_id' value='".$students_info->student_id."' />".($row->amount-$row->discount)."/-</th>";
 		
-		$feeList .= '<td><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#payfee" data-feeamount="'.($row->amount-$row->discount).'" data-whatever="'.$row->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Pay</button> <a class="btn btn-primary" href="/admin.php#/fee_chalan_single?m=add&id='.$students_info->student_id.'">Generate Chalan</a></td>';
+		$feeList .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payfee" data-feeamount="'.($row->amount-$row->discount).'" data-whatever="'.$row->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Pay</button> <a class="btn btn-primary" href="/admin.php#/fee_chalan_single?m=add&id='.$students_info->student_id.'">Generate Chalan</a></td>';
 
 		
 		$feeList .= '</tr>';
@@ -501,7 +501,7 @@ class Fee_chalan_pay extends MY_Controller {
 		$timestamp = strtotime($value->updated_date);
 		$new_date_format = date('Y-m-d', $timestamp);
 		if($new_date_format == date('Y-m-d')){
-			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-toggle="modal" id="unpayfee'.$value->chalan_id.'" data-feeamount="'.($value->amount-$value->discount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Make UnPaid</button></td>';
+			$feeList .= '<td style="text-align:center;"><button type="button" class="btn btn-primary" data-bs-toggle="modal" id="unpayfee'.$value->chalan_id.'" data-feeamount="'.($value->amount-$value->discount).'" data-whatever="'.$value->chalan_id.'" data-fine="'.$fine.'" data-student_id="'.$students_info->student_id.'">Make UnPaid</button></td>';
 			$feeList .= "<script>
 				$('#unpayfee".$value->chalan_id."').click(function(){		
 				    if(confirm('Are you sure you want to update this?')){
@@ -545,7 +545,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Pay Fee</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -584,7 +584,7 @@ $feeList .= '<div class="modal fade"  id="payfee" tabindex="-1" role="dialog" ar
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         <button type="button" id="payFee" class="btn btn-primary">Submit</button>
       </div>
     </div>

@@ -187,9 +187,9 @@ $str .= '<div style="width:33%; float:left;"><strong>Emergency Contact:</strong>
         foreach ($exams as $term) {
             $str .= '<th>'.$term['exam_name'].'<br><div style="border-top:1px solid #000;">
                         <div style="width:20%;float:left;">Obt.</div>
-                        <div style="width:20%;float:left;border-left:1px solid #000;">Total</div>
-                        <div style="width:20%;float:left;border-left:1px solid #000;">Per</div>
-                        <div style="width:40%;float:left;border-left:1px solid #000;">Grade</div>
+                        <div style="width:20%;float:left;border-start:1px solid #000;">Total</div>
+                        <div style="width:20%;float:left;border-start:1px solid #000;">Per</div>
+                        <div style="width:40%;float:left;border-start:1px solid #000;">Grade</div>
                      </div></th>';
         }
         $str .= '</tr></thead><tbody>';
@@ -218,9 +218,9 @@ $str .= '<div style="width:33%; float:left;"><strong>Emergency Contact:</strong>
                     $has_any_grade = true;
 
                     $str .= '<td><div style="width:20%;float:left;">'.$res->obtained_marks.'</div>
-                            <div style="width:20%;float:left;border-left:1px solid #000;">'.$ds->total_marks.'</div>
-                            <div style="width:20%;float:left;border-left:1px solid #000;">'.$perc.'%</div>
-                            <div style="width:40%;float:left;border-left:1px solid #000;">'.$grade.'</div></td>';
+                            <div style="width:20%;float:left;border-start:1px solid #000;">'.$ds->total_marks.'</div>
+                            <div style="width:20%;float:left;border-start:1px solid #000;">'.$perc.'%</div>
+                            <div style="width:40%;float:left;border-start:1px solid #000;">'.$grade.'</div></td>';
 
                     if (!isset($exam_totals[$exam['eid']])) {
                         $exam_totals[$exam['eid']] = ['obt' => 0, 'total' => 0];
@@ -244,9 +244,9 @@ $str .= '<div style="width:33%; float:left;"><strong>Emergency Contact:</strong>
                     $grade = $grade_obj->name ?? '-';
 
                     $str .= '<td><div style="width:20%;float:left;">'.$tot['obt'].'</div>
-                            <div style="width:20%;float:left;border-left:1px solid #000;">'.$tot['total'].'</div>
-                            <div style="width:20%;float:left;border-left:1px solid #000;">'.$perc.'%</div>
-                            <div style="width:40%;float:left;border-left:1px solid #000;">'.$grade.'</div></td>';
+                            <div style="width:20%;float:left;border-start:1px solid #000;">'.$tot['total'].'</div>
+                            <div style="width:20%;float:left;border-start:1px solid #000;">'.$perc.'%</div>
+                            <div style="width:40%;float:left;border-start:1px solid #000;">'.$grade.'</div></td>';
                 } else {
                     $str .= '<td><div style="text-align:center;">-</div></td>';
                 }

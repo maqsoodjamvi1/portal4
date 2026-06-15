@@ -60,21 +60,15 @@
 </style>
 
 <!-- Page Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1><i class="fas fa-book mr-2"></i> Section Subjects</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= site_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Section Subjects</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Section Subjects',
+    'icon' => 'fas fa-book me-2',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Section Subjects', 'active' => true],
+    ],
+]) ?>
+
 
 <!-- Main Content -->
 <section class="content">
@@ -86,7 +80,7 @@
             <!-- Loader -->
             <div id="loader" class="text-center py-5">
               <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
+                <span class="visually-hidden">Loading...</span>
               </div>
               <p class="mt-2">Loading section subjects...</p>
             </div>
@@ -183,10 +177,10 @@ function showError(message) {
     $('#loader').hide();
     $('#contentArea').html(`
         <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <i class="fas fa-exclamation-triangle me-2"></i>
             ${message}
-            <button class="btn btn-sm btn-outline-danger ml-3" onclick="location.reload()">
-                <i class="fas fa-redo mr-1"></i> Retry
+            <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">
+                <i class="fas fa-redo me-1"></i> Retry
             </button>
         </div>
     `).show();
@@ -242,9 +236,9 @@ function renderSections() {
         sectionsHtml += `
             <div class="section-card">
                 <h5>
-                    <i class="fas fa-users mr-2"></i>
+                    <i class="fas fa-users me-2"></i>
                     Section ${escapeHtml(section.section_short_name || section.section_name)}
-                    <span class="badge badge-primary float-right">${assignedCount}/${totalSubjects} assigned</span>
+                    <span class="badge text-bg-primary float-end">${assignedCount}/${totalSubjects} assigned</span>
                 </h5>
                 
                 <div class="progress-bar-custom">

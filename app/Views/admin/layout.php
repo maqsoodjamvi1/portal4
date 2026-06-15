@@ -1,5 +1,6 @@
 <?php
 // app/Views/admin/layout.php
+/** @deprecated Legacy AdminDispatcher wrapper. Prefer routes + layouts/admin_template. */
 
 /**
  * Tries a list of candidate view names and returns the first that exists,
@@ -39,6 +40,10 @@ if ($headerView) {
 ?>
 
 <?= $this->renderSection('content') ?>
+
+<?php if (! empty($content)): ?>
+<?= $content ?>
+<?php endif; ?>
 
 <?php // Optional per-page scripts block ?>
 <?= $this->renderSection('scripts') ?>

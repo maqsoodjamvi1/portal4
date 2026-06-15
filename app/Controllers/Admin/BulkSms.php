@@ -13,7 +13,11 @@ class BulkSms extends BaseController
     {
         helper(['form', 'url']);
         $this->db = \Config\Database::connect();
-        check_permission('admin-enquiry');
+        if (function_exists('check_any_permission')) {
+            check_any_permission(['admin-bulk-messages', 'admin-enquiry']);
+        } else {
+            check_permission('admin-enquiry');
+        }
     }
 
     public function index()
@@ -153,7 +157,7 @@ class BulkSms extends BaseController
         try {
             $client->post($url, [
                 'form_params' => $params,
-                'verify' => false
+                'verify' => true
             ]);
         } catch (\Exception $e) {
             log_message('error', 'SMS send error: ' . $e->getMessage());

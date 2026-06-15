@@ -389,7 +389,7 @@ private function renderListSection(string $title, array $items, string $badgeCla
     if ($count === 0) return ''; // do not render empty block
 
     $b  = '<div class="col-12 mb-2">';
-    $b .= '  <div class="mb-1 font-weight-600">'.esc($title).' <span class="badge badge-light">'.(int)$count.'</span></div>';
+    $b .= '  <div class="mb-1 fw-semibold">'.esc($title).' <span class="badge text-bg-light">'.(int)$count.'</span></div>';
     $b .= '  <div class="d-flex flex-wrap" style="gap:6px 8px;">';
     foreach ($items as $it) {
         $b .= '<span class="badge '.$badgeClass.'" style="white-space:normal;">'.esc($it).'</span>';
@@ -418,11 +418,11 @@ private function renderStudentCard($st, array $summary, int $familyWise, string 
 
     // Header row (photo + tight text)
     $html .= '      <div class="d-flex align-items-center">';
-    $html .= '        <img src="'.esc($photo).'" alt="photo" class="rounded-circle mr-2" style="width:48px;height:48px;object-fit:cover;">';
+    $html .= '        <img src="'.esc($photo).'" alt="photo" class="rounded-circle me-2" style="width:48px;height:48px;object-fit:cover;">';
     $html .= '        <div class="flex-grow-1">';
 
     // Line 1: Name + (Student ID) — Class
-    $html .= '          <div class="font-weight-600" style="font-size:.95rem;line-height:1.2;">'
+    $html .= '          <div class="fw-semibold" style="font-size:.95rem;line-height:1.2;">'
           .      esc($fullName)
           .      ' <span class="text-muted">(ID: '.(int)$st->student_id.')</span>'
           .      ' — <span class="text-muted">'.esc($clsLabel).'</span>'
@@ -430,7 +430,7 @@ private function renderStudentCard($st, array $summary, int $familyWise, string 
 
     // Line 2: Father + (Parent ID) • Contact (all inline)
     $html .= '          <div class="small" style="line-height:1.2;">'
-          .    'Father: <span class="font-weight-600">'.esc($fatherName).'</span>'
+          .    'Father: <span class="fw-semibold">'.esc($fatherName).'</span>'
           .    ' <span class="text-muted">(PID: '.(int)$st->parent_id.')</span>'
           .    ' &nbsp;•&nbsp; Contact: '
           .    ($waDigits ? '<a href="'.esc($waHref).'" target="_blank" rel="noopener">'.esc($contact).'</a>' : esc($contact))
@@ -443,12 +443,12 @@ private function renderStudentCard($st, array $summary, int $familyWise, string 
     $html .= '      <div style="border-top:1px dashed #e9ecef;margin:.35rem 0;"></div>';
 
     // Term chip small
-    $html .= '      <div class="mb-1"><span class="badge badge-secondary" style="font-size:.72rem;">'
+    $html .= '      <div class="mb-1"><span class="badge text-bg-secondary" style="font-size:.72rem;">'
           .  'Term: '.esc($start).' → '.esc($end)
           .  '</span></div>';
 
     // Sections (only if non-empty; counts handled by renderListSection)
-    $html .= '      <div class="row no-gutters">'; // no extra gutters
+    $html .= '      <div class="row g-0">'; // no extra gutters
     $html .=           $this->renderListSection('Absentees',   $summary['absents'], 'badge-danger');
     $html .=           $this->renderListSection('Leave',       $summary['leaves'],  'badge-warning');
     $html .=           $this->renderListSection('Late Coming', $summary['late'],    'badge-info');
@@ -711,50 +711,19 @@ public function get_students_byabsentees()
 
 
 
+    /**
+     * @deprecated Use admin/students_absentees/add for marking student attendance.
+     */
     public function add()
     {
-        check_permission('admin-add-student-attendance');
-        
-        $campusid = $this->session->get('member_campusid');
-        $sessionid = $this->session->get('member_sessionid');
-        $sessionData = [
-            'campusid' => $campusid,
-            'sessionid' => $sessionid
-        ];
-        $this->template_data['sessionData'] = $sessionData;
+        $params = $this->request->getGet();
+        $url    = base_url('admin/students_absentees/add');
 
-        $infostudents = $this->db->table('students')->get()->getResult();
-        $this->template_data['infostudents'] = $infostudents;
-
-        $classesinfo = $this->db->table('classes')->get()->getResult();
-        $this->template_data['classesinfo'] = $classesinfo;
-
-        $classsectioninfo = $this->db->table('class_section')
-            ->where('campus_id', $campusid)
-            ->where('status', 1)
-            ->get()
-            ->getResult();
-
-        $sectionsclassinfo = [];
-        foreach ($classsectioninfo as $section) {
-            $classinfo = $this->db->table('classes')
-                ->where('class_id', $section->class_id)
-                ->get()
-                ->getRow();
-
-            $sectioninfo = $this->db->table('sections')
-                ->where('section_id', $section->section_id)
-                ->get()
-                ->getRow();
-            
-            $sectionsclassinfo[] = [
-                'section_id' => $section->cls_sec_id,
-                'sectionclassname' => $classinfo->class_name . " (" . $sectioninfo->section_name . ")"
-            ];
+        if ($params !== []) {
+            $url .= '?' . http_build_query($params);
         }
-        $this->template_data['sectionsclassinfo'] = $sectionsclassinfo;
-        
-        return view('admin/students_attendance_edit', $this->template_data);
+
+        return redirect()->to($url);
     }
 
 
@@ -814,8 +783,12 @@ public function get_students_byabsentees()
                 ->get()
                 ->getRow();
 
-            $schooltimings = $this->db->query("SELECT *,(checkout_timing - checkin_timing) AS duration FROM school_timings WHERE
-                 cls_sec_id =" . $classSecinfo->cls_sec_id . " AND dayname ='" . $day . "'  AND type_id = (SELECT type_id FROM school_timing_types WHERE status=1 AND campus_id=" . $campusid . ")")->getRow();
+            $schoolTimingsRow = getSchoolTimingForSectionDay(
+                (int) $classSecinfo->cls_sec_id,
+                $day,
+                (int) $campusid
+            );
+            $schooltimings = $schoolTimingsRow !== null ? (object) $schoolTimingsRow : null;
 
             if ($this->request->getPost($student_id . '_status') == 'A') {
                 $checkouttime = $this->request->getPost($student_id . '_checkin_date');
@@ -905,7 +878,8 @@ public function get_students_byabsentees()
         
         $classstudents = $this->db->query("select * from student_class where  status=1 and cls_sec_id = " . $id)->getResult();
         
-        $schooltime_info = $this->db->query('select * from school_timings where cls_sec_id=' . $id . ' AND dayname="' . $day . '" AND type_id IN(select type_id from school_timing_types where status=1 AND campus_id=' . $campus_id . ')')->getRow();
+        $schoolTimingsRow = getSchoolTimingForSectionDay((int) $id, $day, (int) $campus_id);
+        $schooltime_info  = $schoolTimingsRow !== null ? (object) $schoolTimingsRow : null;
 
         if (empty($schooltime_info)) {
             echo "<div class='alert alert-danger'>Click Here To Set School Timing Before Taking Attendance <a href='/admin/school_timing/add'>School Timing</a></div>";
@@ -990,7 +964,7 @@ public function get_students_byabsentees()
                 </div>
                 </td><td><div class="funkyradio">
                 <div class="funkyradio-default">
-                <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+                <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
                 <input type="text" class="form-control ' . $studentsinfo->student_id . '_checkin_date" name="' . $studentsinfo->student_id . '_checkin_date" value="';
                 
                 if ($attendance_info) {
@@ -1002,7 +976,7 @@ public function get_students_byabsentees()
                 }
                 
                 $studentsList .= '">
-                <span class="input-group-addon btn btn-default">
+                <span class="input-group-text btn btn-secondary">
                     <span class="far fa-clock"></span>
                 </span>
                 </div>
@@ -1010,7 +984,7 @@ public function get_students_byabsentees()
                 </div> 
             </td><td><div class="funkyradio">
             <div class="funkyradio-default">
-            <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
+            <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
             <input type="text" class="form-control"   name="' . $studentsinfo->student_id . '_checkout_date" value="';
             
             if ($attendance_info) {
@@ -1022,7 +996,7 @@ public function get_students_byabsentees()
             }
             
             $studentsList .= '">
-            <span class="input-group-addon btn btn-default">
+            <span class="input-group-text btn btn-secondary">
                 <span class="far fa-clock"></span>
             </span>
         </div>

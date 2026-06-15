@@ -1,9 +1,8 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?php $id = 0; ?>
+<?php $id = '0'; ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
 <style>
 @media print
 {
@@ -34,23 +33,14 @@ th{ text-align: center; }
     margin-bottom: 0px;
 }
 </style>
- <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Pay Fee Chalan
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Pay Fee Chalan</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+ <?= view('components/page_header', [
+    'title' => 'Pay Fee Chalan',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Pay Fee Chalan', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -60,17 +50,15 @@ th{ text-align: center; }
       <div class="card-body">
       <div class="tab-content">
 			<?php
-			echo form_open('c=campus_chalan_pay&m=save', 'role="form" id="user-edit-form"');
+			echo form_open(base_url('admin/campus_chalan_pay/save'), 'role="form" id="user-edit-form"');
 			echo form_hidden('id', $id);
 			?>
       <div class="row">
        <div class="form-group col-lg-4">
         <label>Date Paid:</label>
            <div class="input-group date" id="datepicker2" data-target-input="nearest">
-              <input type="text" id="datePaid" name="paid_date" autocomplete="off" class="form-control datetimepicker-input" data-target="#datepicker2"/>
-              <div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-            </div>
+              <input type="text" id="datePaid" name="paid_date" autocomplete="off" class="form-control datetimepicker-input" data-bs-target="#datepicker2"/>
+              <span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
           </div>
           <!-- /.input group -->
         </div>			  
@@ -115,14 +103,14 @@ $("#campus_id").select2({
     minimumInputLength: 2,
     tags: [],
     ajax: {
-        url: 'admin.php?c=campus_chalan_pay&m=get_campusinfo', 
+        url: '<?= base_url('admin/campus_chalan_pay/get_campusinfo') ?>',
         dataType: 'json',
         type: "POST",
         quietMillis: 50,
-        data: function (term) {
+        data: function (params) {
             return {
-                term: term
-            }
+                term: params.term
+            };
         },
        processResults: function (response) {
         console.log(response);
@@ -139,7 +127,7 @@ $('#campus_id').on('select2:select', function (e) {
     var campus_id = data.id;
 
     $.ajax({
-            url: 'admin.php?c=campus_chalan_pay&m=get_campus_list',
+            url: '<?= base_url('admin/campus_chalan_pay/get_campus_list') ?>',
             type: "POST",
             data:{campus_id: campus_id},
             success:function(res){

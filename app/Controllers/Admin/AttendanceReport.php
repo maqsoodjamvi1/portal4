@@ -14,7 +14,7 @@ class AttendanceReport extends BaseController
     {
         $this->db = \Config\Database::connect();
         $this->session = session();
-        helper(['form']);
+        helper(['form', 'school']);
         check_permission('admin-attendance-monthly-report');
     }
 
@@ -241,16 +241,6 @@ private function generateWorkingDaysReport($campus_id, $sessionid, $year, $month
         ];
     }
     
-    // Get active timing type
-    $activeTimingType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
     // Get class sections
     if ($cls_sec_id > 0) {
         $sections = $this->getClassSectionById($cls_sec_id);
@@ -279,7 +269,7 @@ private function generateWorkingDaysReport($campus_id, $sessionid, $year, $month
         }
         
         // Get school timings for this section
-        $timings = $this->getSectionTimings($cls_sec_id_val, $activeTypeId);
+        $timings = $this->getSectionTimings($cls_sec_id_val, $campus_id);
         
         // Get attendance records for the month (only Present status)
         $attendanceRecords = $this->db->table('attendance a')
@@ -1021,19 +1011,8 @@ private function getWeekDaysWithAttendance($student_id, $start_date, $end_date)
     
     $cls_sec_id = $studentClass->cls_sec_id ?? 0;
     
-    // Get active timing type for this campus
-    $campus_id = (int) session('member_campusid');
-    $activeTimingType = $this->db->table('school_timing_types')
-        ->select('type_id')
-        ->where('campus_id', $campus_id)
-        ->where('status', 1)
-        ->orderBy('type_id', 'ASC')
-        ->get()
-        ->getRow();
-    $activeTypeId = $activeTimingType ? $activeTimingType->type_id : null;
-    
     // Get school timings for this section
-    $timings = $this->getSectionTimings($cls_sec_id, $activeTypeId);
+    $timings = $this->getSectionTimings($cls_sec_id, (int) session('member_campusid'));
     
     // Define day names mapping
     $dayNames = [
@@ -1168,27 +1147,19 @@ private function isSchoolDay($timings, $dayName)
 /**
  * Get school timings for a section
  */
-private function getSectionTimings($cls_sec_id, $activeTypeId = null)
+private function getSectionTimings($cls_sec_id, $campusId = null)
 {
     if (!$cls_sec_id) {
         return [];
     }
-    
-    $query = $this->db->table('school_timings st')
-        ->select('st.dayname, st.checkin_timing, st.checkout_timing, st.type_id')
-        ->where('st.cls_sec_id', $cls_sec_id);
-    
-    if ($activeTypeId) {
-        $query->where('st.type_id', $activeTypeId);
-    }
-    
-    $timings = $query->get()->getResult();
-    
+
+    $rows = getSchoolTimingsForSections([(int) $cls_sec_id], $campusId ? (int) $campusId : null);
+
     $timingsByDay = [];
-    foreach ($timings as $timing) {
-        $timingsByDay[$timing->dayname] = $timing;
+    foreach ($rows as $timing) {
+        $timingsByDay[$timing['dayname']] = (object) $timing;
     }
-    
+
     return $timingsByDay;
 }
 

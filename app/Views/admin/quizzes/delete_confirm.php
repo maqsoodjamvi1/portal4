@@ -84,7 +84,7 @@
                             
                             <!-- Delete Type Selection -->
                             <div class="form-group">
-                                <label class="font-weight-bold">What do you want to delete?</label>
+                                <label class="fw-bold">What do you want to delete?</label>
                                 <div class="card-options">
                                     <div class="form-check mb-3">
                                         <input class="form-check-input" type="radio" name="delete_type" 
@@ -100,7 +100,7 @@
                                                         • The quiz itself<br>
                                                         • All <?= $questionCount ?> questions<br>
                                                         • All <?= $attemptCount ?> student results<br>
-                                                        <span class="text-danger font-weight-bold">Complete wipe - nothing remains</span>
+                                                        <span class="text-danger fw-bold">Complete wipe - nothing remains</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -154,17 +154,15 @@
                             
                             <!-- Confirmation -->
                             <div class="form-group mt-4">
-                                <label for="confirmation" class="font-weight-bold">
+                                <label for="confirmation" class="fw-bold">
                                     <i class="fas fa-keyboard"></i> Type the delete option name to confirm:
                                 </label>
                                 <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">
-                                            <span id="confirmationHint" class="font-weight-bold">DELETE ALL</span>
+                                    <span class="input-group-text">
+                                            <span id="confirmationHint" class="fw-bold">DELETE ALL</span>
                                         </span>
-                                    </div>
                                     <input type="text" 
-                                           class="form-control form-control-lg text-center font-weight-bold" 
+                                           class="form-control form-control-lg text-center fw-bold" 
                                            id="confirmation" 
                                            name="confirmation" 
                                            placeholder="Type option name here" 
@@ -173,7 +171,7 @@
                                            style="font-size: 1.2rem; letter-spacing: 1px;">
                                 </div>
                                 <small class="form-text text-muted">
-                                    Type exactly: <span id="requiredText" class="font-weight-bold">DELETE ALL</span>
+                                    Type exactly: <span id="requiredText" class="fw-bold">DELETE ALL</span>
                                 </small>
                             </div>
                             
@@ -182,7 +180,7 @@
                                 <a href="<?= base_url('admin/quizzes') ?>" class="btn btn-secondary btn-lg">
                                     <i class="fas fa-arrow-left"></i> Cancel & Go Back
                                 </a>
-                                <button type="submit" class="btn btn-danger btn-lg float-right" id="submitBtn">
+                                <button type="submit" class="btn btn-danger btn-lg float-end" id="submitBtn">
                                     <i class="fas fa-trash"></i> Execute Delete
                                 </button>
                             </div>

@@ -10,7 +10,7 @@
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 3.3.5 -->
-  <link rel="stylesheet" href="<?php echo base_url();?>resource/adminlte/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   <!-- Ionicons -->
@@ -39,11 +39,9 @@
 	<?php echo form_open('c=login&m=findpassword', 'id="findpasswordform"');?>
       <div class="input-group mb-3">
         <input type="text" class="form-control" required name="username" id="username" placeholder="Email/Username">
-        <div class="input-group-append">
-            <div class="input-group-text">
+        <span class="input-group-text">
               <span class="fa fa-envelope"></span>
-            </div>
-          </div>
+            </span>
 		    <div class="text-danger col-12" id="usernameerror"></div>
       </div>
 	  <!-- <div class="form-group">
@@ -61,7 +59,7 @@
         </div>
         <!-- /.col -->
         <div class="col-lg-4">
-          <button type="submit" class="btn btn-primary btn-block btn-flat">Submit</button>
+          <button type="submit" class="btn btn-primary w-100 btn-flat">Submit</button>
         </div>
         <!-- /.col -->
       </div>
@@ -75,7 +73,7 @@
 
 <!-- jQuery 2.1.4 -->
 <script src="<?php echo base_url();?>resource/adminlte/plugins/jquery/jquery.min.js"></script>
-<script src="<?php echo base_url();?>resource/adminlte/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" type="text/javascript"></script>
 <script src="<?php echo base_url();?>resource/js/jquery.form.js" type="text/javascript"></script>
 <script type="text/javascript" src="<?php echo base_url();?>resource/toastr/toastr.min.js"></script>
 <script src="<?php echo base_url();?>resource/js/jquery.validate.min.js" type="text/javascript"></script>

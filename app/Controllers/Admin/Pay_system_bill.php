@@ -24,6 +24,7 @@ class Pay_system_bill extends MY_Controller {
 	 */
 	public function index()
 	{
+		$this->template_data['system_status'] = $this->input->get('system_status') ?? '';
 		$this->load->view('pay_system_bill', $this->template_data);
 	}
 
@@ -238,7 +239,7 @@ class Pay_system_bill extends MY_Controller {
     $schoolinfo = getSchoolInfo();
     $campusid = $this->session->userdata('member_campusid');
 
-    $system_status = $_GET['system_status'];
+    $system_status = $this->input->post('system_status') ?? $this->input->get('system_status') ?? '';
 
     $keyword = '';
     if($search) $keyword = $search['value'];
@@ -355,7 +356,7 @@ class Pay_system_bill extends MY_Controller {
        $strSteps .= "5. Sections, ";  
     }
      
-    $classSections_info = $this->db->query('SELECT * FROM class_section WHERE campus_id='.$campus_id)->row();
+    $classSections_info = $this->db->from('class_section')->where('campus_id', (int) $campus_id)->get()->row();
     
     if(empty($classSections_info->cls_sec_id)){
       $strSteps .= "6. Class Section, ";  
@@ -367,7 +368,12 @@ class Pay_system_bill extends MY_Controller {
       $strSteps .= "7. Subjects, ";  
     }
    
-    $SectionsSubject_info = $this->db->query('SELECT * FROM section_subjects WHERE subject_id IN (SELECT sid FROM allsubject WHERE system_id ='.$campus_info->system_id.') AND cls_sec_id IN(SELECT cls_sec_id FROM class_section WHERE campus_id='.$campus_id.')')->row();
+    $subjectSub = $this->db->select('sid')->from('allsubject')->where('system_id', (int) $campus_info->system_id)->get_compiled_select();
+    $clsSecSub = $this->db->select('cls_sec_id')->from('class_section')->where('campus_id', (int) $campus_id)->get_compiled_select();
+    $SectionsSubject_info = $this->db->from('section_subjects')
+      ->where("subject_id IN ($subjectSub)", null, false)
+      ->where("cls_sec_id IN ($clsSecSub)", null, false)
+      ->get()->row();
 
     if(empty($SectionsSubject_info->sec_sub_id)){
       $strSteps .= "8. Section Subjects, ";  
@@ -392,16 +398,28 @@ class Pay_system_bill extends MY_Controller {
       $strSteps .= "11. Add Student";  
     }
 
-   $total_student_info = $this->db->query('select count(*) as total from students where status="1" and campus_id='.$campus_id)->row(); 
+   $total_student_info = $this->db->table('students')
+     ->selectCount('*', 'total')
+     ->where('status', '1')
+     ->where('campus_id', (int) $campus_id)
+     ->get()->row(); 
    if(!empty($total_student_info)){
       $strSteps .= "<br>Total Student:".$total_student_info->total;  
    }
   
-   $last_student_info = $this->db->query('select * from students where status="1" and campus_id='.$campus_id.' ORDER BY student_id desc')->row(); 
+   $last_student_info = $this->db->from('students')
+     ->where('status', '1')
+     ->where('campus_id', (int) $campus_id)
+     ->orderBy('student_id', 'desc')
+     ->get()->row();
    
    if(!empty($last_student_info)){
       $strSteps .= "<br>Last Student:".$last_student_info->created_date;  
-      $last_chalan_info = $this->db->query('select * from fee_chalan where status="unpaid" and student_id='.$last_student_info->student_id.' ORDER BY chalan_id desc')->row(); 
+      $last_chalan_info = $this->db->from('fee_chalan')
+        ->where('status', 'unpaid')
+        ->where('student_id', (int) $last_student_info->student_id)
+        ->orderBy('chalan_id', 'desc')
+        ->get()->row();
    
        if(!empty($last_chalan_info)){
           $strSteps .= "<br>Last Challan:".$last_chalan_info->created_date;  
@@ -536,7 +554,6 @@ class Pay_system_bill extends MY_Controller {
 			$mobile = $campus_info->mobile_no;
 		}
 
-		//$this->db->db_select('admin_timessportal_live');
 		if(!empty($mobile)){
 			$data = array(
 					'mobile' => $mobile,
@@ -592,7 +609,6 @@ class Pay_system_bill extends MY_Controller {
 		if($campus_info){
 			$mobile = $campus_info->mobile_no;
 		}
-		//$this->db->db_select('admin_timessportal_live');
 		if(!empty($mobile)){
 			$data = array(
 					'mobile' => $mobile,
@@ -670,7 +686,11 @@ class Pay_system_bill extends MY_Controller {
 		//exit;
 		if($systemInfo){	
 	
-		$userInfo = $this->db->query('SELECT * FROM users WHERE campus_id='.$campusInfo->campus_id.' AND id IN(SELECT userID FROM user_roles WHERE roleID=2)')->row();
+		$adminSub = $this->db->select('userID')->from('user_roles')->where('roleID', 2)->get_compiled_select();
+		$userInfo = $this->db->from('users')
+			->where('campus_id', (int) $campusInfo->campus_id)
+			->where("id IN ($adminSub)", null, false)
+			->get()->row();
 	
 		$data  = array(
 			'bill_status' => 'paid', 
@@ -679,8 +699,6 @@ class Pay_system_bill extends MY_Controller {
 		$this->db->where('bill_id', $bill_id);
 		$this->db->update('campus_bills',$data);
 
-		//$this->db->db_select('admin_timessportal_live');
- 
 		$this->db->trans_begin();	
 		
 		$data  = array( 

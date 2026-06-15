@@ -5,22 +5,34 @@
   $cls_sec_id         = $cls_sec_id         ?? '';
   $sectionsclassinfo  = $sectionsclassinfo  ?? [];
   $schoolinfo         = getSchoolInfo();
+  $activeExamName     = (string)($exam->exam_name ?? '');
 ?>
+
+<?= view('components/page_header', [
+    'title' => 'Exam Schedule',
+    'icon' => 'fas fa-table',
+    'subtitle' => $activeExamName !== '' ? 'Exam: ' . $activeExamName : null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Datesheet', 'url' => base_url('admin/datesheet')],
+        ['label' => 'Schedule', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
 
-  <div class="card card-outline card-primary">
+  <div class="card sms-card card-outline card-primary">
     <!-- Minimal, professional header -->
     <div class="card-header py-2 d-flex flex-wrap align-items-center justify-content-between">
-      <div class="mr-2">
-        <h5 class="mb-0 font-weight-bold">Exam Schedule</h5>
+      <div class="me-2">
+        <h5 class="mb-0 fw-bold">Exam Schedule<?= $activeExamName !== '' ? ' of ' . esc($activeExamName) : '' ?></h5>
        
       </div>
 
       <!-- Filters (Class → Section only) -->
       <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
         <div class="form-group mb-0">
-          <label for="cls_sec_id" class="sr-only">Class → Section</label>
+          <label for="cls_sec_id" class="visually-hidden">Class → Section</label>
           <select name="cls_sec_id" id="cls_sec_id" class="form-control form-control-sm" required>
             <option value="">Class → Section</option>
             <?php foreach ($sectionsclassinfo as $section):
@@ -45,7 +57,7 @@
     </div>
 
     <div class="card-body p-0">
-      <div id="datesheetGrid" class="p-2">
+      <div id="datesheetGrid" class="p-3">
         <div class="alert alert-info mb-0">
           Select a Class → Section. The latest active exam will load automatically.
         </div>
@@ -59,12 +71,15 @@
   /* Keep things tidy and professional */
   #datesheetGrid .table { margin-bottom: 0; }
 
+  .content .card { border-radius: .4rem; }
+  .content .card-header { background: #fff; }
+
   /* Enable smooth horizontal scroll if many dates */
   #datesheetGrid .table-responsive { overflow-x: auto; }
 
   /* When your partial uses .datesheet-table, we apply layout hints */
   .datesheet-table {
-    table-layout: auto; /* we’ll set explicit widths via JS */
+    table-layout: auto;
     width: 100%;
   }
 
@@ -78,7 +93,7 @@
 
   /* Keep subject cells readable if they get long */
   .datesheet-table td:first-child, .datesheet-table th:first-child {
-    white-space: nowrap; /* subject column stays on one line */
+    white-space: nowrap;
   }
 </style>
 
@@ -121,17 +136,16 @@
           $('#datesheetGrid').wrapInner('<div class="table-responsive"></div>');
         }
 
-        // After content loads, adjust columns
-        setTimeout(adjustGridColumns, 0);
-
-        // Recalc on resize
-        $(window).off('resize.datesheet').on('resize.datesheet', throttle(adjustGridColumns, 100));
+        // The loaded grid handles its own compact column fitting.
       },
       error: function () {
         $('#datesheetGrid').html('<div class="alert alert-danger mb-0">Failed to load schedule.</div>');
       }
     });
   }
+
+  // Preview grid removed; keep hook as no-op for the insertion grid.
+  window.refreshDatesheetSummary = function () {};
 
   // Throttle helper for resize
   function throttle(fn, wait) {

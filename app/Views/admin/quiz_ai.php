@@ -1,9 +1,14 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <h1>AI Quiz Builder (Gemini)</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'AI Quiz Builder (Gemini)',
+    'icon' => 'fas fa-robot',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'AI Quiz Builder', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
 
@@ -31,7 +36,7 @@
                     <button id="btnGenerate" class="btn btn-primary">
                         Generate from Gemini
                     </button>
-                    <span id="aiStatus" class="ml-2 text-muted"></span>
+                    <span id="aiStatus" class="ms-2 text-muted"></span>
                 </div>
             </div>
         </div>
@@ -62,7 +67,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer text-right">
+            <div class="card-footer text-end">
                 <button type="submit" class="btn btn-success">Save Quiz</button>
             </div>
         </div>

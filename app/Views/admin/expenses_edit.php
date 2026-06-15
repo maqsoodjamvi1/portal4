@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -11,29 +12,20 @@
 	$subject_id = '';
 }
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-          Expenses
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Expenses</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Expenses',
+    'icon' => 'fas fa-receipt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Expenses', 'url' => base_url('admin/expenses')],
+        ['label' => empty($id) ? 'Add' : 'Edit', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
     <div class="row">
     <div class="col-lg-12">
-	  <div class="card card-primary card-outline card-tabs">
+	  <div class="card sms-card card-primary card-outline card-tabs">
     	<div class="card-header p-0 pt-1 border-bottom-0">
 		<ul class="nav nav-tabs">
 		<li class="nav-item"><a class="nav-link" href="<?= base_url('admin/expenses') ?>">Expenses</a></li>
@@ -46,7 +38,7 @@
 <div class="card-body">		
 <div class="tab-content">
 <?php
-	echo form_open( base_url('admin/expenses/save'), 'role="form" id="user-edit-form"');
+	echo form_open(base_url('admin/expenses/save'), ['role' => 'form', 'id' => 'user-edit-form', 'class' => 'needs-validation', 'novalidate' => 'novalidate']);
 	echo form_hidden('id', (string)$id);
 ?>
 <div class="">
@@ -64,6 +56,18 @@
               <label>Expense Date</label>
               <input type="date" id="expense_date" name="expense_date" value="<?php print(date("Y-m-d")); ?>" class="form-control">
             </div>
+            <?php if (! empty($finance_enabled) && ! empty($finance_accounts)): ?>
+            <div class="form-group">
+              <label>Paid from account</label>
+              <select name="account_id" id="account_id" class="form-control">
+                <?php foreach ($finance_accounts as $acc): ?>
+                <option value="<?= (int) $acc->account_id ?>" <?= ((int)($default_account_id ?? 0) === (int)$acc->account_id) ? 'selected' : '' ?>>
+                  <?= esc($acc->account_name) ?> (<?= esc(ucfirst($acc->account_type)) ?>)
+                </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php endif; ?>
         </div>
         <div class="col-md-12 bg">
 		    <div id="loader-1" class="overlay text-center" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
@@ -73,8 +77,8 @@
         </div>
           <div class="form-group">
             <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-			<button type="reset" class="btn btn-default">Reset</button>
-			<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+			<button type="reset" class="btn btn-secondary">Reset</button>
+			<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
         <?php echo form_close();?>
 		</div>

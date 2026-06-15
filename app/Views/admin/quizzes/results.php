@@ -1,9 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1 class="mb-3">Quiz Results</h1>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Quiz Results',
+    'icon' => 'fas fa-poll',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Quizzes', 'url' => base_url('admin/quizzes')],
+        ['label' => 'Results', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card">
@@ -26,7 +32,7 @@
                 <td><?= (int)$a->attempt_id ?></td>
                 <td><?= esc($a->student_name ?? $a->student_id) ?></td>
                 <td><?= (int)$a->attempt_no ?></td>
-                <td><span class="badge <?= $a->status==='submitted'?'badge-success':'badge-secondary' ?>"><?= esc($a->status) ?></span></td>
+                <td><span class="badge <?= $a->status==='submitted'?'text-bg-success':'text-bg-secondary' ?>"><?= esc($a->status) ?></span></td>
                 <td><?= esc($a->score_obtained) ?></td>
                 <td><?= esc($a->submitted_at) ?></td>
               </tr>

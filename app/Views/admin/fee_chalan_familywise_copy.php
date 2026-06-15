@@ -74,23 +74,23 @@ td{ text-align:left; padding-left:10px;}
         
             <div class="col-lg-4 form-group">
                 <label>Footer Lines 1:</label>
-                  <input type="text" class="form-control pull-right"  value="<?php echo $footer_line1; ?>" name="footer_line1">
+                  <input type="text" class="form-control float-end"  value="<?php echo $footer_line1; ?>" name="footer_line1">
                 <!-- /.input group -->
             </div>
             
              <div class="col-lg-4 form-group">
                 <label>Footer Lines 2:</label>
-                  <input type="text" class="form-control pull-right"  value="<?php echo $footer_line2; ?>" name="footer_line2">
+                  <input type="text" class="form-control float-end"  value="<?php echo $footer_line2; ?>" name="footer_line2">
                 <!-- /.input group -->
             </div>
             <div class="col-lg-2 form-group">
                 <label>Show Footer Line 1:</label>
-                  <input type="checkbox" class="form-control pull-right" <?php if($show_line1 == 1){ ?> checked <?php } ?>  value="1" name="show_line1">
+                  <input type="checkbox" class="form-control float-end" <?php if($show_line1 == 1){ ?> checked <?php } ?>  value="1" name="show_line1">
                 <!-- /.input group -->
             </div>
             <div class="col-lg-2 form-group">
                 <label>Show Footer Line 2:</label>
-                  <input type="checkbox" class="form-control pull-right" <?php if($show_line2 == 1){ ?> checked <?php } ?>  value="1" name="show_line2">
+                  <input type="checkbox" class="form-control float-end" <?php if($show_line2 == 1){ ?> checked <?php } ?>  value="1" name="show_line2">
                 <!-- /.input group -->
             </div>
             <div class="col-sm-2">
@@ -109,13 +109,13 @@ td{ text-align:left; padding-left:10px;}
                 <div style="text-align: center;"> <?php echo rtrim($student_info['emergency_contact'].", ".$student_info['mother_contact'].", ".$student_info['father_contact']); ?></div>
                 <div class="chalanwrapper">
                   <div class="row">
-                    <div class="col-sm-3 ml-2 mt-2"></div>
+                    <div class="col-sm-3 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">Bank Copy</div><br />
-                    <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                    <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                     <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     if($student_info['bank_name']){
                       echo $student_info['bank_name'].', '; 
@@ -209,13 +209,13 @@ td{ text-align:left; padding-left:10px;}
               <div style="text-align: center;"> <?php echo trim($student_info['emergency_contact'].", ".$student_info['mother_contact'].", ".$student_info['father_contact']); ?></div>
                 <div class="chalanwrapper"> 
                   <div class="row">
-                    <div class="col-sm-3 ml-2 mt-2"></div>
+                    <div class="col-sm-3 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">School Copy</div><br />
-                    <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                    <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                     <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     if($student_info['bank_name']){
                       echo $student_info['bank_name'].', '; 
@@ -308,13 +308,13 @@ td{ text-align:left; padding-left:10px;}
                <div style="text-align: center;"> <?php echo trim($student_info['emergency_contact'].", ".$student_info['mother_contact'].", ".$student_info['father_contact']); ?></div>
                 <div class="chalanwrapper">
                   <div class="row">
-                    <div class="col-sm-3 ml-2 mt-2"></div>
+                    <div class="col-sm-3 ms-2 mt-2"></div>
                     <div class="col-sm-8" style="font-weight:bold;">Student Copy</div><br />
-                    <div class="col-sm-3 ml-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
+                    <div class="col-sm-3 ms-2 mt-2"><img style="width: 100%;" src="<?php echo base_url();?>system-logo/<?php echo $student_info['logo']; ?>"></div>
                     <div class="col-sm-8"><?php echo $student_info['system_name']; ?><br />
                     <?php echo $student_info['campus_name']; ?>, <?php echo $student_info['location']; ?></div>
                   </div>  
-                  <div class="ml-2 mt-2" style="text-align: left;">
+                  <div class="ms-2 mt-2" style="text-align: left;">
                   <?php 
                     if($student_info['bank_name']){
                       echo $student_info['bank_name'].', '; 

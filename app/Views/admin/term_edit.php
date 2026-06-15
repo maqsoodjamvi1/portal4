@@ -1,21 +1,16 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-8">
-        <h1><i class="fas fa-calendar-alt"></i> Add Terms</h1>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Terms</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Terms',
+    'icon' => 'fas fa-calendar-alt',
+    'subtitle' => 'Add term',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Terms', 'url' => base_url('admin/terms')],
+        ['label' => 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card card-primary">
@@ -29,7 +24,7 @@
       <?= form_open(base_url('admin/terms/save'), ['id' => 'term-edit-form']) ?>
       <div class="table-responsive">
         <table class="table table-bordered table-striped" id="dynamic_field">
-          <thead class="thead-light">
+          <thead class="table-light">
             <tr>
               <th>Term Name</th>
               <th>Short Name</th>
@@ -74,7 +69,7 @@
         <button type="button" name="add" id="add" class="btn btn-success"><i class="fas fa-plus"></i> Add Row</button>
       </div>
 
-      <div class="mt-4 text-right">
+      <div class="mt-4 text-end">
         <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
         <button type="reset" class="btn btn-secondary">Reset</button>
         <button type="button" onclick="history.back();" class="btn btn-light">Cancel</button>

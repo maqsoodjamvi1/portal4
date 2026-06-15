@@ -67,7 +67,7 @@
         border: none;
     }
     
-    .text-right {
+    .text-end {
         text-align: right;
     }
     
@@ -143,7 +143,7 @@
 .info-card h6 {
     color: #2c3e50;
     margin-bottom: 10px;
-    border-left: 3px solid #3498db;
+    border-start: 3px solid #3498db;
     padding-left: 10px;
 }
 
@@ -326,7 +326,7 @@
                                     <span style="color: #e67e22; font-weight: bold;">
                                         <i class="fas fa-clock"></i> Pending
                                     </span>
-                                    <button type="button" class="btn btn-sm btn-success ml-2 no-print" 
+                                    <button type="button" class="btn btn-sm btn-success ms-2 no-print" 
                                             onclick="openPaymentModal(<?php echo $slip->slip_id; ?>, <?php echo $slip->net_salary; ?>)">
                                         <i class="fas fa-check-circle"></i> Mark as Paid
                                     </button>
@@ -342,7 +342,7 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="info-card">
-                    <h6 style="border-left-color: #27ae60;"><i class="fas fa-plus-circle"></i> Earnings</h6>
+                    <h6 style="border-start-color: #27ae60;"><i class="fas fa-plus-circle"></i> Earnings</h6>
                     <table class="earning-table">
                         <tr>
                             <td>Basic Salary</td>
@@ -370,7 +370,7 @@
             
             <div class="col-md-6">
                 <div class="info-card">
-                    <h6 style="border-left-color: #e74c3c;"><i class="fas fa-minus-circle"></i> Deductions</h6>
+                    <h6 style="border-start-color: #e74c3c;"><i class="fas fa-minus-circle"></i> Deductions</h6>
                     <table class="deduction-table">
                         <?php if ($slip->absent_deduction > 0): ?>
                         <tr>
@@ -472,7 +472,7 @@
                 <h5 class="modal-title">
                     <i class="fas fa-check-circle"></i> Process Salary Payment
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -482,6 +482,12 @@
                     <input type="hidden" id="payment_amount">
                     
                     <div class="row">
+                        <div class="col-md-12" id="salaryPaidFromRow" style="display:none;">
+                            <div class="form-group">
+                                <label><i class="fas fa-wallet"></i> Paid from account</label>
+                                <select id="paid_from_account_id" class="form-control"></select>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label><i class="fas fa-money-bill-wave"></i> Payment Method <span class="text-danger">*</span></label>
@@ -552,11 +558,11 @@
                                 <table class="table table-sm table-borderless">
                                     <tr>
                                         <td><strong>Net Salary:</strong></td>
-                                        <td class="text-right"><strong id="display_amount"><?php echo number_format($slip->net_salary, 2); ?></strong></td>
+                                        <td class="text-end"><strong id="display_amount"><?php echo number_format($slip->net_salary, 2); ?></strong></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Slip No:</strong></td>
-                                        <td class="text-right"><?php echo $slip->slip_no; ?></td>
+                                        <td class="text-end"><?php echo $slip->slip_no; ?></td>
                                     </tr>
                                 </table>
                             </div>
@@ -565,7 +571,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-success" onclick="submitPayment()">
@@ -579,10 +585,10 @@
 <!-- Print and Action Buttons (Hidden in Print) -->
 <div class="no-print text-center" style="margin-top: 20px; padding: 20px;">
     <button onclick="window.print()" class="btn btn-primary btn-lg">
-        <i class="fas fa-print mr-2"></i> Print Salary Slip
+        <i class="fas fa-print me-2"></i> Print Salary Slip
     </button>
-    <a href="<?php echo base_url('admin/users/salary/' . $user->id); ?>" class="btn btn-secondary btn-lg ml-2">
-        <i class="fas fa-arrow-left mr-2"></i> Back to Employee Salary
+    <a href="<?php echo base_url('admin/users/salary/' . $user->id); ?>" class="btn btn-secondary btn-lg ms-2">
+        <i class="fas fa-arrow-left me-2"></i> Back to Employee Salary
     </a>
 </div>
 
@@ -606,6 +612,19 @@ function openPaymentModal(slipId, amount) {
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+function loadSalaryFinanceAccounts() {
+    $.get('<?= base_url('admin/campus-finance-accounts/accounts-json') ?>', function (r) {
+        if (!r || !r.enabled) return;
+        $('#salaryPaidFromRow').show();
+        var $sel = $('#paid_from_account_id').empty();
+        (r.accounts || []).forEach(function (a) {
+            $sel.append($('<option>', { value: a.account_id, text: a.label || a.account_name }));
+        });
+        if (r.default_account_id) $sel.val(String(r.default_account_id));
+    }, 'json');
+}
+$(function () { loadSalaryFinanceAccounts(); });
 
 // Submit payment
 function submitPayment() {
@@ -640,6 +659,7 @@ function submitPayment() {
             slip_id: slipId,
             payment_status: 'paid',
             payment_method: paymentMethod,
+            paid_from_account_id: $('#paid_from_account_id').val() || '',
             transaction_id: transactionId,
             payment_date: paymentDate,
             bank_name: bankName,

@@ -4,6 +4,7 @@ $tabs = [
     ['key' => 'names', 'label' => 'Student Names', 'url' => base_url('admin/addbulkstudents/add')],
     ['key' => 'class', 'label' => 'Class Change', 'url' => base_url('admin/studentsbulk')],
     ['key' => 'other', 'label' => 'Other Info', 'url' => base_url('admin/students_bulk_info')],
+    ['key' => 'photos', 'label' => 'Student Photos', 'url' => base_url('admin/students_bulk_photos')],
     ['key' => 'fee', 'label' => 'Fee Info', 'url' => base_url('admin/students_bulk_fee_info')],
     ['key' => 'parent', 'label' => 'Parent Info', 'url' => base_url('admin/studentsbulkparents')],
     ['key' => 'dob', 'label' => 'Date of Birth & BMI', 'url' => base_url('admin/students_bulk_info_date_of_birth')],

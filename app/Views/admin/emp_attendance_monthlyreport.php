@@ -23,7 +23,6 @@ if(isset($info) ){
 	$session_id = $sessionData['sessionid'];
 }
 ?>
-<!-- Content Header (Page header) -->
 <style type="text/css">
 	.verticalTableHeader {
    /* text-align:center;
@@ -57,28 +56,19 @@ table {
 }
 .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th{padding: 1px !important; vertical-align: middle; text-align: center;}
 </style>
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Students Attendance Report</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Employee Monthly Attendance Report',
+    'icon' => 'fas fa-calendar-alt',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Employee Monthly Attendance', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-     <div class="card card-primary card-outline card-tabs">
+     <div class="card sms-card card-primary card-outline card-tabs">
         <div class="card-header p-0 pt-1 border-bottom-0">
         <div class="card-body">	 
 		 <div class="row">
@@ -93,11 +83,11 @@ table {
 		   <input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
 		   <div class="col-lg-12">
 		    <div class="col-lg-6 col-lg-offset-3 d-inline-flex">
-	            <div class="form-group  pull-left" style="margin-left: 15px;">
+	            <div class="form-group  float-start" style="margin-left: 15px;">
 	            	<label for="class">Month</label>
 	             <input type="month" name="date" id="date" required value="<?php echo date('Y-m'); ?>" class="form-control" style="height: 24px;line-height: 15px;padding: 0 10px;">
 	           </div>
-	            <div class="form-group  pull-left"  style="margin-left: 15px;">
+	            <div class="form-group  float-start"  style="margin-left: 15px;">
 	            <button type="button" onclick="getstudents();" class="btn btn-sm btn-primary" style="margin-top: 27px;height: 30px;line-height: 10px;">View</button>
 	           </div>
 	          </div> 

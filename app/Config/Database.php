@@ -26,23 +26,23 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => 'db-mysql-nyc3-81353-do-user-29191560-0.d.db.ondigitalocean.com',
-        'username'     => 'doadmin',
-        'password'     => 'AVNS_XjCSzXgMuzcgFBP7syL',
-        'database'     => 'admin_timessportal_live',
+        'hostname'     => 'localhost',
+        'username'     => '',
+        'password'     => '',
+        'database'     => '',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
-        'persistent' => true,    // important
-        'DBDebug'      => true,
+        'persistent'   => false,
+        'DBDebug'      => false,
         'charset'      => 'utf8',
         'DBCollat'     => 'utf8_general_ci',
-        'swapPre'      => '', 
+        'swapPre'      => '',
         'encrypt'      => false,
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],
-        'port'         => 25060,
+        'port'         => 3306,
         'numberNative' => false,
         'foundRows'    => false,
         'dateFormat'   => [
@@ -50,7 +50,7 @@ class Database extends Config
             'datetime' => 'Y-m-d H:i:s',
             'time'     => 'H:i:s',
         ],
-         'cacheOn'     => true,
+        'cacheOn'     => false,
         'cacheDir'    => WRITEPATH . 'database/',
     ];
 
@@ -196,11 +196,85 @@ class Database extends Config
     {
         parent::__construct();
 
+        $this->applyDefaultConnectionFromEnvironment();
+
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that
         // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
+            $this->applyTestsConnectionFromEnvironment();
+        }
+    }
+
+    /**
+     * Keep deploy-specific connection details in `.env`, never in source.
+     */
+    private function applyDefaultConnectionFromEnvironment(): void
+    {
+        $map = [
+            'DSN'      => 'database.default.DSN',
+            'hostname' => 'database.default.hostname',
+            'username' => 'database.default.username',
+            'password' => 'database.default.password',
+            'database' => 'database.default.database',
+            'DBDriver' => 'database.default.DBDriver',
+            'DBPrefix' => 'database.default.DBPrefix',
+            'port'     => 'database.default.port',
+            'encrypt'  => 'database.default.encrypt',
+            'DBDebug'  => 'database.default.DBDebug',
+            'pConnect' => 'database.default.pConnect',
+            'cacheOn'  => 'database.default.cacheOn',
+        ];
+
+        foreach ($map as $key => $envKey) {
+            $value = env($envKey);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if ($key === 'port') {
+                $this->default[$key] = (int) $value;
+                continue;
+            }
+
+            if (in_array($key, ['encrypt', 'DBDebug', 'pConnect', 'cacheOn'], true)) {
+                $this->default[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                continue;
+            }
+
+            $this->default[$key] = $value;
+        }
+    }
+
+    /**
+     * PHPUnit / .env overrides for the `tests` DB group (see phpunit.xml.dist).
+     */
+    private function applyTestsConnectionFromEnvironment(): void
+    {
+        $map = [
+            'DSN'      => 'database.tests.DSN',
+            'hostname' => 'database.tests.hostname',
+            'username' => 'database.tests.username',
+            'password' => 'database.tests.password',
+            'database' => 'database.tests.database',
+            'DBDriver' => 'database.tests.DBDriver',
+            'DBPrefix' => 'database.tests.DBPrefix',
+            'port'     => 'database.tests.port',
+        ];
+
+        foreach ($map as $key => $envKey) {
+            $value = env($envKey);
+            if ($value !== null && $value !== '') {
+                $this->tests[$key] = $value;
+            }
+        }
+
+        if (! class_exists(\SQLite3::class) && ($this->tests['DBDriver'] ?? '') === 'SQLite3') {
+            $driver = env('database.tests.DBDriver');
+            if ($driver !== null && $driver !== '') {
+                $this->tests['DBDriver'] = $driver;
+            }
         }
     }
 }

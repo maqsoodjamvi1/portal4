@@ -32,7 +32,7 @@ class ClasswiseMonthlyStrengthReport extends BaseController
         ->get()->getResultArray();
 
     if (empty($sessions)) {
-        return view('admin/classwise_monthly_strength/index', [
+        return view('admin/classwise-monthly-strength/index', [
             'error' => 'No academic sessions found.',
         ]);
     }
@@ -117,7 +117,7 @@ class ClasswiseMonthlyStrengthReport extends BaseController
     // - $labels: 12 row labels (Month 1..12, e.g., Apr..Mar)
     // - $sessions: columns with ->label like '2024-25'
     // - $grid[rowIndex][session_id]
-    return view('admin/classwise_monthly_strength/index', [
+    return view('admin/classwise-monthly-strength/index', [
         'campusId' => $campusId,
         'labels'   => $labels,     // ['April','May',...]
         'sessions' => $sessions,   // each has session_id + label 'YYYY-YY'
@@ -130,7 +130,7 @@ class ClasswiseMonthlyStrengthReport extends BaseController
     public function print()
     {
         // Reuse same data as index so print page matches
-        return $this->indexAsView('admin/classwise_monthly_strength/print');
+        return $this->indexAsView('admin/classwise-monthly-strength/print');
     }
 
     /** ---------- Helpers ---------- */

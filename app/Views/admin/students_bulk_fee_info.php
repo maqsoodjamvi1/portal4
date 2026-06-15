@@ -37,7 +37,7 @@
       <div class="p-3">
         <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center">
           <span><strong>Fee Bulk Editor</strong> - Updated responsive view with full fee field save support.</span>
-          <span class="badge badge-primary">v2</span>
+          <span class="badge text-bg-primary">v2</span>
         </div>
         <div class="row">
           <div class="col-lg-6 form-group">
@@ -81,32 +81,32 @@
               <div class="card-body py-2">
                 <div class="d-flex flex-wrap align-items-center">
                   <!-- Month toggles -->
-                  <div class="custom-control custom-checkbox mr-3 mb-2">
-                    <input type="checkbox" class="custom-control-input upd-col upd-month" id="col_month_prev"
-                           value="month_prev" data-ym="<?= esc($prevYm) ?>" data-target=".col-month_prev" checked>
-                    <label class="custom-control-label" for="col_month_prev"><?= esc($prevShort) ?></label>
+                  <div class="form-check form-check me-3 mb-2">
+                    <input type="checkbox" class="form-check-input upd-col upd-month" id="col_month_prev"
+                           value="month_prev" data-ym="<?= esc($prevYm) ?>" data-bs-target=".col-month_prev" checked>
+                    <label class="form-check-label" for="col_month_prev"><?= esc($prevShort) ?></label>
                   </div>
-                  <div class="custom-control custom-checkbox mr-3 mb-2">
-                    <input type="checkbox" class="custom-control-input upd-col upd-month" id="col_month_curr"
-                           value="month_curr" data-ym="<?= esc($currYm) ?>" data-target=".col-month_curr" checked>
-                    <label class="custom-control-label" for="col_month_curr"><?= esc($currShort) ?></label>
+                  <div class="form-check form-check me-3 mb-2">
+                    <input type="checkbox" class="form-check-input upd-col upd-month" id="col_month_curr"
+                           value="month_curr" data-ym="<?= esc($currYm) ?>" data-bs-target=".col-month_curr" checked>
+                    <label class="form-check-label" for="col_month_curr"><?= esc($currShort) ?></label>
                   </div>
-                  <div class="custom-control custom-checkbox mr-3 mb-2">
-                    <input type="checkbox" class="custom-control-input upd-col upd-month" id="col_month_next"
-                           value="month_next" data-ym="<?= esc($nextYm) ?>" data-target=".col-month_next" checked>
-                    <label class="custom-control-label" for="col_month_next"><?= esc($nextShort) ?></label>
+                  <div class="form-check form-check me-3 mb-2">
+                    <input type="checkbox" class="form-check-input upd-col upd-month" id="col_month_next"
+                           value="month_next" data-ym="<?= esc($nextYm) ?>" data-bs-target=".col-month_next" checked>
+                    <label class="form-check-label" for="col_month_next"><?= esc($nextShort) ?></label>
                   </div>
 
                   <!-- Fee fields -->
-                  <div class="custom-control custom-checkbox mr-3 mb-2">
-                   <input type="checkbox" class="custom-control-input upd-col" id="col_student_fee"
-       value="student_fee" data-target=".col-student_fee" checked>
-<label class="custom-control-label" for="col_student_fee">Student Fee</label>
+                  <div class="form-check form-check me-3 mb-2">
+                   <input type="checkbox" class="form-check-input upd-col" id="col_student_fee"
+       value="student_fee" data-bs-target=".col-student_fee" checked>
+<label class="form-check-label" for="col_student_fee">Student Fee</label>
                   </div>
-                  <div class="custom-control custom-checkbox mr-3 mb-2">
-                    <input type="checkbox" class="custom-control-input upd-col" id="col_fee_plan"
-                           value="fee_plan" data-target=".col-fee_plan" checked>
-                    <label class="custom-control-label" for="col_fee_plan">Fee Plan</label>
+                  <div class="form-check form-check me-3 mb-2">
+                    <input type="checkbox" class="form-check-input upd-col" id="col_fee_plan"
+                           value="fee_plan" data-bs-target=".col-fee_plan" checked>
+                    <label class="form-check-label" for="col_fee_plan">Fee Plan</label>
                   </div>
 
                   <!-- Hidden month shims get injected here (kept in row DOM) -->
@@ -144,7 +144,7 @@
                   <th data-col="student_fee" style="min-width:160px;">Student Fee</th>
                   <th data-col="fee_plan" style="min-width:140px;">Fee Plan</th>
 
-                  <th class="text-right" style="width:110px;">Action</th>
+                  <th class="text-end" style="width:110px;">Action</th>
                 </tr>
               </thead>
               <tbody id="studentsTbody">
@@ -160,7 +160,7 @@
       <!-- Loader -->
       <div id="loader-1" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);">
         <div style="position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);">
-          <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           <div>Loading...</div>
         </div>
       </div>
@@ -182,7 +182,7 @@
   #studentsTable thead th.sticky-col, #studentsTable thead th.sticky-col-2 { z-index:12; }
   #studentsTable .th-sno, #studentsTable .sno-cell { width:var(--sno-w); min-width:var(--sno-w); max-width:var(--sno-w); padding-left:.5rem; padding-right:.5rem; }
   #studentsTable .action-cell { width:var(--action-w); }
-  #studentsTable .th-name, #studentsTable .student-name-cell { border-right:1px solid #e9ecef; width:clamp(140px,40vw,280px); max-width:clamp(140px,40vw,280px); }
+  #studentsTable .th-name, #studentsTable .student-name-cell { border-end:1px solid #e9ecef; width:clamp(140px,40vw,280px); max-width:clamp(140px,40vw,280px); }
   @media (max-width:992px){ #studentsTable .th-name, #studentsTable .student-name-cell { width:clamp(140px,36vw,240px); max-width:clamp(140px,36vw,240px); } }
   @media (max-width:768px){ #studentsTable { font-size:13px; } #studentsTable .th-name, #studentsTable .student-name-cell { width:clamp(140px,52vw,220px); max-width:clamp(140px,52vw,220px); } }
   @media (max-width:576px){ #studentsTable { font-size:12px; } #studentsTable .th-name, #studentsTable .student-name-cell { width:clamp(140px,55vw,200px); max-width:clamp(140px,55vw,200px); } }
@@ -210,7 +210,7 @@
 
   // ----- Templates for the only editable cells we allow here -----
   const TPL = {
-    student_fee: () => `<input name="student_fee" class="form-control form-control-sm text-right" placeholder="0.00" inputmode="decimal">`,
+    student_fee: () => `<input name="student_fee" class="form-control form-control-sm text-end" placeholder="0.00" inputmode="decimal">`,
     fee_plan: () => `
       <select name="fee_plan" class="form-control form-control-sm">
         <option value="0">Monthly</option>

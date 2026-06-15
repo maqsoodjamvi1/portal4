@@ -18,121 +18,110 @@ class EmpTiming extends BaseController
 
     public function index()
     {
-        check_permission('admin-emp-timing');
-        // You may populate $template_data as needed
-        return view('admin/emp_timing_edit', []); // Adjust as per your data needs
+        check_permission('admin-add-teacher-section');
+
+        return view('admin/emp_timing_edit', []);
     }
 
     public function data(): ResponseInterface
     {
-        $campusid = $this->session->get('member_campusid');
+        check_permission('admin-add-teacher-section');
+
+        $campusid = (int) $this->session->get('member_campusid');
+        if ($campusid <= 0) {
+            return $this->response->setBody(
+                "<div class='alert alert-warning mb-0'>Campus not selected. Choose a campus from the header and try again.</div>"
+            );
+        }
+
         $empInfo = $this->db->table('users')
+            ->select('id, first_name, last_name')
             ->where('campus_id', $campusid)
             ->where('status', 1)
-            ->get()->getResult();
+            ->orderBy('first_name', 'ASC')
+            ->orderBy('last_name', 'ASC')
+            ->get()
+            ->getResult();
 
         $empDetailsinfo = [];
         foreach ($empInfo as $emp) {
             $empDetailsinfo[] = [
-                'user_id' => $emp->id,
-                'name' => $emp->first_name . " " . $emp->last_name,
+                'user_id' => (int) $emp->id,
+                'name'    => trim($emp->first_name . ' ' . $emp->last_name),
             ];
         }
 
-        $daysName = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        $data = "<table class='table'><tr><th></th>";
+        if ($empDetailsinfo === []) {
+            return $this->response->setBody(
+                "<div class='alert alert-info mb-0'>No active employees found for this campus.</div>"
+            );
+        }
+
+        $userIds = array_column($empDetailsinfo, 'user_id');
+        $timingsByUserDay = [];
+        $timingRows = $this->db->table('emp_timings')
+            ->whereIn('user_id', $userIds)
+            ->get()
+            ->getResult();
+
+        foreach ($timingRows as $row) {
+            $timingsByUserDay[(int) $row->user_id][$row->dayname] = $row;
+        }
+
+        $daysName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $firstUserId = $empDetailsinfo[0]['user_id'];
+
+        $data = "<div class='table-responsive'><table class='table table-bordered'><tr><th></th>";
 
         foreach ($daysName as $day) {
-            $firstUserId = $empDetailsinfo[0]['user_id'] ?? 0;
-            $data .= '<th style="width: 132px;">
-                <input type="hidden" name="dayname[]" value="'.$day.'"/>' . $day . '<br>
-                Set Off <input type="checkbox" id="setclockoff_'.$day.'"><br>
-                Set to column <input type="checkbox" id="setclock_'.$day.'">
-                <script>
-                $(function(){
-                    $("#setclock_'.$day.'").click(function(){
-                        if (this.checked) {
-                            var checkintime = $("#'.$day.'_'.$firstUserId.'_checkin_date").val();
-                            $(".clockpicker_'.$day.'").val(checkintime);
-                            var checkouttime = $("#'.$day.'_'.$firstUserId.'_checkout_date").val();
-                            $(".clockpickercheckout_'.$day.'").val(checkouttime);
-                        }
-                    });
-                    $("#setclockoff_'.$day.'").click(function(){
-                        if (this.checked) {
-                            $(".clockpicker_'.$day.'").val("08:00");
-                            $(".clockpickercheckout_'.$day.'").val("08:00");
-                        }
-                    });
-                });
-                </script>
-            </th>';
+            $dayEsc = esc($day);
+            $data .= '<th style="width: 132px;">'
+                . '<input type="hidden" name="dayname[]" value="' . $dayEsc . '"/>'
+                . $dayEsc . '<br>'
+                . 'Set Off <input type="checkbox" class="emp-timing-set-off" data-day="' . $dayEsc . '"><br>'
+                . 'Set to column <input type="checkbox" class="emp-timing-set-col" data-day="' . $dayEsc . '" data-first-user="' . $firstUserId . '">'
+                . '</th>';
         }
         $data .= '</tr>';
 
-        if (!empty($empDetailsinfo)) {
-            foreach ($empDetailsinfo as $employee) {
-                $data .= '<tr><th>'.$employee['name'].'<input type="hidden" name="user_id[]" value="'.$employee['user_id'].'" /><br>
-                    Set to Row <input type="checkbox" id="setclock_'.$employee['user_id'].'">
-                    <script>
-                    $(function(){
-                        $("#setclock_'.$employee['user_id'].'").click(function(){
-                            if (this.checked) {
-                                var checkintime = $("#Monday_'.$employee['user_id'].'_checkin_date").val();
-                                $(".clockpicker_'.$employee['user_id'].'").val(checkintime);
-                                var checkouttime = $("#Monday_'.$employee['user_id'].'_checkout_date").val();
-                                $(".clockpickercheckout_'.$employee['user_id'].'").val(checkouttime);
-                            }
-                        });
-                    });
-                    </script>
-                </th>';
-                foreach ($daysName as $value) {
-                    $emp_timings_info = $this->db->table('emp_timings')
-                        ->where('dayname', $value)
-                        ->where('user_id', $employee['user_id'])
-                        ->get()->getRow();
-                    $checkin = $emp_timings_info->checkin ?? '';
-                    $checkout = $emp_timings_info->checkout ?? '';
-                    $data .= '<td>
-                        <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
-                            <input type="text" class="form-control clockpicker_'.$value.' clockpicker_'.$employee['user_id'].'" placeholder="Check In" name="'.$value.'_'.$employee['user_id'].'_checkin_date" id="'.$value.'_'.$employee['user_id'].'_checkin_date" value="'.$checkin.'">
-                            <span class="input-group-addon btn btn-default"><span class="far fa-clock"></span></span>
+        foreach ($empDetailsinfo as $employee) {
+            $uid = $employee['user_id'];
+            $nameEsc = esc($employee['name']);
+            $data .= '<tr><th>' . $nameEsc
+                . '<input type="hidden" name="user_id[]" value="' . $uid . '" /><br>'
+                . 'Set to Row <input type="checkbox" class="emp-timing-set-row" data-user-id="' . $uid . '">'
+                . '</th>';
+
+            foreach ($daysName as $value) {
+                $empTimingsInfo = $timingsByUserDay[$uid][$value] ?? null;
+                $checkin = esc($empTimingsInfo->checkin ?? '');
+                $checkout = esc($empTimingsInfo->checkout ?? '');
+                $valueEsc = esc($value);
+
+                $data .= '<td>
+                        <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
+                            <input type="text" class="form-control clockpicker_' . $valueEsc . ' clockpicker_' . $uid . '" placeholder="Check In" name="' . $valueEsc . '_' . $uid . '_checkin_date" id="' . $valueEsc . '_' . $uid . '_checkin_date" value="' . $checkin . '">
+                            <span class="input-group-text btn btn-secondary"><span class="far fa-clock"></span></span>
                         </div>
-                        <div class="input-group clockpicker" data-placement="left" data-align="top" data-autoclose="true">
-                            <input type="text" class="form-control clockpickercheckout_'.$value.' clockpickercheckout_'.$employee['user_id'].'" placeholder="Check Out" name="'.$value.'_'.$employee['user_id'].'_checkout_date" id="'.$value.'_'.$employee['user_id'].'_checkout_date" value="'.$checkout.'">
-                            <span class="input-group-addon btn btn-default"><span class="far fa-clock"></span></span>
+                        <div class="input-group clockpicker" data-bs-placement="left" data-align="top" data-autoclose="true">
+                            <input type="text" class="form-control clockpickercheckout_' . $valueEsc . ' clockpickercheckout_' . $uid . '" placeholder="Check Out" name="' . $valueEsc . '_' . $uid . '_checkout_date" id="' . $valueEsc . '_' . $uid . '_checkout_date" value="' . $checkout . '">
+                            <span class="input-group-text btn btn-secondary"><span class="far fa-clock"></span></span>
                         </div>
                     </td>';
-                }
-                $data .= '</tr>';
             }
+            $data .= '</tr>';
         }
-        $data .=  '</table>
-            <script>
-                $(function() { $(".clockpicker").clockpicker(); });
-            </script>';
-        return $this->response->setJSON($data);
+
+        $data .= '</table></div>';
+
+        return $this->response->setBody($data);
     }
 
     public function add()
     {
-        check_permission('admin-add-timetable');
-        $campusid = $this->session->get('member_campusid');
+        check_permission('admin-add-teacher-section');
 
-        $info = $this->db->table('school_timings')->get()->getResultArray();
-        $infoschooltimingtypes = $this->db->table('school_timing_types')->get()->getResultArray();
-        $sectionsclassinfo = userClassSections();
-        $subjectinfo = $this->db->table('allsubject')->get()->getResult();
-
-        $template_data = [
-            'info' => $info,
-            'infoschooltimingtypes' => $infoschooltimingtypes,
-            'sectionsclassinfo' => $sectionsclassinfo,
-            'subjectinfo' => $subjectinfo,
-        ];
-
-        return view('admin/emp_timing_edit', $template_data);
+        return view('admin/emp_timing_edit', []);
     }
 
     public function edit()
@@ -158,8 +147,7 @@ class EmpTiming extends BaseController
 
     public function save(): ResponseInterface
     {
-        check_permission('admin-add-timetable');
-        $campus_id = (int) $this->session->get('member_campusid');
+        check_permission('admin-add-teacher-section');
         $request = $this->request;
         $user_ids = $request->getPost('user_id');
         $days = $request->getPost('dayname');
@@ -168,26 +156,25 @@ class EmpTiming extends BaseController
             return $this->response->setJSON(['success' => false, 'msg' => 'Missing users or days']);
         }
 
-        // Delete previous timings for these users
         $this->db->table('emp_timings')->whereIn('user_id', $user_ids)->delete();
 
         $this->db->transStart();
 
         foreach ($days as $day) {
             foreach ($user_ids as $user_id) {
-                $checkin = $request->getPost($day . "_" . $user_id . "_checkin_date");
-                $checkout = $request->getPost($day . "_" . $user_id . "_checkout_date");
-                $data = [
-                    'user_id' => $user_id,
-                    'dayname' => $day,
-                    'checkin' => $checkin,
+                $checkin = $request->getPost($day . '_' . $user_id . '_checkin_date');
+                $checkout = $request->getPost($day . '_' . $user_id . '_checkout_date');
+                $this->db->table('emp_timings')->insert([
+                    'user_id'  => $user_id,
+                    'dayname'  => $day,
+                    'checkin'  => $checkin,
                     'checkout' => $checkout,
-                ];
-                $this->db->table('emp_timings')->insert($data);
+                ]);
             }
         }
 
         $this->db->transComplete();
+
         return $this->response->setJSON(['success' => true, 'msg' => 'Add Employee Timing Success']);
     }
 

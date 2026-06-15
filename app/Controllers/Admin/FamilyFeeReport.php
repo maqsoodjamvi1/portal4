@@ -274,9 +274,22 @@ class FamilyFeeReport extends BaseController
             ->where('system_id', $schoolinfo->system_id)
             ->get()->getRow();
 
-        $feeTypesInfo = $this->db->query('SELECT * FROM fee_type WHERE is_monthly_fee != 1 AND fee_type_id !=0 AND system_id=' . $schoolinfo->system_id)->getResult();
+        $feeTypesInfo = $this->db->table('fee_type')
+            ->where('is_monthly_fee !=', 1)
+            ->where('fee_type_id !=', 0)
+            ->where('system_id', (int) $schoolinfo->system_id)
+            ->get()->getResult();
 
-        $studentClass = $this->db->query('SELECT * FROM student_class WHERE session_id=' . $session_id . ' AND student_id IN( SELECT student_id FROM students WHERE status=1 AND campus_id=' . $campus_id . ') AND cls_sec_id=' . $cls_sec_id)->getResult();
+        $studentSub = $this->db->table('students')
+            ->select('student_id')
+            ->where('status', 1)
+            ->where('campus_id', (int) $campus_id)
+            ->getCompiledSelect();
+        $studentClass = $this->db->table('student_class')
+            ->where('session_id', (int) $session_id)
+            ->where('cls_sec_id', (int) $cls_sec_id)
+            ->where("student_id IN ($studentSub)", null, false)
+            ->get()->getResult();
 
         $start = new \DateTime($academic_session->start_date);
         $start->modify('first day of this month');

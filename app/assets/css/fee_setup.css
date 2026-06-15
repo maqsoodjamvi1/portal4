@@ -1,0 +1,327 @@
+/* =============================================================================
+   Fee Configuration — fee-specific grids and tables only.
+   Shared shell, nav, toolbar, and footer: school_setup_wizard.css
+   ============================================================================= */
+
+.fee-setup-amounts .grid-card--full .fee-amount-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.fee-setup-amounts .grid-card--full {
+  overflow: visible;
+}
+
+.fee-setup-amounts .fee-structure-table {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.fee-setup-amounts .fee-structure-table thead th {
+  background: #1e293b;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border: none;
+  vertical-align: middle;
+  padding: 0.5rem 0.5rem;
+  white-space: nowrap;
+}
+
+.fee-setup-amounts .fee-structure-table thead tr.fee-head-fill th {
+  padding: 0.4rem 0.5rem 0.55rem;
+  vertical-align: bottom;
+  font-weight: 500;
+}
+
+.fee-setup-amounts .fee-structure-table thead th.col-class {
+  left: 0;
+  z-index: 4;
+  min-width: 140px;
+}
+
+.fee-setup-amounts .fee-structure-table tbody th.col-class {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #334155;
+  border-right: 2px solid #e2e8f0;
+  min-width: 140px;
+  padding: 0.5rem 0.75rem;
+}
+
+.fee-setup-amounts .fee-structure-table tbody tr:nth-child(even) th.col-class {
+  background: #e8eef4;
+}
+
+.fee-setup-amounts .fee-structure-table tbody tr:hover th.col-class {
+  background: #dbeafe;
+}
+
+.fee-setup-amounts .fee-structure-table tbody td {
+  vertical-align: middle;
+  padding: 0.35rem 0.4rem;
+  border-color: #e2e8f0;
+}
+
+.fee-setup-amounts .fee-structure-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.fee-setup-amounts .fee-structure-table tbody tr:hover td {
+  background: #f0f9ff;
+}
+
+.fee-setup-amounts .fee-structure-table th.col-fee--monthly,
+.fee-setup-amounts .fee-structure-table td.col-fee--monthly {
+  background-color: #fffbeb !important;
+}
+
+.fee-setup-amounts .fee-structure-table thead th.col-fee--monthly {
+  background: #92400e !important;
+  color: #fff;
+}
+
+.fee-setup-amounts .fee-structure-table thead .fill-all-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin: 0;
+  color: #e2e8f0;
+}
+
+.fee-setup-amounts .repeat-input {
+  max-width: 88px;
+  margin: 0 auto;
+  font-size: 0.8rem;
+  height: calc(1.5em + 0.5rem);
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.fee-setup-amounts .repeat-input::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.fee-setup-amounts .repeat-input:focus {
+  background: #fff;
+  color: #0f172a;
+  border-color: #fff;
+}
+
+.fee-setup-amounts .amount-input {
+  width: 100%;
+  max-width: 100px;
+  margin: 0 auto;
+  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.fee-setup-amounts .amount-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.fee-setup-amounts .amount-input.is-invalid {
+  border-color: #dc3545;
+}
+
+.fee-setup-amounts .prev-amount {
+  display: block;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+.fee-setup-panel .grid-scroll--auto {
+  max-height: none;
+}
+
+.fee-setup-panel .student-type-toggle .btn {
+  min-width: 6.5rem;
+  font-weight: 500;
+}
+
+/* Fee types table */
+.fee-setup-types .fee-setup-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #1e293b;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border: none;
+  padding: 0.65rem 0.75rem;
+  vertical-align: middle;
+}
+
+.fee-setup-types .fee-setup-table tbody td,
+.fee-setup-types .fee-setup-table tbody th.col-label {
+  vertical-align: middle;
+  padding: 0.5rem 0.75rem;
+  border-color: #e2e8f0;
+}
+
+.fee-setup-types .fee-setup-table tbody th.col-label {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+  min-width: 200px;
+}
+
+.fee-setup-types .fee-setup-table tbody tr:nth-child(even) td,
+.fee-setup-types .fee-setup-table tbody tr:nth-child(even) th.col-label {
+  background: #fafbfc;
+}
+
+.fee-setup-types .fee-setup-table tbody tr:hover td,
+.fee-setup-types .fee-setup-table tbody tr:hover th.col-label {
+  background: #f0f9ff;
+}
+
+.fee-setup-types .badge-setup {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Plan months grid */
+.fee-setup-months .plan-months-table {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.fee-setup-months .plan-months-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #1e293b;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: none;
+  padding: 0.5rem 0.35rem;
+  vertical-align: bottom;
+}
+
+.fee-setup-months .plan-months-table thead th.col-plan {
+  left: 0;
+  z-index: 4;
+  min-width: 160px;
+  text-align: left;
+}
+
+.fee-setup-months .plan-months-table thead th.col-actions {
+  min-width: 72px;
+  background: #334155;
+}
+
+.fee-setup-months .plan-months-table thead th.col-month {
+  min-width: 52px;
+}
+
+.fee-setup-months .plan-months-table .month-label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 0.15rem;
+}
+
+.fee-setup-months .plan-months-table .col-select-all {
+  font-size: 0.65rem;
+  color: #93c5fd !important;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.fee-setup-months .plan-months-table .col-select-all:hover {
+  color: #fff !important;
+  text-decoration: underline;
+}
+
+.fee-setup-months .plan-months-table tbody th.col-plan {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #334155;
+  border-right: 2px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  min-width: 160px;
+}
+
+.fee-setup-months .plan-months-table tbody tr:nth-child(even) th.col-plan {
+  background: #e8eef4;
+}
+
+.fee-setup-months .plan-months-table tbody tr:hover th.col-plan {
+  background: #dbeafe;
+}
+
+.fee-setup-months .plan-months-table .plan-name {
+  display: block;
+}
+
+.fee-setup-months .plan-months-table .plan-active-count {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.fee-setup-months .plan-months-table tbody td {
+  vertical-align: middle;
+  padding: 0.4rem 0.25rem;
+  border-color: #e2e8f0;
+}
+
+.fee-setup-months .plan-months-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.fee-setup-months .plan-months-table tbody tr:hover td {
+  background: #f0f9ff;
+}
+
+.fee-setup-months .plan-month-check {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 1.25rem;
+  padding-left: 1.35rem;
+  margin: 0;
+}
+
+.fee-setup-months .plan-month-check .custom-control-label::before,
+.fee-setup-months .plan-month-check .custom-control-label::after {
+  width: 1.1rem;
+  height: 1.1rem;
+  left: -1.35rem;
+}
+
+.fee-setup-months .plan-month-check .custom-control-input:checked ~ .custom-control-label::before {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.fee-setup-months .plan-month-cb:disabled ~ .custom-control-label {
+  opacity: 0.5;
+}
+
+.fee-setup-months .col-actions .btn-xs {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+  line-height: 1.3;
+}

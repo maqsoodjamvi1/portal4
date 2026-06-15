@@ -3,27 +3,71 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\ExamQuizService;
 
 class QuizAssign extends BaseController
 {
-public function index()
-{
-    $db = \Config\Database::connect();
+    protected $session;
 
-    // Get class-section list with names
-    $classSections = $db->query("
-        SELECT cs.cls_sec_id, c.class_name, s.section_name
-        FROM class_section cs
-        JOIN classes c ON cs.class_id = c.class_id
-        JOIN sections s ON cs.section_id = s.section_id
-        WHERE cs.campus_id = 1 AND cs.status = 1
-        ORDER BY c.class_name, s.section_name
-    ")->getResultArray();
+    public function __construct()
+    {
+        helper(['form', 'url']);
+        $this->session = session();
+        check_any_permission(['admin-quiz', 'admin-quiz-assign']);
+    }
 
-    return view('admin/quizzes/quiz_selector', [
-        'classSections' => $classSections
-    ]);
-}
+    private function resolveCampusId(): int
+    {
+        return (int) ($this->session->get('member_campusid') ?? 0);
+    }
+
+    /** @return array{cls_sec_id:int,class_name:string,section_name:string}|null */
+    private function classSectionForCampus(int $clsSecId, int $campusId): ?array
+    {
+        if ($clsSecId <= 0 || $campusId <= 0) {
+            return null;
+        }
+
+        return \Config\Database::connect()
+            ->table('class_section cs')
+            ->select('cs.cls_sec_id, c.class_name, s.section_name')
+            ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+            ->join('sections s', 's.section_id = cs.section_id', 'inner')
+            ->where('cs.cls_sec_id', $clsSecId)
+            ->where('cs.campus_id', $campusId)
+            ->where('cs.status', 1)
+            ->get()
+            ->getRowArray() ?: null;
+    }
+
+    public function index()
+    {
+        $campusId = $this->resolveCampusId();
+        $classSections = [];
+
+        if ($campusId > 0) {
+            $classSections = \Config\Database::connect()
+                ->table('class_section cs')
+                ->select('cs.cls_sec_id, c.class_name, s.section_name')
+                ->join('classes c', 'c.class_id = cs.class_id', 'inner')
+                ->join('sections s', 's.section_id = cs.section_id', 'inner')
+                ->where('cs.campus_id', $campusId)
+                ->where('cs.status', 1)
+                ->orderBy('c.class_name', 'ASC')
+                ->orderBy('s.section_name', 'ASC')
+                ->get()
+                ->getResultArray();
+        }
+
+        return view('admin/quizzes/quiz_selector', [
+            'classSections'       => $classSections,
+            'examQuizColumnReady' => (new ExamQuizService())->hasExamIdColumn(),
+            'unannouncedExam'     => (new ExamQuizService())->resolveUnannouncedExam(
+                $campusId,
+                (int) (session('member_sessionid') ?? 0)
+            ),
+        ]);
+    }
 
 /**
  * Load students by cls_sec_id
@@ -35,25 +79,47 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
     $db         = \Config\Database::connect();
     $cls_sec_id = (int) $cls_sec_id;
     $quiz_id    = (int) $quiz_id;
+    $campusId   = $this->resolveCampusId();
+
+    if ($campusId <= 0 || ! $this->classSectionForCampus($cls_sec_id, $campusId)) {
+        return $this->response->setJSON([
+            'available'     => false,
+            'reason'        => 'access_denied',
+            'attempted'     => [],
+            'not_attempted' => [],
+        ]);
+    }
 
     // ==========================================
     // 0) Get quiz meta: subject_name + topic_name + start/end
     // ==========================================
+    $examQuizSvc = new ExamQuizService();
+    $selectCols  = 'q.quiz_id, q.title, q.sec_sub_id, q.start_at, q.end_at, a.subject_name, t.topic_name';
+    if ($examQuizSvc->hasExamIdColumn()) {
+        $selectCols = 'q.quiz_id, q.title, q.sec_sub_id, q.start_at, q.end_at, q.exam_id, a.subject_name, t.topic_name';
+    }
+
     $quizMeta = $db->table('quizzes q')
-        ->select('
-            q.quiz_id,
-            q.sec_sub_id,
-            q.start_at,
-            q.end_at,
-            a.subject_name,
-            t.topic_name
-        ')
+        ->select($selectCols, false)
         ->join('section_subjects ss', 'ss.sec_sub_id = q.sec_sub_id', 'inner')
+        ->join('class_section cs', 'cs.cls_sec_id = ss.cls_sec_id', 'inner')
         ->join('allsubject a', 'a.sid = ss.subject_id', 'left')
         ->join('qb_topics t', 't.id = q.topic_id', 'left')
         ->where('q.quiz_id', $quiz_id)
+        ->where('cs.campus_id', $campusId)
         ->get()
         ->getRowArray();
+
+    $topicsJoined = '';
+    if ($quizMeta && $db->tableExists('quiz_topics')) {
+        $topicRow = $db->query("
+            SELECT GROUP_CONCAT(DISTINCT qt.topic_name ORDER BY qt.topic_name SEPARATOR ', ') AS topics
+            FROM quiz_topics qtp
+            JOIN qb_topics qt ON qt.id = qtp.topic_id
+            WHERE qtp.quiz_id = ?
+        ", [$quiz_id])->getRowArray();
+        $topicsJoined = trim((string) ($topicRow['topics'] ?? ''));
+    }
 
     // If quiz not found → nothing to show
     if (!$quizMeta) {
@@ -65,8 +131,9 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
         ]);
     }
 
-    $subjectName = $quizMeta['subject_name'] ?? '';
-    $topicName   = $quizMeta['topic_name']   ?? '';
+    $subjectName  = trim((string) ($quizMeta['subject_name'] ?? ''));
+    $topicName    = trim((string) ($quizMeta['topic_name'] ?? ''));
+    $topicDisplay = $topicsJoined !== '' ? $topicsJoined : $topicName;
 
     // ==========================================
     // ✅ Availability rule
@@ -85,6 +152,12 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
     $endNotFinished  = $endAtNullish || ($endAt >= $now);
 
     $isAvailable = $alwaysAvailable || $endNotFinished;
+
+    $examQuizSvc = new ExamQuizService();
+    $examId      = $examQuizSvc->getExamIdFromQuiz($quizMeta);
+    if ($examId > 0 && $examQuizSvc->getExamStatus($examId) === '0') {
+        $isAvailable = true;
+    }
 
     if (!$isAvailable) {
         // Quiz is closed / expired → don’t show any students
@@ -115,7 +188,8 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
             p.whatsapp,
 
             qa.score_obtained,
-            qa.attempt_id 
+            qa.attempt_id,
+            qa.status AS attempt_status
 
         FROM students s
         JOIN student_class sc ON sc.student_id = s.student_id
@@ -127,7 +201,8 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
 
         WHERE sc.cls_sec_id = ?
           AND sc.status = 1
-    ", [$quiz_id, $cls_sec_id])->getResultArray();
+          AND s.campus_id = ?
+    ", [$quiz_id, $cls_sec_id, $campusId])->getResultArray();
 
     // ==========================================
     // 2) NOT attempted students
@@ -156,10 +231,11 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
 
         WHERE sc.cls_sec_id = ?
           AND sc.status = 1
+          AND s.campus_id = ?
           AND s.student_id NOT IN (
              SELECT student_id FROM quiz_attempts WHERE quiz_id = ?
           )
-    ", [$cls_sec_id, $quiz_id])->getResultArray();
+    ", [$cls_sec_id, $campusId, $quiz_id])->getResultArray();
 
     // ==========================================
     // 3) Age calculation helper
@@ -185,8 +261,9 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
         $x = $ageCalc($a['date_of_birth'] ?? null);
         $a['age_years']    = $x['years'];
         $a['age_months']   = $x['months'];
-        $a['subject_name'] = $subjectName;
-        $a['topic_name']   = $topicName;
+        $a['subject_name']  = $subjectName;
+        $a['topic_name']    = $topicDisplay;
+        $a['topic_display'] = $topicDisplay;
     }
     unset($a);
 
@@ -194,8 +271,9 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
         $x = $ageCalc($na['date_of_birth'] ?? null);
         $na['age_years']    = $x['years'];
         $na['age_months']   = $x['months'];
-        $na['subject_name'] = $subjectName;
-        $na['topic_name']   = $topicName;
+        $na['subject_name']  = $subjectName;
+        $na['topic_name']    = $topicDisplay;
+        $na['topic_display'] = $topicDisplay;
     }
     unset($na);
 
@@ -204,6 +282,12 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
     // ==========================================
     return $this->response->setJSON([
         'available'      => true,
+        'quiz'           => [
+            'quiz_id'      => $quiz_id,
+            'title'        => trim((string) ($quizMeta['title'] ?? '')),
+            'subject_name' => $subjectName,
+            'topic_name'   => $topicDisplay,
+        ],
         'attempted'      => $attempted,
         'not_attempted'  => $not_attempted,
     ]);
@@ -216,9 +300,9 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
     {
         $db        = \Config\Database::connect();
         $cls_sec_id = (int) $cls_sec_id;
+        $campusId   = $this->resolveCampusId();
 
-        if ($cls_sec_id <= 0) {
-            // Return empty array if invalid
+        if ($cls_sec_id <= 0 || $campusId <= 0 || ! $this->classSectionForCampus($cls_sec_id, $campusId)) {
             return $this->response->setJSON([]);
         }
 
@@ -228,10 +312,12 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
                 sc.subject_id,
                 s.subject_name
             FROM section_subjects sc
+            JOIN class_section cs ON cs.cls_sec_id = sc.cls_sec_id
             JOIN allsubject s ON sc.subject_id = s.sid
             WHERE sc.cls_sec_id = ?
+              AND cs.campus_id = ?
               AND sc.status = 1
-        ", [$cls_sec_id])->getResultArray();
+        ", [$cls_sec_id, $campusId])->getResultArray();
 
         // JS expects a plain array, so we return it directly
         return $this->response->setJSON($subjects);
@@ -244,17 +330,21 @@ public function load_students_for_quiz($cls_sec_id, $quiz_id)
     {
         $db = \Config\Database::connect();
         $sec_sub_id = (int) $sec_sub_id;
+        $campusId   = $this->resolveCampusId();
 
-        if ($sec_sub_id <= 0) {
+        if ($sec_sub_id <= 0 || $campusId <= 0) {
             return $this->response->setJSON([]);
         }
 
         $quizzes = $db->query("
-            SELECT quiz_id, title
-            FROM quizzes
-            WHERE sec_sub_id = ? 
-            ORDER BY quiz_id DESC
-        ", [$sec_sub_id])->getResultArray();
+            SELECT q.quiz_id, q.title
+            FROM quizzes q
+            JOIN section_subjects ss ON ss.sec_sub_id = q.sec_sub_id
+            JOIN class_section cs ON cs.cls_sec_id = ss.cls_sec_id
+            WHERE q.sec_sub_id = ?
+              AND cs.campus_id = ?
+            ORDER BY q.quiz_id DESC
+        ", [$sec_sub_id, $campusId])->getResultArray();
 
         return $this->response->setJSON($quizzes);
     }
@@ -282,6 +372,14 @@ public function generateImpersonationLink()
         ]);
     }
 
+    $campusId = $this->resolveCampusId();
+    if ($campusId <= 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Campus not selected.',
+        ]);
+    }
+
     // Get POST data
     $quiz_id    = (int) $this->request->getPost('quiz_id');
     $student_id = (int) $this->request->getPost('student_id');
@@ -290,6 +388,27 @@ public function generateImpersonationLink()
         return $this->response->setJSON([
             'success' => false,
             'message' => 'Invalid quiz or student.',
+        ]);
+    }
+
+    $db = \Config\Database::connect();
+
+    $studentOk = $db->table('students')
+        ->where('student_id', $student_id)
+        ->where('campus_id', $campusId)
+        ->countAllResults() > 0;
+
+    $quizOk = $db->table('quizzes q')
+        ->join('section_subjects ss', 'ss.sec_sub_id = q.sec_sub_id', 'inner')
+        ->join('class_section cs', 'cs.cls_sec_id = ss.cls_sec_id', 'inner')
+        ->where('q.quiz_id', $quiz_id)
+        ->where('cs.campus_id', $campusId)
+        ->countAllResults() > 0;
+
+    if (! $studentOk || ! $quizOk) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Quiz or student does not belong to your campus.',
         ]);
     }
 
@@ -307,7 +426,6 @@ public function generateImpersonationLink()
         'used'       => 0,
     ];
 
-    $db = \Config\Database::connect();
     $db->table('quiz_impersonation_tokens')->insert($data);
 
     // Must match your frontend route: quiz/start/(:num)
@@ -320,22 +438,130 @@ public function generateImpersonationLink()
     ]);
 }
 
+/**
+ * Remove a student's quiz attempt so they can take the quiz again (Quiz Assign).
+ */
+public function resetQuizAttempt()
+{
+    if (! $this->request->isAJAX()) {
+        return $this->response->setStatusCode(405)->setJSON([
+            'success' => false,
+            'message' => 'AJAX request required.',
+        ]);
+    }
+
+    $campusId   = $this->resolveCampusId();
+    $attemptId  = (int) $this->request->getPost('attempt_id');
+    $quizId     = (int) $this->request->getPost('quiz_id');
+    $studentId  = (int) $this->request->getPost('student_id');
+
+    if ($campusId <= 0 || $attemptId <= 0 || $quizId <= 0 || $studentId <= 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Invalid request.',
+        ]);
+    }
+
+    $db = \Config\Database::connect();
+
+    $attempt = $db->table('quiz_attempts qa')
+        ->select('qa.attempt_id, qa.quiz_id, qa.student_id')
+        ->join('students s', 's.student_id = qa.student_id', 'inner')
+        ->join('quizzes q', 'q.quiz_id = qa.quiz_id', 'inner')
+        ->join('section_subjects ss', 'ss.sec_sub_id = q.sec_sub_id', 'inner')
+        ->join('class_section cs', 'cs.cls_sec_id = ss.cls_sec_id', 'inner')
+        ->where('qa.attempt_id', $attemptId)
+        ->where('qa.quiz_id', $quizId)
+        ->where('qa.student_id', $studentId)
+        ->where('s.campus_id', $campusId)
+        ->where('cs.campus_id', $campusId)
+        ->get()
+        ->getRow();
+
+    if (! $attempt) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Attempt not found or access denied.',
+        ]);
+    }
+
+    $db->transStart();
+
+    try {
+        if ($db->tableExists('quiz_attempt_answers')) {
+            $db->table('quiz_attempt_answers')->where('attempt_id', $attemptId)->delete();
+        }
+        if ($db->tableExists('quiz_attempt_questions')) {
+            $db->table('quiz_attempt_questions')->where('attempt_id', $attemptId)->delete();
+        }
+        $db->table('quiz_attempts')->where('attempt_id', $attemptId)->delete();
+    } catch (\Throwable $e) {
+        $db->transRollback();
+        log_message('error', 'resetQuizAttempt failed: ' . $e->getMessage());
+
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Could not reset attempt. Please try again.',
+        ]);
+    }
+
+    if ($db->transStatus() === false) {
+        $db->transRollback();
+
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Could not reset attempt.',
+        ]);
+    }
+
+    $db->transComplete();
+
+    return $this->response->setJSON([
+        'success' => true,
+        'message' => 'Attempt removed. The student can take this quiz again.',
+    ]);
+}
+
 public function load_quizzes_by_clssec($clsSecId = 0)
 {
     $db       = \Config\Database::connect();
     $clsSecId = (int) $clsSecId;
+    $campusId = $this->resolveCampusId();
+    $mode     = strtolower(trim((string) ($this->request->getGet('mode') ?? 'regular')));
 
-    if ($clsSecId <= 0) {
+    if ($clsSecId <= 0 || $campusId <= 0 || ! $this->classSectionForCampus($clsSecId, $campusId)) {
         return $this->response->setJSON([]);
     }
 
-    // Use current academic session from staff session
-    $sessionId = (int) (session('member_sessionid') ?? 0);
+    $sessionId   = (int) (session('member_sessionid') ?? 0);
+    $examQuizSvc = new ExamQuizService();
+    $unannounced = $examQuizSvc->resolveUnannouncedExam($campusId, $sessionId);
+    $examFilter  = '';
 
+    if ($examQuizSvc->hasExamIdColumn()) {
+        if ($mode === 'exam') {
+            if (!$unannounced) {
+                return $this->response->setJSON([]);
+            }
+            $examFilter = ' AND q.exam_id = ' . (int) ($unannounced['eid'] ?? 0) . ' ';
+        } else {
+            $examFilter = " AND (q.exam_id IS NULL OR q.exam_id = 0 OR EXISTS (
+                SELECT 1 FROM exam ex WHERE ex.eid = q.exam_id AND ex.status = '1'
+            )) ";
+        }
+    } elseif ($mode === 'exam') {
+        return $this->response->setJSON([]);
+    }
+
+    $examIdSelect = $examQuizSvc->hasExamIdColumn() ? 'q.exam_id, q.is_published,' : '';
+    $examGroupBy  = $examQuizSvc->hasExamIdColumn() ? 'q.exam_id, q.is_published,' : '';
+
+    // Use current academic session from staff session
     $sql = "
         SELECT
             q.quiz_id,
             q.title,
+            {$examIdSelect}
 
             cs.cls_sec_id,
             c.class_name,
@@ -390,10 +616,13 @@ public function load_quizzes_by_clssec($clsSecId = 0)
         LEFT JOIN qb_topics qt    ON qt.id        = qtp.topic_id
 
         WHERE cs.cls_sec_id = :clsSecId:
+          AND cs.campus_id = :campusId:
+          {$examFilter}
 
         GROUP BY
             q.quiz_id,
             q.title,
+            {$examGroupBy}
             cs.cls_sec_id,
             c.class_name,
             se.section_name,
@@ -414,11 +643,13 @@ public function load_quizzes_by_clssec($clsSecId = 0)
 
     $rows = $db->query($sql, [
         'clsSecId'  => $clsSecId,
+        'campusId'  => $campusId,
         'sessionId' => $sessionId,
     ])->getResultArray();
 
     $availableRows = [];
     $now = new \DateTime();
+    $skipExpiryCheck = ($mode === 'exam');
 
     foreach ($rows as &$row) {
 
@@ -443,11 +674,15 @@ public function load_quizzes_by_clssec($clsSecId = 0)
             }
         }
 
-        $isAvailable = $alwaysAvailable || $endNotFinished;
+        $isAvailable = $skipExpiryCheck || $alwaysAvailable || $endNotFinished;
 
-        // ❌ Skip expired quizzes
+        // ❌ Skip expired quizzes (regular mode only)
         if (! $isAvailable) {
             continue;
+        }
+
+        if ($mode === 'exam') {
+            $row['is_exam_quiz'] = 1;
         }
 
         // ---------- Existing post-processing ----------

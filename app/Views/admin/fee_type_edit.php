@@ -1,30 +1,31 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-8">
-        <h1><i class="fas fa-coins"></i> Add Fee Type</h1>
-        <?php if (empty($info->fee_type_id)) : ?>
-            <span class="badge badge-success float-right">Step 9 of 10: System Configuration</span>
-            <audio autoplay controls hidden>
-              <source src="audio/Step6Classes.m4a" type="audio/mpeg">
-            </audio>
-          <?php endif; ?>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Fee Type</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php
+$feeTypeIsNew = empty($info->fee_type_id ?? null);
+$feeTypeSetupBadge = $feeTypeIsNew
+    ? '<span class="badge text-bg-success">Step 9 of 10: System Configuration</span>'
+    : '';
+?>
+<?php if ($feeTypeIsNew): ?>
+<audio autoplay controls hidden>
+  <source src="audio/Step6Classes.m4a" type="audio/mpeg">
+</audio>
+<?php endif; ?>
+<?= view('components/page_header', [
+    'title' => $feeTypeIsNew ? 'Add Fee Type' : 'Edit Fee Type',
+    'icon' => 'fas fa-coins',
+    'actionsHtml' => $feeTypeSetupBadge !== '' ? '<div class="text-sm-right">' . $feeTypeSetupBadge . '</div>' : null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Type', 'url' => base_url('admin/fee_type')],
+        ['label' => $feeTypeIsNew ? 'Add' : 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
-  <div class="card card-primary">
+  <div class="card sms-card card-primary">
     <div class="card-header p-2">
       <ul class="nav nav-pills">
         <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/fee_type') ?>">Fee Type List</a></li>
@@ -32,10 +33,10 @@
       </ul>
     </div>
     <div class="card-body">
-      <?= form_open(base_url('admin/fee_type/save'), ['id' => 'fee-type-form']) ?>
+      <?= form_open(base_url('admin/fee_type/save'), ['id' => 'fee-type-form', 'class' => 'needs-validation', 'novalidate' => 'novalidate']) ?>
       <div class="table-responsive">
         <table class="table table-bordered table-striped" id="dynamic_field">
-          <thead class="thead-light">
+          <thead class="table-light">
             <tr>
               <th>Fee Type Name</th>
               <th>Action</th> <!-- Action for dynamic rows only -->
@@ -53,7 +54,7 @@
       <input type="text" name="fee_type_name<?= $i ?>" class="form-control" value="<?= esc($value->fee_type_name) ?>" required>
     </td>
     <td>
-      <span class="badge badge-<?= $value->is_monthly_fee ? 'info' : 'secondary' ?>">
+      <span class="badge text-bg-<?=  $value->is_monthly_fee ? 'info' : 'secondary' ?>">
         <?= $value->is_monthly_fee ? 'Monthly Fee' : 'Other Fee' ?>
       </span>
     </td>
@@ -68,7 +69,7 @@
       <input type="text" name="fee_type_name<?= $j ?>" class="form-control" placeholder="e.g. Tuition Fee" required>
     </td>
     <td>
-      <span class="badge badge-info"><?= $j === 0 ? 'Monthly Fee' : 'Other Fee' ?></span>
+      <span class="badge text-bg-info"><?= $j === 0 ? 'Monthly Fee' : 'Other Fee' ?></span>
     </td>
   </tr>
             <?php endfor; $i = $j; endif; ?>
@@ -77,7 +78,7 @@
         <button type="button" name="add" id="add" class="btn btn-success"><i class="fas fa-plus"></i> Add Row</button>
       </div>
 
-      <div class="mt-4 text-right">
+      <div class="mt-4 text-end">
         <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
         <button type="reset" class="btn btn-secondary">Reset</button>
         <button type="button" onclick="history.back();" class="btn btn-light">Cancel</button>
@@ -129,13 +130,13 @@
 
 
         if (response.amount_id === false) {
-            window.location.href = '<?= base_url('admin/fee_amount/add') ?>';
+            window.location.href = '<?= base_url('admin/fee_setup?tab=amounts') ?>';
             return;
         }
 
         if (response.success) {
           toastr.success(response.msg);
-          location.href = '<?= base_url('admin/fee_type') ?>';
+          location.href = '<?= base_url('admin/fee_setup?tab=types') ?>';
         } else {
           toastr.error(response.msg);
         }

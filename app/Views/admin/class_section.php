@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <style>
 :root {
@@ -430,21 +430,14 @@
 </style>
 
 <!-- Page Header -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-layer-group mr-2"></i> Class Sections Management</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= site_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Class Sections</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Class Sections Management',
+    'icon' => 'fas fa-layer-group',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Sections', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
@@ -452,7 +445,7 @@
         <!-- Loading State -->
         <div id="loader" class="text-center py-5">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2 text-muted">Loading class sections...</p>
         </div>
@@ -490,8 +483,8 @@
                 <div class="col-md-3">
                     <div class="class-sidebar">
                         <h5>
-                            <i class="fas fa-graduation-cap mr-2"></i> Classes
-                            <span class="badge badge-light float-right" id="totalClasses">0</span>
+                            <i class="fas fa-graduation-cap me-2"></i> Classes
+                            <span class="badge text-bg-light float-end" id="totalClasses">0</span>
                         </h5>
                         <div class="class-list" id="classList"></div>
                     </div>
@@ -501,7 +494,7 @@
                 <div class="col-md-9">
                     <div id="selectedClassInfo" class="mb-3">
                         <h3 id="selectedClassName" class="d-inline-block"></h3>
-                        <span class="badge badge-info ml-2" id="sectionCount"></span>
+                        <span class="badge text-bg-info ms-2" id="sectionCount"></span>
                     </div>
                     <div id="sectionsContainer"></div>
                 </div>
@@ -516,10 +509,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-chalkboard-teacher mr-2"></i>
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
                     Assign Class Teacher
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalClsSecId">
@@ -532,9 +525,9 @@
                 <div id="modalSectionInfo" class="small text-muted mt-2"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="saveTeacherAssignment()">
-                    <i class="fas fa-save mr-1"></i> Save Assignment
+                    <i class="fas fa-save me-1"></i> Save Assignment
                 </button>
             </div>
         </div>
@@ -641,7 +634,7 @@ function renderClassList() {
                         ${assignedCount}/${totalSections} sections
                     </div>
                 </div>
-                <div class="text-right">
+                <div class="text-end">
                     <span class="badge">${studentCount} students</span>
                 </div>
             </div>
@@ -824,7 +817,7 @@ function openTeacherModal(clsSecId, sectionName, event) {
             });
             
             $('#modalTeacherSelect').html(options).select2({
-                theme: 'bootstrap4',
+                theme: 'bootstrap-5',
                 width: '100%',
                 dropdownParent: $('#teacherModal')
             });
@@ -935,10 +928,10 @@ function updateStats() {
 function showError(message) {
     $('#loader').hide();
     $('#errorMessage').show().html(`
-        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <i class="fas fa-exclamation-triangle me-2"></i>
         ${message}
-        <button class="btn btn-sm btn-outline-danger ml-3" onclick="location.reload()">
-            <i class="fas fa-redo mr-1"></i> Retry
+        <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">
+            <i class="fas fa-redo me-1"></i> Retry
         </button>
     `);
 }

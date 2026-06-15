@@ -1,21 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>View Top Level Planning</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">View Top Level Planning</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'View Top Level Planning',
+    'icon' => 'fas fa-eye',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Top Level Planning', 'url' => base_url('admin/top_level_planning')],
+        ['label' => 'View', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="row">
@@ -23,7 +17,7 @@
             <div class="card card-primary card-outline">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-eye mr-2"></i>
+                        <i class="fas fa-eye me-2"></i>
                         Top Level Planning
                     </h3>
                     <div class="card-tools">
@@ -37,7 +31,7 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle mr-2"></i>
+                        <i class="fas fa-info-circle me-2"></i>
                         Choose how you want to view planning:
                         <ul class="mt-2 mb-0">
                             <li><strong>Term Wise</strong> - Shows selected terms with all classes and their subjects</li>
@@ -78,13 +72,13 @@
                                 <label>&nbsp;</label>
                                 <div class="btn-group w-100">
                                     <button type="button" id="view_btn" class="btn btn-primary">
-                                        <i class="fas fa-search mr-1"></i> View
+                                        <i class="fas fa-search me-1"></i> View
                                     </button>
                                     <button type="button" id="print_btn" class="btn btn-success" style="display: none;">
-                                        <i class="fas fa-print mr-1"></i> Print
+                                        <i class="fas fa-print me-1"></i> Print
                                     </button>
                                     <button type="button" id="clear_btn" class="btn btn-secondary">
-                                        <i class="fas fa-undo-alt mr-1"></i> Clear
+                                        <i class="fas fa-undo-alt me-1"></i> Clear
                                     </button>
                                 </div>
                             </div>
@@ -427,7 +421,7 @@ $(document).ready(function() {
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 4px solid #2c7da0;
+    border-start: 4px solid #2c7da0;
 }
 
 .term-badge-summary {
@@ -589,7 +583,7 @@ $(document).ready(function() {
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 4px solid #2c7da0;
+    border-start: 4px solid #2c7da0;
     font-size: 14px;
 }
 

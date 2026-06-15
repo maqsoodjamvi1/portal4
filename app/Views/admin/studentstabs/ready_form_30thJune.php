@@ -6,7 +6,7 @@
 
 <style>
 @media print {
-  .btn, .card-header button, .custom-file-label, .custom-file-input {
+  .btn, .card-header button, .form-label, .form-control {
     display: none !important;
   }
   body {
@@ -23,7 +23,7 @@
 <div class="container-fluid px-3">
   <div class="card shadow mb-4">
     <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i>Student Admission Form</h5>
+      <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Admission Form</h5>
       <button type="button" class="btn btn-light btn-sm" onclick="window.print();">
         <i class="fas fa-print"></i> Print / Save PDF
       </button>
@@ -39,12 +39,12 @@
         <div class="card">
           <div class="card-header" id="headingStudent">
             <h6 class="mb-0">
-              <button class="btn btn-link text-left" type="button" data-toggle="collapse" data-target="#collapseStudent">
+              <button class="btn btn-link text-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStudent">
                 <i class="fas fa-user"></i> Student Information
               </button>
             </h6>
           </div>
-          <div id="collapseStudent" class="collapse show" data-parent="#admissionAccordion">
+          <div id="collapseStudent" class="collapse show" data-bs-parent="#admissionAccordion">
             <div class="card-body">
               <div class="row">
                 <!-- Include your student info fields here like first_name, reg_no, gr_no, etc. -->
@@ -133,19 +133,19 @@
         <div class="card">
           <div class="card-header" id="headingFee">
             <h6 class="mb-0">
-              <button class="btn btn-link collapsed text-left" type="button" data-toggle="collapse" data-target="#collapseFee">
+              <button class="btn btn-link collapsed text-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFee">
                 <i class="fas fa-money-check-alt"></i> Fee Structure & Discounts
               </button>
             </h6>
           </div>
-          <div id="collapseFee" class="collapse" data-parent="#admissionAccordion">
+          <div id="collapseFee" class="collapse" data-bs-parent="#admissionAccordion">
             <div class="card-body">
               <div class="row">
                 <!-- Include your fee fields here: section_id, class_fee, discounted_amount, etc. -->
 
       <!-- Fee Details -->
       <div class="section-header mt-5 mb-4">
-        <h5 class="text-primary"><i class="fas fa-money-check-alt mr-2"></i>Fee Structure & Discounts</h5>
+        <h5 class="text-primary"><i class="fas fa-money-check-alt me-2"></i>Fee Structure & Discounts</h5>
         <hr class="mt-1 mb-4">
       </div>
 
@@ -174,7 +174,7 @@
 
         <div class="col-md-4 mb-3">
           <label for="discount_display">Discount</label>
-          <input type="text" class="form-control form-control-sm bg-light font-weight-bold" readonly id="discount_display" value="0">
+          <input type="text" class="form-control form-control-sm bg-light fw-bold" readonly id="discount_display" value="0">
         </div>
 
         <div class="col-md-4 mb-3">
@@ -201,12 +201,12 @@
         <div class="card">
           <div class="card-header" id="headingParent">
             <h6 class="mb-0">
-              <button class="btn btn-link collapsed text-left" type="button" data-toggle="collapse" data-target="#collapseParent">
+              <button class="btn btn-link collapsed text-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapseParent">
                 <i class="fas fa-user-friends"></i> Parent & Contact Information
               </button>
             </h6>
           </div>
-          <div id="collapseParent" class="collapse" data-parent="#admissionAccordion">
+          <div id="collapseParent" class="collapse" data-bs-parent="#admissionAccordion">
             <div class="card-body">
               <div class="row">
                 <!-- Include contact/parent fields: father_name, contact numbers, etc. -->
@@ -248,12 +248,12 @@
         <div class="card">
           <div class="card-header" id="headingAttachments">
             <h6 class="mb-0">
-              <button class="btn btn-link collapsed text-left" type="button" data-toggle="collapse" data-target="#collapseAttachments">
+              <button class="btn btn-link collapsed text-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAttachments">
                 <i class="fas fa-paperclip"></i> Attachments
               </button>
             </h6>
           </div>
-          <div id="collapseAttachments" class="collapse" data-parent="#admissionAccordion">
+          <div id="collapseAttachments" class="collapse" data-bs-parent="#admissionAccordion">
             <div class="card-body">
               <div class="row">
                 <?php
@@ -266,13 +266,13 @@
                     ->getRow();
                 ?>
                 <div class="col-md-6 col-lg-4 mb-4 attachment-wrapper">
-                  <label class="font-weight-bold"> <?= esc($value->a_type_name) ?> </label>
+                  <label class="fw-bold"> <?= esc($value->a_type_name) ?> </label>
                   <input type="hidden" class="a_type_id" value="<?= $value->a_type_id ?>">
                   <input type="hidden" class="attachement_id" value="<?= $attachement->attachement_id ?? 0 ?>">
 
-                  <div class="custom-file mb-2">
-                    <input type="file" class="custom-file-input attachment-file" data-typeid="<?= $value->a_type_id ?>" id="attachment_<?= $value->a_type_id ?>">
-                    <label class="custom-file-label" for="attachment_<?= $value->a_type_id ?>">Choose file</label>
+                  <div class="mb-3 mb-2">
+                    <input type="file" class="form-control attachment-file" data-typeid="<?= $value->a_type_id ?>" id="attachment_<?= $value->a_type_id ?>">
+                    <label class="form-label" for="attachment_<?= $value->a_type_id ?>">Choose file</label>
                   </div>
 
                   <div class="text-center">
@@ -294,13 +294,13 @@
      <!-- Form Buttons -->
       <div class="text-center mt-4">
         <button type="submit" class="btn btn-success px-4">
-          <i class="fas fa-save mr-2"></i>Save Admission
+          <i class="fas fa-save me-2"></i>Save Admission
         </button>
         <button type="reset" class="btn btn-secondary px-4">
-          <i class="fas fa-redo mr-2"></i>Reset
+          <i class="fas fa-redo me-2"></i>Reset
         </button>
         <a href="<?= base_url('admin/students') ?>" class="btn btn-light px-4">
-          <i class="fas fa-times mr-2"></i>Cancel
+          <i class="fas fa-times me-2"></i>Cancel
         </a>
       </div>
 
@@ -355,7 +355,7 @@ function updateAgeBadge() {
   const age = calculateAge(dob);
 
   if (age) {
-    $('#age-badge').html(`<span class="badge badge-info p-2"><i class="fas fa-user-clock mr-1"></i>${age}</span>`);
+    $('#age-badge').html(`<span class="badge text-bg-info p-2"><i class="fas fa-user-clock me-1"></i>${age}</span>`);
   } else {
     $('#age-badge').empty();
   }
@@ -391,7 +391,7 @@ $(document).ready(function () {
       };
       reader.readAsDataURL(file);
 
-      $(this).next('.custom-file-label').text(file.name);
+      $(this).next('.form-label').text(file.name);
     }
   });
 
@@ -519,7 +519,7 @@ $('#discounted_amount').on('input', function () {
                 dataType: 'json',
                 beforeSend: function() {
                     $('button[type="submit"]').prop('disabled', true)
-                        .html('<i class="fas fa-spinner fa-spin mr-2"></i>Saving...');
+                        .html('<i class="fas fa-spinner fa-spin me-2"></i>Saving...');
                 },
                 success: function(response) {
                     if (response.success) {
@@ -528,13 +528,13 @@ $('#discounted_amount').on('input', function () {
                     } else {
                         toastr.error(response.msg);
                         $('button[type="submit"]').prop('disabled', false)
-                            .html('<i class="fas fa-save mr-2"></i>Save Admission');
+                            .html('<i class="fas fa-save me-2"></i>Save Admission');
                     }
                 },
                 error: function() {
                     toastr.error('An error occurred. Please try again.');
                     $('button[type="submit"]').prop('disabled', false)
-                        .html('<i class="fas fa-save mr-2"></i>Save Admission');
+                        .html('<i class="fas fa-save me-2"></i>Save Admission');
                 }
             });
         }
@@ -588,12 +588,12 @@ $('#section_id').on('change', function () {
     background-color: #f8f9fa;
     padding: 10px 15px;
     border-radius: 5px;
-    border-left: 4px solid #4e73df;
+    border-start: 4px solid #4e73df;
 }
 .datepicker {
     z-index: 1151 !important;
 }
-.custom-file-label::after {
+.form-label::after {
     content: "Browse";
 }
 .is-invalid {

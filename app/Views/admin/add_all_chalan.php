@@ -16,29 +16,20 @@
 		$chalan_type_detail = '';
 	}
 ?>
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-8">
-            <h1>
-               Fee Chalan    	
-            </h1>
-          </div>
-          <div class="col-sm-4">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Fee Chalan</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<?= view('components/page_header', [
+    'title' => $header ?? 'Bulk Fee Chalan',
+    'icon' => 'fas fa-layer-group',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Fee Chalan', 'url' => base_url('admin/fee_chalan')],
+        ['label' => 'Bulk generate', 'active' => true],
+    ],
+]) ?>
     <!-- Main content -->
     <section class="content">
       <div class="row">
         <div class="col-lg-12">
-		  <div class="card card-primary card-outline card-tabs">
+		  <div class="card sms-card card-primary card-outline card-tabs">
           	<div class="card-header p-0 pt-1 border-bottom-0">
 			<ul class="nav nav-tabs">
 				<li class="nav-item"><a class="nav-link" href="<?php echo '#/fee_chalan_single?m=download&id='.$id.'&after=edit';?>">View Fee Chalan</a></li>
@@ -62,10 +53,8 @@
 				<div class="form-group">
                 <label>Issue Date:</label>
                 <div class="input-group date" id="datepicker2" data-target-input="nearest">
-                	<input type="text" class="form-control datetimepicker-input" data-target="#datepicker2"  name="issue_date" required value=""/>
-                	<div class="input-group-append" data-target="#datepicker2" data-toggle="datetimepicker">
-                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                	</div>
+                	<input type="text" class="form-control datetimepicker-input" data-bs-target="#datepicker2"  name="issue_date" required value=""/>
+                	<span class="input-group-text" data-bs-target="#datepicker2" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
               	</div>
                 <!-- /.input group -->
               </div>				
@@ -74,10 +63,8 @@
 				<div class="form-group">
                 <label>Due Date:</label>
                 <div class="input-group date" id="datepicker" data-target-input="nearest">
-                	<input type="text" class="form-control datetimepicker-input" data-target="#datepicker"  name="due_date" required value=""/>
-                	<div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                	</div>
+                	<input type="text" class="form-control datetimepicker-input" data-bs-target="#datepicker"  name="due_date" required value=""/>
+                	<span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
               	</div>
                 <!-- /.input group -->
               </div>
@@ -86,7 +73,7 @@
 			<div class="form-group">
                 <label>Fee Month:</label>
                 <div class="">
-                  <input type="month" class="form-control pull-right" id="month" name="fee_month" value="<?php echo date('Y-m'); ?>" style="height: 24px;">
+                  <input type="month" class="form-control float-end" id="month" name="fee_month" value="<?php echo date('Y-m'); ?>" style="height: 24px;">
 			    </div>
                 <!-- /.input group -->
               </div>			
@@ -95,8 +82,8 @@
 			<div class="row">
             <div class="col-lg-12">  <div class="form-group">
                 <button type="submit"  id="submitBtn" class="btn btn-primary">Save</button>
-				<button type="reset" class="btn btn-default">Reset</button>
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
               </div>
 			  </div>
 			  </div>

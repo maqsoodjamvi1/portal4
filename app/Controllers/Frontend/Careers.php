@@ -49,7 +49,12 @@ class Careers extends MY_Controller {
     public function account() {
         $data = array();
         $current_date = date('Y-m-d');
-        $campus_info = $this->db->query("SELECT * from campus where system_id=1 and campus_id IN (select campus_id from admission_phases where status=1 and start_date <= '".$current_date."')")->result();
+        $campus_info = $this->db->query(
+            'SELECT * FROM campus WHERE system_id = 1 AND campus_id IN (
+                SELECT campus_id FROM admission_phases WHERE status = 1 AND start_date <= ?
+            )',
+            [$current_date]
+        )->getResult();
         $dataCampus = array();    
         foreach($campus_info as $campus_value){
 
@@ -81,12 +86,18 @@ class Careers extends MY_Controller {
         //     );
             
         // }
-       $terms_session = $this->db->query('SELECT * FROM terms_session WHERE system_id=1 AND "'.$current_date.'" BETWEEN start_date AND end_date')->row();
-    
-        $session_info = $this->db->query('SELECT * FROM academic_session WHERE system_id=1 AND "'.$current_date.'" BETWEEN start_date AND end_date')->row();
+       $terms_session = $this->db->query(
+            'SELECT * FROM terms_session WHERE system_id = 1 AND ? BETWEEN start_date AND end_date',
+            [$current_date]
+        )->getRow();
 
-        if(empty($session_info)){
-            $session_info = $this->db->query('SELECT * FROM academic_session WHERE system_id=1')->row();
+        $session_info = $this->db->query(
+            'SELECT * FROM academic_session WHERE system_id = 1 AND ? BETWEEN start_date AND end_date',
+            [$current_date]
+        )->getRow();
+
+        if (empty($session_info)) {
+            $session_info = $this->db->query('SELECT * FROM academic_session WHERE system_id = 1')->getRow();
         }
         
         if($session_info){
@@ -144,8 +155,7 @@ class Careers extends MY_Controller {
           
             $timeStamp = time();
             $status = 1;
-            $query = "SELECT * FROM `recruitment` WHERE `post` LIKE '%$position%'";
-            $result = $this->db->query($query);
+            $result = $this->db->table('recruitment')->like('post', $position)->get();
             $g = $result->num_rows();
             $id1 = str_pad($g+1, 4, '0', STR_PAD_LEFT);
             //$id1=$g+0001;

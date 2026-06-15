@@ -1,26 +1,20 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Bag Pack Planner</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Bag Pack</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Bag Pack Planner',
+    'icon' => 'fas fa-suitcase',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Diary', 'url' => base_url('admin/classdiary-view')],
+        ['label' => 'Bag Pack', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-      <div class="card card-primary card-outline">
+      <div class="card sms-card card-primary card-outline">
         <div class="card-header">
           <h3 class="card-title">Select Week &amp; Class</h3>
         </div>
@@ -79,21 +73,21 @@
             <div class="col-md-3">
               <label>Show</label>
               <div class="border rounded p-2">
-                <div class="custom-control custom-checkbox">
-                  <input type="checkbox" class="custom-control-input" id="show_homework" checked>
-                  <label class="custom-control-label" for="show_homework">
+                <div class="form-check form-check">
+                  <input type="checkbox" class="form-check-input" id="show_homework" checked>
+                  <label class="form-check-label" for="show_homework">
                     Weekly Diary – Homework
                   </label>
                 </div>
-                <div class="custom-control custom-checkbox mt-1">
-                  <input type="checkbox" class="custom-control-input" id="show_classwork" checked>
-                  <label class="custom-control-label" for="show_classwork">
+                <div class="form-check form-check mt-1">
+                  <input type="checkbox" class="form-check-input" id="show_classwork" checked>
+                  <label class="form-check-label" for="show_classwork">
                     Weekly Diary – Class work
                   </label>
                 </div>
-                <div class="custom-control custom-checkbox mt-1">
-                  <input type="checkbox" class="custom-control-input" id="show_bagpack" checked>
-                  <label class="custom-control-label" for="show_bagpack">
+                <div class="form-check form-check mt-1">
+                  <input type="checkbox" class="form-check-input" id="show_bagpack" checked>
+                  <label class="form-check-label" for="show_bagpack">
                     Bag Pack
                   </label>
                 </div>
@@ -102,9 +96,9 @@
           </div><!-- /.row -->
 
           <div class="row mt-2">
-            <div class="col-md-3 ml-auto">
-              <button type="button" id="btnShowBagPack" class="btn btn-primary btn-block">
-                <i class="fas fa-eye mr-1"></i> Show Weekly View
+            <div class="col-md-3 ms-auto">
+              <button type="button" id="btnShowBagPack" class="btn btn-primary w-100">
+                <i class="fas fa-eye me-1"></i> Show Weekly View
               </button>
             </div>
           </div>
@@ -198,7 +192,7 @@ $(function(){
       return;
     }
 
-    $('#bagpackResult').html('<div class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i> Loading…</div>');
+    $('#bagpackResult').html('<div class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i> Loading…</div>');
 
     $.ajax({
       url: URL_GET_BAGPACK,

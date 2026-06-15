@@ -1,39 +1,45 @@
 <?php
+
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
-use App\Models\UserMenuPrefsModel;
+use App\Libraries\UserMenuPrefsLibrary;
 
 class UserMenuPrefs extends BaseController
 {
     public function get()
     {
         $uid = (int) session('member_userid');
-        if (!$uid) return $this->response->setStatusCode(401)->setJSON(['error'=>'Not logged in']);
+        if (! $uid) {
+            return $this->response->setStatusCode(401)->setJSON(['error' => 'Not logged in']);
+        }
 
-        $m   = new UserMenuPrefsModel();
-        $row = $m->find($uid);
-        $prefs = $row ? (is_string($row['prefs']) ? json_decode($row['prefs'], true) : $row['prefs']) : ['hidden'=>[]];
+        $map    = UserMenuPrefsLibrary::loadMapForUser($uid);
+        $hidden = UserMenuPrefsLibrary::toHiddenList($map);
 
-        return $this->response->setJSON(['prefs' => $prefs]);
+        return $this->response->setJSON([
+            'prefs'  => ['hidden' => $hidden],
+            'map'    => $map,
+        ]);
     }
 
     public function save()
     {
         $uid = (int) session('member_userid');
-        if (!$uid) return $this->response->setStatusCode(401)->setJSON(['error'=>'Not logged in']);
+        if (! $uid) {
+            return $this->response->setStatusCode(401)->setJSON(['error' => 'Not logged in']);
+        }
 
-        // Accept JSON or form
-        $payload = $this->request->getJSON(true) ?: $this->request->getPost();
-        $hidden  = array_values(array_unique(array_map('strval', $payload['hidden'] ?? [])));
+        $map = UserMenuPrefsLibrary::parseRequestPayload($this->request);
+        if ($map === null) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Invalid preferences payload']);
+        }
 
-        // Optional: clamp to a whitelist of known keys (for safety)
-        // $hidden = array_values(array_intersect($hidden, $this->knownMenuKeys()));
+        UserMenuPrefsLibrary::saveForUser($uid, $map);
 
-        $m = new UserMenuPrefsModel();
-        $m->save(['user_id'=>$uid, 'prefs'=>json_encode(['hidden'=>$hidden])]);
-
-        return $this->response->setJSON(['success'=>true]);
+        return $this->response->setJSON([
+            'success' => true,
+            'prefs'   => ['hidden' => UserMenuPrefsLibrary::toHiddenList($map)],
+        ]);
     }
 }
-?>

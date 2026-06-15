@@ -1,28 +1,21 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Weekly Planning</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Weekly Planning</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Weekly Planning',
+    'icon' => 'fas fa-calendar-week',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Weekly Planning', 'url' => base_url('admin/weekly_planning')],
+        ['label' => 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-      <div class="card card-primary card-outline">
+      <div class="card sms-card card-primary card-outline">
         
         <div class="card-body">
           <?= form_open(base_url('admin/weekly_planning/save'), 'role="form" id="weekly-planning-form"') ?>
@@ -101,8 +94,8 @@
                 <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
                   <i class="fas fa-save"></i> Save All Changes
                 </button>
-                <button type="reset" class="btn btn-default btn-lg">Reset</button>
-                <button type="button" class="btn btn-default btn-lg" onclick="history.go(-1);">Cancel</button>
+                <button type="reset" class="btn btn-secondary btn-lg">Reset</button>
+                <button type="button" class="btn btn-secondary btn-lg" onclick="history.go(-1);">Cancel</button>
               </div>
             </div>
           </div>

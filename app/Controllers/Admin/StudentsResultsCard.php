@@ -536,7 +536,7 @@ foreach ($filtered as $item) {
               .  esc($term['exam_name'])
               .  '</th>';
     }
-    $html .= '?</tr>';
+    $html .= '</tr>';
 
     // Header row with column types - ADD CLASSES HERE
     $html .= '<tr style="height:'.$rowHeight.'px;">';
@@ -771,9 +771,10 @@ foreach ($filtered as $item) {
     $html .= '</div>'; // Close table-responsive
 
     if (!empty($ctx['showSignatureLine'])) {
+        $html .= '<br>';
         $html .= '<div class="signature-section" style="display:flex;gap:40px;margin-top:20px;">'
-              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:30px 0 6px;"></div><strong>Class Teacher</strong></div>'
-              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:30px 0 6px;"></div><strong>Principal</strong></div>'
+              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:54px 0 6px;"></div><strong>Class Teacher</strong></div>'
+              .  '<div class="signature-box" style="flex:1;"><div class="signature-line" style="height:1px;background:#000;margin:54px 0 6px;"></div><strong>Principal</strong></div>'
               .  '</div>';
     }
 

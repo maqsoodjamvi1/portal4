@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-header bg-info text-white">
         <h5 class="modal-title">Update Discount</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body" id="discountUpdateModalBody">
         <!-- Loaded dynamically -->

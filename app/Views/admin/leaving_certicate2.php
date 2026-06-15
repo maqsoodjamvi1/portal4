@@ -71,24 +71,14 @@
 			}
 		
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Certificate
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active">Certificate</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Certificate',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Certificate', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
       <div class="row">
@@ -209,8 +199,8 @@
          <div class="col-lg-3">
           <div class="form-group">
             <button type="submit" class="btn btn-primary">Generate SLC </button>
-			<button type="reset" class="btn btn-default">Reset</button>
-			<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+			<button type="reset" class="btn btn-secondary">Reset</button>
+			<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
           </div>
       	</div>
       	</div>

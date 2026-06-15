@@ -1,33 +1,26 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<!-- Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row align-items-center mb-2">
-      <div class="col-sm-7">
-        <h1 class="mb-0">Daily Fee Collection</h1>
-        <small class="text-muted">Net = Total Collection − Discount</small>
-      </div>
-      <div class="col-sm-5">
-        <ol class="breadcrumb float-sm-right mb-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Daily Collection</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Campus Cash Flow / P&L',
+    'icon' => 'fas fa-chart-line',
+    'subtitle' => 'Monthly summary, account balances, and daily fee collection',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Cash Flow / P&L', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
 
     <!-- Filters -->
-    <div class="card shadow-sm">
+    <div class="card sms-card shadow-sm">
       <div class="card-body pb-2">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3">
-            <label for="month" class="mb-1 font-weight-bold">Month</label>
+            <label for="month" class="mb-1 fw-bold">Month</label>
             <select class="form-control" id="month">
               <option value="">Select Month</option>
               <?php foreach ($months as $key => $name): ?>
@@ -39,7 +32,7 @@
           </div>
 
           <div class="col-12 col-md-3">
-            <label for="year" class="mb-1 font-weight-bold">Year</label>
+            <label for="year" class="mb-1 fw-bold">Year</label>
             <select class="form-control" id="year">
               <option value="">Select Year</option>
               <?php foreach ($years as $y): ?>
@@ -50,21 +43,21 @@
             </select>
           </div>
 
-          <div class="col-12 col-md-6 text-md-right mt-2 mt-md-0">
+          <div class="col-12 col-md-6 text-md-end mt-2 mt-md-0">
             <div class="btn-group mb-2" role="group" aria-label="Quick ranges">
               <button class="btn btn-outline-primary btn-sm preset" data-preset="this">This Month</button>
               <button class="btn btn-outline-secondary btn-sm preset" data-preset="last">Last Month</button>
               <button class="btn btn-outline-info btn-sm preset" data-preset="ytd">YTD</button>
             </div>
-            <div class="btn-group mb-2 ml-md-2" role="group" aria-label="Actions">
+            <div class="btn-group mb-2 ms-md-2" role="group" aria-label="Actions">
               <button id="btnRefresh" class="btn btn-primary btn-sm">
-                <i class="fas fa-sync-alt mr-1"></i>Refresh
+                <i class="fas fa-sync-alt me-1"></i>Refresh
               </button>
               <button id="btnExport" class="btn btn-success btn-sm">
-                <i class="fas fa-file-csv mr-1"></i>Export CSV
+                <i class="fas fa-file-csv me-1"></i>Export CSV
               </button>
               <button id="btnPrint" class="btn btn-outline-dark btn-sm">
-                <i class="fas fa-print mr-1"></i>Print
+                <i class="fas fa-print me-1"></i>Print
               </button>
             </div>
           </div>
@@ -77,7 +70,62 @@
       </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- Monthly P&L KPIs -->
+    <div class="row" id="pnl-summary-row">
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-success">
+          <div class="inner"><h3 id="kpi-income">0</h3><p>Fee Income</p></div>
+          <div class="icon"><i class="fas fa-arrow-down"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-danger">
+          <div class="inner"><h3 id="kpi-outflow">0</h3><p>Total Outflow</p></div>
+          <div class="icon"><i class="fas fa-arrow-up"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-info">
+          <div class="inner"><h3 id="kpi-net-pnl">0</h3><p>Net Surplus</p></div>
+          <div class="icon"><i class="fas fa-balance-scale"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-warning">
+          <div class="inner"><h3 id="kpi-cash-hand">0</h3><p>Campus Cash Balance</p></div>
+          <div class="icon"><i class="fas fa-wallet"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-lg-6">
+        <div class="card card-outline card-secondary">
+          <div class="card-header py-2"><strong>Expenses by head</strong></div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0" id="expense-head-table">
+              <thead><tr><th>Head</th><th class="text-end">Amount</th></tr></thead>
+              <tbody id="expense-head-body"><tr><td colspan="2" class="text-muted text-center">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card card-outline card-secondary">
+          <div class="card-header py-2"><strong>Account balances</strong></div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0" id="account-balance-table">
+              <thead><tr><th>Account</th><th class="text-end">Balance</th></tr></thead>
+              <tbody id="account-balance-body"><tr><td colspan="2" class="text-muted text-center">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h5 class="mb-2">Daily fee collection</h5>
+
+    <!-- Daily KPIs -->
     <div class="row">
       <div class="col-12 col-md-4">
         <div class="small-box bg-primary">
@@ -117,21 +165,21 @@
 
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0" id="report-table" style="display:none; min-width:640px;">
-            <thead class="thead-dark">
+            <thead class="table-dark">
               <tr>
                 <th style="width: 160px;">Date</th>
-                <th class="text-right">Total Collection</th>
-                <th class="text-right">Total Discount</th>
-                <th class="text-right">Net Collection</th>
+                <th class="text-end">Total Collection</th>
+                <th class="text-end">Total Discount</th>
+                <th class="text-end">Net Collection</th>
               </tr>
             </thead>
             <tbody id="report-body"></tbody>
             <tfoot>
-              <tr class="bg-light font-weight-bold">
+              <tr class="bg-light fw-bold">
                 <td>Grand Totals</td>
-                <td id="grand-total" class="text-right">0</td>
-                <td id="grand-discount" class="text-right">0</td>
-                <td id="grand-net" class="text-right">0</td>
+                <td id="grand-total" class="text-end">0</td>
+                <td id="grand-discount" class="text-end">0</td>
+                <td id="grand-net" class="text-end">0</td>
               </tr>
             </tfoot>
           </table>
@@ -193,6 +241,10 @@
   'use strict';
 
   const URL_DAILY = "<?= base_url('admin/profit-loss-report/daily') ?>";
+  const URL_SUMMARY = "<?= base_url('admin/profit-loss-report/monthly-summary') ?>";
+  const URL_EXPORT = "<?= base_url('admin/profit-loss-report/export') ?>";
+  const CSRF_NAME = "<?= csrf_token() ?>";
+  const CSRF_HASH = "<?= csrf_hash() ?>";
 
   const $month  = $('#month');
   const $year   = $('#year');
@@ -233,11 +285,55 @@
     if (state === 'idle') { $table.hide(); $empty.hide(); $error.hide(); }
   }
 
+  function fetchMonthlySummary(m, y) {
+    $.post(URL_SUMMARY, { month: m, year: y }, function(res) {
+      if (!res || !res.success || !res.summary) return;
+      const s = res.summary;
+      $('#kpi-income').text(fmtNum(s.income));
+      $('#kpi-outflow').text(fmtNum(s.total_outflow));
+      $('#kpi-net-pnl').text(fmtNum(s.net));
+      $('#kpi-cash-hand').text(fmtNum(s.campus_cash_balance));
+
+      const $eh = $('#expense-head-body').empty();
+      const heads = s.expenses_by_head || [];
+      if (!heads.length) {
+        $eh.append('<tr><td colspan="2" class="text-muted text-center">No expenses</td></tr>');
+      } else {
+        heads.forEach(h => {
+          $eh.append(`<tr><td>${escapeHtml(h.head_title)}</td><td class="text-end">${fmtNum(h.total)}</td></tr>`);
+        });
+        if (parseFloat(s.salary_outflow) > 0) {
+          $eh.append(`<tr><td>Salary (paid)</td><td class="text-end">${fmtNum(s.salary_outflow)}</td></tr>`);
+        }
+      }
+
+      const $ab = $('#account-balance-body').empty();
+      const accs = s.accounts || [];
+      if (!accs.length) {
+        $ab.append('<tr><td colspan="2" class="text-muted text-center">No finance accounts — <a href="<?= base_url('admin/campus-finance-accounts') ?>">Set up</a></td></tr>');
+      } else {
+        accs.forEach(a => {
+          $ab.append(`<tr><td>${escapeHtml(a.account_name)} <small class="text-muted">${escapeHtml(a.account_type)}</small></td><td class="text-end">${fmtNum(a.balance)}</td></tr>`);
+        });
+      }
+      const petty = s.petty_cash || [];
+      petty.forEach(p => {
+        $ab.append(`<tr><td><em>Petty:</em> ${escapeHtml(p.user_name)}</td><td class="text-end">${fmtNum(p.balance)}</td></tr>`);
+      });
+    }, 'json');
+  }
+
+  function fmtNum(n) {
+    const x = parseFloat(n) || 0;
+    return x.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+
   function fetchReport() {
     const m = parseInt($month.val(), 10);
     const y = parseInt($year.val(), 10);
     if (!m || !y) { showState('idle'); return; }
 
+    fetchMonthlySummary(m, y);
     showState('loading');
 
     $.ajax({
@@ -275,9 +371,9 @@
       $tbody.append(
         `<tr>
            <td>${escapeHtml(r.date || '')}</td>
-           <td class="text-right">${escapeHtml(r.total || '0')}</td>
-           <td class="text-right">${escapeHtml(r.discount || '0')}</td>
-           <td class="text-right font-weight-bold">${escapeHtml(r.net || '0')}</td>
+           <td class="text-end">${escapeHtml(r.total || '0')}</td>
+           <td class="text-end">${escapeHtml(r.discount || '0')}</td>
+           <td class="text-end fw-bold">${escapeHtml(r.net || '0')}</td>
          </tr>`
       );
     });
@@ -300,31 +396,17 @@
   function exportCSV() {
     const m = parseInt($month.val(), 10);
     const y = parseInt($year.val(), 10);
-    if (!m || !y || !$table.is(':visible')) {
-      return (window.toastr && toastr.info) ? toastr.info('Nothing to export.') : alert('Nothing to export.');
+    if (!m || !y) {
+      return (window.toastr && toastr.warning) ? toastr.warning('Select month and year.') : alert('Select month and year.');
     }
-    const rows = [];
-    rows.push(['Date','Total Collection','Total Discount','Net Collection']);
-    $('#report-body tr').each(function(){
-      const r = [];
-      $(this).find('td').each(function(){ r.push($(this).text().trim()); });
-      rows.push(r);
-    });
-    rows.push(['Grand Totals',
-      $('#grand-total').text().trim(),
-      $('#grand-discount').text().trim(),
-      $('#grand-net').text().trim()
-    ]);
-    const csv  = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `daily_collection_${y}-${String(m).padStart(2,'0')}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    const $form = $('<form method="post"></form>').attr('action', URL_EXPORT);
+    $form.append($('<input type="hidden">').attr('name', CSRF_NAME).val(CSRF_HASH));
+    $form.append($('<input type="hidden" name="month">').val(m));
+    $form.append($('<input type="hidden" name="year">').val(y));
+    $('body').append($form);
+    $form.trigger('submit');
+    $form.remove();
   }
-  function csvEscape(s){ s = String(s ?? ''); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
   function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
   // Initial load

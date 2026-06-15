@@ -2,6 +2,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\CampusFinanceService;
 use CodeIgniter\HTTP\ResponseInterface;
 use stdClass;
 
@@ -131,11 +132,17 @@ class Expenses extends BaseController
     {
         check_permission('admin-add-account-expenses');
         $schoolinfo = getSchoolInfo();
+        $campusid = (int) $this->session->get('member_campusid');
+        $finance = new CampusFinanceService($this->db);
         $expense_heads = $this->db->table('expense_heads')
             ->where('system_id', $schoolinfo->system_id)
             ->get()->getResult();
         return view('admin/expenses_edit', [
-            'expense_heads' => $expense_heads
+            'expense_heads' => $expense_heads,
+            'finance_enabled' => $finance->campusHasFinanceAccounts($campusid),
+            'finance_accounts' => $finance->getAccountsForCampus($campusid),
+            'default_account_id' => $finance->getCampusCashAccountId($campusid)
+                ?: $finance->ensureCampusCashAccount($campusid, (int) $this->session->get('member_userid')),
         ]);
     }
 
@@ -159,45 +166,67 @@ class Expenses extends BaseController
 
     public function save(): ResponseInterface
     {
-        $user_id = $this->session->get('member_userid');
+        $user_id = (int) $this->session->get('member_userid');
         $date = date('Y-m-d H:i:s');
-        $expenseDate = $this->request->getPost('expense_date');
+        $expenseDate = $this->request->getPost('expense_date') ?: date('Y-m-d');
         $rowscount = $this->request->getPost('rowscount');
-        $campusid = $this->session->get('member_campusid');
+        $campusid = (int) $this->session->get('member_campusid');
+        $accountId = (int) $this->request->getPost('account_id');
+        $finance = new CampusFinanceService($this->db);
 
-        // You should use CI4 validation, but for minimal migration, skipping for now.
-        // Add your validation here.
+        $this->db->transStart();
 
-        foreach ((array)$rowscount as $i) {
+        foreach ((array) $rowscount as $i) {
             $id = $this->request->getPost('id' . $i);
             $title = $this->request->getPost('title' . $i);
             $detail = $this->request->getPost('detail' . $i);
-            $amount = $this->request->getPost('amount' . $i);
+            $amount = (float) $this->request->getPost('amount' . $i);
 
-            if ($id == 0) {
+            if ($id == 0 && $amount > 0) {
                 $data = [
                     'title' => trim($title),
                     'detail' => trim($detail),
-                    'amount' => trim($amount),
-                    'campus_id' => trim($campusid),
+                    'amount' => $amount,
+                    'campus_id' => $campusid,
                     'exp_head_id' => trim($this->request->getPost('exp_head_id')),
                     'user_id' => $user_id,
-                    'created_date' => $expenseDate
+                    'created_date' => $expenseDate,
                 ];
+                if ($this->db->fieldExists('expense_date', 'expenses')) {
+                    $data['expense_date'] = date('Y-m-d', strtotime($expenseDate));
+                }
                 $this->db->table('expenses')->insert($data);
-            } else {
+                $expenseId = (int) $this->db->insertID();
+
+                if ($finance->campusHasFinanceAccounts($campusid)) {
+                    $finance->recordExpense(
+                        $expenseId,
+                        $campusid,
+                        $amount,
+                        $expenseDate,
+                        $accountId,
+                        $user_id,
+                        trim($title)
+                    );
+                }
+            } elseif ($id != 0) {
                 $data = [
                     'title' => trim($title),
                     'detail' => trim($detail),
-                    'amount' => trim($amount),
+                    'amount' => $amount,
                     'exp_head_id' => trim($this->request->getPost('exp_head_id')),
                     'user_id' => $user_id,
-                    'updated_date' => $date
+                    'updated_date' => $date,
                 ];
+                if ($this->db->fieldExists('expense_date', 'expenses')) {
+                    $data['expense_date'] = date('Y-m-d', strtotime($expenseDate));
+                }
                 $this->db->table('expenses')->where('expense_id', $id)->update($data);
             }
-            $this->db->transComplete();
         }
+
+        $this->db->transComplete();
+
         return $this->response->setJSON(['success' => true, 'msg' => 'Add Expenses Success']);
     }
 

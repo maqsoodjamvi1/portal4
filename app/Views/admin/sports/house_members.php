@@ -70,30 +70,23 @@
 }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-7">
-        <h1>House Members Report</h1>
-        <div class="text-muted">Select a house to view and print members (ordered by age).</div>
-      </div>
-      <div class="col-sm-5">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/houses') ?>">Houses</a></li>
-          <li class="breadcrumb-item active">Members Report</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'House Members Report',
+    'icon' => 'fas fa-users',
+    'subtitle' => 'Select a house to view and print members (ordered by age).',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Houses', 'url' => base_url('admin/sports/houses')],
+        ['label' => 'Members Report', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="card card-outline card-primary">
     <div class="card-header">
       <div class="report-head">
-        <div class="form-inline no-print" style="gap:10px;">
-          <label class="mr-2">House</label>
+        <div class="d-flex flex-wrap align-items-center no-print" style="gap:10px;">
+          <label class="me-2">House</label>
           <select id="house_id" class="form-control">
             <option value="">-- Select House --</option>
             <?php foreach (($houses ?? []) as $h): ?>
@@ -128,7 +121,7 @@ function metaOf(r){
   if (age) bits.push(age);
   if (cls) bits.push(cls);
   bits.push(String(cnt)); // always show participation count
-  return bits.join(' • ');
+  return bits.join(' ï¿½ ');
 }
 
 function card(r, i){
@@ -162,7 +155,7 @@ function renderSummary(sum){
 
 function loadHouse(houseId){
   if (!houseId){ $('#reportBody').html('<div class="text-muted">Choose a house to load members.</div>'); $('#summary').empty(); return; }
-  $('#reportBody').html('<div class="text-muted">Loading…</div>');
+  $('#reportBody').html('<div class="text-muted">Loadingï¿½</div>');
   $.post('<?= base_url('admin/sports/reports/house-members/data') ?>', {
     [CSRF_NAME]: CSRF_HASH,
     house_id: houseId

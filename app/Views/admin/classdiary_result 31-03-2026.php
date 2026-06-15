@@ -60,13 +60,13 @@ sort($allSubjects);
           <div class="mb-1 d-flex justify-content-between align-items-center">
             <strong>Classes</strong>
             <div>
-              <button type="button" class="btn btn-xs btn-link p-0 mr-2" onclick="checkAll('class-filter', true)">Select all</button>
-              <button type="button" class="btn btn-xs btn-link p-0" onclick="checkAll('class-filter', false)">Clear</button>
+              <button type="button" class="btn btn-sm btn-link p-0 me-2" onclick="checkAll('class-filter', true)">Select all</button>
+              <button type="button" class="btn btn-sm btn-link p-0" onclick="checkAll('class-filter', false)">Clear</button>
             </div>
           </div>
           <div class="filters-wrap" id="classFilters">
             <?php foreach ($allClasses as $cid => $cname): ?>
-              <label class="mr-3 mb-1">
+              <label class="me-3 mb-1">
                 <input type="checkbox" class="class-filter" value="<?= esc($cid) ?>" checked>
                 <span><?= esc($cname) ?></span>
               </label>
@@ -79,13 +79,13 @@ sort($allSubjects);
           <div class="mb-1 d-flex justify-content-between align-items-center">
             <strong>Subjects</strong>
             <div>
-              <button type="button" class="btn btn-xs btn-link p-0 mr-2" onclick="checkAll('subject-filter', true)">Select all</button>
-              <button type="button" class="btn btn-xs btn-link p-0" onclick="checkAll('subject-filter', false)">Clear</button>
+              <button type="button" class="btn btn-sm btn-link p-0 me-2" onclick="checkAll('subject-filter', true)">Select all</button>
+              <button type="button" class="btn btn-sm btn-link p-0" onclick="checkAll('subject-filter', false)">Clear</button>
             </div>
           </div>
           <div class="filters-wrap" id="subjectFilters">
             <?php foreach ($allSubjects as $s): ?>
-              <label class="mr-3 mb-1">
+              <label class="me-3 mb-1">
                 <input type="checkbox" class="subject-filter" value="<?= esc($s) ?>" checked>
                 <span><?= esc($s) ?></span>
               </label>
@@ -159,7 +159,7 @@ sort($allSubjects);
 
             <!-- Row 2: Date + Day headings -->
             <tr class="date-day-row">
-              <th class="subj-col text-left">Subject</th>
+              <th class="subj-col text-start">Subject</th>
               <?php foreach ($activeDates as $d): ?>
                 <th class="text-center dd-cell">
                   <?= esc(date('d-m-Y (l)', strtotime($d))) ?>
@@ -199,7 +199,7 @@ sort($allSubjects);
     padding:.25rem .5rem;
   }
   .filters-wrap label { cursor: pointer; font-weight: 400; }
-  .btn-xs { font-size: .78rem; }
+  .btn-sm { font-size: .78rem; }
 
   /* Diary table layout */
   .diary-table {

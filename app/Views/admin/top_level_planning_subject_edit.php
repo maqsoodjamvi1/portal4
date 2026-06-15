@@ -13,22 +13,16 @@
   $preSub  = (string)($pre['subject_id'] ?? '');
 ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1 class="mb-0">Scheme of Studies</h1>
-        <small class="text-muted d-block"><?= esc($header) ?></small>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Scheme of Studies</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Scheme of Studies',
+    'icon' => 'fas fa-book-open',
+    'subtitle' => $header,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Scheme of Studies', 'url' => base_url('admin/top_level_planning')],
+        ['label' => $header, 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
   <div class="container-fluid">
@@ -108,15 +102,15 @@
         <!-- Toolbar -->
         <div class="d-flex align-items-center justify-content-between flex-wrap mt-3 mb-2">
           <div class="d-flex align-items-center gap-2">
-            <div class="custom-control custom-switch mr-3">
-              <input type="checkbox" class="custom-control-input" id="synch" name="synch" value="1">
-              <label class="custom-control-label" for="synch">Sync to all campuses</label>
+            <div class="form-check form-switch me-3">
+              <input type="checkbox" class="form-check-input" id="synch" name="synch" value="1">
+              <label class="form-check-label" for="synch">Sync to all campuses</label>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="expandAll"><i class="fas fa-expand mr-1"></i>Expand all</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAll"><i class="fas fa-compress mr-1"></i>Collapse all</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="expandAll"><i class="fas fa-expand me-1"></i>Expand all</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAll"><i class="fas fa-compress me-1"></i>Collapse all</button>
           </div>
           <div class="small text-muted">
-            <i class="far fa-info-circle mr-1"></i>Edits auto-save after you stop typing.
+            <i class="far fa-info-circle me-1"></i>Edits auto-save after you stop typing.
           </div>
         </div>
 
@@ -267,7 +261,7 @@
     <div class="tlp-card" data-class-id="${classId || ''}">
       <div class="tlp-hd">
         <div class="title">
-          <i class="fas fa-chalkboard-teacher mr-1"></i>
+          <i class="fas fa-chalkboard-teacher me-1"></i>
           ${displayTitle}
         </div>
         <span class="badge-soft">#${idx}</span>
@@ -276,7 +270,7 @@
       <div class="tlp-ft">
         <div class="save-hint js-save-hint">Idle</div>
         <div>
-          <button type="button" class="btn btn-xs btn-outline-secondary js-collapse">Collapse</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary js-collapse">Collapse</button>
         </div>
       </div>
     </div>

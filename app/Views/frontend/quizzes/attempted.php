@@ -1,10 +1,14 @@
 <?= $this->extend('frontend/layouts/master_portal') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <h1 class="mb-3">Attempted Quizzes</h1>
- 
-</section>
+<?= view('components/page_header', [
+    'title' => 'Attempted Quizzes',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('student/dashboard')],
+        ['label' => 'Attempted Quizzes', 'active' => true],
+    ],
+]) ?>
+
 
 <section class="content">
   <?php if (!empty($err)): ?>
@@ -30,7 +34,7 @@
               <td><?= esc($a->title) ?></td>
               <td><?= esc($a->score_obtained) ?></td>
               <td>
-                <span class="badge <?= $a->status==='submitted'?'badge-success':'badge-secondary' ?>">
+                <span class="badge <?= $a->status==='submitted'?'text-bg-success':'text-bg-secondary' ?>">
                   <?= esc(ucfirst($a->status)) ?>
                 </span>
               </td>

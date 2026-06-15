@@ -1,5 +1,5 @@
 <footer class="main-footer no-print">
-        <div class="pull-right hidden-xs">
+        <div class="float-end d-none d-sm-inline-block">
           <b>Version</b> 2.3.1
         </div>
         <strong>Copyright &copy; 2008- <?php echo date('Y'); ?> <a href="#">TIME Soft Solution</a>.</strong>

@@ -30,7 +30,7 @@ public function index()
 	$campusid = $this->session->userdata('member_campusid');
 	$sessionid = $this->session->userdata('member_sessionid');
 	$defaulter_fee_sms = '';
-	$campusInfo = $this->db->query('SELECT student_fee_sms FROM campus WHERE campus_id='.$campusid)->row();
+	$campusInfo = $this->db->select('student_fee_sms')->from('campus')->where('campus_id', (int) $campusid)->get()->row();
 	if($campusInfo){
 		$defaulter_fee_sms = $campusInfo->student_fee_sms;
 	}
@@ -39,18 +39,27 @@ public function index()
 	$campusSections = getAllClassSection();
 	$this->template_data['campusSections'] = $campusSections;
 
-	$students = $this->db->query('select * from student_class where student_id IN (select student_id from students where campus_id='.$campusid.') AND status=1 AND session_id='.$sessionid)->result();
+	$studentSub = $this->db->select('student_id')->from('students')->where('campus_id', (int) $campusid)->get_compiled_select();
+	$students = $this->db->from('student_class')
+		->where("student_id IN ($studentSub)", null, false)
+		->where('status', 1)
+		->where('session_id', (int) $sessionid)
+		->get()->result();
 
 	$detaulterArr = array();
 	foreach($students as $student){
 
-		$studentInfo = $this->db->query('SELECT * FROM students WHERE student_id='.$student->student_id)->row();
+		$studentInfo = $this->db->from('students')->where('student_id', (int) $student->student_id)->get()->row();
 				
-		$studentsFee = $this->db->query('SELECT SUM(amount-discount) AS feeTotal FROM fee_chalan WHERE status="unpaid" AND  student_id='.$student->student_id)->row();
+		$studentsFee = $this->db->table('fee_chalan')
+			->select('SUM(amount - discount) AS feeTotal', false)
+			->where('status', 'unpaid')
+			->where('student_id', (int) $student->student_id)
+			->get()->row();
 		
 		if($studentsFee){	
 			if($studentsFee->feeTotal > 0){	
-				$parentsInfo =  $this->db->query('select * from parents where parent_id IN (select parent_id from students where student_id='.$student->student_id.')')->row();
+				$parentsInfo = $this->db->from('parents')->where('parent_id', (int) $studentInfo->parent_id)->get()->row();
 
 				$detaulterArr[] = array(
 					'student_id' => $studentInfo->student_id,
@@ -85,7 +94,7 @@ public function parent_sms()
 	$sessionid = $this->session->userdata('member_sessionid');
 
 	$defaulter_fee_sms = '';
-	$campusInfo = $this->db->query('SELECT family_fee_sms FROM campus WHERE campus_id='.$campusid)->row();
+	$campusInfo = $this->db->select('family_fee_sms')->from('campus')->where('campus_id', (int) $campusid)->get()->row();
 	if($campusInfo){
 		$defaulter_fee_sms = $campusInfo->family_fee_sms;
 	}
@@ -94,7 +103,8 @@ public function parent_sms()
 	$campusSections = getAllClassSection();
 	$this->template_data['campusSections'] = $campusSections;
 
-	$parents = $this->db->query('select * from parents where parent_id IN (select parent_id from students where campus_id='.$campusid.' AND status=1)')->result();
+	$parentSub = $this->db->select('parent_id')->from('students')->where('campus_id', (int) $campusid)->where('status', 1)->get_compiled_select();
+	$parents = $this->db->from('parents')->where("parent_id IN ($parentSub)", null, false)->get()->result();
 
 	$detaulterArr = array();
 	foreach($parents as $parent){
@@ -102,7 +112,12 @@ public function parent_sms()
 		//$studentInfo = $this->db->query('SELECT * FROM students WHERE student_id='.$student->student_id)->row();
 
 				
-		$studentsFee = $this->db->query('SELECT SUM(amount-discount) AS feeTotal FROM fee_chalan WHERE status="unpaid" AND student_id IN(select student_id from students where parent_id='.$parent->parent_id.' AND status=1)')->row();
+		$childSub = $this->db->select('student_id')->from('students')->where('parent_id', (int) $parent->parent_id)->where('status', 1)->get_compiled_select();
+		$studentsFee = $this->db->table('fee_chalan')
+			->select('SUM(amount - discount) AS feeTotal', false)
+			->where('status', 'unpaid')
+			->where("student_id IN ($childSub)", null, false)
+			->get()->row();
 		
 		if($studentsFee){	
 			if($studentsFee->feeTotal > 0){	
@@ -154,12 +169,17 @@ function save(){
 
 	foreach($students as $student_id){
 
-		$studentsFee = $this->db->query('SELECT SUM(amount-discount) AS feeTotal FROM fee_chalan WHERE status="unpaid" AND  student_id='.$student_id)->row();
+		$studentsFee = $this->db->table('fee_chalan')
+			->select('SUM(amount - discount) AS feeTotal', false)
+			->where('status', 'unpaid')
+			->where('student_id', (int) $student_id)
+			->get()->row();
 		
 		if($studentsFee){	
 			if($studentsFee->feeTotal > 0){
 				
-			$parentsInfo =  $this->db->query('select * from parents where parent_id IN (select parent_id from students where student_id='.$student_id.')')->row();
+			$studentRow = $this->db->select('parent_id')->from('students')->where('student_id', (int) $student_id)->get()->row();
+			$parentsInfo = $studentRow ? $this->db->from('parents')->where('parent_id', (int) $studentRow->parent_id)->get()->row() : null;
 			
 			$this->db->where('student_id', $student_id);
 			$studentInfo = $this->db->get('students')->row();
@@ -261,12 +281,17 @@ function saveparent(){
 	foreach($parents as $parent_id){
 
 		// $studentsFee = $this->db->query('SELECT SUM(amount-discount) AS feeTotal FROM fee_chalan WHERE status="unpaid" AND  student_id IN(select student_id from students where parent_id='.$parent_id.' AND status=1)')->row();
-		$studentsFee = $this->db->query('SELECT SUM(amount-discount) AS feeTotal FROM fee_chalan WHERE status="unpaid" AND student_id IN(select student_id from students where parent_id='.$parent_id.' AND status=1)')->row();
+		$childSub = $this->db->select('student_id')->from('students')->where('parent_id', (int) $parent_id)->where('status', 1)->get_compiled_select();
+		$studentsFee = $this->db->table('fee_chalan')
+			->select('SUM(amount - discount) AS feeTotal', false)
+			->where('status', 'unpaid')
+			->where("student_id IN ($childSub)", null, false)
+			->get()->row();
 		
 		if($studentsFee){	
 			if($studentsFee->feeTotal > 0){
 				
-			$parentsInfo =  $this->db->query('select * from parents where parent_id ='.$parent_id)->row();
+			$parentsInfo = $this->db->from('parents')->where('parent_id', (int) $parent_id)->get()->row();
 
 			
 			

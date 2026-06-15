@@ -351,10 +351,8 @@ class DatesheetWithoutSyllabus extends BaseController
                 $subject_id = $subjectinfo['sid'];
                 $subjectList .= "<tr><td><input type='hidden' name='did[]'  value='" . $did . "'><input type='hidden' name='sec_sub_id[]'  value='" . $subject->sec_sub_id . "'>" . $subject_name . "</td><td><input type='text' name='total_marks[]' value='" . $totalmarks . "' class='form-control'></td><td>
                     <div class='input-group date' id='datepicker" . $subject->sec_sub_id . "' data-target-input='nearest'>
-                            <input type='text' name='exam_date[]'  value='" . $subjectexamdate . "'  class='form-control datetimepicker-input' data-target='#datepicker" . $subject->sec_sub_id . "'/>
-                            <div class='input-group-append' data-target='#datepicker" . $subject->sec_sub_id . "' data-toggle='datetimepicker'>
-                                <div class='input-group-text'><i class='fa fa-calendar'></i></div>
-                            </div>
+                            <input type='text' name='exam_date[]'  value='" . $subjectexamdate . "'  class='form-control datetimepicker-input' data-bs-target='#datepicker" . $subject->sec_sub_id . "'/>
+                            <span class='input-group-text' data-bs-target='#datepicker" . $subject->sec_sub_id . "' data-bs-toggle='datetimepicker'><i class='fa fa-calendar'></i></span>
                       </td><td><textarea name='syllabus[]' class='form-control editor222'>" . $papersyllabus . "</textarea></td></tr>
                 <script>
                     $(function(){

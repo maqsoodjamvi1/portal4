@@ -82,7 +82,13 @@ class DefaulterMessage extends BaseController
             $defaultMessage = $campusInfo->student_fee_sms;
         }
 
-        $students = $this->db->query("SELECT * FROM student_class WHERE student_id IN (SELECT student_id FROM students WHERE campus_id = $campusId) AND status = 1 AND session_id = $sessionId")->getResult();
+        $students = $this->db->table('student_class')
+            ->whereIn('student_id', static function ($builder) use ($campusId) {
+                return $builder->select('student_id')->from('students')->where('campus_id', (int) $campusId);
+            })
+            ->where(['status' => 1, 'session_id' => (int) $sessionId])
+            ->get()
+            ->getResult();
 
         $output = view('partials/defaulter_message_form', [
             'students' => $students,
@@ -182,7 +188,12 @@ class DefaulterMessage extends BaseController
 
     protected function getParentInfo($studentId)
     {
-        return $this->db->query("SELECT * FROM parents WHERE parent_id IN (SELECT parent_id FROM students WHERE student_id = $studentId)")->getRow();
+        $student = $this->db->table('students')->select('parent_id')->where('student_id', (int) $studentId)->get()->getRow();
+        if (! $student) {
+            return null;
+        }
+
+        return $this->db->table('parents')->where('parent_id', (int) $student->parent_id)->get()->getRow();
     }
 
     protected function getStudentClass($studentId)

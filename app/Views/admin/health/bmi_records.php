@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -15,33 +16,26 @@
 .bmi-obese { background: #e74c3c; color: white; }
 </style>
 
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1><i class="fas fa-chart-line mr-2"></i>BMI Records</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="<?= base_url('admin/health/bmi-dashboard') ?>">BMI</a></li>
-                    <li class="breadcrumb-item active">Records</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'BMI Records',
+    'icon' => 'fas fa-chart-line',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'BMI Dashboard', 'url' => base_url('admin/health/bmi-dashboard')],
+        ['label' => 'Records', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Student BMI Records</h3>
             <div class="card-tools">
-                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#bulkUpdateModal">
-                    <i class="fas fa-upload mr-1"></i> Bulk Update
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+                    <i class="fas fa-upload me-1"></i> Bulk Update
                 </button>
                 <a href="<?= base_url('admin/students_bulk_info_date_of_birth') ?>" class="btn btn-sm btn-info">
-                    <i class="fas fa-edit mr-1"></i> Bulk Edit
+                    <i class="fas fa-edit me-1"></i> Bulk Edit
                 </a>
             </div>
         </div>
@@ -71,13 +65,13 @@
                     <input type="text" id="searchInput" class="form-control" placeholder="Search by name or reg no...">
                 </div>
                 <div class="col-md-2">
-                    <button id="filterBtn" class="btn btn-primary btn-block">
-                        <i class="fas fa-search mr-1"></i> Filter
+                    <button id="filterBtn" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Filter
                     </button>
                 </div>
                 <div class="col-md-2">
-                    <button id="resetBtn" class="btn btn-secondary btn-block">
-                        <i class="fas fa-undo mr-1"></i> Reset
+                    <button id="resetBtn" class="btn btn-secondary w-100">
+                        <i class="fas fa-undo me-1"></i> Reset
                     </button>
                 </div>
             </div>
@@ -114,7 +108,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Edit BMI Record</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <form id="editBmiForm">
                     <?= csrf_field() ?>
@@ -143,7 +137,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>

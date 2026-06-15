@@ -80,9 +80,6 @@ class StudentsEnroll extends BaseController
             <th style="width: 55px !important;" nowrap>#</th>
             <th style="width: 100px !important;">Name</th>
             <th style="width:130px;">School</th>
-            <th style="width:130px;">Academy</th>
-            <th style="width:130px;">Transport</th>
-            <th style="width:130px;">Hostel</th>
             <th style="width:50px;">Action</th>
         </tr>
         </thead>
@@ -131,39 +128,18 @@ class StudentsEnroll extends BaseController
                 }
                 $studentsList .= ' id="s_flag' . $value->student_id . '" class="form-control" name="s_flag" value="1"></td>';
 
-                $studentsList .= '<td nowrap><input type="checkbox" ';
-                if ($value->a_flag == 1) {
-                    $studentsList .= 'checked';
-                }
-                $studentsList .= ' id="a_flag' . $value->student_id . '" class="form-control" name="a_flag" value="1" ></td>';
-
-                $studentsList .= '<td nowrap><input type="checkbox" ';
-                if ($value->t_flag == 1) {
-                    $studentsList .= 'checked';
-                }
-                $studentsList .= ' id="t_flag' . $value->student_id . '" class="form-control" name="t_flag" value="1" ></td>';
-
-                $studentsList .= '<td nowrap><input type="checkbox" ';
-                if ($value->h_flag == 1) {
-                    $studentsList .= 'checked';
-                }
-                $studentsList .= ' id="h_flag' . $value->student_id . '" class="form-control" name="h_flag" value="1" ></td>';
-
                 $studentsList .= '<td>
-                    <a  id="save' . $value->student_id . '"  data-id="' . $value->student_id . '" class="btn btn-primary btn-xs">Save</a>
+                    <a  id="save' . $value->student_id . '"  data-id="' . $value->student_id . '" class="btn btn-primary btn-sm">Save</a>
                     </td></tr>';
                 $studentsList .= '<script type="text/javascript">
                     $("#save' . $value->student_id . '").click(function(){
                         var student_id = $("#studentID' . $value->student_id . '").val();
                         var s_flag = $("#s_flag' . $value->student_id . '").prop("checked") ? 1 : 0;
-                        var a_flag = $("#a_flag' . $value->student_id . '").prop("checked") ? 1 : 0;
-                        var t_flag = $("#t_flag' . $value->student_id . '").prop("checked") ? 1 : 0;
-                        var h_flag = $("#h_flag' . $value->student_id . '").prop("checked") ? 1 : 0;
 
                         $.ajax({
                             url: "' . base_url('admin/students_enroll/enrollstudentinfo') . '",
                             type: "POST",
-                            data: {s_flag: s_flag, a_flag: a_flag, t_flag: t_flag, h_flag: h_flag, student_id: student_id},
+                            data: {s_flag: s_flag, student_id: student_id},
                             success: function(res) {
                                 toastr.success("Updated Successfully"); 
                             }
@@ -189,15 +165,9 @@ class StudentsEnroll extends BaseController
 
         $studentID = $this->request->getPost('student_id');
         $s_flag = $this->request->getPost('s_flag');
-        $a_flag = $this->request->getPost('a_flag');
-        $t_flag = $this->request->getPost('t_flag');
-        $h_flag = $this->request->getPost('h_flag');
 
         $data = [
             's_flag' => trim($s_flag),
-            'a_flag' => trim($a_flag),
-            't_flag' => trim($t_flag),
-            'h_flag' => trim($h_flag),
             'updated_date' => $date,
             'user_id' => $user_id
         ];

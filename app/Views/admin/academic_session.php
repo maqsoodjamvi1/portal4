@@ -5,28 +5,21 @@
 <!-- <link rel="stylesheet" href="<?= base_url('resource/datatables/buttons.dataTables.min.css') ?>">
 <link rel="stylesheet" href="<?= base_url('resourpgce/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" /> -->
 
-<!-- Content Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1 class="mb-0">Academic Session</h1>
-        <small class="text-muted">Manage session years and dates</small>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right bg-transparent p-0 m-0">
-          <li class="breadcrumb-item"><a href="<?= base_url('/admin'); ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Academic Session</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php $uiNeedsDataTables = true; ?>
+<?= view('components/page_header', [
+    'title' => 'Academic Session',
+    'icon' => 'fas fa-calendar',
+    'subtitle' => 'Manage session years and dates',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Academic Session', 'active' => true],
+    ],
+]) ?>
 
 <!-- Main Content -->
 <section class="content">
   <div class="container-fluid">
-    <div class="card card-primary card-outline shadow-sm">
+    <div class="card sms-card card-primary card-outline shadow-sm">
       <div class="card-header border-0 pb-0">
         <!-- Tabs -->
         <ul class="nav nav-tabs" role="tablist">
@@ -57,14 +50,14 @@
             <input id="filterEnd" type="date" class="form-control form-control-sm" placeholder="YYYY-MM-DD">
           </div>
           <div class="col-md-3 d-flex gap-2">
-            <button id="applyFilters" class="btn btn-primary btn-sm mr-2">
-              <i class="fas fa-filter mr-1"></i>Apply
+            <button id="applyFilters" class="btn btn-primary btn-sm me-2">
+              <i class="fas fa-filter me-1"></i>Apply
             </button>
-            <button id="resetFilters" class="btn btn-outline-secondary btn-sm mr-2">
-              <i class="fas fa-undo mr-1"></i>Reset
+            <button id="resetFilters" class="btn btn-outline-secondary btn-sm me-2">
+              <i class="fas fa-undo me-1"></i>Reset
             </button>
             <a href="<?= base_url('admin/academic_session/add') ?>" class="btn btn-success btn-sm">
-              <i class="fas fa-plus mr-1"></i>New Session
+              <i class="fas fa-plus me-1"></i>New Session
             </a>
           </div>
         </div>
@@ -72,7 +65,7 @@
         <!-- Table -->
         <div class="table-responsive">
           <table class="table table-striped table-hover w-100" id="academic-session-datatable">
-            <thead class="thead-light sticky-thead">
+            <thead class="table-light sticky-thead">
               <tr>
                 <th style="width:60px">#</th>
                 <th>Session Name</th>
@@ -87,7 +80,7 @@
 
         <!-- Legend / Hints -->
         <div class="mt-3 text-muted small">
-          <i class="fas fa-info-circle mr-1"></i>Tip: Use the search box to find sessions quickly. Use date filters to narrow by start/end.
+          <i class="fas fa-info-circle me-1"></i>Tip: Use the search box to find sessions quickly. Use date filters to narrow by start/end.
         </div>
       </div>
     </div>
@@ -145,7 +138,7 @@ function printHeader() {
     lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
     pageLength: 10,
     order: [[1, 'asc']],
-    dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6 text-right'B>>" +
+    dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6 text-end'B>>" +
          "<'row'<'col-12'tr>>" +
          "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>",
     buttons: (function() {
@@ -201,7 +194,7 @@ function printHeader() {
       // Session Name
       {
         data: 'session_name',
-        className: 'align-middle font-weight-600',
+        className: 'align-middle fw-semibold',
         render: function(val) {
           return val ? $('<div/>').text(val).html() : '';
         }
@@ -210,13 +203,13 @@ function printHeader() {
       {
         data: 'start_date',
         className: 'align-middle',
-        render: function(val) { return `<span class="badge badge-light border">${fmt(val)}</span>`; }
+        render: function(val) { return `<span class="badge text-bg-light border">${fmt(val)}</span>`; }
       },
       // End
       {
         data: 'end_date',
         className: 'align-middle',
-        render: function(val) { return `<span class="badge badge-light border">${fmt(val)}</span>`; }
+        render: function(val) { return `<span class="badge text-bg-light border">${fmt(val)}</span>`; }
       },
       // Operation
       {

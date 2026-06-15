@@ -1,0 +1,51 @@
+PORTAL4 SIGNUP DEPLOY — READ THIS
+==================================
+
+Your live site still shows the OLD form because files were likely uploaded
+to the WRONG remote folder.
+
+CORRECT server root for portal4.timesoftsol.com:
+  /var/www/portal4/html/
+
+NOT (example default in deploy-config.example.ps1):
+  /var/www/html/school-management-system
+
+
+EXACT REMOTE PATHS (WinSCP)
+---------------------------
+
+Local file                                              → Remote path
+---------------------------------------------------------------------------
+app/Views/trial_signup/form.php                         → /var/www/portal4/html/app/Views/trial_signup/form.php
+app/Controllers/TrialSignup.php                         → /var/www/portal4/html/app/Controllers/TrialSignup.php
+public/resource/intl-tel-input/   (entire folder)       → /var/www/portal4/html/public/resource/intl-tel-input/
+
+IMPORTANT: intl-tel-input must go under public/resource/ — not app/ or html/resource/
+
+
+VERIFY DEPLOY WORKED
+--------------------
+
+1. Open https://portal4.timesoftsol.com/signup
+2. Hard refresh: Ctrl+F5
+3. You should see:
+   - Navy "TLive Education" bar at top of white card
+   - Icon inputs (school, user, envelope icons)
+   - Phone field with Pakistan flag + +92
+   - Footer text: "Signup form v3"
+4. View page source → search for "signup-v3"
+
+If you still see placeholder "Your School Name" → wrong folder or OPcache.
+SSH check:
+  grep -n "signup-v3" /var/www/portal4/html/app/Views/trial_signup/form.php
+  grep -n "Your School Name" /var/www/portal4/html/app/Views/trial_signup/form.php
+
+If signup-v3 is missing on server, re-upload to the path above.
+
+
+QUICK UPLOAD SCRIPT
+-------------------
+
+1. Copy deploy-config.example.ps1 → deploy-config.local.ps1
+2. Set RemotePath = '/var/www/portal4/html'
+3. Run: powershell -ExecutionPolicy Bypass -File tools\deploy\upload-signup-portal4.ps1

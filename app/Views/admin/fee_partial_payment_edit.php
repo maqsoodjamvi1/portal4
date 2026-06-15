@@ -52,30 +52,14 @@
 			}
 
 			?>
+    <?= view('components/page_header', [
+    'title' => 'Partial Payment',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Partial Payment', 'active' => true],
+    ],
+]) ?>
 
-
-
-    <!-- Content Header (Page header) -->
-
-    <section class="content-header">
-
-      <h1>
-
-        Partial Payment 
-
-        <small></small>
-
-      </h1>
-
-      <ol class="breadcrumb">
-
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-        <li class="active">Partial Payment</li>
-
-      </ol>
-
-    </section>
 
     <!-- Main content -->
 
@@ -83,7 +67,7 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
 
 
@@ -115,13 +99,13 @@
 
                 <div class="input-group date">
 
-                  <div class="input-group-addon">
+                  <div class="input-group-text">
 
                     <i class="fa fa-calendar"></i>
 
                   </div>
 
-                  <input type="text" class="form-control pull-right" id="datepicker2"  readonly="readonly"  value="<?php echo $issue_date; ?>" name="issue_date">
+                  <input type="text" class="form-control float-end" id="datepicker2"  readonly="readonly"  value="<?php echo $issue_date; ?>" name="issue_date">
 
                 </div>
 
@@ -135,13 +119,13 @@
 
 	        <div class="input-group date">
 
-                  <div class="input-group-addon">
+                  <div class="input-group-text">
 
                     <i class="fa fa-calendar"></i>
 
                   </div>
 
-                  <input type="text" class="form-control pull-right" id="datepicker"  readonly="readonly" value="<?php echo $due_date; ?>" name="due_date">
+                  <input type="text" class="form-control float-end" id="datepicker"  readonly="readonly" value="<?php echo $due_date; ?>" name="due_date">
 
                 </div>
 
@@ -155,13 +139,13 @@
 
                 <div class="input-group date">
 
-                  <div class="input-group-addon">
+                  <div class="input-group-text">
 
                     <i class="fa fa-calendar"></i>
 
                   </div>
 
-                  <input type="text" class="form-control pull-right" id="datetimepicker1" readonly="readonly" value="<?php echo $fee_month; ?>"  name="fee_month">
+                  <input type="text" class="form-control float-end" id="datetimepicker1" readonly="readonly" value="<?php echo $fee_month; ?>"  name="fee_month">
 
 				  
 
@@ -177,9 +161,9 @@
 
                 <label>Amount:</label>
 
-                  <input type="hidden" class="form-control pull-right" id="amount"  readonly="readonly" value="<?php echo $amount; ?>"  name="amount">
+                  <input type="hidden" class="form-control float-end" id="amount"  readonly="readonly" value="<?php echo $amount; ?>"  name="amount">
 
-				    <input type="text" class="form-control pull-right" id="disc_amount"  readonly="readonly" value="<?php echo ($amount - $discount); ?>"  name="disc_amount">
+				    <input type="text" class="form-control float-end" id="disc_amount"  readonly="readonly" value="<?php echo ($amount - $discount); ?>"  name="disc_amount">
 
 			    <!-- /.input group -->
 
@@ -191,7 +175,7 @@
 
                 <label>Paid Amount:</label>
 
-                  <input type="text" class="form-control pull-right" id="paid_amount" value=""  name="paid_amount">
+                  <input type="text" class="form-control float-end" id="paid_amount" value=""  name="paid_amount">
 
 				  <!-- /.input group -->
 
@@ -203,9 +187,9 @@
 
                 <button type="submit" class="btn btn-primary">Save</button>
 
-				<button type="reset" class="btn btn-default">Reset</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
 
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 
               </div>
 

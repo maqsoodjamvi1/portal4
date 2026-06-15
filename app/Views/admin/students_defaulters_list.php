@@ -1,141 +1,137 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?php 
-  $status = ''; 
-  if(!empty($_GET['status'])){
-   $status = $_GET['status']; 
+<?php
+  $status = '';
+  if (!empty($_GET['status'])) {
+      $status = $_GET['status'];
   }
 ?>
-<link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               Students Defaulters List
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">Students Defaulters List</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
-    <!-- Main content -->
-    <section class="content">
-    <div class="row">
-      <div class="col-lg-12">
-      <div class="card card-primary card-outline card-tabs">
-      <div class="card-header p-0 pt-1 border-bottom-0">
-      <ul class="nav nav-tabs">     
-        <li  class="nav-item" ><a  class="nav-link <?php if($status == 1){ ?> active <?php } ?>" href="<?php echo '#/students_defaulters_list?status=1';?>">  Current Defaulters </a></li>
-        <li class="nav-item"><a class="nav-link <?php if($status == 3){ ?> active <?php } ?>" href="<?php echo '#/students_defaulters_list?status=3';?>">  Dropped Defaulters</a></li>
-        <li class="nav-item"><a class="nav-link <?php if($status == 4){ ?> active <?php } ?>" href="<?php echo '#/family_defaulters_list?status=1';?>">Defaulter Family List</a></li>
-      </ul>
-    <div class="card-body">
-    <div class="row">
-      <div class="col-lg-12">
-        <form id="form-filter" class="form-inline">
-                <div class="col-lg-2">
-                    <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
-                       <option value="0">Select Student</option>   
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                  <select class="form-control select2" name="parent_id" id="parent_id" style="height: 24px;width: 100%;" >
-                    <option value="0">Select Parent</option>   
-                  </select>
-                </div>
-               <div class="col-lg-2">
-                    <select class="form-control select2"  name="cls_sec_id" id="cls_sec_id" required="required" style="height: 24px;width: 100%;">
-                      <option value="0">Select Section</option>
-                      <option value="all">All Sections</option>
-                      <?php if(isset($sectionsclassinfo)){
-                      foreach ($sectionsclassinfo as  $secionvalue) { ?>
-                      <option value="<?php echo $secionvalue['section_id']; ?>"><?php echo $secionvalue['sectionclassname']; ?></option>
-                      <?php } ?>
-                      <?php } ?>
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                    <?php //$months = array(1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec');?>
-                    <select class="form-control select2" id="month" name="month">
-                        <option value="">Select Fee Month</option>
-                        <?php
-                            foreach ($months as $key => $name) {
-                                    //print_r($name);
-                                printf('<option value="%s">%s</option>', $name['id'], $name['value']);
-                            }
-                        ?>
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                    <select class="form-control select2" id="fee_type" name="fee_type" style="max-width: 100%;">
-                        <option value="">Select Fee Type</option>
-                        <?php
-                            foreach ($fee_types as $value) {
-                                printf('<option value="%u">%s</option>', $value->fee_type_id, $value->fee_type_name);
-                            }
-                        ?>
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                  <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
-                </div>
-        </form>
+<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
+
+<?= view('components/page_header', [
+    'title' => 'Students Defaulters List',
+    'icon' => 'fas fa-user-times',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students', 'url' => base_url('admin/students')],
+        ['label' => 'Defaulters List', 'active' => true],
+    ],
+]) ?>
+<?php ob_start(); ?>
+<div class="row">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="student_id" class="report-label">Student</label>
+        <select class="form-control form-control-sm select2" name="student_id" id="student_id" style="width:100%;">
+            <option value="0">Select Student</option>
+        </select>
     </div>
-  </div>
-  <br>
-    <table class="table table-striped table-bordered table-hover" id="students-datatable" width="100%" style="font-size:13px;">
-					<thead>
-						<tr style="vertical-align: middle;">
-							<th nowrap>#</th>
-                            <th style="width: 250px;">F Id</th>
-                            <th style="width: 250px;">F Name</th>
-							<th style="width: 250px;">Name</th>
-                            <th style="width:150px;" nowrap>Class</th>
-                            <th nowrap>Father<br> Contact</th>
-                            <!-- <th nowrap>Mother Contact</th> -->
-                            <th id="dynamicCol" style="width: 70px;"><?php echo date('M Y'); ?></th>
-                            <th style="width: 70px;">Previous<br> Balance </th>
-                            <th style="width: 70px;">Total </th>
-						</tr>
-					</thead>
-					<tbody>
-					</tbody>
-                    <tfoot>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th id="total"></th>
-                        <th></th>
-                        <th></th>
-                     </tr>
-                    </tfoot>
-				</table></div></div>
-        </div>
-         <!-- /.box-body -->
-      </div>
-      <!-- /.box -->
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="parent_id" class="report-label">Parent</label>
+        <select class="form-control form-control-sm select2" name="parent_id" id="parent_id" style="width:100%;">
+            <option value="0">Select Parent</option>
+        </select>
     </div>
-  </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="cls_sec_id" class="report-label">Section</label>
+        <select class="form-control form-control-sm select2" name="cls_sec_id" id="cls_sec_id" required style="width:100%;">
+            <option value="0">Select Section</option>
+            <option value="all">All Sections</option>
+            <?php if (!empty($sectionsclassinfo)) : ?>
+                <?php foreach ($sectionsclassinfo as $secionvalue) : ?>
+                    <option value="<?= esc($secionvalue['section_id']) ?>"><?= esc($secionvalue['sectionclassname']) ?></option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="month" class="report-label">Fee month</label>
+        <select class="form-control form-control-sm select2" id="month" name="month">
+            <option value="">Select Fee Month</option>
+            <?php foreach ($months as $name) : ?>
+                <option value="<?= esc($name['id']) ?>"><?= esc($name['value']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+        <label for="fee_type" class="report-label">Fee type</label>
+        <select class="form-control form-control-sm select2" id="fee_type" name="fee_type">
+            <option value="">Select Fee Type</option>
+            <?php foreach ($fee_types as $value) : ?>
+                <option value="<?= (int) $value->fee_type_id ?>"><?= esc($value->fee_type_name) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-12 mb-2 d-flex align-items-end">
+        <button type="button" id="btn-filter" class="btn btn-primary btn-sm me-1">Filter</button>
+        <button type="button" id="btn-reset" class="btn btn-secondary btn-sm">Reset</button>
+    </div>
+</div>
+<?php $filterBodyHtml = ob_get_clean(); ?>
+
+<?php ob_start(); ?>
+<table class="table table-striped table-bordered table-hover mb-0" id="students-datatable" width="100%" style="font-size:13px;">
+    <thead>
+        <tr style="vertical-align: middle;">
+            <th nowrap>#</th>
+            <th style="width:250px;">F Id</th>
+            <th style="width:250px;">F Name</th>
+            <th style="width:250px;">Name</th>
+            <th style="width:150px;" nowrap>Class</th>
+            <th nowrap>Father<br>Contact</th>
+            <th id="dynamicCol" style="width:70px;"><?= esc(date('M Y')) ?></th>
+            <th style="width:70px;">Previous<br>Balance</th>
+            <th style="width:70px;">Total</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+        <tr>
+            <th></th><th></th><th></th><th></th><th></th><th></th>
+            <th id="total"></th><th></th><th></th>
+        </tr>
+    </tfoot>
+</table>
+<?php $tableHtml = ob_get_clean(); ?>
+
+<section class="content">
+    <div class="card sms-card card-primary card-outline card-tabs">
+        <div class="card-header p-0 pt-1 border-bottom-0">
+            <ul class="nav nav-tabs">
+                <li class="nav-item"><a class="nav-link <?= $status == 1 ? 'active' : '' ?>" href="#/students_defaulters_list?status=1">Current Defaulters</a></li>
+                <li class="nav-item"><a class="nav-link <?= $status == 3 ? 'active' : '' ?>" href="#/students_defaulters_list?status=3">Dropped Defaulters</a></li>
+                <li class="nav-item"><a class="nav-link <?= $status == 4 ? 'active' : '' ?>" href="#/family_defaulters_list?status=1">Defaulter Family List</a></li>
+            </ul>
+        </div>
+        <div class="card-body pt-3">
+            <?= view('components/filter_card', [
+                'title' => 'Filters',
+                'bodyHtml' => $filterBodyHtml,
+                'cardClass' => 'card sms-filter-card report-filter-card mb-3',
+            ]) ?>
+            <?= view('components/data_table_card', [
+                'title' => 'Defaulters',
+                'icon' => 'fas fa-user-times',
+                'tableHtml' => $tableHtml,
+                'cardClass' => 'card sms-card mb-0',
+            ]) ?>
+        </div>
+    </div>
 </section>
-<style type="text/css">
-  table.table-bordered th:last-child, table.table-bordered td:last-child{width: 50px;}
+
+<?= $this->endSection() ?>
+
+<?= $this->section('pageStyles') ?>
+<style>
+  table.table-bordered th:last-child,
+  table.table-bordered td:last-child { width: 50px; }
 </style>
-<!-- /.content -->
+<?= $this->endSection() ?>
+
+<?= $this->section('pageScripts') ?>
 <script src="https://cdn.datatables.net/plug-ins/1.10.19/api/sum().js"></script>
-<script type="text/javascript">
+<script>
    
 $(function(){
     var selectedFeeTypeTxt = 'Current<br> Month';
@@ -341,13 +337,6 @@ $(function(){
            },
            cache: true
     }
- });  
-
 });
- // $(document).ready(function() {
- //      var sum = $('#students-datatable').DataTable().column(7).data().sum();
- //      $('#total').html(sum);
- //    });
 </script>
-
 <?= $this->endSection() ?>

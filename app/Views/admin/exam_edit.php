@@ -48,38 +48,29 @@
   $csrfHash = function_exists('csrf_hash')  ? csrf_hash()  : '';
 ?>
 
-<!-- Header -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>Exam</h1>
-        <?php if ($locked): ?>
-          <small class="text-muted">Locked (datesheet or results exist)</small>
-        <?php endif; ?>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Exam</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Edit Exam',
+    'icon' => 'fas fa-file-alt',
+    'subtitle' => !empty($locked) ? 'Locked (datesheet or results exist)' : null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Exams', 'url' => base_url('admin/exam')],
+        ['label' => 'Edit', 'active' => true],
+    ],
+]) ?>
 
 <!-- Content -->
 <section class="content">
   <div class="row">
     <div class="col-lg-12">
-      <div class="card card-primary card-outline card-tabs">
+      <div class="card sms-card card-primary card-outline card-tabs">
         <div class="card-header p-0 pt-1 border-bottom-0">
           <ul class="nav nav-tabs">
-            <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/exam') ?>">Exams</a></li>
+            <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/exam') ?>"><i class="fas fa-list me-1"></i> Exams</a></li>
             <?php if (!$isEdit): ?>
-              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/add') ?>"><?= esc($header) ?></a></li>
+              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/add') ?>"><i class="fas fa-plus me-1"></i> <?= esc($header) ?></a></li>
             <?php else: ?>
-              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/edit?id=' . urlencode($id)) ?>"><?= esc($header) ?></a></li>
+              <li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/exam/edit?id=' . urlencode($id)) ?>"><i class="fas fa-edit me-1"></i> <?= esc($header) ?></a></li>
             <?php endif; ?>
           </ul>
         </div>
@@ -87,10 +78,10 @@
         <div class="card-body">
           <?php if ($locked): ?>
             <div class="alert alert-warning d-flex align-items-center" role="alert">
-              <i class="fas fa-lock mr-2"></i>
+              <i class="fas fa-lock me-2"></i>
               <div>
                 This exam is <strong>locked</strong> because a datesheet and/or subject results exist.
-                You can view details, but editing is disabled.
+                Exam name, short name and term can still be updated. Date range and exam days are locked.
               </div>
             </div>
           <?php endif; ?>
@@ -103,40 +94,49 @@
               if (function_exists('csrf_field')) { echo csrf_field(); }
             ?>
 
-            <!-- Hidden term_session_id (edit view expects it) -->
-            <input type="hidden" name="term_session_id" id="term_session_id" value="<?= esc($term_session_id) ?>">
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="exam_name">Exam Name</label>
+                  <input type="text" name="exam_name" value="<?= esc($exam_name) ?>" placeholder="Exam Name" class="form-control">
+                </div>
+              </div>
 
-            <!-- Disable all inputs when locked -->
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="short_name">Short Name</label>
+                  <input type="text" name="short_name" value="<?= esc($short_name) ?>" placeholder="Short Name" class="form-control">
+                </div>
+              </div>
+
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="term_session_id">Term</label>
+                  <select name="term_session_id" id="term_session_id" class="form-control">
+                    <option value="">Select Term</option>
+                    <?php foreach (($termsinfo ?? []) as $t):
+                      $tsid = is_array($t) ? (string)($t['term_session_id'] ?? '') : (string)($t->term_session_id ?? '');
+                      $tname = is_array($t) ? (string)($t['name'] ?? '') : (string)($t->name ?? '');
+                    ?>
+                      <option value="<?= esc($tsid) ?>" <?= ($term_session_id === $tsid ? 'selected' : '') ?>><?= esc($tname) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Date range partial (renders start/end inputs + per-day toggles) -->
             <fieldset <?= $locked ? 'disabled' : '' ?>>
               <div class="row">
-                <div class="col-lg-4">
-                  <div class="form-group">
-                    <label for="exam_name">Exam Name</label>
-                    <input type="text" name="exam_name" value="<?= esc($exam_name) ?>" placeholder="Exam Name" class="form-control">
-                  </div>
-                </div>
-
-                <div class="col-lg-4">
-                  <div class="form-group">
-                    <label for="short_name">Short Name</label>
-                    <input type="text" name="short_name" value="<?= esc($short_name) ?>" placeholder="Short Name" class="form-control">
-                  </div>
-                </div>
-
-                <!-- Date range partial (renders start/end inputs + per-day toggles) -->
                 <div class="col-lg-12" id="dateRange"></div>
               </div>
             </fieldset>
 
             <!-- Actions -->
             <div class="form-group mt-3">
-              <?php if (!$locked): ?>
-                <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-                <button type="reset" class="btn btn-default">Reset</button>
-              <?php else: ?>
-                <button type="button" class="btn btn-secondary" disabled><i class="fas fa-lock mr-1"></i> Locked</button>
-              <?php endif; ?>
-              <button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+              <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
+              <button type="reset" class="btn btn-secondary">Reset</button>
+              <button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
             </div>
 
             <?= form_close(); ?>
@@ -186,26 +186,22 @@
     // Load term date range on ready
     loadDateRange();
 
-    // Client guard if locked
-    if (IS_LOCKED) {
-      $('#user-edit-form').on('submit', function(e){
-        e.preventDefault();
-        if (window.toastr) toastr.warning('This exam is locked for editing because a datesheet and/or results exist.');
-        return false;
-      });
-      return; // no ajaxForm binding when locked
-    }
-
     // jQuery Validate (basic)
     if ($.fn.validate) {
       $('#user-edit-form').validate({
         rules:{
           exam_name:{ required:true },
-          exam_start_date:{ required:true }
+          <?php if (!$locked): ?>
+          exam_start_date:{ required:true },
+          <?php endif; ?>
+          term_session_id:{ required:true }
         },
         messages:{
           exam_name:{ required:'Exam Name is required' },
-          exam_start_date:{ required:'Exam start date is required' }
+          <?php if (!$locked): ?>
+          exam_start_date:{ required:'Exam start date is required' },
+          <?php endif; ?>
+          term_session_id:{ required:'Term is required' }
         }
       });
     }
@@ -239,11 +235,7 @@
         },
         error:function(xhr){
           $('#submitBtn').html('Save').prop('disabled', false);
-          if (xhr.status === 423) {
-            if (window.toastr) toastr.error('This exam is locked for editing because a datesheet and/or results exist.');
-          } else {
-            if (window.toastr) toastr.error('Request failed (' + xhr.status + ').');
-          }
+          if (window.toastr) toastr.error('Request failed (' + xhr.status + ').');
         }
       });
     }

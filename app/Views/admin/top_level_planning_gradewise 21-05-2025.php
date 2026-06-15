@@ -87,7 +87,7 @@
                         </div>
                         <div class="card-footer">
                         <button type="button" id="filterForm" class="btn btn-primary">Apply Filters</button>
-                        <button type="button" class="btn btn-default" onclick="resetFilters()">Reset</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetFilters()">Reset</button>
                          </div>
                     </div>
 
@@ -97,9 +97,9 @@
                         <div class="table-responsive">
                             <?php foreach($grouped_data as $class): ?>
                                 <div class="mb-4" style="page-break-inside: avoid;">
-                                    <h4 class="text-center font-weight-bold mb-3"><?= $class['class_name'] ?></h4>
+                                    <h4 class="text-center fw-bold mb-3"><?= $class['class_name'] ?></h4>
                                     <table class="table table-bordered">
-                                        <thead class="thead-light">
+                                        <thead class="table-light">
                                             <tr>
                                                 <th style="width:20%;">Subject</th>
                                                 <?php foreach($class['terms'] as $term_id => $term_name): ?>

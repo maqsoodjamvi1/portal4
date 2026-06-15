@@ -1,20 +1,15 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1><?= !empty($row) ? 'Edit Event' : 'Add Event' ?></h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item active"><?= !empty($row)?'Edit':'Add' ?></li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => !empty($row) ? 'Edit Event' : 'Add Event',
+    'icon' => 'fas fa-running',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => !empty($row) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -27,7 +22,7 @@
       <input type="hidden" name="event_id" value="<?= esc($row['event_id'] ?? '') ?>">
 
       <div class="card-body">
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-6">
             <label>Event Name</label>
             <input type="text" name="event_name" class="form-control" required
@@ -55,7 +50,7 @@
           </div>
         </div>
 
-        <div class="form-row">
+        <div class="row">
           <div class="form-group col-md-3">
             <label>Event Date</label>
             <input type="date" name="event_date" class="form-control" required

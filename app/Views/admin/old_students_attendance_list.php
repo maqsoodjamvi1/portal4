@@ -163,8 +163,8 @@ th{ text-align: center; }
 		 <div class="row no-print">
 		 	<div id="loader-1" class="overlay col-md-12 text-center" style="display: none;"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
 		   <input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
-		    <div class="form-inline col-lg-6 col-lg-offset-3">
-	            <!-- <div class="form-group pull-left">
+		    <div class="d-flex flex-wrap align-items-center col-lg-6 col-lg-offset-3">
+	            <!-- <div class="form-group float-start">
 	              <select class="form-control select2"  style="height: 25px;padding: 0 5px;" name="section_id" id="section_id">
 	              	 <option value="0">Select Section</option>
 	                <?php if(isset($sectionsclassinfo)){
@@ -174,10 +174,10 @@ th{ text-align: center; }
 	                <?php } ?>
 	              </select>
 	            </div> -->
-	            <div class="form-group  pull-left" style="margin-left: 15px;">
+	            <div class="form-group  float-start" style="margin-left: 15px;">
 	             <input type="date" name="date" id="date" required value="<?php echo date('Y-m-d'); ?>" class="form-control" style="height: 24px;line-height: 15px;padding: 0 10px;">
 	           </div>
-	            <div class="form-group  pull-left"  style="margin-left: 15px;">
+	            <div class="form-group  float-start"  style="margin-left: 15px;">
 	            <button type="button" onclick="getstudents();" class="btn btn-sm btn-primary" style="height: 24px;line-height: 10px;">View</button>
 	           </div>
 	          </div> 

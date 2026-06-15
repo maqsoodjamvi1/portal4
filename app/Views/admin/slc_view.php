@@ -51,28 +51,28 @@
         .corner-tl {
             top: 8mm;
             left: 8mm;
-            border-right: none;
+            border-end: none;
             border-bottom: none;
         }
 
         .corner-tr {
             top: 8mm;
             right: 8mm;
-            border-left: none;
+            border-start: none;
             border-bottom: none;
         }
 
         .corner-bl {
             bottom: 8mm;
             left: 8mm;
-            border-right: none;
+            border-end: none;
             border-top: none;
         }
 
         .corner-br {
             bottom: 8mm;
             right: 8mm;
-            border-left: none;
+            border-start: none;
             border-top: none;
         }
 
@@ -1165,9 +1165,9 @@ console.log('Global SLC edit functions registered');
 <div class="card mt-4">
     <div class="card-header bg-warning text-white">
         <h5 class="mb-0">
-            <i class="fas fa-money-bill-wave mr-2"></i> 
+            <i class="fas fa-money-bill-wave me-2"></i> 
             Fee Management
-            <span id="outstandingBadge" class="badge badge-light ml-2"></span>
+            <span id="outstandingBadge" class="badge text-bg-light ms-2"></span>
         </h5>
     </div>
     <div class="card-body">
@@ -1179,7 +1179,7 @@ console.log('Global SLC edit functions registered');
         <div id="feeContent" style="display: none;">
             <!-- Outstanding Balance Summary -->
             <div class="alert alert-info mb-3" id="outstandingSummary">
-                <i class="fas fa-info-circle mr-2"></i>
+                <i class="fas fa-info-circle me-2"></i>
                 <span id="outstandingMessage">Loading...</span>
             </div>
             
@@ -1202,7 +1202,7 @@ console.log('Global SLC edit functions registered');
                     </tbody>
                     <tfoot id="feeTableFooter" style="display: none;">
                         <tr class="bg-light">
-                            <th colspan="3" class="text-right">Total Selected:</th>
+                            <th colspan="3" class="text-end">Total Selected:</th>
                             <th id="selectedTotal">0.00</th>
                             <th id="selectedPaid">0.00</th>
                             <th id="selectedRemaining">0.00</th>
@@ -1216,7 +1216,7 @@ console.log('Global SLC edit functions registered');
             <div id="paymentActions" class="mt-3" style="display: none;">
                 <div class="card border-primary">
                     <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0"><i class="fas fa-credit-card mr-2"></i> Payment Actions</h6>
+                        <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i> Payment Actions</h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -1267,12 +1267,12 @@ console.log('Global SLC edit functions registered');
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-12 text-right">
+                            <div class="col-md-12 text-end">
                                 <button type="button" id="processPaymentBtn" class="btn btn-success">
-                                    <i class="fas fa-check-circle mr-1"></i> Process Payment
+                                    <i class="fas fa-check-circle me-1"></i> Process Payment
                                 </button>
                                 <button type="button" id="clearSelectionBtn" class="btn btn-secondary">
-                                    <i class="fas fa-times mr-1"></i> Clear Selection
+                                    <i class="fas fa-times me-1"></i> Clear Selection
                                 </button>
                             </div>
                         </div>
@@ -1288,12 +1288,12 @@ console.log('Global SLC edit functions registered');
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fas fa-check-circle mr-2"></i> Confirm Payment</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> Confirm Payment</h5>
+                <button type="button" class="close text-white" data-bs-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body" id="paymentConfirmBody"></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" id="confirmPaymentBtn" class="btn btn-success">Confirm & Process</button>
             </div>
         </div>
@@ -1341,7 +1341,7 @@ $(document).ready(function() {
     function displayFeeEntries(entries, totalOutstanding) {
         if (!entries || entries.length === 0) {
             $('#feeEntriesBody').html('<tr><td colspan="7" class="text-center text-muted">No outstanding fees found</td></tr>');
-            $('#outstandingSummary').html('<i class="fas fa-check-circle mr-2"></i> All fees are cleared! No outstanding balance.');
+            $('#outstandingSummary').html('<i class="fas fa-check-circle me-2"></i> All fees are cleared! No outstanding balance.');
             $('#outstandingSummary').removeClass('alert-info').addClass('alert-success');
             $('#paymentActions').hide();
             $('#feeTableFooter').hide();
@@ -1362,9 +1362,9 @@ $(document).ready(function() {
                         <td><input type="checkbox" class="fee-selector" data-remaining="${remaining}" data-net-amount="${entry.net_amount}"></td>
                         <td>${formatMonthYear(entry.fee_month)}</td>
                         <td>${escapeHtml(entry.fee_type_name)}</td>
-                        <td class="text-right">${formatNumber(entry.net_amount)}</td>
-                        <td class="text-right">${formatNumber(entry.total_paid || 0)}</td>
-                        <td class="text-right text-danger font-weight-bold remaining-amount">${formatNumber(remaining)}</td>
+                        <td class="text-end">${formatNumber(entry.net_amount)}</td>
+                        <td class="text-end">${formatNumber(entry.total_paid || 0)}</td>
+                        <td class="text-end text-danger fw-bold remaining-amount">${formatNumber(remaining)}</td>
                         <td>
                             ${entry.partial_payments && entry.partial_payments.length > 0 ? 
                                 `<button type="button" class="btn btn-sm btn-info view-payments" data-chalan-id="${entry.chalan_id}">
@@ -1398,7 +1398,7 @@ $(document).ready(function() {
         });
         
         $('#feeEntriesBody').html(html);
-        $('#outstandingSummary').html(`<i class="fas fa-exclamation-triangle mr-2"></i> Total Outstanding Balance: <strong>PKR ${formatNumber(totalRemaining)}</strong>`);
+        $('#outstandingSummary').html(`<i class="fas fa-exclamation-triangle me-2"></i> Total Outstanding Balance: <strong>PKR ${formatNumber(totalRemaining)}</strong>`);
         $('#outstandingSummary').removeClass('alert-success').addClass('alert-warning');
         $('#outstandingBadge').html(`PKR ${formatNumber(totalRemaining)}`);
         $('#paymentActions').show();

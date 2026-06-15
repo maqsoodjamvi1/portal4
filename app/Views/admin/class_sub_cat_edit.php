@@ -32,28 +32,16 @@
 	}
 
 ?>
-
-   <!-- Content Header (Page header) -->
-
-    <section class="content-header">
-
-      <h1>
-
-        Class Subject Category
-
-        <small></small>
-
-      </h1>
-
-      <ol class="breadcrumb">
-
-        <li><a href="<?= base_url('admin/dashboard') ?>"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-
-        <li class="active">Class Subject Category</li>
-
-      </ol>
-
-    </section>
+<?= view('components/page_header', [
+    'title' => 'Class Subject Category',
+    'icon' => 'fas fa-folder-open',
+    'subtitle' => $header ?? null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Class Subject Category', 'url' => base_url('admin/class_sub_cat')],
+        ['label' => isset($info) ? 'Edit' : 'Add', 'active' => true],
+    ],
+]) ?>
 
     <!-- Main content -->
 
@@ -61,7 +49,7 @@
 
       <div class="row">
 
-        <div class="col-xs-12">
+        <div class="col-12">
 
 		  <div class="nav-tabs-custom">
 
@@ -179,9 +167,9 @@
 
                 <button type="submit" class="btn btn-primary">Save</button>
 
-				<button type="reset" class="btn btn-default">Reset</button>
+				<button type="reset" class="btn btn-secondary">Reset</button>
 
-				<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+				<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 
               </div>
 

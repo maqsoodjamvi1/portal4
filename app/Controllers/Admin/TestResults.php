@@ -296,8 +296,8 @@ public function cardData()
         $card .=     '</div>';
         $card .=   '</div>';
         $card .=   '<div class="text-nowrap">';
-        $card .=     '<span class="badge badge-light" style="border:1px solid #ddd;">Total Classes: <b>'.(int)$att['total_classes'].'</b></span> ';
-        $card .=     '<span class="badge badge-light" style="border:1px solid #ddd;">Absents: <b>'.(int)$att['absents'].'</b></span>';
+        $card .=     '<span class="badge text-bg-light" style="border:1px solid #ddd;">Total Classes: <b>'.(int)$att['total_classes'].'</b></span> ';
+        $card .=     '<span class="badge text-bg-light" style="border:1px solid #ddd;">Absents: <b>'.(int)$att['absents'].'</b></span>';
         $card .=   '</div>';
         $card .= '</div>';
 
@@ -338,15 +338,15 @@ public function cardData()
 
                 // Row 2: Marks + %
                 $card .=     '<div class="d-flex justify-content-between" style="margin-top:6px;">';
-                $card .=       '<div><span class="badge badge-light" style="border:1px solid #ddd;">'
+                $card .=       '<div><span class="badge text-bg-light" style="border:1px solid #ddd;">'
                              .   ($got === null ? '— / '.(int)$t->total_marks : ((int)$got.' / '.(int)$t->total_marks))
                              . '</span></div>';
-                $card .=       '<div><span class="badge badge-info">'.($perc === null ? '— %' : ($perc.'%')).'</span></div>';
+                $card .=       '<div><span class="badge text-bg-info">'.($perc === null ? '— %' : ($perc.'%')).'</span></div>';
                 $card .=     '</div>';
 
                 // Row 3: Grade
-                $title = $gdetail ? ' title="'.esc($gdetail, 'attr').'" data-toggle="tooltip"' : '';
-                $card .=     '<div class="mt-1">Grade: <span'.$title.' class="badge badge-success" style="min-width:44px;">'.esc($grade).'</span></div>';
+                $title = $gdetail ? ' title="'.esc($gdetail, 'attr').'" data-bs-toggle="tooltip"' : '';
+                $card .=     '<div class="mt-1">Grade: <span'.$title.' class="badge text-bg-success" style="min-width:44px;">'.esc($grade).'</span></div>';
 
                 $card .=   '</div>';
                 $card .= '</div>';
@@ -358,11 +358,11 @@ public function cardData()
             if ($maxSum > 0) {
                 $overall = round($obtSum * 100.0 / $maxSum, 1);
                 [$overallGrade, $overallDetail] = $assignGrade($overall);
-                $titleOverall = $overallDetail ? ' title="'.esc($overallDetail, 'attr').'" data-toggle="tooltip"' : '';
-                $card .= '<div class="mt-2 text-right">'
-                      .    '<span class="badge badge-primary" style="border-radius:8px;">Total: '.(int)$obtSum.' / '.(int)$maxSum.'</span> '
-                      .    '<span class="badge badge-success" style="border-radius:8px;">'.$overall.'%</span> '
-                      .    '<span'.$titleOverall.' class="badge badge-dark" style="border-radius:8px;">Grade: '.esc($overallGrade).'</span>'
+                $titleOverall = $overallDetail ? ' title="'.esc($overallDetail, 'attr').'" data-bs-toggle="tooltip"' : '';
+                $card .= '<div class="mt-2 text-end">'
+                      .    '<span class="badge text-bg-primary" style="border-radius:8px;">Total: '.(int)$obtSum.' / '.(int)$maxSum.'</span> '
+                      .    '<span class="badge text-bg-success" style="border-radius:8px;">'.$overall.'%</span> '
+                      .    '<span'.$titleOverall.' class="badge text-bg-dark" style="border-radius:8px;">Grade: '.esc($overallGrade).'</span>'
                       .  '</div>';
             } else {
                 $card .= '<div class="mt-2 text-muted" style="font-size:.9rem;">No scored tests yet in this subject.</div>';
@@ -386,7 +386,7 @@ public function cardData()
                   <i class="fas fa-print"></i> Print
                 </button>
               </div>
-              <script>$(function(){ $(\'[data-toggle="tooltip"]\').tooltip(); });</script>';
+              <script>$(function(){ $(\'[data-bs-toggle="tooltip"]\').tooltip(); });</script>';
 
     return $html;
 }
@@ -835,11 +835,11 @@ public function listTests()
     // Build compact table
     $html  = '<div class="card mb-3"><div class="card-body p-2">';
     $html .= '<div class="d-flex align-items-center mb-2">';
-    $html .= '<i class="fas fa-list-alt mr-2 text-secondary"></i><strong>Tests in Selection</strong>';
+    $html .= '<i class="fas fa-list-alt me-2 text-secondary"></i><strong>Tests in Selection</strong>';
     $html .= '</div>';
     $html .= '<div class="table-responsive">';
     $html .= '<table class="table table-sm table-striped table-bordered mb-0" id="testsTable">';
-    $html .= '<thead class="thead-light">';
+    $html .= '<thead class="table-light">';
     $html .= '<tr>';
     $html .= '<th style="white-space:nowrap">Test&nbsp;No</th>';
     $html .= '<th style="white-space:nowrap">Day &amp; Date</th>';

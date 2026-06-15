@@ -1,31 +1,20 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<?php 
-  $system_status = ''; 
-  if(!empty($_GET['system_status'])){
-   $system_status = $_GET['system_status']; 
-  }
+<?php
+  $system_status = $system_status ?? '';
+  $psbBase = base_url('admin/pay_system_bill');
 ?>
-<script src="<?php echo base_url();?>resource/adminlte/plugins/bootstrap-switch/js/bootstrap-switch.min.js"></script>  
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>
-               System Bills
-            </h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-              <li class="breadcrumb-item active">System Bills</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
+<script src="<?php echo base_url();?>resource/adminlte/plugins/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+    <?= view('components/page_header', [
+    'title' => 'System Bills',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'System Bills', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
 <section class="content">
 <div class="row">
@@ -34,20 +23,20 @@
     <div class="card-header p-0 pt-1 border-bottom-0">
 	<ul class="nav nav-tabs">		
       <li class="nav-item"><a class="nav-link <?php if($system_status == ''){ ?> active <?php } ?>" href="<?= base_url('admin/pay_system_bill') ?>">  All </a></li> 
-			<li class="nav-item"><a class="nav-link <?php if($system_status == 'pending'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=pending';?>">  Pending </a></li>	
-		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'in_connection'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=in_connection';?>">  In Connection</a></li>
+			<li class="nav-item"><a class="nav-link <?php if($system_status == 'pending'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=pending">  Pending </a></li>	
+		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'in_connection'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=in_connection">  In Connection</a></li>
 
-		 <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'willing'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=willing';?>">  Willing</a></li>
+		 <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'willing'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=willing">  Willing</a></li>
 		  
-      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'paid'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=paid';?>">  Paid</a></li>
+      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'paid'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=paid">  Paid</a></li>
 		 
-		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'not_responding'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=not_responding';?>">Not responding</a></li>
+		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'not_responding'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=not_responding">Not responding</a></li>
 		 
-		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'testing'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=testing';?>">Testing</a></li>
+		  <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'testing'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=testing">Testing</a></li>
       
-      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'active'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=active';?>">Active</a></li>
+      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'active'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=active">Active</a></li>
       
-      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'inactive'){ ?> active <?php } ?>" href="<?php echo '#/pay_system_bill?system_status=inactive';?>">InActive</a></li>
+      <li  class="nav-item" ><a  class="nav-link <?php if($system_status == 'inactive'){ ?> active <?php } ?>" href="<?= $psbBase ?>?system_status=inactive">InActive</a></li>
         
        
 		</ul>
@@ -76,15 +65,15 @@
  <div class="modal fade" id="viewSibling" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Message</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Message</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
         	<input type="hidden" name="messagesystemID" id="messagesystemID">
           <textarea id="message" style="height:400px !important;" class="form-control" name="message"></textarea>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateMessage" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -94,8 +83,8 @@
    <div class="modal fade" id="changeStatus" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Status</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Status</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
         	<input type="hidden" name="billID" id="billID">
@@ -109,7 +98,7 @@
           </select>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateBillStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -120,15 +109,15 @@
    <div class="modal fade" id="viewLoginSms" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Login SMS</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Login SMS</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
         	<input type="hidden" name="smscampusID" id="smscampusID">
           <textarea id="login_message" style="height:400px !important;" class="form-control" name="login_message"></textarea>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="sendLoginSms" class="btn btn-primary">Send</button>
           </div>
         </div>
@@ -140,15 +129,15 @@
    <div class="modal fade" id="viewReminderSms" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Reminder SMS</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Reminder SMS</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
         	<input type="hidden" name="remindersmscampusID" id="remindersmscampusID">
           <textarea id="reminder_message" style="height:400px !important;" class="form-control" name="reminder_message"></textarea>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="sendReminderSms" class="btn btn-primary">Send</button>
           </div>
         </div>
@@ -165,7 +154,7 @@ $(function(){
  	var billID = $('#billID').val();
  	 	
  	  $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=updateBillStatus',
+      url: '<?= $psbBase ?>/updateBillStatus',
       type: 'POST',
       data:{status: status,billID:billID}, 
       success:function(res){
@@ -184,7 +173,7 @@ $(function(){
  	var messagesystemID = $('#messagesystemID').val();
  	 	
  	  $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=updateStatusMessage',
+      url: '<?= $psbBase ?>/updateStatusMessage',
       type: 'POST',
       data:{message: message,messagesystemID:messagesystemID}, 
       success:function(res){
@@ -223,7 +212,7 @@ $(function(){
   var systemID = button.data('id');
 
   $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=getMessage',
+      url: '<?= $psbBase ?>/getMessage',
       type: 'POST',
       data:{systemID: systemID}, 
       success:function(res){
@@ -244,7 +233,7 @@ $('#sendLoginSms').click(function(){
  	var smscampusID = $('#smscampusID').val();
  	 	
  	  $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=updateLoginSms',
+      url: '<?= $psbBase ?>/updateLoginSms',
       type: 'POST',
       data:{login_message: login_message,smscampusID:smscampusID}, 
       success:function(res){
@@ -263,7 +252,7 @@ $('#viewLoginSms').on('show.bs.modal', function (event) {
   var campusID = button.data('id');
 
   $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=getLoginSms',
+      url: '<?= $psbBase ?>/getLoginSms',
       type: 'POST',
       data:{campusID: campusID}, 
       success:function(res){
@@ -284,7 +273,7 @@ $('#sendReminderSms').click(function(){
  	var remindersmscampusID = $('#remindersmscampusID').val();
  	 	
  	  $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=updateReminderSms',
+      url: '<?= $psbBase ?>/updateReminderSms',
       type: 'POST',
       data:{reminder_message: reminder_message,remindersmscampusID:remindersmscampusID}, 
       success:function(res){
@@ -303,7 +292,7 @@ $('#viewReminderSms').on('show.bs.modal', function (event) {
   var campusID = button.data('id');
 
   $.ajax({
-      url: 'admin.php?c=pay_system_bill&m=getReminderSms',
+      url: '<?= $psbBase ?>/getReminderSms',
       type: 'POST',
       data:{campusID: campusID}, 
       success:function(res){
@@ -337,9 +326,10 @@ var table = $('#campus-datatable').DataTable({
   processing: true,
   serverSide: true,
 	ajax:{
-		url:'<?php echo site_url('c=pay_system_bill&m=data&system_status='.$system_status);?>',
+		url:'<?= $psbBase ?>/data',
 		type:'post',
 		data:function(d){
+			d.system_status = '<?= esc($system_status, 'js') ?>';
 		}
 	},
 	columns:[
@@ -364,25 +354,25 @@ var table = $('#campus-datatable').DataTable({
 		render:function(data, type, row){
 		var html = ''; 
 		html += '<div class="">';
-		html += '<a style="width:100%;" target="_blank" href="<?php echo 'https://portal.timesoftsol.com/admin.php?c=login&username=';?>' + row.username + '&pass='+row.pass+'" title="login" class="btn btn-default btn-xs"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>';
+		html += '<a style="width:100%;" target="_blank" href="<?php echo 'https://portal.timesoftsol.com/admin.php?c=login&username=';?>' + row.username + '&pass='+row.pass+'" title="login" class="btn btn-secondary btn-sm"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>';
 
-		html += '<a style="width:100%;" href="<?php echo '#/pay_system_bill?m=view&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> View</a>';
+		html += '<a style="width:100%;" href="<?= $psbBase ?>/view?id=' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> View</a>';
 
 		// if(row.bill_status == 'unpaid'){
-		// 	html += ' <a  style="width:100%;" onclick="myFunction(' + data + ')"  title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Create Live System </a>';
+		// 	html += ' <a  style="width:100%;" onclick="myFunction(' + data + ')"  title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Create Live System </a>';
 		// }else{
-		html += '<a style="width:100%;" onclick="myFunction(' + row.userID + ')"  title="edit" class="btn btn-default btn-xs"><i class="fas fa-file-invoice"></i> Reset Password</a>';
+		html += '<a style="width:100%;" onclick="myFunction(' + row.userID + ')"  title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Reset Password</a>';
 		// }
 
-    html += '<a style="width:100%;" href="#" data-toggle="modal" style="font-size: .75rem !important;" id="#changeStatus' + data + '" data-target="#changeStatus" data-id="' + row.id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Update Status</a>';
+    html += '<a style="width:100%;" href="#" data-bs-toggle="modal" style="font-size: .75rem !important;" id="#changeStatus' + data + '" data-bs-target="#changeStatus" data-id="' + row.id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Update Status</a>';
 
-    html += '<a style="width:100%;" href="#" data-toggle="modal" style="font-size: .75rem !important;" id="#viewSibling' + data + '" data-target="#viewSibling" data-id="' + row.system_id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Update Message</a>';
+    html += '<a style="width:100%;" href="#" data-bs-toggle="modal" style="font-size: .75rem !important;" id="#viewSibling' + data + '" data-bs-target="#viewSibling" data-id="' + row.system_id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Update Message</a>';
 
-    html += '<a style="width:100%;" href="#" data-toggle="modal" style="font-size: .75rem !important;" id="#viewLoginSms' + data + '" data-target="#viewLoginSms" data-id="' + row.campus_id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Login SMS</a>';
+    html += '<a style="width:100%;" href="#" data-bs-toggle="modal" style="font-size: .75rem !important;" id="#viewLoginSms' + data + '" data-bs-target="#viewLoginSms" data-id="' + row.campus_id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Login SMS</a>';
 
-    html += '<a style="width:100%;" href="#" data-toggle="modal" style="font-size: .75rem !important;" id="#viewReminderSms' + data + '" data-target="#viewReminderSms" data-id="' + row.campus_id + '" class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Reminder SMS</a>';
+    html += '<a style="width:100%;" href="#" data-bs-toggle="modal" style="font-size: .75rem !important;" id="#viewReminderSms' + data + '" data-bs-target="#viewReminderSms" data-id="' + row.campus_id + '" class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Reminder SMS</a>';
     
-    html += '<a style="width:100%;" target="_blank" href="https://wa.me/' +row.campus_phone+ '?text=Free trial account of '+row.system_name+'  on TIME Soft Solution. %0a username: '+row.username+' password: '+row.pass +' For Login plz click on https://portal.timesoftsol.com/admin.php Feel free to contact us more detail TIME Soft Solution Islamabad, Pakistan" style="font-size: .75rem !important;"  class="btn btn-default btn-xs"><i class="fa fa-check" aria-hidden="true"></i> Whatsapp</a>';
+    html += '<a style="width:100%;" target="_blank" href="https://wa.me/' +row.campus_phone+ '?text=Free trial account of '+row.system_name+'  on TIME Soft Solution. %0a username: '+row.username+' password: '+row.pass +' For Login plz click on https://portal.timesoftsol.com/admin.php Feel free to contact us more detail TIME Soft Solution Islamabad, Pakistan" style="font-size: .75rem !important;"  class="btn btn-secondary btn-sm"><i class="fa fa-check" aria-hidden="true"></i> Whatsapp</a>';
 
 		html += '</div>';
 		
@@ -432,7 +422,7 @@ var r = confirm("OK! or Cancel!");
 if (r == true) {
 var userid = id;	
 $.ajax({
-    url: 'admin.php?c=pay_system_bill&m=reset_password',
+    url: '<?= $psbBase ?>/reset_password',
     type: "POST",
     data:{userid: userid},
     success:function(res){

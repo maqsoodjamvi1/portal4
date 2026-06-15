@@ -1,3 +1,4 @@
+<?php $uiNeedsDataTables = true; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
@@ -8,24 +9,14 @@
   }
 ?>
 <link rel="stylesheet" href="<?php echo base_url();?>resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css" />
-<!-- Content Header (Page header) -->
-<section class="content-header">
-      <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>
-             Students
-          </h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-            <li class="breadcrumb-item active">Students</li>
-          </ol>
-        </div>
-      </div>
-    </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Students', 'active' => true],
+    ],
+]) ?>
+
     <!-- Main content -->
     <section class="content">
     <div class="row">
@@ -42,7 +33,7 @@
       <div class="card-body">
       <div class="row">
         <div class="col-lg-12">
-              <form id="form-filter" class="form-inline">
+              <form id="form-filter" class="d-flex flex-wrap align-items-center">
                 <div class="col-lg-3">
                     <select class="form-control select2" name="student_id" id="student_id" style="height: 24px;width: 100%;">
 		                   <option value="0">Select Student</option>   
@@ -56,7 +47,7 @@
                
 					      <div class="col-lg-3">
                   <button type="button" id="btn-filter" style="float:left;line-height:12px;height: 24px;" class="btn btn-primary">Filter</button>
-                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-default">Reset</button>
+                  <button type="button" id="btn-reset"  style="float:left;line-height:12px;height: 24px;" class="btn btn-secondary">Reset</button>
                 </div>
                 </form>
         </div>
@@ -93,8 +84,8 @@
     <div class="modal fade" id="makeCurrent" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content"><div class="modal-header">
-          <h5 class="modal-title pull-left" id="exampleModalLabel">Update Status</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title float-start" id="exampleModalLabel">Update Status</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form>
@@ -117,7 +108,7 @@
  		       </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" id="updateStatus" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -185,9 +176,9 @@ $(function(){
 				render:function(data, type, row){
 					//console.log(row);
 					var html = '';
-          html += '<div class="btn-group"><button type="button" class="btn btn-default btn-sm">Action</button><button type="button" class="btn btn-default dropdown-toggle dropdown-icon" data-toggle="dropdown"><span class="sr-only">Toggle Dropdown</span></button><div class="dropdown-menu" role="menu">';
-          html += '<a href="<?php echo '#/a_students?m=edit&id=';?>' + data + '" title="edit" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-pencil-alt"></i> Edit</a>';
-          html += '<a href="<?php echo '#/a_fee_chalan_single?m=add&id=';?>' + data + '" title="Fee Chalan" class="btn btn-default btn-xs dropdown-item"><i class="fas fa-file-invoice"></i> Chalan</a>';
+          html += '<div class="btn-group"><button type="button" class="btn btn-secondary btn-sm">Action</button><button type="button" class="btn btn-secondary dropdown-toggle dropdown-icon" data-bs-toggle="dropdown"><span class="visually-hidden">Toggle Dropdown</span></button><div class="dropdown-menu" role="menu">';
+          html += '<a href="<?php echo '#/a_students?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-pencil-alt"></i> Edit</a>';
+          html += '<a href="<?php echo '#/a_fee_chalan_single?m=add&id=';?>' + data + '" title="Fee Chalan" class="btn btn-secondary btn-sm dropdown-item"><i class="fas fa-file-invoice"></i> Chalan</a>';
           html += '</div></div>'; 
 		      html += '<div></div>';
 	 

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admission Form - <?= esc($student['first_name'] . ' ' . esc($student['last_name']) ?></title>
+    <title>Admission Form - <?= esc(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? '')) ?></title>
     
-    <!-- Bootstrap 4 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -91,7 +91,7 @@
             background-color: #f8f9fa;
             padding: 8px 15px;
             margin-top: 20px;
-            border-left: 4px solid #007bff;
+            border-start: 4px solid #007bff;
             font-weight: bold;
         }
         
@@ -129,10 +129,10 @@
       <div class="print-container">
     <div class="no-print mb-3 text-center">
         <button onclick="window.print()" class="btn btn-primary">
-            <i class="fas fa-print mr-2"></i> Print Form
+            <i class="fas fa-print me-2"></i> Print Form
         </button>
         <a href="<?= base_url('admin/students') ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Students
+            <i class="fas fa-arrow-left me-2"></i> Back to Students
         </a>
     </div>
     
@@ -399,7 +399,7 @@
                                 <td><?= date('M j, Y', strtotime($invoice['due_date'])) ?></td>
                                 <td><?= number_format($invoice['amount'], 2) ?> PKR</td>
                                 <td>
-                                    <span class="badge badge-<?= $invoice['status'] == 'paid' ? 'success' : 'danger' ?>">
+                                    <span class="badge text-bg-<?=  $invoice['status'] == 'paid' ? 'success' : 'danger' ?>">
                                         <?= ucfirst($invoice['status']) ?>
                                     </span>
                                 </td>
@@ -414,7 +414,7 @@
                                 <td><?= date('M j, Y', strtotime($invoice['due_date'])) ?></td>
                                 <td><?= number_format($invoice['amount'], 2) ?> PKR</td>
                                 <td>
-                                    <span class="badge badge-<?= $invoice['status'] == 'paid' ? 'success' : 'danger' ?>">
+                                    <span class="badge text-bg-<?=  $invoice['status'] == 'paid' ? 'success' : 'danger' ?>">
                                         <?= ucfirst($invoice['status']) ?>
                                     </span>
                                 </td>
@@ -470,7 +470,8 @@
     
     <!-- Bootstrap & jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
     
     <script>
         // Automatically trigger print dialog when page loads

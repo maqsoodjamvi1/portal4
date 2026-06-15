@@ -1,31 +1,31 @@
+<?php $uiNeedsDataTables = false; ?>
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-8">
-        <h1><i class="fas fa-school"></i> Add Subject
-          <?php if (empty($sections_info->sid)) : ?>
-            <span class="badge badge-success float-right">Step 7 of 10: System Configuration</span>
-            <audio autoplay controls hidden>
-              <source src="audio/Step7subjects.m4a" type="audio/mpeg">
-            </audio>
-          <?php endif; ?>
-        </h1>
-      </div>
-      <div class="col-sm-4">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Subject</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?php
+$isAddMode = is_array($info ?? null);
+$subjectTitle = $isAddMode ? 'Add Subject' : 'Edit Subject';
+$subjectActions = '';
+if ($isAddMode) {
+    $subjectActions = '<span class="badge text-bg-success sms-summary-chip sms-summary-chip--primary">Step 7 of 10: System Configuration</span>';
+}
+?>
+<?= view('components/page_header', [
+    'title' => $subjectTitle,
+    'icon' => 'fas fa-book',
+    'actionsHtml' => $subjectActions,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Subjects', 'url' => base_url('admin/subjects')],
+        ['label' => $subjectTitle, 'active' => true],
+    ],
+]) ?>
+<?php if ($isAddMode) : ?>
+<audio autoplay controls hidden><source src="<?= base_url('audio/Step7subjects.m4a') ?>" type="audio/mpeg"></audio>
+<?php endif; ?>
 
 <section class="content">
-  <div class="card card-primary">
+  <div class="card sms-card card-primary">
     <div class="card-header p-2">
       <ul class="nav nav-pills">
         <li class="nav-item"><a class="nav-link" href="<?= base_url('admin/subjects') ?>">Subject List</a></li>
@@ -33,11 +33,11 @@
       </ul>
     </div>
     <div class="card-body">
-      <?= form_open(base_url('admin/subjects/save'), ['id' => 'subjects-edit-form']) ?>
+      <?= form_open(base_url('admin/subjects/save'), ['id' => 'subjects-edit-form', 'class' => 'needs-validation', 'novalidate' => 'novalidate']) ?>
       <div class="table-responsive">
 
         <table class="table table-bordered table-striped" id="dynamic_field">
-          <thead class="thead-light">
+          <thead class="table-light">
             <tr>
               <th>Subject Name</th>
               <th>Short Name</th>
@@ -107,7 +107,7 @@ else:
         <button type="button" name="add" id="add" class="btn btn-success"><i class="fas fa-plus"></i> Add Row</button>
       </div>
 
-      <div class="mt-4 text-right">
+      <div class="mt-4 text-end">
         <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
         <button type="reset" class="btn btn-secondary">Reset</button>
         <button type="button" onclick="history.back();" class="btn btn-light">Cancel</button>

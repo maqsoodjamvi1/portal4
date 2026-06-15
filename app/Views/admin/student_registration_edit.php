@@ -78,24 +78,14 @@ function checkfathercnic() {
 
  }
 </script>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-          Student Registration
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Student Registration</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Student Registration',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Student Registration', 'active' => true],
+    ],
+]) ?>
+
 <!-- Main content -->
 <section class="content">
 <div class="row">
@@ -201,10 +191,8 @@ function checkfathercnic() {
           <div class="form-group"> 
           <label>Date of Birth</label>
 		  		<div class="input-group date" id="datepicker" data-target-input="nearest">
-          <input type="text" class="form-control datetimepicker-input" data-target="#datepicker"  name="date_of_birth" required value="<?php echo $date_of_birth;?>"/>
-          <div class="input-group-append" data-target="#datepicker" data-toggle="datetimepicker">
-              <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-          </div>
+          <input type="text" class="form-control datetimepicker-input" data-bs-target="#datepicker"  name="date_of_birth" required value="<?php echo $date_of_birth;?>"/>
+          <span class="input-group-text" data-bs-target="#datepicker" data-bs-toggle="datetimepicker"><i class="fa fa-calendar"></i></span>
         </div>
       	</div>
 			</div>
@@ -221,8 +209,8 @@ function checkfathercnic() {
 			<div class="col-sm-12">
 				<div class="form-group">
 		      <button type="submit" id="submitBtn" class="btn btn-primary">Save</button>
-					<button type="reset" class="btn btn-default">Reset</button>
-					<button type="button" class="btn btn-default" onclick="history.go(-1);">Cancel</button>
+					<button type="reset" class="btn btn-secondary">Reset</button>
+					<button type="button" class="btn btn-secondary" onclick="history.go(-1);">Cancel</button>
 		    </div>
 			</div>
 		

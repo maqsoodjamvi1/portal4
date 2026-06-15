@@ -255,9 +255,9 @@ class Top_level_planning extends BaseController
             $output .= "<textarea name='syllabus[]' class='form-control editor' rows='4'>{$syllabus}</textarea>";
             $output .= "</td>";
             $output .= "<td class='text-center'>";
-            $output .= "<div class='custom-control custom-switch'>";
-            $output .= "<input type='checkbox' class='custom-control-input' name='lock_{$term->term_session_id}' id='lock_{$term->term_session_id}' value='1' {$lock}>";
-            $output .= "<label class='custom-control-label' for='lock_{$term->term_session_id}'></label>";
+            $output .= "<div class='form-check form-switch'>";
+            $output .= "<input type='checkbox' class='form-check-input' name='lock_{$term->term_session_id}' id='lock_{$term->term_session_id}' value='1' {$lock}>";
+            $output .= "<label class='form-check-label' for='lock_{$term->term_session_id}'></label>";
             $output .= "</div>";
             $output .= "</td>";
             $output .= "</tr>";

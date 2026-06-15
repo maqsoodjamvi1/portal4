@@ -693,8 +693,8 @@ function selectSubjectsforTopLevelPlanning() {
                             <div class="video-preview">';
             
             if ($youtube_id) {
-                $html .= '<div class="embed-responsive embed-responsive-16by9 mb-2">
-                            <iframe class="embed-responsive-item" 
+                $html .= '<div class="ratio ratio-16x9 mb-2">
+                            <iframe class="" 
                                     src="https://www.youtube.com/embed/'.$youtube_id.'" 
                                     allowfullscreen></iframe>
                           </div>';

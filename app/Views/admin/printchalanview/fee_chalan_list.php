@@ -3,7 +3,7 @@
 <?php else: ?>
   <div class="table-responsive">
     <table class="table table-sm table-striped mb-0">
-      <thead class="thead-light">
+      <thead class="table-light">
         <tr>
           <th>#</th>
           <th>Month</th>
@@ -12,7 +12,7 @@
           <th>Balance</th>
           <th>Status</th>
           <th>Created</th>
-          <th class="text-right">Action</th>
+          <th class="text-end">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -25,15 +25,15 @@
           <td><?= number_format((float)$r['balance']) ?></td>
           <td>
             <?php if ((int)$r['status'] === 0): ?>
-              <span class="badge badge-warning">Unpaid</span>
+              <span class="badge text-bg-warning">Unpaid</span>
             <?php else: ?>
-              <span class="badge badge-success">Paid</span>
+              <span class="badge text-bg-success">Paid</span>
             <?php endif; ?>
           </td>
           <td><?= esc(date('d-M-Y', strtotime($r['created_at'] ?? 'now'))) ?></td>
-          <td class="text-right">
+          <td class="text-end">
             <button type="button"
-              class="btn btn-primary btn-xs"
+              class="btn btn-primary btn-sm"
               onclick="openPayModal(<?= (int)$r['id'] ?>)">
               Pay
             </button>

@@ -27,7 +27,12 @@ class StudentsComplaints extends BaseController
         $sessionid = $this->session->get('member_sessionid');
         $campus_id = $this->session->get('member_campusid');
 
-        $results = $this->db->query("SELECT * FROM complaints WHERE student_id IN (SELECT student_id FROM students WHERE campus_id = $campus_id)")->getResult();
+        $results = $this->db->table('complaints')
+            ->whereIn('student_id', static function ($builder) use ($campus_id) {
+                return $builder->select('student_id')->from('students')->where('campus_id', (int) $campus_id);
+            })
+            ->get()
+            ->getResult();
 
         $academic_session = $this->db->table('academic_session')->where('session_id', $sessionid)->get()->getRow();
 
@@ -39,7 +44,10 @@ class StudentsComplaints extends BaseController
             $classSection = $this->db->table('class_section')->where('cls_sec_id', $cls_sec_id)->get()->getRow();
             $class = $this->db->table('classes')->where('class_id', $classSection->class_id ?? 0)->get()->getRow();
 
-            $term = $this->db->query("SELECT * FROM terms_session WHERE session_id = $sessionid AND '{$row->date}' BETWEEN start_date AND end_date")->getRow();
+            $term = $this->db->query(
+                'SELECT * FROM terms_session WHERE session_id = ? AND ? BETWEEN start_date AND end_date',
+                [(int) $sessionid, (string) $row->date]
+            )->getRow();
             $termName = $term ? ($this->db->table('terms')->where('term_id', $term->term_id)->get()->getRow('name')) : '';
 
             $data[] = [

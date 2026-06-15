@@ -130,27 +130,22 @@ if (!function_exists('student_photo_url')) {
 }
 </style>
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-7">
-        <h1 class="mb-1">
-          Members: <?= esc($team['team_name']) ?>
-          <small class="text-muted"> (<?= esc($team['house_name'] ?? $team['house_id']) ?>)</small>
-        </h1>
-        <div><small>Event: <?= esc($team['event_name']) ?></small></div>
-      </div>
-      <div class="col-sm-5">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/events') ?>">Sports Events</a></li>
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/sports/teams/event/'.$team['event_id']) ?>">Teams</a></li>
-          <li class="breadcrumb-item active">Members</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
+<?= view('components/page_header', [
+    'title' => 'Team Members: ' . ($team['team_name'] ?? ''),
+    'icon' => 'fas fa-user-friends',
+    'subtitle' => implode(' · ', array_filter([
+        !empty($team['house_name']) || !empty($team['house_id'])
+            ? 'House: ' . ($team['house_name'] ?? $team['house_id'])
+            : null,
+        !empty($team['event_name']) ? 'Event: ' . $team['event_name'] : null,
+    ])) ?: null,
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Sports Events', 'url' => base_url('admin/sports/events')],
+        ['label' => 'Teams', 'url' => base_url('admin/sports/teams/event/' . ($team['event_id'] ?? ''))],
+        ['label' => 'Members', 'active' => true],
+    ],
+]) ?>
 
 <section class="content">
  <div class="row">
@@ -187,7 +182,7 @@ if (!function_exists('student_photo_url')) {
                 <?php endif; ?>
 
                 <div class="member-actions">
-                  <button class="btn btn-xs btn-danger del" title="Remove" data-id="<?= (int)$m['stm_id'] ?>">
+                  <button class="btn btn-sm btn-danger del" title="Remove" data-id="<?= (int)$m['stm_id'] ?>">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -221,9 +216,9 @@ if (!function_exists('student_photo_url')) {
           <small class="form-text text-muted">Options show Name — Age | Class–Section.</small>
         </div>
         <div class="form-group">
-          <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="is_captain" value="1">
-            <label class="custom-control-label" for="is_captain">Mark as Captain</label>
+          <div class="form-check form-switch">
+            <input type="checkbox" class="form-check-input" id="is_captain" value="1">
+            <label class="form-check-label" for="is_captain">Mark as Captain</label>
           </div>
         </div>
         <button id="addMember" class="btn btn-success">

@@ -27,9 +27,9 @@ $db = \Config\Database::connect();  ?>
 
 <li class="list-group-item">
     <div class="input-group mb-3">
-        <div class="custom-file">
-            <input type="file" class="custom-file-input" name="thumbnail<?= $value->a_type_id ?>" id="thumbnail<?= $value->a_type_id ?>">
-            <label class="custom-file-label" for="thumbnail<?= $value->a_type_id ?>">Choose file</label>
+        <div class="mb-3">
+            <input type="file" class="form-control" name="thumbnail<?= $value->a_type_id ?>" id="thumbnail<?= $value->a_type_id ?>">
+            <label class="form-label" for="thumbnail<?= $value->a_type_id ?>">Choose file</label>
         </div>
     </div>
     <div class="img-thumbnail text-center">

@@ -1,7 +1,7 @@
 <?php if (!empty($students)) : ?>
 <div class="table-responsive">
   <table class="table table-bordered table-hover">
-    <thead class="thead-light">
+    <thead class="table-light">
       <tr>
         <th>#</th>
         <th>Student Name</th>
@@ -26,7 +26,7 @@
               <td><?= esc($student['family_id']) ?></td>
               <td><?= esc($student['class_name']) ?></td>
               <td><?= esc($month) ?></td>
-              <td class="text-right">AED <?= number_format($data['amount'], 2) ?></td>
+              <td class="text-end">AED <?= number_format($data['amount'], 2) ?></td>
               <td>
                 <button class="btn btn-success btn-sm pay-fee-btn"
                         data-student-id="<?= $student['id'] ?>"

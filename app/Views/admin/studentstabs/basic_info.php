@@ -13,7 +13,7 @@
 <div class="container-fluid px-3">
   <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex justify-content-between align-items-center bg-primary text-white">
-      <h5 class="mb-0"><i class="fas fa-user-graduate mr-2"></i> Student Admission Registration</h5>
+      <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Admission Registration</h5>
       <button type="button" class="btn btn-light btn-sm no-print" onclick="window.print();">
         <i class="fas fa-print"></i> Print / Save PDF
       </button>
@@ -21,89 +21,89 @@
 
     <div class="card-body">
       <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle mr-2"></i><?= session()->getFlashdata('success') ?></div>
+        <div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><?= session()->getFlashdata('success') ?></div>
       <?php endif; ?>
 
       <!-- ======================== STUDENT INFORMATION ======================== -->
       <div class="section-card">
         <div class="section-head">
-          <h5 class="mb-0"><i class="fas fa-user-graduate text-primary mr-2"></i> Student Information</h5>
+          <h5 class="mb-0"><i class="fas fa-user-graduate text-primary me-2"></i> Student Information</h5>
         </div>
         <div class="section-body">
-          <div class="form-row">
+          <div class="row">
             <div class="col-12 col-md-3 mb-3 ad-field" data-field="reg_no">
-              <label class="mb-1 font-weight-600"><i class="fas fa-hashtag mr-1 text-primary"></i> Registration No</label>
+              <label class="mb-1 fw-semibold"><i class="fas fa-hashtag me-1 text-primary"></i> Registration No</label>
               <input type="text" class="form-control form-control-sm" id="reg_no" name="reg_no" value="<?= esc(old('reg_no', $reg_no ?? '')) ?>" readonly>
             </div>
 
             <div class="col-12 col-md-3 mb-3 ad-field" data-field="gr_no">
-              <label class="mb-1 font-weight-600"><i class="far fa-id-card mr-1 text-primary"></i> G.R. Number <small class="text-muted">(Optional)</small></label>
+              <label class="mb-1 fw-semibold"><i class="far fa-id-card me-1 text-primary"></i> G.R. Number <small class="text-muted">(Optional)</small></label>
               <input type="text" class="form-control form-control-sm" id="gr_no" name="gr_no" value="<?= esc(old('gr_no', $gr_no ?? '')) ?>" placeholder="School GR No">
             </div>
 
             <div class="col-12 col-md-3 mb-3 ad-field" data-field="gr_date">
-              <label class="mb-1 font-weight-600"><i class="far fa-calendar-alt mr-1 text-primary"></i> G.R. Date</label>
+              <label class="mb-1 fw-semibold"><i class="far fa-calendar-alt me-1 text-primary"></i> G.R. Date</label>
               <input type="text" class="form-control form-control-sm datepicker" id="gr_date" name="gr_date" value="<?= date('d/m/Y') ?>" placeholder="dd/mm/yyyy" autocomplete="off">
             </div>
 
             <div class="col-12 col-md-3 mb-3 ad-field" data-field="date_of_admission">
-              <label class="mb-1 font-weight-600"><i class="far fa-calendar-check mr-1 text-primary"></i> Admission Date</label>
+              <label class="mb-1 fw-semibold"><i class="far fa-calendar-check me-1 text-primary"></i> Admission Date</label>
               <input type="text" class="form-control form-control-sm datepicker" id="date_of_admission" name="date_of_admission" value="<?= date('d/m/Y') ?>" placeholder="dd/mm/yyyy" autocomplete="off">
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="row">
             <div class="col-md-3 mb-3 ad-field" data-field="full_name" data-required="1">
-              <label class="mb-1 font-weight-600 required"><i class="fas fa-user mr-1 text-primary"></i> Full Name</label>
+              <label class="mb-1 fw-semibold required"><i class="fas fa-user me-1 text-primary"></i> Full Name</label>
               <input type="text" class="form-control form-control-sm" id="full_name" name="full_name" placeholder="Student full name" required>
             </div>
 
             <div class="col-md-3 mb-3 ad-field" data-field="date_of_birth" data-required="1">
-              <label class="mb-1 font-weight-600 required"><i class="fas fa-birthday-cake mr-1 text-primary"></i> Date of Birth</label>
+              <label class="mb-1 fw-semibold required"><i class="fas fa-birthday-cake me-1 text-primary"></i> Date of Birth</label>
               <input type="text" class="form-control form-control-sm datepicker" id="date_of_birth" name="date_of_birth" placeholder="dd/mm/yyyy" autocomplete="off" required>
             </div>
 
             <div class="col-md-3 mb-3 ad-field" data-field="gender" data-required="1">
-              <label class="mb-1 font-weight-600 required"><i class="fas fa-venus-mars mr-1 text-primary"></i> Gender</label>
-              <div class="btn-group btn-group-sm d-flex w-100" id="genderToggle" data-toggle="buttons">
-                <label class="btn btn-outline-primary flex-fill"><input type="radio" name="gender" value="male" required> <i class="fas fa-mars mr-1"></i> Male</label>
-                <label class="btn btn-outline-info flex-fill"><input type="radio" name="gender" value="female" required> <i class="fas fa-venus mr-1"></i> Female</label>
+              <label class="mb-1 fw-semibold required"><i class="fas fa-venus-mars me-1 text-primary"></i> Gender</label>
+              <div class="btn-group btn-group-sm d-flex w-100" id="genderToggle" data-bs-toggle="buttons">
+                <label class="btn btn-outline-primary flex-fill"><input type="radio" name="gender" value="male" required> <i class="fas fa-mars me-1"></i> Male</label>
+                <label class="btn btn-outline-info flex-fill"><input type="radio" name="gender" value="female" required> <i class="fas fa-venus me-1"></i> Female</label>
               </div>
             </div>
 
             <div class="col-md-3 mb-3 ad-field" data-field="student_cnic">
-              <label class="mb-1 font-weight-600"><i class="far fa-id-badge mr-1 text-primary"></i> CNIC / B-Form</label>
+              <label class="mb-1 fw-semibold"><i class="far fa-id-badge me-1 text-primary"></i> CNIC / B-Form</label>
               <input type="text" class="form-control form-control-sm cnic-mask" id="student_cnic" name="student_cnic" placeholder="XXXXX-XXXXXXX-X">
             </div>
           </div>
 
           <!-- Sibling Search Section -->
           <div class="ad-field" data-field="sibling_search">
-            <label class="form-label"><i class="fas fa-user-friends mr-1"></i> Search Sibling (Optional)</label>
+            <label class="form-label"><i class="fas fa-user-friends me-1"></i> Search Sibling (Optional)</label>
             <div class="input-group input-group-sm">
-              <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
               <input type="text" class="form-control form-control-sm" id="sibling_search" placeholder="Type student name (min 3 characters)..." autocomplete="off">
-              <div class="input-group-append"><button class="btn btn-outline-secondary btn-sm" type="button" id="clearSiblingBtn"><i class="fas fa-times"></i></button></div>
+              <button class="btn btn-outline-secondary btn-sm" type="button" id="clearSiblingBtn"><i class="fas fa-times"></i></button>
             </div>
             <div id="sibling-results" class="mt-2" style="display: none;"><div class="list-group" id="sibling-list"></div></div>
             <div id="selected-sibling-info" class="mt-2"></div>
           </div>
 
-          <div class="form-row">
+          <div class="row">
             <div class="col-md-3 mb-3 ad-field" data-field="previous_school">
-              <label class="mb-1 font-weight-600"><i class="fas fa-school mr-1 text-primary"></i> Previous School</label>
+              <label class="mb-1 fw-semibold"><i class="fas fa-school me-1 text-primary"></i> Previous School</label>
               <input type="text" class="form-control form-control-sm" id="previous_school" name="previous_school" placeholder="School name">
             </div>
             <div class="col-md-3 mb-3 ad-field" data-field="previous_school_city">
-              <label class="mb-1 font-weight-600"><i class="fas fa-city mr-1 text-primary"></i> Previous School City</label>
+              <label class="mb-1 fw-semibold"><i class="fas fa-city me-1 text-primary"></i> Previous School City</label>
               <input type="text" class="form-control form-control-sm" id="previous_school_city" name="previous_school_city" placeholder="City">
             </div>
             <div class="col-md-3 mb-3 ad-field" data-field="health_condition">
-              <label class="mb-1 font-weight-600"><i class="fas fa-heartbeat mr-1 text-primary"></i> Health Condition</label>
+              <label class="mb-1 fw-semibold"><i class="fas fa-heartbeat me-1 text-primary"></i> Health Condition</label>
               <input type="text" class="form-control form-control-sm" id="health_condition" name="health_condition" placeholder="e.g. Normal">
             </div>
             <div class="col-md-3 mb-3 ad-field" data-field="major_injuries">
-              <label class="mb-1 font-weight-600"><i class="fas fa-first-aid mr-1 text-primary"></i> Major Injuries / Illness</label>
+              <label class="mb-1 fw-semibold"><i class="fas fa-first-aid me-1 text-primary"></i> Major Injuries / Illness</label>
               <input type="text" class="form-control form-control-sm" id="major_injuries" name="major_injuries" placeholder="If any">
             </div>
           </div>
@@ -113,102 +113,98 @@
       <!-- ======================== PARENT / GUARDIAN INFORMATION ======================== -->
       <div class="section-card">
         <div class="section-head">
-          <h5 class="mb-0"><i class="fas fa-users text-info mr-2"></i> Parent / Guardian Information</h5>
+          <h5 class="mb-0"><i class="fas fa-users text-info me-2"></i> Parent / Guardian Information</h5>
         </div>
         <div class="section-body">
           <input type="hidden" id="parent_id" name="parent_id" value="">
           
           <div class="info-grid">
             <div class="ad-field" data-field="father_cnic" data-required="1">
-              <label class="form-label required"><i class="fas fa-id-card mr-1"></i> Father's CNIC</label>
+              <label class="form-label required"><i class="fas fa-id-card me-1"></i> Father's CNIC</label>
               <div class="input-group input-group-sm">
                 <input type="text" class="form-control form-control-sm cnic-mask parent-field" name="father_cnic" id="father_cnic" placeholder="XXXXX-XXXXXXX-X" required>
-                <div id="cnic-spinner" class="input-group-append d-none"><span class="input-group-text"><i class="fas fa-spinner fa-spin"></i></span></div>
+                <span id="cnic-spinner" class="input-group-text d-none"><i class="fas fa-spinner fa-spin"></i></span>
               </div>
               <div id="children-info-container" class="mt-2"></div>
             </div>
 
             <div class="ad-field" data-field="f_name" data-required="1">
-              <label class="form-label required"><i class="fas fa-user mr-1"></i> Father's Full Name</label>
+              <label class="form-label required"><i class="fas fa-user me-1"></i> Father's Full Name</label>
               <input type="text" class="form-control form-control-sm parent-field" name="f_name" id="f_name" required>
             </div>
 
             <div class="ad-field" data-field="father_contact">
-              <label class="form-label"><i class="fas fa-phone mr-1"></i> Father's Contact</label>
+              <label class="form-label"><i class="fas fa-phone me-1"></i> Father's Contact</label>
               <div class="input-group input-group-sm">
                 <input type="text" class="form-control form-control-sm phone-mask parent-field" name="father_contact" id="father_contact" placeholder="+92 XXX XXXXXXX">
-                <div class="input-group-append">
-                  <button class="btn btn-outline-success btn-sm set-whatsapp" type="button" data-source="father_contact" title="Use as WhatsApp number">
+                <button class="btn btn-outline-success btn-sm set-whatsapp" type="button" data-source="father_contact" title="Use as WhatsApp number">
                     <i class="fab fa-whatsapp"></i>
                   </button>
-                </div>
               </div>
             </div>
 
             <div class="ad-field" data-field="mother_contact">
-              <label class="form-label"><i class="fas fa-phone mr-1"></i> Mother's Contact</label>
+              <label class="form-label"><i class="fas fa-phone me-1"></i> Mother's Contact</label>
               <div class="input-group input-group-sm">
                 <input type="text" class="form-control form-control-sm phone-mask parent-field" name="mother_contact" id="mother_contact" placeholder="+92 XXX XXXXXXX">
-                <div class="input-group-append">
-                  <button class="btn btn-outline-success btn-sm set-whatsapp" type="button" data-source="mother_contact" title="Use as WhatsApp number">
+                <button class="btn btn-outline-success btn-sm set-whatsapp" type="button" data-source="mother_contact" title="Use as WhatsApp number">
                     <i class="fab fa-whatsapp"></i>
                   </button>
-                </div>
               </div>
             </div>
 
             <div class="ad-field" data-field="whatsapp_contact">
-              <label class="form-label"><i class="fab fa-whatsapp mr-1 text-success"></i> WhatsApp Number</label>
+              <label class="form-label"><i class="fab fa-whatsapp me-1 text-success"></i> WhatsApp Number</label>
               <input type="text" class="form-control form-control-sm phone-mask" name="whatsapp_contact" id="whatsapp_contact" placeholder="+92 XXX XXXXXXX">
             </div>
 
             <div class="ad-field" data-field="father_email">
-              <label class="form-label"><i class="fas fa-envelope mr-1"></i> Father's Email</label>
+              <label class="form-label"><i class="fas fa-envelope me-1"></i> Father's Email</label>
               <input type="email" class="form-control form-control-sm parent-field" name="father_email" id="father_email" placeholder="example@domain.com">
             </div>
 
             <div class="ad-field" data-field="father_occupation">
-              <label class="form-label"><i class="fas fa-briefcase mr-1"></i> Father's Occupation</label>
+              <label class="form-label"><i class="fas fa-briefcase me-1"></i> Father's Occupation</label>
               <input type="text" class="form-control form-control-sm parent-field" name="father_occupation" id="father_occupation">
             </div>
 
             <div class="ad-field" data-field="father_office_address">
-              <label class="form-label"><i class="fas fa-map-marker-alt mr-1"></i> Father's Office Address</label>
+              <label class="form-label"><i class="fas fa-map-marker-alt me-1"></i> Father's Office Address</label>
               <input type="text" class="form-control form-control-sm parent-field" name="father_office_address" id="father_office_address">
             </div>
 
             <div class="ad-field" data-field="m_name">
-              <label class="form-label"><i class="fas fa-user mr-1"></i> Mother's Full Name</label>
+              <label class="form-label"><i class="fas fa-user me-1"></i> Mother's Full Name</label>
               <input type="text" class="form-control form-control-sm parent-field" name="m_name" id="m_name">
             </div>
 
             <div class="ad-field" data-field="address_line1">
-              <label class="form-label"><i class="fas fa-map-marker-alt mr-1"></i> Residential Address</label>
+              <label class="form-label"><i class="fas fa-map-marker-alt me-1"></i> Residential Address</label>
               <input type="text" class="form-control form-control-sm parent-field" name="address_line1" id="address_line1">
             </div>
 
             <div class="ad-field" data-field="city">
-              <label class="form-label"><i class="fas fa-city mr-1"></i> City</label>
+              <label class="form-label"><i class="fas fa-city me-1"></i> City</label>
               <input type="text" class="form-control form-control-sm parent-field" name="city" id="city">
             </div>
 
             <div class="ad-field" data-field="hear_source">
-              <label class="form-label"><i class="fas fa-bullhorn mr-1"></i> How did you hear about us?</label>
+              <label class="form-label"><i class="fas fa-bullhorn me-1"></i> How did you hear about us?</label>
               <input type="text" class="form-control form-control-sm parent-field" name="hear_source" id="hear_source">
             </div>
 
             <div class="ad-field" data-field="emergency_contact_person">
-              <label class="form-label"><i class="fas fa-user mr-1"></i> Emergency Contact Person</label>
+              <label class="form-label"><i class="fas fa-user me-1"></i> Emergency Contact Person</label>
               <input type="text" class="form-control form-control-sm parent-field" name="emergency_contact_person" id="emergency_contact_person">
             </div>
 
             <div class="ad-field" data-field="emergency_contact">
-              <label class="form-label"><i class="fas fa-phone mr-1"></i> Emergency Contact Number</label>
+              <label class="form-label"><i class="fas fa-phone me-1"></i> Emergency Contact Number</label>
               <input type="text" class="form-control form-control-sm phone-mask parent-field" name="emergency_contact" id="emergency_contact" placeholder="+92 XXX XXXXXXX">
             </div>
 
             <div class="ad-field" data-field="a_address">
-              <label class="form-label"><i class="fas fa-map-marker-alt mr-1"></i> Emergency Contact Address</label>
+              <label class="form-label"><i class="fas fa-map-marker-alt me-1"></i> Emergency Contact Address</label>
               <input type="text" class="form-control form-control-sm parent-field" name="a_address" id="a_address">
             </div>
           </div>
@@ -218,12 +214,12 @@
       <!-- ======================== FEE STRUCTURE & FINANCIAL ======================== -->
       <div class="section-card">
         <div class="section-head">
-          <h5 class="mb-0"><i class="fas fa-receipt text-primary mr-2"></i> Fee Structure & Financial</h5>
+          <h5 class="mb-0"><i class="fas fa-receipt text-primary me-2"></i> Fee Structure & Financial</h5>
         </div>
         <div class="section-body">
           <!-- Class Selection -->
           <div class="form-group mb-3">
-            <label class="font-weight-600 required"><i class="fas fa-layer-group mr-1 text-primary"></i> Select Class Section</label>
+            <label class="fw-semibold required"><i class="fas fa-layer-group me-1 text-primary"></i> Select Class Section</label>
             <select id="cls_sec_id" name="cls_sec_id" class="form-control" required>
               <option value="">-- Select Class Section --</option>
               <?php foreach ($sectionsclassinfo as $row): ?>
@@ -237,16 +233,16 @@
           <!-- Fee Dates Row -->
           <div class="row">
             <div class="col-md-4 mb-3">
-              <label class="font-weight-600 required"><i class="far fa-calendar-alt mr-1 text-primary"></i> Fee Month</label>
+              <label class="fw-semibold required"><i class="far fa-calendar-alt me-1 text-primary"></i> Fee Month</label>
               <input type="text" class="form-control monthpicker" id="fee_month_ui" placeholder="Select month" autocomplete="off" required>
               <input id="fee_month" name="fee_month" type="hidden" value="<?= date('Y-m') ?>">
             </div>
             <div class="col-md-4 mb-3">
-              <label class="font-weight-600 required"><i class="far fa-calendar-check mr-1 text-primary"></i> Issue Date</label>
+              <label class="fw-semibold required"><i class="far fa-calendar-check me-1 text-primary"></i> Issue Date</label>
               <input type="text" class="form-control datepicker" id="fee_issue_date" name="fee_issue_date" value="<?= date('d/m/Y') ?>" required>
             </div>
             <div class="col-md-4 mb-3">
-              <label class="font-weight-600 required"><i class="far fa-calendar-minus mr-1 text-primary"></i> Due Date</label>
+              <label class="fw-semibold required"><i class="far fa-calendar-minus me-1 text-primary"></i> Due Date</label>
               <input type="text" class="form-control datepicker" id="fee_due_date" name="fee_due_date" value="<?= date('d/m/Y', strtotime('+10 days')) ?>" required>
             </div>
           </div>
@@ -261,7 +257,7 @@
 
           <!-- Fee Summary -->
           <div class="fee-summary-card mt-3" id="fee-summary" style="display: none;">
-            <div class="fee-summary-header"><i class="fas fa-calculator mr-2"></i> Fee Summary</div>
+            <div class="fee-summary-header"><i class="fas fa-calculator me-2"></i> Fee Summary</div>
             <div class="fee-summary-body">
               <div class="fee-summary-row">
                 <span>Total Standard Fees:</span>
@@ -285,7 +281,7 @@
       <?php if (!empty($types)): ?>
       <div class="section-card">
         <div class="section-head">
-          <h5 class="mb-0"><i class="fas fa-file-upload text-warning mr-2"></i> Required Documents</h5>
+          <h5 class="mb-0"><i class="fas fa-file-upload text-warning me-2"></i> Required Documents</h5>
         </div>
         <div class="section-body">
           <div class="row">
@@ -293,7 +289,7 @@
               <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 border shadow-sm">
                   <div class="card-header bg-light">
-                    <h6 class="card-title mb-0 text-primary"><i class="fas fa-file mr-2"></i><?= esc($value->a_type_name) ?></h6>
+                    <h6 class="card-title mb-0 text-primary"><i class="fas fa-file me-2"></i><?= esc($value->a_type_name) ?></h6>
                   </div>
                   <div class="card-body text-center">
                     <input type="hidden" class="a_type_id" value="<?= $value->a_type_id ?>">
@@ -302,11 +298,11 @@
                     </div>
                     <input type="file" class="d-none attachment-file" data-typeid="<?= $value->a_type_id ?>" id="attachment_<?= $value->a_type_id ?>" accept="image/*,.pdf">
                     <button type="button" class="btn btn-sm btn-outline-primary btn-upload" data-typeid="<?= $value->a_type_id ?>">
-                      <i class="fas fa-upload mr-2"></i>Upload Document
+                      <i class="fas fa-upload me-2"></i>Upload Document
                     </button>
                   </div>
                   <div class="card-footer bg-light">
-                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i><?= $value->description ?? 'Required for admission processing' ?></small>
+                    <small class="text-muted"><i class="fas fa-info-circle me-1"></i><?= $value->description ?? 'Required for admission processing' ?></small>
                   </div>
                 </div>
               </div>
@@ -320,12 +316,12 @@
       <div class="section-card">
         <div class="section-body">
           <div class="form-actions">
-            <button type="submit" class="btn btn-success btn-action"><i class="fas fa-save mr-2"></i> Submit Admission</button>
-            <button type="button" id="btnCustomizeForm" class="btn btn-outline-secondary btn-action no-print" data-toggle="modal" data-target="#customizeModal">
-              <i class="fas fa-sliders-h mr-2"></i> Customize Form
+            <button type="submit" class="btn btn-success btn-action"><i class="fas fa-save me-2"></i> Submit Admission</button>
+            <button type="button" id="btnCustomizeForm" class="btn btn-outline-secondary btn-action no-print" data-bs-toggle="modal" data-bs-target="#customizeModal">
+              <i class="fas fa-sliders-h me-2"></i> Customize Form
             </button>
           </div>
-          <p class="text-center text-muted mt-3 mb-0"><small><i class="fas fa-lock mr-1"></i> Your information is secure and protected</small></p>
+          <p class="text-center text-muted mt-3 mb-0"><small><i class="fas fa-lock me-1"></i> Your information is secure and protected</small></p>
         </div>
       </div>
     </div>
@@ -339,17 +335,17 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-sliders-h mr-2"></i> Customize Admission Form</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <h5 class="modal-title"><i class="fas fa-sliders-h me-2"></i> Customize Admission Form</h5>
+        <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
       </div>
       <div class="modal-body">
         <p class="text-muted mb-2">Show/hide fields. Items with a lock are always required.</p>
         <div id="fieldList" class="list-group"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnSavePrefs" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save preferences</button>
-        <button type="button" id="resetPrefsBtn" class="btn btn-outline-danger"><i class="fas fa-undo-alt mr-1"></i> Reset to Default</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" id="btnSavePrefs" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save preferences</button>
+        <button type="button" id="resetPrefsBtn" class="btn btn-outline-danger"><i class="fas fa-undo-alt me-1"></i> Reset to Default</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -371,7 +367,7 @@
   .fee-cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
   @media (max-width: 768px) { .fee-cards-container { grid-template-columns: 1fr; } }
   .fee-card { background: #fff; border: 1px solid #e9ecef; border-radius: 0.75rem; overflow: hidden; transition: all 0.2s; }
-  .fee-card.monthly-fee { border-left: 4px solid #007bff; background: #f8fbff; }
+  .fee-card.monthly-fee { border-start: 4px solid #007bff; background: #f8fbff; }
   .fee-card-header { padding: 0.75rem 1rem; background: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
   .fee-card-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; flex-wrap: wrap; }
   .monthly-badge { background: #007bff; color: white; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 1rem; }
@@ -402,15 +398,16 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/4.0.9/jquery.inputmask.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -583,9 +580,9 @@ $(document).ready(function() {
           $('#parent_id').val(res.parent.parent_id);
           $('#children-info-container').remove();
           if (res.children && res.children.length) {
-            let html = '<div id="children-info-container" class="mt-2"><small class="text-muted"><i class="fas fa-child mr-1"></i> Existing children:</small><div class="children-list">';
+            let html = '<div id="children-info-container" class="mt-2"><small class="text-muted"><i class="fas fa-child me-1"></i> Existing children:</small><div class="children-list">';
             res.children.forEach(function(c) { 
-              html += '<span class="badge badge-info mr-1 mb-1"><i class="fas fa-user-graduate mr-1"></i>' + escapeHtml(c.name) + ' (' + escapeHtml(c.class) + ')</span>'; 
+              html += '<span class="badge text-bg-info me-1 mb-1"><i class="fas fa-user-graduate me-1"></i>' + escapeHtml(c.name) + ' (' + escapeHtml(c.class) + ')</span>'; 
             });
             html += '</div></div>';
             $('#father_cnic').closest('.ad-field').append(html);
@@ -607,30 +604,37 @@ $(document).ready(function() {
       $.ajax({
         url: '<?= site_url("admin/students/search_siblings") ?>',
         method: 'POST',
-        data: { search: searchTerm, campus_id: $('#campus_id').val(), '<?= csrf_token() ?>': '<?= csrf_hash() ?>' },
+        data: (window.adminCsrfPayload || function (x) { return x; })({
+          search: searchTerm,
+          campus_id: $('#campus_id').val()
+        }),
         dataType: 'json',
         beforeSend: function() { $('#sibling-results').show(); $('#sibling-list').html('<div class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>'); },
         success: function(res) {
           if (res.success && res.data && res.data.length) {
             let html = '';
             res.data.forEach(function(s) {
-              html += '<a href="javascript:void(0)" class="list-group-item list-group-item-action sibling-result-item" data-parent-id="' + escapeHtml(s.parent_id) + '" data-father-cnic="' + escapeHtml(s.father_cnic) + '" data-father-name="' + escapeHtml(s.f_name) + '"><div><strong><i class="fas fa-user-graduate mr-1"></i> ' + escapeHtml(s.student_name) + '</strong><br><small class="text-muted"><i class="fas fa-id-card mr-1"></i>' + (s.father_cnic || 'No CNIC') + '</small></div></a>';
+              html += '<a href="javascript:void(0)" class="list-group-item list-group-item-action sibling-result-item" data-parent-id="' + escapeHtml(s.parent_id) + '" data-father-cnic="' + escapeHtml(s.father_cnic) + '" data-father-name="' + escapeHtml(s.f_name) + '"><div><strong><i class="fas fa-user-graduate me-1"></i> ' + escapeHtml(s.student_name) + '</strong><br><small class="text-muted"><i class="fas fa-id-card me-1"></i>' + (s.father_cnic || 'No CNIC') + '</small></div></a>';
             });
             $('#sibling-list').html(html);
             $('.sibling-result-item').on('click', function() {
               const $item = $(this);
               $('#father_cnic').val($item.data('father-cnic')).trigger('blur');
               $('#f_name').val($item.data('father-name'));
-              $('#selected-sibling-info').html('<div class="alert alert-info py-2 mb-0"><i class="fas fa-info-circle mr-1"></i> Sibling loaded. Parent information populated.<button type="button" class="close float-none ml-2" id="removeSiblingBtn" style="font-size:14px;">&times;</button></div>');
+              $('#selected-sibling-info').html('<div class="alert alert-info py-2 mb-0"><i class="fas fa-info-circle me-1"></i> Sibling loaded. Parent information populated.<button type="button" class="close float-none ms-2" id="removeSiblingBtn" style="font-size:14px;">&times;</button></div>');
               $('#sibling-results').hide();
               $('#sibling_search').val('');
               $('#removeSiblingBtn').on('click', function() { $('#selected-sibling-info').empty(); });
             });
           } else {
-            $('#sibling-list').html('<div class="list-group-item text-muted"><i class="fas fa-user-slash mr-1"></i> No students found</div>');
+            $('#sibling-list').html('<div class="list-group-item text-muted"><i class="fas fa-user-slash me-1"></i> No students found</div>');
           }
         },
-        error: function() { $('#sibling-list').html('<div class="list-group-item text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Error searching siblings</div>'); }
+        error: function(xhr, status) {
+          if (status === 'abort') return;
+          if (window.refreshAdminCsrf) refreshAdminCsrf(xhr);
+          $('#sibling-list').html('<div class="list-group-item text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Error searching siblings</div>');
+        }
       });
     }, 500);
   });
@@ -650,7 +654,7 @@ $(document).ready(function() {
         const fd = new FormData(form);
         $.ajax({
           url: $(form).attr('action'), type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
-          beforeSend: function() { $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Processing Admission...'); },
+          beforeSend: function() { $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Processing Admission...'); },
           success: function(res) {
             if (res.success) {
               toastr.success(res.msg || 'Admission saved successfully');
@@ -658,10 +662,10 @@ $(document).ready(function() {
               setTimeout(function() { window.location.reload(); }, 1500);
             } else {
               toastr.error(res.msg || 'Save failed');
-              $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Submit Admission');
+              $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save me-2"></i> Submit Admission');
             }
           },
-          error: function() { toastr.error('An error occurred'); $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save mr-2"></i> Submit Admission'); }
+          error: function() { toastr.error('An error occurred'); $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save me-2"></i> Submit Admission'); }
         });
       }
     });
@@ -708,13 +712,13 @@ $(document).ready(function() {
     let html = '';
     customizableFields.forEach(field => {
       const isVisible = fieldPreferences[field.id] !== undefined ? fieldPreferences[field.id] : field.defaultVisible;
-      html += `<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${escapeHtml(field.label)}</strong>${field.required ? '<i class="fas fa-lock text-danger ml-2"></i>' : ''}${field.required ? '<small class="text-muted ml-2">(Required)</small>' : ''}</div><div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input field-toggle" id="toggle_${field.id}" data-field="${field.id}"${isVisible ? ' checked' : ''}${field.required ? ' disabled' : ''}><label class="custom-control-label" for="toggle_${field.id}"><span class="toggle-status">${isVisible ? 'Visible' : 'Hidden'}</span></label></div></div>`;
+      html += `<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${escapeHtml(field.label)}</strong>${field.required ? '<i class="fas fa-lock text-danger ms-2"></i>' : ''}${field.required ? '<small class="text-muted ms-2">(Required)</small>' : ''}</div><div class="form-check form-switch"><input type="checkbox" class="form-check-input field-toggle" id="toggle_${field.id}" data-field="${field.id}"${isVisible ? ' checked' : ''}${field.required ? ' disabled' : ''}><label class="form-check-label" for="toggle_${field.id}"><span class="toggle-status">${isVisible ? 'Visible' : 'Hidden'}</span></label></div></div>`;
     });
     $('#fieldList').html(html);
     $('.field-toggle').on('change', function() {
       const fieldId = $(this).data('field');
       const isChecked = $(this).prop('checked');
-      $(this).siblings('.custom-control-label').find('.toggle-status').text(isChecked ? 'Visible' : 'Hidden');
+      $(this).siblings('.form-check-label').find('.toggle-status').text(isChecked ? 'Visible' : 'Hidden');
       fieldPreferences[fieldId] = isChecked;
     });
   }

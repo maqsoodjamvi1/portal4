@@ -39,11 +39,11 @@ td { text-align: left; padding-left: 10px; }
             <!-- In the form section -->
             <!-- <div class="col-lg-2 form-group">
                 <label>Show Footer Line 1:</label>
-                <input type="checkbox" class="form-control pull-right" <?= $show_line1 ? 'checked' : '' ?> value="1" name="show_line1">
+                <input type="checkbox" class="form-control float-end" <?= $show_line1 ? 'checked' : '' ?> value="1" name="show_line1">
             </div>
             <div class="col-lg-2 form-group">
                 <label>Show Footer Line 2:</label>
-                <input type="checkbox" class="form-control pull-right" <?= $show_line2 ? 'checked' : '' ?> value="1" name="show_line2">
+                <input type="checkbox" class="form-control float-end" <?= $show_line2 ? 'checked' : '' ?> value="1" name="show_line2">
             </div> -->
             <div class="card card-primary card-outline card-tabs">
                 <div class="card-header p-0 pt-1 border-bottom-0">
@@ -63,7 +63,7 @@ td { text-align: left; padding-left: 10px; }
                                         </div>
                                         <div class="chalanwrapper">
                                             <div class="row">
-                                                <div class="col-sm-3 ml-2 mt-2">
+                                                <div class="col-sm-3 ms-2 mt-2">
                                                     <img style="width: 100%;" src="<?= base_url() ?>system-logo/<?= $student_info['logo'] ?>">
                                                 </div>
                                                 <div class="col-sm-8">
@@ -75,7 +75,7 @@ td { text-align: left; padding-left: 10px; }
                                                 </div>
                                             </div>
                                             
-                                            <div class="ml-2 mt-2" style="text-align: left;">
+                                            <div class="ms-2 mt-2" style="text-align: left;">
                                                 <?php if (!empty($student_info['bank_name'])): ?>
                                                 <?= htmlspecialchars($student_info['bank_name']) ?>, 
                                                 <?php endif; ?>

@@ -5,8 +5,8 @@
   </a>
 
   <nav class="navbar navbar-static-top">
-    <a href="javascript:;" class="sidebar-toggle" data-toggle="offcanvas" role="button">
-      <span class="sr-only">Toggle navigation</span>
+    <a href="javascript:;" class="sidebar-toggle" data-bs-toggle="offcanvas" role="button">
+      <span class="visually-hidden">Toggle navigation</span>
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
@@ -15,9 +15,9 @@
     <div class="navbar-custom-menu">
       <ul class="nav navbar-nav">
         <li class="dropdown user user-menu">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+          <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
             <img src="<?= base_url('resource/adminlte/dist/img/user2-160x160.jpg') ?>" class="user-image" alt="User Image">
-            <span class="hidden-xs"><?= esc(session('admin_username')) ?></span>
+            <span class="d-none d-sm-inline-block"><?= esc(session('admin_username')) ?></span>
           </a>
           <ul class="dropdown-menu">
             <li class="user-header">
@@ -28,17 +28,17 @@
               </p>
             </li>
             <li class="user-footer">
-              <div class="pull-left">
-                <a href="<?= site_url('admin/profile') ?>" class="btn btn-default btn-flat"><i class="fa fa-gear"></i> Profile</a>
+              <div class="float-start">
+                <a href="<?= site_url('admin/profile') ?>" class="btn btn-secondary btn-flat"><i class="fa fa-gear"></i> Profile</a>
               </div>
-              <div class="pull-right">
-                <a href="<?= site_url('logout') ?>" class="btn btn-default btn-flat"><i class="fa fa-sign-out"></i> Logout</a>
+              <div class="float-end">
+                <a href="<?= site_url('logout') ?>" class="btn btn-secondary btn-flat"><i class="fa fa-sign-out"></i> Logout</a>
               </div>
             </li>
           </ul>
         </li>
         <li>
-          <a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
+          <a href="#" data-bs-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
         </li>
       </ul>
     </div>

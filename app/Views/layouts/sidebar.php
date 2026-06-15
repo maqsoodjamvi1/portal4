@@ -119,58 +119,64 @@ $curr_session_id = $curr_session_id ?? 0;
           </ul>
         </li>
         <?php } ?>
-        <?php if(hasPermission('admin-classes') || hasPermission('admin-sections') || hasPermission('admin-subjects') || hasPermission('admin-class-subjects') ||  hasPermission('admin-class-section')){ ?>
+        <?php
+          $campusHifzOn = function_exists('campusHifzEnabled') && campusHifzEnabled();
+          $hifzMenu = hasPermission('admin-hifz-sections') || hasPermission('admin-hifz-students')
+            || hasPermission('admin-hifz-teachers') || hasPermission('admin-hifz-recitation')
+            || hasPermission('admin-hifz-reports');
+        ?>
+        <?php if ($campusHifzOn && $hifzMenu) { ?>
         <li class="nav-item">
           <a href="#" class="nav-link">
-            <i class="nav-icon fa fa-list-alt" aria-hidden="true"></i> 
-            <p>Classes
+            <i class="nav-icon fas fa-quran"></i>
+            <p>Hifz Program
               <i class="right fas fa-angle-left"></i>
             </p>
           </a>
           <ul class="nav nav-treeview">
-            <?php if(hasPermission('admin-classes')){ ?>
+            <?php if(hasPermission('admin-hifz-sections')){ ?>
             <li class="nav-item">
-              <a href="<?php echo '#/classes';?>" class="nav-link">
-                <i class="nav-icon fa fa-list"></i> 
-                <p>Classes</p> 
-              </a> 
+              <a href="<?= base_url('admin/hifz/sections') ?>" class="nav-link">
+                <i class="nav-icon far fa-circle"></i>
+                <p>Hifz Sections</p>
+              </a>
             </li>
             <?php } ?>
-            <?php if(hasPermission('admin-sections')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/sections';?>" class="nav-link"> 
-                <i class="nav-icon fa fa-flask"></i> 
-                <p>Sections</p> 
-              </a> 
+            <?php if(hasPermission('admin-hifz-students')){ ?>
+            <li class="nav-item">
+              <a href="<?= base_url('admin/hifz/students') ?>" class="nav-link">
+                <i class="nav-icon far fa-circle"></i>
+                <p>Hifz Students</p>
+              </a>
             </li>
             <?php } ?>
-            <?php if(hasPermission('admin-class-section')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/class_section';?>" class="nav-link"> 
-                <i class="nav-icon fa fa-flask"></i> 
-                <p>Class Sections</p> 
-              </a> 
+            <?php if(hasPermission('admin-hifz-teachers')){ ?>
+            <li class="nav-item">
+              <a href="<?= base_url('admin/hifz/teachers') ?>" class="nav-link">
+                <i class="nav-icon far fa-circle"></i>
+                <p>Assign Teachers</p>
+              </a>
             </li>
             <?php } ?>
-            <?php if(hasPermission('admin-subjects')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/subjects';?>" class="nav-link"> 
-                <i class="nav-icon fa fa-list"></i> 
-                <p>Subjects</p> 
-              </a> 
+            <?php if(hasPermission('admin-hifz-recitation')){ ?>
+            <li class="nav-item">
+              <a href="<?= base_url('admin/hifz/recitation') ?>" class="nav-link">
+                <i class="nav-icon far fa-circle"></i>
+                <p>Daily Recitation</p>
+              </a>
             </li>
             <?php } ?>
-            <?php if(hasPermission('admin-section-subjects')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/section_subjects'; ?>" class="nav-link">
-                <i class="nav-icon fa fa-list"></i> 
-                <p>Section Subjects</p> 
-              </a> 
+            <?php if(hasPermission('admin-hifz-reports')){ ?>
+            <li class="nav-item">
+              <a href="<?= base_url('admin/hifz/reports') ?>" class="nav-link">
+                <i class="nav-icon far fa-circle"></i>
+                <p>Progress Reports</p>
+              </a>
             </li>
             <?php } ?>
           </ul>
         </li>
-        <?php } ?>   
+        <?php } ?>
         <?php if(hasPermission('admin-students') || hasPermission('admin-student-class') ){ ?>  
           <li class="nav-item">
           <a href="#" class="nav-link">
@@ -437,7 +443,7 @@ $curr_session_id = $curr_session_id ?? 0;
             <?php } ?> 
             <?php if(hasPermission('admin-add-teacher-section')){ ?>
             <li class="nav-item"> 
-              <a href="<?php echo '#/emp_timing?m=add';?>" class="nav-link"> 
+              <a href="<?= base_url('admin/emp_timing/add') ?>" class="nav-link"> 
                 <i class="nav-icon fa fa-clock"></i> 
                 <p>Employee Timing</p> 
               </a> 
@@ -455,28 +461,12 @@ $curr_session_id = $curr_session_id ?? 0;
             </p>
           </a>
           <ul class="nav nav-treeview">
-            <?php if(hasPermission('admin-fee-type')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/fee_type';?>" class="nav-link"> 
-                <i class="nav-icon fas fa-money-check-alt"></i> 
-                <p>Fee Type</p> 
-              </a> 
-            </li>
-            <?php } ?> 
-            <?php if(hasPermission('admin-fee-plan-months')){ ?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/fee_plan_months?m=add';?>" class="nav-link"> 
-                <i class="nav-icon fas fa-money-check-alt"></i> 
-                <p>Fee Plan Months</p> 
-              </a> 
-            </li>
-            <?php } ?> 
-            <?php if(hasPermission('admin-fee-amount')){?>
-            <li class="nav-item"> 
-              <a href="<?php echo '#/fee_amount?m=add';?>" class="nav-link"> 
-                <i class="nav-icon fa fa-calendar"></i> 
-                <p>Fee Structure</p> 
-              </a> 
+            <?php if(hasPermission('admin-fee-type') || hasPermission('admin-fee-amount') || hasPermission('admin-fee-plan-months')){ ?>
+            <li class="nav-item">
+              <a href="<?php echo '#/fee_setup';?>" class="nav-link">
+                <i class="nav-icon fas fa-sliders-h"></i>
+                <p>Fee Configuration</p>
+              </a>
             </li>
             <?php } ?>
             <?php if(hasPermission('admin-fee-chalan')){ ?>
@@ -503,6 +493,14 @@ $curr_session_id = $curr_session_id ?? 0;
               </a> 
             </li>
             <?php } ?> 
+            <?php if(hasPermission('admin-fee-chalan')){ ?>
+            <li class="nav-item">
+              <a href="<?= base_url('admin/advance-fee') ?>" class="nav-link">
+                <i class="nav-icon fas fa-piggy-bank"></i>
+                <p>Update Advance Fee</p>
+              </a>
+            </li>
+            <?php } ?> 
             <?php if(hasPermission('admin-del-fee-chalan')){ ?>
             <li class="nav-item"> 
               <a href="<?php echo '#/delete_fee_chalan';?>" class="nav-link"> 
@@ -516,6 +514,12 @@ $curr_session_id = $curr_session_id ?? 0;
               <a href="<?php echo '#/fee_chalan_balance';?>" class="nav-link"> 
                 <i class="nav-icon far fa-money-bill-alt"></i> 
                 <p>Monthly Balance</p> 
+              </a> 
+            </li>
+            <li class="nav-item"> 
+              <a href="<?= base_url('admin/fee-chalan-daily-collection') ?>" class="nav-link"> 
+                <i class="nav-icon fas fa-calendar-day"></i> 
+                <p>Daily Collection Summary</p> 
               </a> 
             </li>
             <?php } ?> 
@@ -578,9 +582,9 @@ $curr_session_id = $curr_session_id ?? 0;
           <ul class="nav nav-treeview">
             <?php if(hasPermission('admin-exams')){ ?>
             <li class="nav-item"> 
-              <a href="<?php echo '#/exam';?>" class="nav-link"> 
+              <a href="<?php echo '#/exam/add';?>" class="nav-link"> 
                 <i class="nav-icon fa fa-list"></i> 
-                <p>Exams</p> 
+                <p>Add Exam</p> 
               </a> 
             </li>  
             <?php } ?>
@@ -699,6 +703,20 @@ $curr_session_id = $curr_session_id ?? 0;
             <?php } ?>
             <?php if(hasPermission('admin-add-student-attendance')){?>
             <li class="nav-item"> 
+              <a href="<?= base_url('admin/employee-face-attendance') ?>" class="nav-link"> 
+                <i class="nav-icon fa fa-camera"></i> 
+                <p>Employee Face Scanner</p> 
+              </a> 
+            </li>
+            <li class="nav-item"> 
+              <a href="<?= base_url('admin/employee-face-management') ?>" class="nav-link"> 
+                <i class="nav-icon fa fa-user-check"></i> 
+                <p>Employee Face Enrollment</p> 
+              </a> 
+            </li>
+            <?php } ?>
+            <?php if(hasPermission('admin-add-student-attendance')){?>
+            <li class="nav-item"> 
               <a href="#/employee_leaves?m=add" class="nav-link"> 
                 <i class="nav-icon fa fa-cubes"></i> 
                 <p>Create Employee Leaves Applications</p> 
@@ -786,6 +804,24 @@ $curr_session_id = $curr_session_id ?? 0;
               <a href="<?php echo '#/timetable?m=add'; ?>" class="nav-link"> 
                 <i class="nav-icon far fa-clock"></i> 
                 <p>Time Table</p>
+              </a> 
+            </li>
+            <li class="nav-item"> 
+              <a href="<?= base_url('admin/timetable/generator') ?>" class="nav-link"> 
+                <i class="nav-icon fas fa-calendar-week"></i> 
+                <p>Timetable Constraints</p>
+              </a> 
+            </li>
+            <li class="nav-item"> 
+              <a href="<?= base_url('admin/timetable/teachers') ?>" class="nav-link"> 
+                <i class="nav-icon far fa-calendar-alt"></i> 
+                <p>Teacher Timetable</p>
+              </a> 
+            </li>
+            <li class="nav-item"> 
+              <a href="<?= base_url('admin/timetable/report') ?>" class="nav-link"> 
+                <i class="nav-icon far fa-file-alt"></i> 
+                <p>Timetable Report</p>
               </a> 
             </li>
             <?php } ?>

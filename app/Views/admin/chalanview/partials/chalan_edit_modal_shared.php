@@ -15,7 +15,7 @@ $saveUrl             = base_url('admin/fee-chalan/save-edit');
         <div class="modal-content">
             <div class="modal-header py-2 bg-light">
                 <h5 class="modal-title mb-0">Edit challan lines (unpaid)</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -23,7 +23,7 @@ $saveUrl             = base_url('admin/fee-chalan/save-edit');
                 <p class="text-muted mb-0">Loading…</p>
             </div>
             <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary btn-sm" id="chalanEditSaveBtn">Save</button>
             </div>
         </div>

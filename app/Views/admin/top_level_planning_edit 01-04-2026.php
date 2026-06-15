@@ -114,9 +114,9 @@
           <div class="col-lg-1 col-md-6">
             <div class="form-group">
               <label class="mb-1 d-block">Sync</label>
-              <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input" id="synch" name="synch" value="1">
-                <label class="custom-control-label" for="synch">All campuses</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="synch" name="synch" value="1">
+                <label class="form-check-label" for="synch">All campuses</label>
               </div>
             </div>
           </div>
@@ -124,9 +124,9 @@
 
         <!-- Selection summary (optional) -->
         <div class="mb-3">
-          <span class="badge badge-light border mr-1" id="badgeSession">Session: —</span>
-          <span class="badge badge-light border mr-1" id="badgeSection">Section: —</span>
-          <span class="badge badge-light border" id="badgeSubject">Subject: —</span>
+          <span class="badge text-bg-light border me-1" id="badgeSession">Session: —</span>
+          <span class="badge text-bg-light border me-1" id="badgeSection">Section: —</span>
+          <span class="badge text-bg-light border" id="badgeSubject">Subject: —</span>
         </div>
 
         <!-- Loader + dynamic list -->
@@ -143,7 +143,7 @@
         </div>
 
         <div class="mt-3 d-flex gap-2">
-          <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save</button>
+          <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save</button>
           <button type="reset" class="btn btn-outline-secondary">Reset</button>
           <a href="javascript:history.back();" class="btn btn-outline-dark">Cancel</a>
         </div>
@@ -375,7 +375,7 @@
         });
       }
 
-      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving');
+      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving');
 
       $.ajax({
         url: this.action,
@@ -391,7 +391,7 @@
       }).fail(function(){
         toastr.error('Request failed.');
       }).always(function(){
-        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
+        $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save');
       });
     });
 

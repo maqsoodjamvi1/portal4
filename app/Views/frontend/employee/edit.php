@@ -14,7 +14,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-user-o"></i>
                         </span>
                         <input type="text" name="f_name" class="form-control" id="first-name" placeholder="Father Name" value="<?php print $userInfo['full_name']; ?>">
@@ -27,7 +27,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-envelope"></i>
                         </span>
                         <input type="text" disabled="disabled" name="email" class="form-control" id="email" placeholder="Email" value="<?php print $userInfo['father_email']; ?>">
@@ -37,7 +37,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-phone"></i>
                         </span>
                         <input type="text" name="contact_no" class="form-control" id="contact-no" placeholder="Contact No" value="<?php print $userInfo['father_contact']; ?>">
@@ -49,7 +49,7 @@
             <div class="col-lg-6">
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-map-marker"></i>
                         </span>
                         <input type="text" name="address" class="form-control" id="address" placeholder="Address" value="<?php print $userInfo['address_line1']; ?>">
@@ -59,7 +59,7 @@
             <div class='col-lg-6'>
                 <div class="form-group">
                     <div class="input-group">
-                        <span class="input-group-addon">
+                        <span class="input-group-text">
                             <i class="fa fa-calendar"></i>
                         </span>
                         <input type='text' class="form-control" name="dob" id="dob" placeholder="DOB: DD-MM-YYYY" value="<?php //print $userInfo['dob']; ?>">                    
@@ -70,7 +70,7 @@
         </div>
         <div class="row"> 
             <div class="col-lg-12">
-                <div class="form-group pull-right">
+                <div class="form-group float-end">
                     <button type="submit" id="register" class="btn btn-info">Register</button>
                 </div>
             </div>

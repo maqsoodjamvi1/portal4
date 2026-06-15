@@ -82,7 +82,7 @@ $cardClass = $cardClass ?? 'card report-filter-card no-print';
           <?php
             $btnType = $action['type'] ?? 'button';
             $btnId = $action['id'] ?? '';
-            $btnClass = $action['class'] ?? 'btn btn-primary btn-block';
+            $btnClass = $action['class'] ?? 'btn btn-primary w-100';
             $btnLabel = $action['label'] ?? 'Apply';
             $btnCol = $action['col_class'] ?? 'col-md-4 mb-2';
             $btnAttrs = $action['attrs'] ?? '';

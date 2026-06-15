@@ -23,24 +23,14 @@
 		$session_id = $sessionData['sessionid'];
 	}
 ?>
-<!-- Content Header (Page header) -->
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1>
-           Students Subject Results
-        </h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="<?= base_url('admin/dashboard') ?>">Dashboard</a></li>
-          <li class="breadcrumb-item active">Students Subject Results</li>
-        </ol>
-      </div>
-    </div>
-  </div><!-- /.container-fluid -->
-</section>
+<?= view('components/page_header', [
+    'title' => 'Students Subject Results',
+    'icon' => 'fas fa-book-open',
+    'breadcrumbs' => [
+        ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
+        ['label' => 'Subject Results', 'active' => true],
+    ],
+]) ?>
 <!-- Main content -->
 <section class="content">
   <div class="row">
@@ -67,8 +57,8 @@
 		 
 		<input type="hidden" name="campus_id" id="campus_id" value="<?php echo $campus_id; ?>" />
 		
-          <div class="col-lg-3">
-            <div class="form-group pull-left">
+          <div class="col-12 col-md-6 col-lg-4 mb-3 mb-lg-0">
+            <div class="form-group mb-0">
 	              <label for="class">Classes</label>
 	             <select class="form-control select2" name="cls_sec_id" id="cls_sec_id">
   <option value="0">Select Section</option>
@@ -82,28 +72,37 @@
 </select>
 	            </div>
           </div>
-          <div class="col-lg-3">
-          	<div class="form-group">
+          <div class="col-12 col-md-6 col-lg-4 mb-3 mb-lg-0">
+          	<div class="form-group mb-0">
           		<label>Subjects</label>
           		<select class="form-control" name="sub_id" id="sub_id">
           			
           		</select>
           	</div>
           </div>
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="form-group mb-0">
+              <label for="sort_order">List order</label>
+              <select class="form-control" id="sort_order" name="sort_order">
+                <option value="name" selected>Student name (A-Z)</option>
+                <option value="reg_no">Registration number</option>
+              </select>
+            </div>
+          </div>
 		<!--   <div class="col-lg-1">
 		   <div class="form-group">
 		    <button type="button" onclick="getstudents();" class="btn btn-primary" style="margin-top: 18px;line-height: 10px;height: 25px;">View</button>
           </div>
 		  </div> -->
-		  <!--  <div class="col-lg-1 pull-right">
+		  <!--  <div class="col-lg-1 float-end">
 		   <div class="form-group">
 		    <button type="button" onclick="printout();" class="btn btn-primary" style="margin-top: 18px;line-height: 10px;height: 25px;">Print</button>
           </div>
 		  </div> -->
 		  </div>
-		  <div class="row">          
-		  <div class="col-lg-12">
-         <div id="students_list_container"></div>
+		  <div class="row mx-0">          
+		  <div class="col-12 px-0 px-sm-2">
+         <div id="students_list_container" class="students-subject-results-list"></div>
 		 </div>
 		 
 		  </div>
@@ -221,12 +220,38 @@ function saveOne($in){
 }
 
   // ===== Your existing dropdown flows (kept), but no exam picker needed =====
+  function loadStudentsList(){
+    const session_id = $('#session_id').val();
+    const campus_id  = $('#campus_id').val();
+    const cls_sec_id = $('#cls_sec_id').val();
+    const sub_id     = $('#sub_id').val();
+    const sort_order = $('#sort_order').val() || 'name';
+
+    if (!cls_sec_id || cls_sec_id === '0' || !sub_id || sub_id === '') {
+      $('#students_list_container').empty();
+      return;
+    }
+
+    $.post(GET_STUDENTS_URL, addCsrf({
+      session_id,
+      campus_id,
+      cls_sec_id,
+      sub_id,
+      sort_order
+    }))
+      .done(function(res){
+        $('#students_list_container').html(res);
+        bindAutoSave($('#students_list_container'));
+      });
+  }
+
 $("#cls_sec_id").on('change', function(){
   const cls_sec_id = $('#cls_sec_id').val();
   const campus_id  = $('#campus_id').val();
   const session_id = $('#session_id').val();
 
   $("#sub_id").html('<option>Loading…</option>');
+  $('#students_list_container').empty();
 
   $.ajax({
     type: 'POST',
@@ -248,22 +273,11 @@ $("#cls_sec_id").on('change', function(){
 
   // When subject changes → fetch students grid (server will resolve active exam)
   $("#sub_id").on('change', function(){
-    const session_id = $('#session_id').val();     // still sent if you use it server-side
-    const campus_id  = $('#campus_id').val();      // still sent if you use it server-side
-    const cls_sec_id = $('#cls_sec_id').val();
-    const sub_id     = $('#sub_id').val();
+    loadStudentsList();
+  });
 
-    $.post(GET_STUDENTS_URL, addCsrf({
-      session_id, campus_id, cls_sec_id, sub_id
-      // no eid needed; controller should pick active exam (status='0')
-    }))
-    .done(function(res){
-      $("#students_list_container").html(res);
-
-      // After the table is rendered, hook auto-save to inputs inside it
-      // Expect inputs like: name="obtained_marks[STUDENT_ID][SUBJECT_ID]" class="mark-input"
-      bindAutoSave($("#students_list_container"));
-    });
+  $('#sort_order').on('change', function(){
+    loadStudentsList();
   });
 
   // Initial bind (in case markup is already present)

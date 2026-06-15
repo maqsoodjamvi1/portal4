@@ -139,15 +139,8 @@ namespace App\Controllers\Admin;
 
             $studentID = $this->request->getPost('student_id');
             $s_flag = $this->request->getPost('s_flag');
-            $a_flag = $this->request->getPost('a_flag');
-            $t_flag = $this->request->getPost('t_flag');
-            $h_flag = $this->request->getPost('h_flag');
-
             $data = [
                 's_flag' => trim($s_flag),
-                'a_flag' => trim($a_flag),
-                't_flag' => trim($t_flag),
-                'h_flag' => trim($h_flag),
                 'updated_date' => $date,
                 'user_id' => $user_id
             ];
@@ -303,10 +296,7 @@ public function import()
                     'fee_plan'          => 0,
                     'status'            => 1,
                     'cls_sec_id'        => $section_id,
-                    'h_flag'            => 0,
                     's_flag'            => 1,
-                    'a_flag'            => 0,
-                    't_flag'            => 0,
                     'gr_date'           => $date,
                     'std_type'          => 1,
                     'gr_no'             => 0,
