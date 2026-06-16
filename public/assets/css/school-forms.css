@@ -1064,11 +1064,40 @@ body.admin-shell-active {
   color: var(--sms-navy, #10263f);
 }
 
+.content .btn-flat {
+  border-radius: 7px !important;
+}
+
+.content .card-tools,
+.content .box-tools {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.content .card-tools .btn,
+.content .box-tools .btn,
+.content td .btn,
+.content .table .btn {
+  min-height: 30px;
+  padding: 0.28rem 0.56rem;
+  font-size: 0.8rem;
+}
+
+.content .table .btn i,
+.content td .btn i,
+.content .card-tools .btn i {
+  font-size: 0.82rem;
+}
+
 .content .table,
 .content table.dataTable {
   background: #fff;
   border-collapse: separate;
   border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .content .table thead th,
@@ -1076,6 +1105,7 @@ body.admin-shell-active {
   background: linear-gradient(180deg, #eef6fc, #e5eef8);
   color: var(--sms-navy, #10263f);
   white-space: nowrap;
+  padding: 0.62rem 0.72rem;
 }
 
 .content .table tbody tr:hover,
@@ -1094,12 +1124,118 @@ body.admin-shell-active {
   border-color: #e6edf5;
 }
 
+.content .table td,
+.content table.dataTable td {
+  color: #1e293b;
+  padding: 0.58rem 0.72rem;
+}
+
+.content .table-sm td,
+.content .table-sm th,
+.content table.dataTable.table-sm td,
+.content table.dataTable.table-sm th {
+  padding: 0.42rem 0.55rem;
+}
+
+.content .table-bordered {
+  border-color: #e1eaf3;
+}
+
+.content .dataTables_wrapper {
+  color: #475569;
+}
+
+.content .dataTables_wrapper .row:first-child,
+.content .dataTables_wrapper .row:last-child {
+  align-items: center;
+  row-gap: 0.65rem;
+}
+
+.content .dataTables_wrapper .dataTables_info {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding-top: 0.35rem;
+}
+
+.content .dataTables_wrapper .dataTables_paginate {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.content .dataTables_wrapper .pagination {
+  gap: 0.25rem;
+  margin-bottom: 0;
+}
+
+.content .dataTables_wrapper .page-link {
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 7px !important;
+  border-color: var(--school-form-border-strong);
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content .dataTables_wrapper .page-item.active .page-link {
+  background: var(--sms-primary-dark, #174b75);
+  border-color: var(--sms-primary-dark, #174b75);
+  color: #fff;
+}
+
+.content .dataTables_wrapper .page-item.disabled .page-link {
+  color: #94a3b8;
+  background: #f8fafc;
+}
+
+.content .dataTables_wrapper .dataTables_empty {
+  color: #64748b;
+  font-weight: 700;
+  padding: 1.5rem !important;
+  background: #fbfdff;
+}
+
+.content .dt-buttons .btn,
+.content .dataTables_wrapper .btn {
+  min-height: 34px;
+  border-radius: 7px !important;
+}
+
+.content .table-responsive,
+.content div.dataTables_wrapper div.dataTables_scrollBody {
+  border: 1px solid var(--school-form-border);
+  border-radius: 8px;
+}
+
+.content .table-responsive > .table,
+.content div.dataTables_wrapper div.dataTables_scrollBody > table {
+  margin-bottom: 0;
+}
+
 .content .badge,
 .content .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   border-radius: 999px;
   font-weight: 800;
   letter-spacing: 0;
   padding: 0.32em 0.62em;
+  line-height: 1.15;
+  border: 1px solid transparent;
+}
+
+.content .badge.bg-secondary,
+.content .badge-secondary,
+.content .label-default,
+.content .label-secondary {
+  background: #e8eef5 !important;
+  color: #475569 !important;
+  border-color: #d8e2ed !important;
 }
 
 .content .badge.bg-primary,
@@ -1107,6 +1243,7 @@ body.admin-shell-active {
 .content .label-primary {
   background: #d9ecf8 !important;
   color: #174b75 !important;
+  border-color: #bdddf1 !important;
 }
 
 .content .badge.bg-success,
@@ -1114,6 +1251,7 @@ body.admin-shell-active {
 .content .label-success {
   background: #dff8ec !important;
   color: #0b704e !important;
+  border-color: #bcebd4 !important;
 }
 
 .content .badge.bg-warning,
@@ -1121,6 +1259,7 @@ body.admin-shell-active {
 .content .label-warning {
   background: #fff2d2 !important;
   color: #7a4d09 !important;
+  border-color: #f3d48d !important;
 }
 
 .content .badge.bg-danger,
@@ -1128,6 +1267,7 @@ body.admin-shell-active {
 .content .label-danger {
   background: #fde2e2 !important;
   color: #9f2626 !important;
+  border-color: #f4b6b6 !important;
 }
 
 .content .alert {
