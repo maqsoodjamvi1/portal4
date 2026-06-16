@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 !env.email.example
+/portal4/
 
 # Runtime writable data
 writable/
