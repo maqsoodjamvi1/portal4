@@ -64,12 +64,12 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
 
     <link rel="stylesheet" href="<?= base_url('assets/js/sweetalert/sweetalert.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260604') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616a') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260615a') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616b') ?>">
 
     <script type="text/javascript">
       var BASE_URL   = '<?= base_url() ?>';

@@ -3,11 +3,14 @@
  * Import after AdminLTE; feature CSS should use var(--sms-*) where possible.
  */
 :root {
-  /* Brand (maps legacy AdminLTE #3c8dbc) */
-  --sms-primary: #3c8dbc;
-  --sms-primary-dark: #367fa9;
-  --sms-primary-light: #4dabf7;
-  --sms-accent: #06b6d4;
+  /* Brand: school operations palette */
+  --sms-primary: #256f9f;
+  --sms-primary-dark: #174b75;
+  --sms-primary-light: #5dade2;
+  --sms-accent: #0f9f8f;
+  --sms-navy: #10263f;
+  --sms-navy-2: #173a5e;
+  --sms-gold: #f2b84b;
 
   /* Semantic */
   --sms-success: #10b981;
@@ -16,11 +19,11 @@
   --sms-info: #0ea5e9;
 
   /* Surfaces */
-  --sms-bg: #f1f5f9;
+  --sms-bg: #f4f7fb;
   --sms-surface: #ffffff;
   --sms-surface-muted: #f7f9fc;
-  --sms-border: #e2e8f0;
-  --sms-border-strong: #dfe5ee;
+  --sms-border: #dde7f2;
+  --sms-border-strong: #cad8e8;
 
   /* Text */
   --sms-text: #0f172a;
@@ -39,8 +42,8 @@
   --sms-radius-sm: 6px;
   --sms-radius: 10px;
   --sms-radius-lg: 14px;
-  --sms-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
-  --sms-shadow-hover: 0 12px 32px rgba(15, 23, 42, 0.1);
+  --sms-shadow: 0 6px 22px rgba(16, 38, 63, 0.07);
+  --sms-shadow-hover: 0 14px 34px rgba(16, 38, 63, 0.12);
 
   /* Spacing scale */
   --sms-space-1: 0.25rem;
