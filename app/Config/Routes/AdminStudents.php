@@ -296,14 +296,10 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
     $routes->get('users/check-availability', 'Users::checkAvailability');
     $routes->post('users/save', 'Users::save'); // Add this if you're saving from the add/edit form
     $routes->get('users/get-teacher-subjects/(:num)', 'Users::getTeacherSubjects/$1');
-$routes->post('users/assign-subject', 'Users::assignSubject');
-
-$routes->get('users/get-teacher-classes/(:num)', 'Users::getTeacherClasses/$1');
-$routes->post('users/assign-class-teacher', 'Users::assignClassTeacher');
-
-
-    $routes->get('users/getEmployeeImage/(:any)', 'Users::getEmployeeImage/$1', ['filter' => false]);
-
+    $routes->post('users/assign-subject', 'Users::assignSubject');
+    $routes->get('users/get-teacher-classes/(:num)', 'Users::getTeacherClasses/$1');
+    $routes->post('users/assign-class-teacher', 'Users::assignClassTeacher');
+    $routes->get('users/getEmployeeImage/(:any)', 'Users::getEmployeeImage/$1');
 
     $routes->get('users/delete/(:num)', 'Users::delete/$1');
     $routes->get('users/edit_password', 'Users::edit_password');
