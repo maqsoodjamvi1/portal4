@@ -69,7 +69,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616b') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616c') ?>">
 
     <script type="text/javascript">
       var BASE_URL   = '<?= base_url() ?>';

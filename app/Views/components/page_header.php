@@ -16,8 +16,8 @@ $actionsHtml = $actionsHtml ?? null;
 ?>
 <section class="content-header sms-page-header">
   <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="<?= $actionsHtml ? 'col-sm-6' : 'col-sm-12' ?>">
+    <div class="sms-page-header__bar">
+      <div class="sms-page-header__main">
         <h1 class="sms-page-header__title mb-1">
           <?php if ($icon): ?><i class="<?= esc($icon, 'attr') ?>"></i><?php endif; ?>
           <?= esc($title) ?>
@@ -27,25 +27,21 @@ $actionsHtml = $actionsHtml ?? null;
         <?php endif; ?>
       </div>
       <?php if ($actionsHtml): ?>
-        <div class="col-sm-6"><?= $actionsHtml ?></div>
+        <div class="sms-page-header__actions"><?= $actionsHtml ?></div>
+      <?php endif; ?>
+      <?php if (!empty($breadcrumbs)): ?>
+        <ol class="breadcrumb sms-page-header__breadcrumb mb-0">
+          <?php foreach ($breadcrumbs as $crumb): ?>
+            <?php if (!empty($crumb['active'])): ?>
+              <li class="breadcrumb-item active"><?= esc($crumb['label'] ?? '') ?></li>
+            <?php else: ?>
+              <li class="breadcrumb-item">
+                <a href="<?= esc($crumb['url'] ?? '#', 'attr') ?>"><?= esc($crumb['label'] ?? '') ?></a>
+              </li>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </ol>
       <?php endif; ?>
     </div>
-    <?php if (!empty($breadcrumbs)): ?>
-      <div class="row">
-        <div class="col-12">
-          <ol class="breadcrumb float-sm-right mb-0">
-            <?php foreach ($breadcrumbs as $crumb): ?>
-              <?php if (!empty($crumb['active'])): ?>
-                <li class="breadcrumb-item active"><?= esc($crumb['label'] ?? '') ?></li>
-              <?php else: ?>
-                <li class="breadcrumb-item">
-                  <a href="<?= esc($crumb['url'] ?? '#', 'attr') ?>"><?= esc($crumb['label'] ?? '') ?></a>
-                </li>
-              <?php endif; ?>
-            <?php endforeach; ?>
-          </ol>
-        </div>
-      </div>
-    <?php endif; ?>
   </div>
 </section>

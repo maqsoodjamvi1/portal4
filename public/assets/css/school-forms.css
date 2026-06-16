@@ -835,6 +835,50 @@ body.admin-shell-active {
   flex: 0 0 auto;
 }
 
+.sms-page-header {
+  padding: 1rem 1rem 0.9rem;
+}
+
+.sms-page-header__bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "main meta"
+    "main crumbs";
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.sms-page-header__main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.sms-page-header__actions {
+  grid-area: meta;
+  justify-self: end;
+}
+
+.sms-page-header__breadcrumb {
+  grid-area: crumbs;
+  justify-self: end;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid rgba(202, 216, 232, 0.88);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 14px rgba(16, 38, 63, 0.05);
+  font-size: 0.84rem;
+}
+
+.sms-page-header__breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  color: #8aa0b6;
+}
+
+.sms-page-header__breadcrumb .breadcrumb-item.active {
+  color: #475569;
+  font-weight: 700;
+}
+
 .content .card,
 .content .box,
 .content .panel,
@@ -1044,4 +1088,117 @@ body.admin-shell-active {
 .content .nav-tabs .nav-link.active {
   color: var(--sms-primary-dark, #174b75);
   border-color: var(--sms-border-strong, #cad8e8) var(--sms-border-strong, #cad8e8) #fff;
+}
+
+/* Campus profile form: compact, school-office layout. */
+.campus-profile-page .card.card-primary.card-outline {
+  border-top: 0 !important;
+}
+
+.campus-profile-card > .card-header {
+  min-height: 3.2rem;
+  padding: 0.85rem 1rem;
+}
+
+.campus-profile-card > .card-header .card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1rem;
+}
+
+.campus-profile-card > .card-header .small {
+  color: #64748b !important;
+  font-weight: 700;
+}
+
+.campus-profile-card .card-body {
+  background: #fff;
+}
+
+.campus-profile-tabs {
+  gap: 0.35rem;
+  padding: 1rem 1rem 0 !important;
+  border-bottom: 1px solid var(--sms-border, #dde7f2);
+}
+
+.campus-profile-tabs.nav-tabs .nav-link {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  color: #475569;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.9rem;
+}
+
+.campus-profile-tabs.nav-tabs .nav-link:hover {
+  background: #f4f8fc;
+  border-color: #d9e6f3;
+  color: var(--sms-primary-dark, #174b75);
+}
+
+.campus-profile-tabs.nav-tabs .nav-link.active {
+  background: #fff;
+  border-color: var(--sms-border-strong, #cad8e8);
+  color: var(--sms-primary-dark, #174b75);
+  box-shadow: 0 -2px 0 var(--sms-accent, #0f9f8f) inset;
+}
+
+.campus-profile-card .tab-content {
+  padding: 1.15rem 1.25rem 1.25rem !important;
+}
+
+.campus-profile-card .tab-pane > .row {
+  row-gap: 1rem;
+}
+
+.campus-profile-card .form-group,
+.campus-profile-card .col-md-6,
+.campus-profile-card .col-lg-6,
+.campus-profile-card .col-12 {
+  margin-bottom: 0;
+}
+
+.campus-profile-card label {
+  margin-bottom: 0.4rem;
+}
+
+.campus-profile-card .form-text,
+.campus-profile-card small.text-muted {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.campus-profile-card .input-group-text {
+  min-width: 2.85rem;
+  justify-content: center;
+  color: var(--sms-primary-dark, #174b75);
+}
+
+.campus-profile-card .card-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 767.98px) {
+  .sms-page-header__bar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "meta"
+      "crumbs";
+  }
+
+  .sms-page-header__breadcrumb,
+  .sms-page-header__actions {
+    justify-self: start;
+  }
+
+  .campus-profile-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
 }

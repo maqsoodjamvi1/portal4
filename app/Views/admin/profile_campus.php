@@ -56,11 +56,11 @@
     ],
 ]) ?>
 
-<section class="content">
+<section class="content campus-profile-page">
   <div class="container-fluid">
 
     <!-- Sticky action bar -->
-    <div class="card card-primary card-outline shadow-sm">
+    <div class="card card-primary card-outline shadow-sm campus-profile-card">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h3 class="card-title mb-0"><i class="fas fa-school me-2"></i>Campus Information</h3>
         <div class="small text-muted">Fields marked <span class="text-danger">*</span> are required</div>
@@ -73,7 +73,7 @@
 
       <div class="card-body p-0">
         <!-- Tabs -->
-        <ul class="nav nav-tabs nav-tabs-clean px-3 pt-3" id="campusTabs" role="tablist">
+        <ul class="nav nav-tabs nav-tabs-clean campus-profile-tabs px-3 pt-3" id="campusTabs" role="tablist">
           <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-basic"><i class="fas fa-id-card-alt me-1"></i>Basics</a></li>
           <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-principal"><i class="fas fa-user-tie me-1"></i>Principal</a></li>
           <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-qrcode"><i class="fas fa-user-tie me-1"></i>QR Code</a></li>
@@ -464,21 +464,6 @@
     transform: scale(1.05);
 }
 
-/* Tab styling */
-.nav-tabs-clean .nav-link {
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: #495057;
-}
-
-.nav-tabs-clean .nav-link:hover {
-    border-bottom-color: #adb5bd;
-}
-
-.nav-tabs-clean .nav-link.active {
-    border-bottom-color: #007bff;
-    color: #007bff;
-}
 </style>
 
 <script>
