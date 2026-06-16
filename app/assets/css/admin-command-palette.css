@@ -84,27 +84,33 @@
 }
 
 .admin-bar-command-btn {
-  min-width: 8.5rem;
+  min-width: 8rem;
   height: 2.15rem;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  background: rgba(15, 23, 42, 0.14);
-  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  background: rgba(15, 23, 42, 0.2);
+  color: #fff !important;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
 }
 
 .admin-bar-command-btn:hover,
 .admin-bar-command-btn:focus {
-  color: #fff;
+  color: #fff !important;
   background: rgba(15, 23, 42, 0.24);
   border-color: rgba(255, 255, 255, 0.56);
   outline: 0;
+}
+
+.admin-bar-command-btn i,
+.admin-bar-command-btn__label,
+.admin-bar-command-btn__kbd {
+  color: #fff !important;
 }
 
 .admin-bar-command-btn__label {
@@ -112,12 +118,14 @@
 }
 
 .admin-bar-command-btn__kbd {
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  min-width: 2.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff !important;
   border-radius: 6px;
   padding: 0.12rem 0.32rem;
   font-size: 0.68rem;
   font-weight: 800;
+  text-align: center;
   box-shadow: none;
 }

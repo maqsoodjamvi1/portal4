@@ -66,7 +66,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="<?= base_url('assets/js/sweetalert/sweetalert.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616b') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616d') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616c') ?>">
@@ -493,7 +493,7 @@ $regYearExample = date('y');
       $session->set('menu_prefs', $userMenuPrefsMap);
   }
 ?>
-<link rel="stylesheet" href="<?= base_url('assets/css/admin-command-palette.css?v=20260616a') ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/admin-command-palette.css?v=20260616b') ?>">
 
     <div class="admin-shell-headers no-print">
       <?php include __DIR__ . '/partials/admin_app_bar.php'; ?>
