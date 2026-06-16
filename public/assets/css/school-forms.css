@@ -976,24 +976,64 @@ body.admin-shell-active {
   font-weight: 700;
 }
 
+.content-header .breadcrumb {
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.content-header .breadcrumb a,
+.sms-page-header__breadcrumb a {
+  color: var(--sms-primary-dark, #174b75);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.content-header .breadcrumb a:hover,
+.sms-page-header__breadcrumb a:hover {
+  color: var(--sms-primary, #256f9f);
+  text-decoration: underline;
+}
+
 .content .card,
 .content .box,
 .content .panel,
 .content .sms-card {
   background: rgba(255, 255, 255, 0.98);
   border-color: rgba(202, 216, 232, 0.9);
+  overflow: hidden;
 }
 
 .content .card-header,
 .content .box-header,
 .content .panel-heading {
   background: linear-gradient(180deg, #ffffff, #f6f9fd);
+  min-height: 3.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .content .card-title,
 .content .box-title,
 .content .panel-title {
   color: var(--sms-navy, #10263f);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  line-height: 1.25;
+}
+
+.content .card-title i,
+.content .box-title i,
+.content .panel-title i {
+  color: var(--sms-primary, #256f9f);
+}
+
+.content .card-header::after,
+.content .box-header::after {
+  display: none;
 }
 
 .content .small-box,
@@ -1074,6 +1114,25 @@ body.admin-shell-active {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+
+.content .btn-tool {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.25rem !important;
+  border-radius: 7px !important;
+  color: #64748b !important;
+  background: rgba(226, 235, 245, 0.65) !important;
+  border: 1px solid rgba(202, 216, 232, 0.8) !important;
+  box-shadow: none !important;
+}
+
+.content .btn-tool:hover,
+.content .btn-tool:focus {
+  color: var(--sms-primary-dark, #174b75) !important;
+  background: #eef6fc !important;
+  border-color: #bdddf1 !important;
+  transform: none !important;
 }
 
 .content .card-tools .btn,
@@ -1274,6 +1333,27 @@ body.admin-shell-active {
   border-radius: 8px;
   border-width: 1px;
   font-weight: 600;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  line-height: 1.45;
+}
+
+.content .alert-dismissible {
+  padding-right: 3rem;
+}
+
+.content .alert .btn-close,
+.content .alert .close {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.content .alert-light,
+.content .alert-secondary {
+  background: #f8fafc;
+  border-color: #dce6f1;
+  color: #475569;
 }
 
 .content .alert-info {
@@ -1298,6 +1378,104 @@ body.admin-shell-active {
   background: #fde7e7;
   border-color: #f4b6b6;
   color: #912525;
+}
+
+.content .callout {
+  border: 1px solid var(--school-form-border);
+  border-left: 4px solid var(--sms-primary, #256f9f);
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 6px 18px rgba(16, 38, 63, 0.06);
+}
+
+.content .callout.callout-info {
+  border-left-color: var(--sms-primary, #256f9f);
+}
+
+.content .callout.callout-success {
+  border-left-color: var(--sms-success, #10b981);
+}
+
+.content .callout.callout-warning {
+  border-left-color: #dd9f2d;
+}
+
+.content .callout.callout-danger {
+  border-left-color: var(--sms-danger, #ef4444);
+}
+
+.content .modal-dialog {
+  margin-top: 1.5rem;
+}
+
+.content .modal-header {
+  min-height: 3.25rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.content .modal-header.bg-primary,
+.content .modal-header.bg-info,
+.content .modal-header.bg-success,
+.content .modal-header.bg-warning,
+.content .modal-header.bg-danger {
+  border-bottom: 0;
+}
+
+.content .modal-header.bg-primary,
+.content .modal-header.bg-info {
+  background: linear-gradient(180deg, var(--sms-primary, #256f9f), var(--sms-primary-dark, #174b75)) !important;
+  color: #fff !important;
+}
+
+.content .modal-header.bg-success {
+  background: linear-gradient(180deg, #19a974, #0f8c61) !important;
+  color: #fff !important;
+}
+
+.content .modal-header.bg-warning {
+  background: linear-gradient(180deg, #f7c25d, #dd9f2d) !important;
+  color: #1f2d3d !important;
+}
+
+.content .modal-header.bg-danger {
+  background: linear-gradient(180deg, #e55858, #c93f3f) !important;
+  color: #fff !important;
+}
+
+.content .modal-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.content .modal-body {
+  color: #334155;
+}
+
+.content .dropdown-menu {
+  border: 1px solid var(--school-form-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.16);
+  padding: 0.35rem;
+}
+
+.content .dropdown-item {
+  border-radius: 6px;
+  color: #334155;
+  font-weight: 700;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.content .dropdown-item:hover,
+.content .dropdown-item:focus {
+  background: #eef6fc;
+  color: var(--sms-primary-dark, #174b75);
 }
 
 .content .nav-pills .nav-link {
@@ -1325,6 +1503,67 @@ body.admin-shell-active {
 .content .nav-tabs .nav-link.active {
   color: var(--sms-primary-dark, #174b75);
   border-color: var(--sms-border-strong, #cad8e8) var(--sms-border-strong, #cad8e8) #fff;
+}
+
+@media (max-width: 767.98px) {
+  .sms-page-header__bar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "meta"
+      "crumbs";
+  }
+
+  .sms-page-header__actions,
+  .sms-page-header__breadcrumb {
+    justify-self: stretch;
+  }
+
+  .sms-page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .sms-page-header__actions .btn,
+  .content .card-tools .btn,
+  .content .box-tools .btn {
+    flex: 1 1 auto;
+  }
+
+  .sms-page-header__breadcrumb {
+    border-radius: 8px;
+    overflow: auto;
+  }
+
+  .content .card-header,
+  .content .box-header,
+  .content .panel-heading {
+    align-items: flex-start;
+  }
+
+  .content .card-title,
+  .content .box-title,
+  .content .panel-title {
+    width: 100%;
+  }
+
+  .content .card-tools,
+  .content .box-tools {
+    width: 100%;
+  }
+
+  .content .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .content .dataTables_wrapper .dataTables_filter {
+    text-align: left;
+  }
+
+  .content .dataTables_wrapper .dataTables_paginate {
+    justify-content: flex-start;
+  }
 }
 
 /* Campus profile form: compact, school-office layout. */
