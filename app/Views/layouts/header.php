@@ -92,7 +92,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     </script>
     <!-- Bootstrap 5 + legacy compatibility bridge -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615a') ?>"></script>
+    <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
     <script src="<?= base_url('assets/js/report-ui.js') ?>"></script>
     <?php if ($uiNeedsChart): ?>
     <!-- ChartJS -->
