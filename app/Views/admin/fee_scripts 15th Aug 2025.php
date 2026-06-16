@@ -3,7 +3,7 @@
 <!-- Bootstrap Switch CSS -->
 <link rel="stylesheet" href="<?= base_url('assets/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css'); ?>">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
 
 <script>
     var base_url = "<?= base_url() ?>";

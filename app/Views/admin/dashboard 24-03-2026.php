@@ -834,7 +834,7 @@ canvas {
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
+<script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
 
 
 <!-- Load QR Scanner Library -->
