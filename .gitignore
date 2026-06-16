@@ -4,6 +4,7 @@
 !.env.example
 !env.email.example
 /portal4/
+FETCH_HEAD
 
 # Runtime writable data
 writable/
@@ -36,6 +37,11 @@ backups/
 .vscode/
 .DS_Store
 Thumbs.db
+.gitignore.save*
+*.save
+*.bak
+*.bak-*
+*--
 =
 ystemctl restart nginx
 
