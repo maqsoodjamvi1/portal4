@@ -34,6 +34,14 @@
       'input[type="checkbox"].switchchk-native:checked::after{transform:translateX(1.45rem)}',
       'input[type="checkbox"].switchchk-native:focus{outline:0;box-shadow:0 0 0 .18rem rgba(60,141,188,.22)}',
       'input[type="checkbox"].switchchk-native[disabled]{cursor:not-allowed;opacity:.65}',
+      'input[type="checkbox"].bootstrap-toggle-native{appearance:none;-webkit-appearance:none;width:4.65rem;height:1.8rem;border:1px solid #9fb0c3;border-radius:999px;background:#e2e8f0;position:relative;cursor:pointer;vertical-align:middle;transition:background-color .15s ease,border-color .15s ease;display:inline-block}',
+      'input[type="checkbox"].bootstrap-toggle-native::before{content:attr(data-off);position:absolute;inset:0 .55rem 0 1.65rem;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.68rem;font-weight:800;white-space:nowrap}',
+      'input[type="checkbox"].bootstrap-toggle-native::after{content:"";position:absolute;top:.16rem;left:.16rem;width:1.38rem;height:1.38rem;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.22);transition:transform .15s ease}',
+      'input[type="checkbox"].bootstrap-toggle-native:checked{background:#0f8f78;border-color:#0f766e}',
+      'input[type="checkbox"].bootstrap-toggle-native:checked::before{content:attr(data-on);inset:0 1.65rem 0 .55rem;color:#fff}',
+      'input[type="checkbox"].bootstrap-toggle-native:checked::after{transform:translateX(2.85rem)}',
+      'input[type="checkbox"].bootstrap-toggle-native:focus{outline:0;box-shadow:0 0 0 .18rem rgba(15,143,120,.22)}',
+      'input[type="checkbox"].bootstrap-toggle-native[disabled]{cursor:not-allowed;opacity:.65}',
       '.input-group-append,.input-group-prepend{display:flex}',
       '.input-group>.input-group-prepend>.btn,.input-group>.input-group-prepend>.input-group-text{border-top-right-radius:0;border-bottom-right-radius:0}',
       '.input-group>.input-group-append>.btn,.input-group>.input-group-append>.input-group-text{border-top-left-radius:0;border-bottom-left-radius:0}',
@@ -113,6 +121,66 @@
             options.onSwitchChange.call(el, event, el.checked);
           }
         });
+      });
+    };
+  }
+
+  function initBootstrapToggleFallback() {
+    if (!$ || $.fn.bootstrapToggle) {
+      return;
+    }
+
+    $.fn.bootstrapToggle = function (option) {
+      var args = Array.prototype.slice.call(arguments, 1);
+
+      if (typeof option === 'string') {
+        if (option === 'on' || option === 'off') {
+          return this.each(function () {
+            $(this).prop('checked', option === 'on').trigger('change');
+          });
+        }
+
+        if (option === 'toggle') {
+          return this.each(function () {
+            $(this).prop('checked', !$(this).prop('checked')).trigger('change');
+          });
+        }
+
+        if (option === 'enable' || option === 'disable') {
+          return this.each(function () {
+            $(this).prop('disabled', option === 'disable');
+          });
+        }
+
+        if (option === 'destroy') {
+          return this.each(function () {
+            $(this)
+              .removeClass('bootstrap-toggle-native')
+              .off('.bootstrapToggleCompat')
+              .removeData('bootstrap-toggle-compat');
+          });
+        }
+
+        return this;
+      }
+
+      return this.each(function () {
+        var el = this;
+        var $el = $(el);
+
+        if (el.type !== 'checkbox') {
+          return;
+        }
+
+        $el
+          .addClass('bootstrap-toggle-native')
+          .attr('data-on', $el.attr('data-on') || 'On')
+          .attr('data-off', $el.attr('data-off') || 'Off')
+          .data('bootstrap-toggle-compat', true);
+
+        if (option && option.disabled !== undefined) {
+          $el.prop('disabled', !!option.disabled);
+        }
       });
     };
   }
@@ -340,6 +408,7 @@
   migrateClasses(document);
   initJQueryBridge();
   initBootstrapSwitchFallback();
+  initBootstrapToggleFallback();
   patchSelect2LegacyApi();
   initBootstrapWidgets(document);
 
@@ -350,6 +419,7 @@
       migrateClasses(document);
       initJQueryBridge();
       initBootstrapSwitchFallback();
+      initBootstrapToggleFallback();
       patchSelect2LegacyApi();
       initBootstrapWidgets(document);
     });

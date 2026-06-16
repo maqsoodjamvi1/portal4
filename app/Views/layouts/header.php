@@ -69,7 +69,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616d') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616c') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616d') ?>">
 
     <script type="text/javascript">
       var BASE_URL   = '<?= base_url() ?>';
@@ -92,7 +92,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     </script>
     <!-- Bootstrap 5 + legacy compatibility bridge -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
+    <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260616a') ?>"></script>
     <script src="<?= base_url('assets/js/report-ui.js') ?>"></script>
     <?php if ($uiNeedsChart): ?>
     <!-- ChartJS -->
