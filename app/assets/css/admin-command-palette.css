@@ -84,14 +84,40 @@
 }
 
 .admin-bar-command-btn {
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.85);
-  padding: 0.35rem 0.5rem;
-  border-radius: 4px;
+  min-width: 8.5rem;
+  height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(15, 23, 42, 0.14);
+  color: #fff;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.admin-bar-command-btn:hover {
+.admin-bar-command-btn:hover,
+.admin-bar-command-btn:focus {
   color: #fff;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.24);
+  border-color: rgba(255, 255, 255, 0.56);
+  outline: 0;
+}
+
+.admin-bar-command-btn__label {
+  font-size: 0.85rem;
+}
+
+.admin-bar-command-btn__kbd {
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.12rem 0.32rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  box-shadow: none;
 }

@@ -290,9 +290,18 @@
 }
 
 .ep-tab-nav .nav-link.active {
-  background: #2c5282;
-  color: #fff;
+  background: #1f5f8f !important;
+  color: #fff !important;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(31, 95, 143, 0.22);
+}
+
+.ep-tab-nav .nav-link.active i,
+.ep-tab-nav .nav-link.active .fas,
+.ep-tab-nav .nav-link.active .far,
+.ep-tab-nav .nav-link.active .fa {
+  color: #fff !important;
+  opacity: 1;
 }
 
 .ep-tab-nav .nav-link:not(.active):hover {

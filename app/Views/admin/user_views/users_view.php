@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin_template') ?>
 
 <?= $this->section('pageStyles') ?>
-<link rel="stylesheet" href="<?= base_url('assets/css/employee-profile.css?v=20260614b') ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/employee-profile.css?v=20260616a') ?>">
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>

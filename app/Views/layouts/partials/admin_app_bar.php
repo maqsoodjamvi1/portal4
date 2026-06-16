@@ -75,6 +75,8 @@ if (!empty($expiryInfo) && $curr_campus_id > 0 && !empty($expiryInfo['expiry_dat
               title="Search menu (Ctrl+K)"
               aria-label="Search menu">
         <i class="fas fa-search"></i>
+        <span class="admin-bar-command-btn__label">Search</span>
+        <kbd class="admin-bar-command-btn__kbd">Ctrl K</kbd>
       </button>
     </div>
 
