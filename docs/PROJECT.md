@@ -4,7 +4,7 @@ CodeIgniter 4 application for multi-campus school operations: admin panel, paren
 
 ## Requirements
 
-- PHP 8.1+
+- PHP 8.2+
 - MySQL
 - Composer
 - Web server document root: `public/`
