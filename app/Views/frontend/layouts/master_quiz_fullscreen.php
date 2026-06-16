@@ -42,7 +42,7 @@ $__homeLabel = ($__langNav === 'ur') ? 'ڈیش بورڈ' : (($__langNav === 'ar'
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
+  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
 </head>
 <body class="quiz-fullscreen-mode quiz-attempt-page <?= in_array($__langNav, ['ar', 'ur'], true) ? 'rtl-support' : '' ?>">
 <div class="quiz-fullscreen-shell">

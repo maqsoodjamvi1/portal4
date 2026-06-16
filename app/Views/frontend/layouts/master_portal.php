@@ -346,7 +346,7 @@ $__langNav = session('language') ?? 'en';
   </script>
   <!-- Bootstrap 5 + legacy compatibility bridge -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260614') ?>"></script>
+  <script src="<?= base_url('assets/js/bootstrap5-compat.js?v=20260615b') ?>"></script>
   <!-- AdminLTE App -->
   <script src="<?= base_url('resource/adminlte/dist/js/adminlte.js') ?>"></script>
 </head>
