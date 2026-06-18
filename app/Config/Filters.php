@@ -78,6 +78,12 @@ class Filters extends BaseFilters
             // 'honeypot',
             'pagecache' => [
                 'except' => [
+                    '',
+                    '/',
+                    'dashboard',
+                    'login',
+                    'signup',
+                    'quizzes/guest/*',
                     'admin',
                     'admin/*',
                     'student',
@@ -118,6 +124,12 @@ class Filters extends BaseFilters
         'after' => [
             'pagecache' => [
                 'except' => [
+                    '',
+                    '/',
+                    'dashboard',
+                    'login',
+                    'signup',
+                    'quizzes/guest/*',
                     'admin',
                     'admin/*',
                     'student',
