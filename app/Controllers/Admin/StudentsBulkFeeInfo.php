@@ -314,7 +314,7 @@ public function data()
     // Require a class/section selection (fee-only screen drives by class)
     if ($cls_sec_id === '') {
         return $this->response->setBody(
-            '<tr><td colspan="8" class="text-center text-muted">Select a class to view students…</td></tr>'
+            '<tr><td colspan="5" class="text-center text-muted">Select a class to view students…</td></tr>'
         );
     }
 
@@ -340,82 +340,50 @@ public function data()
     $rows = $qb->get()->getResult();
     if (!$rows) {
         return $this->response->setBody(
-            '<tr><td colspan="8" class="text-center text-info">No students found for this class/section.</td></tr>'
+            '<tr><td colspan="5" class="text-center text-info">No students found for this class/section.</td></tr>'
         );
+    }
+
+    $monthKeys = array_values(array_unique(array_filter(array_map(
+        static fn (array $m): ?string => $m['key'] ?? null,
+        $selectedMonths
+    ))));
+
+    $monthLabels = [];
+    foreach ($selectedMonths as $m) {
+        if (!empty($m['key'])) {
+            $monthLabels[$m['key']] = $m['label'] ?? $m['key'];
+        }
     }
 
     // Fee helpers
     $monthlyFeeTypeId = $this->getMonthlyFeeTypeId($systemId);
-
-    $readMonth = function (int $studentId, ?string $yyyymm, float $classFee) use ($monthlyFeeTypeId) {
-        if (!$yyyymm || !$monthlyFeeTypeId) {
-            return ['net' => 0.0, 'amount' => $classFee, 'has' => false];
-        }
-        $agg = $this->db->table('fee_chalan')
-            ->select('COUNT(*) as cnt, COALESCE(SUM(amount),0) as amt, COALESCE(SUM(discount),0) as disc')
-            ->where([
-                'student_id'  => $studentId,
-                'fee_month'   => $yyyymm,
-                'status'      => 'unpaid',
-                'fee_type_id' => $monthlyFeeTypeId,
-            ])->get()->getRow();
-
-        $cnt  = (int)($agg->cnt ?? 0);
-        $amt  = (float)($agg->amt ?? 0);
-        $disc = (float)($agg->disc ?? 0);
-
-        if ($cnt > 0) {
-            $net = max(0.0, $amt - $disc);
-            return ['net' => $net, 'amount' => $amt, 'has' => true];
-        }
-        return ['net' => 0.0, 'amount' => $classFee, 'has' => false];
-    };
 
     $tbodyHtml = '';
     foreach ($rows as $r) {
         $studentId = (int)$r->student_id;
         $classId   = (int)($r->cs_class_id ?? 0);
 
-        // Class fee for this student's class
         $classFee = $classId
             ? $this->getClassFee($classId, $sessionid, $campusid, $systemId)
             : 0.0;
 
-        // If you keep "discounted_amount" on student as a discount, derive student_fee from it.
-        $discount    = (float)($r->discounted_amount ?? 0.0);
-        $studentFee  = max(0.0, $classFee - $discount);
+        $discount   = (float)($r->discounted_amount ?? 0.0);
+        $studentFee = max(0.0, $classFee - $discount);
 
-        // Month nets for whichever months user selected
-        $pKey = $selectedMonths['month_prev']['key'] ?? null;
-        $cKey = $selectedMonths['month_curr']['key'] ?? null;
-        $nKey = $selectedMonths['month_next']['key'] ?? null;
+        $chalans = $monthlyFeeTypeId
+            ? $this->getStudentChalansInMonths($studentId, $monthKeys, $monthlyFeeTypeId)
+            : [];
 
-        $PM = $readMonth($studentId, $pKey, $classFee);
-        $CM = $readMonth($studentId, $cKey, $classFee);
-        $NM = $readMonth($studentId, $nKey, $classFee);
-
-        // Render row (fee-only partial)
         $tbodyHtml .= view('admin/partials/student_bulk_fee_row', [
             'student_id'   => $studentId,
             'first_name'   => (string)($r->first_name ?? ''),
             'last_name'    => (string)($r->last_name ?? ''),
-
-            // editable fee fields
             'fee_plan'     => isset($r->fee_plan) ? (int)$r->fee_plan : 0,
-            'student_fee'  => $studentFee,  // prefill editable box
-
-            // context/hidden
+            'student_fee'  => $studentFee,
             'class_fee'    => $classFee,
-            'class_id'     => $classId,
-            'session_id'   => $sessionid,
-            'campus_id'    => $campusid,
-            'system_id'    => $systemId,
-
-            // months (read-only display cells)
-            'prev_net'     => $PM['net'], 'curr_net' => $CM['net'], 'next_net' => $NM['net'],
-            'prev_key'     => $pKey,      'curr_key' => $cKey,      'next_key' => $nKey,
-            'pAmt'         => $PM['amount'], 'cAmt'  => $CM['amount'], 'nAmt'  => $NM['amount'],
-            'monthly_fee_type_id' => (int)$monthlyFeeTypeId,
+            'chalans'      => $chalans,
+            'month_labels' => $monthLabels,
         ]);
     }
 
@@ -473,25 +441,37 @@ $parseMonY = static function (string $label): ?string {
 };
 
 foreach ($monthsPost as $k => $v) {
-    $key = trim((string)$k);
-    $ym  = null;
+    if (!is_array($v)) {
+        continue;
+    }
 
+    $key = trim((string) $k);
+    $chalanId = (int) ($v['chalan_id'] ?? 0);
+
+    // New format: months[{chalan_id}][chalan_id|amount|discount|fee_month]
+    if ($chalanId > 0 && (string) (int) $key === $key) {
+        $norm[$chalanId] = $v;
+        continue;
+    }
+
+    // Legacy: months[YYYY-MM][...]
+    $ym = null;
     if (preg_match('/^\d{4}-\d{2}$/', $key)) {
         $ym = $key;
     } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $key)) {
         $ym = substr($key, 0, 7);
     } elseif (isset($mapLegacy[$key])) {
-        $ym = $mapLegacy[$key]; // map prev/curr/next via ref_month
+        $ym = $mapLegacy[$key];
     } else {
-        $ym = $parseMonY($key); // "Sep 2025"
+        $ym = $parseMonY($key);
     }
 
     if (!$ym || !preg_match('/^\d{4}-\d{2}$/', $ym)) {
-        $invalidKeys[] = $key;  // skip unrecognized keys
+        $invalidKeys[] = $key;
         continue;
     }
 
-    $norm[$ym] = is_array($v) ? $v : ['apply' => (int)$v];
+    $norm[$ym] = $v;
 }
 
 if (!empty($invalidKeys)) {
@@ -504,7 +484,7 @@ $monthsPost = $norm;
     $allowed  = $this->allowedStudentFields();         // your existing helper
     $apply    = array_intersect($selected, array_keys($allowed));
 
-    if (empty($apply) && !is_array($monthsPost)) {
+    if (empty($apply) && empty($monthsPost)) {
         return $this->response->setJSON(['success' => false, 'msg' => 'No columns selected.']);
     }
 
@@ -848,175 +828,108 @@ if (!$doRelink && !empty($parentData)) {
 
 if (is_array($monthsPost)) {
     $norm = [];
-    // derive prev/curr/next in case legacy keys arrive
-    $base = new \DateTime('first day of this month');
-    $mapLegacy = [
-        'month_prev' => $base->modify('-1 month')->format('Y-m'),
-        'month_curr' => (new \DateTime('first day of this month'))->format('Y-m'),
-        'month_next' => (new \DateTime('first day of next month'))->format('Y-m'),
-    ];
-
     foreach ($monthsPost as $k => $v) {
-        $k = trim((string)$k);
-        $ym = null;
-
-        if (preg_match('/^\d{4}-\d{2}$/', $k)) {
-            $ym = $k;
-        } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $k)) {
-            $ym = substr($k, 0, 7);
-        } elseif (preg_match('/^[A-Za-z]{3}\s+\d{4}$/', $k)) { // e.g., "Sep 2025"
-            $ts = strtotime('01 ' . $k);
-            if ($ts !== false) $ym = date('Y-m', $ts);
-        } elseif (isset($mapLegacy[$k])) {
-            $ym = $mapLegacy[$k];
+        if (!is_array($v)) {
+            continue;
         }
-
-        if ($ym === null) {
-            throw new \InvalidArgumentException('Invalid fee month format'); // keep your behaviour
+        $key = trim((string) $k);
+        $chalanId = (int) ($v['chalan_id'] ?? 0);
+        if ($chalanId > 0 && (string) (int) $key === $key) {
+            $norm[$chalanId] = $v;
+            continue;
         }
-        $norm[$ym] = is_array($v) ? $v : ['apply' => (int)$v];
+        if (preg_match('/^\d{4}-\d{2}$/', $key)) {
+            $norm[$key] = $v;
+        }
     }
     $monthsPost = $norm;
 }
-    /** ===================== MONTHLY (unchanged logic) ===================== */
+    /** ===================== MONTHLY: update existing chalans only ===================== */
     if (is_array($monthsPost) && $monthlyFeeTypeId) {
-        foreach ($monthsPost as $fee_month => $m) {
-            if (!isset($m['apply'])) continue;
-
-            $ym         = substr((string)$fee_month, 0, 7); // 'YYYY-MM'
-            $desiredNet = (float) ($m['net'] ?? 0);
-            $origNet    = (float) ($m['orig_net'] ?? 0);
-            $amountBase = (float) ($m['amount'] ?? 0);
-
-            // clamp desiredNet for safety (UI already clamps)
-            if ($amountBase > 0) {
-                if ($desiredNet < 0) $desiredNet = 0;
-                if ($desiredNet > $amountBase) $desiredNet = $amountBase;
-            } else {
-                $desiredNet = max(0.0, $desiredNet);
+        foreach ($monthsPost as $entryKey => $m) {
+            if (!is_array($m)) {
+                continue;
             }
 
-            // Try to find existing unpaid fee_chalan for this month/type
-            $existQB = $this->db->table('fee_chalan')
+            $chalanId = (int) ($m['chalan_id'] ?? 0);
+            if ($chalanId <= 0) {
+                continue;
+            }
+
+            $ym = trim((string) ($m['fee_month'] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}$/', $ym)) {
+                $ym = preg_match('/^\d{4}-\d{2}$/', (string) $entryKey) ? (string) $entryKey : '';
+            }
+            if ($ym === '') {
+                continue;
+            }
+
+            $newAmount   = round((float) ($m['amount'] ?? 0), 2);
+            $newDiscount = round((float) ($m['discount'] ?? 0), 2);
+
+            if ($newAmount < 0 || $newDiscount < 0) {
+                $this->db->transRollback();
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg'     => 'Amount and discount must be zero or positive for ' . $ym . '.',
+                ]);
+            }
+            if ($newDiscount > $newAmount) {
+                $this->db->transRollback();
+                return $this->response->setJSON([
+                    'success' => false,
+                    'msg'     => 'Discount cannot exceed amount for ' . $ym . '.',
+                ]);
+            }
+
+            $existRow = $this->db->table('fee_chalan')
+                ->where('chalan_id', $chalanId)
                 ->where('student_id', $student_id)
                 ->where('fee_type_id', $monthlyFeeTypeId)
                 ->where('status', 'unpaid')
                 ->where('fee_month', $ym)
-                ->select('chalan_id, amount, discount')
-                ->limit(1);
-            $existQuery = $existQB->get();
-            $existRow   = $existQuery ? $existQuery->getFirstRow() : null;
+                ->select('chalan_id, amount, discount, fee_month')
+                ->get()
+                ->getRow();
 
-            if ($existRow) {
-                // Use net exactly as entered (can be same/different)
-                $amountRow = (float) $existRow->amount;
-                $oldDisc   = (float) $existRow->discount;
-                $newDisc   = round($amountRow - $desiredNet, 2); // may be negative if net > amount
-
-                if ($newDisc === $oldDisc) {
-                    $monthlyOps[$ym] = 'no_update_discount_same';
-                    continue;
-                }
-
-                $ok = $this->db->table('fee_chalan')
-                    ->where('chalan_id', (int) $existRow->chalan_id)
-                    ->update([
-                        'discount'     => $newDisc,
-                        'is_tampered'  => 1,
-                        'updated_date' => date('Y-m-d H:i:s'),
-                        'user_id'      => $userId,
-                    ]);
-                $err = $this->db->error();
-                if (!$ok || !empty($err['code'])) {
-                    $this->db->transRollback();
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'msg'     => 'Failed updating monthly fee for ' . $ym . ': [' . ($err['code'] ?? '') . '] ' . ($err['message'] ?? ''),
-                    ]);
-                }
-
-                $monthlyOps[$ym] = ($this->db->affectedRows() > 0) ? 'updated_discount' : 'no_change_db_same';
-                if ($this->db->affectedRows() > 0) $hasMonthlyWork = true;
+            if (!$existRow) {
+                log_message('warning', 'saveStudentInfo: skipped invalid chalan_id {id} for student {sid}', [
+                    'id'  => $chalanId,
+                    'sid' => $student_id,
+                ]);
                 continue;
             }
 
-            // No row exists -> create invoice + fee_chalan
-            if ($amountBase <= 0) {
-                // Get class fee if amount not provided
-                $qry = $this->db->table('student_class sc')
-                    ->join('class_section cs', 'cs.cls_sec_id = sc.cls_sec_id')
-                    ->where('sc.student_id', $student_id)
-                    ->where('sc.session_id', $sessionid)
-                    ->select('cs.class_id')
-                    ->limit(1)
-                    ->get();
+            $oldAmount   = round((float) $existRow->amount, 2);
+            $oldDiscount = round((float) $existRow->discount, 2);
 
-                $classId = 0;
-                if ($qry !== false) {
-                    $r = $qry->getFirstRow();
-                    if ($r && isset($r->class_id)) $classId = (int)$r->class_id;
-                }
-                if (!$classId && isset($student->class_id)) {
-                    $classId = (int)$student->class_id;
-                }
-                $amountBase = $classId ? $this->getClassFee($classId, $sessionid, $campusid, $systemId) : 0.0;
+            if ($newAmount === $oldAmount && $newDiscount === $oldDiscount) {
+                $monthlyOps[$chalanId] = 'no_change';
+                continue;
             }
 
-            $amountBase = max(0.0, $amountBase);
-            $discount   = max(0.0, $amountBase - $desiredNet);
-            if ($discount > $amountBase) $discount = $amountBase;
-
-            $invoiceNo = $this->generateInvoiceNumber($ym);
-            $yrShort   = (int)DateTime::createFromFormat('Y-m', $ym)->format('y');
-
-            $invoiceData = [
-                'student_id'   => $student_id,
-                'issue_date'   => date('Y-m-d'),
-                'fee_month'    => $ym, // store YYYY-MM
-                'yr'           => $yrShort,
-                'invoice_no'   => $invoiceNo,
-                'created_date' => date('Y-m-d H:i:s'),
-                'updated_date' => date('Y-m-d H:i:s'),
-                'user_id'      => $userId,
-            ];
-            $ok  = $this->db->table('invoices')->insert($invoiceData);
+            $ok = $this->db->table('fee_chalan')
+                ->where('chalan_id', $chalanId)
+                ->update([
+                    'amount'       => $newAmount,
+                    'discount'     => $newDiscount,
+                    'is_tampered'  => 1,
+                    'updated_date' => date('Y-m-d H:i:s'),
+                    'user_id'      => $userId,
+                ]);
             $err = $this->db->error();
             if (!$ok || !empty($err['code'])) {
                 $this->db->transRollback();
                 return $this->response->setJSON([
-                    'success'=>false,
-                    'msg'=>'Failed creating invoice for '.$ym.': ['.($err['code']??'').'] '.($err['message']??'')
+                    'success' => false,
+                    'msg'     => 'Failed updating chalan #' . $chalanId . ' (' . $ym . '): [' . ($err['code'] ?? '') . '] ' . ($err['message'] ?? ''),
                 ]);
             }
 
-            $chalData = [
-                'invoice_no'   => $invoiceNo,
-                'student_id'   => $student_id,
-                'fee_type_id'  => $monthlyFeeTypeId,
-                'fee_month'    => $ym,
-                'amount'       => $amountBase,
-                'discount'     => $discount,
-                'status'       => 'unpaid',
-                'is_tampered'  => ($discount > 0 ? 1 : 0),
-                'issue_date'   => date('Y-m-d'),
-                'due_date'     => date('Y-m-d', strtotime('+10 days')),
-                'created_date' => date('Y-m-d H:i:s'),
-                'updated_date' => date('Y-m-d H:i:s'),
-                'user_id'      => $userId,
-                // 'campus_id' => $campusid, 'system_id' => $systemId, // if present in schema
-            ];
-            $ok  = $this->db->table('fee_chalan')->insert($chalData);
-            $err = $this->db->error();
-            if (!$ok || !empty($err['code'])) {
-                $this->db->transRollback();
-                return $this->response->setJSON([
-                    'success'=>false,
-                    'msg'=>'Failed creating fee_chalan for '.$ym.': ['.($err['code']??'').'] '.($err['message']??'')
-                ]);
+            $monthlyOps[$chalanId] = ($this->db->affectedRows() > 0) ? 'updated' : 'no_change_db_same';
+            if ($this->db->affectedRows() > 0) {
+                $hasMonthlyWork = true;
             }
-
-            $monthlyOps[$ym] = 'inserted_invoice_and_fee_chalan';
-            $hasMonthlyWork  = true;
         }
     }
 
@@ -1057,6 +970,75 @@ if (is_array($monthsPost)) {
             ->get()->getRow();
 
         return $row ? (int) $row->fee_type_id : null;
+    }
+
+    /**
+     * All unpaid monthly fee chalans for a student within selected months.
+     *
+     * @return array<int, array{chalan_id:int,fee_month:string,amount:float,discount:float,label:string}>
+     */
+    protected function getStudentChalansInMonths(int $studentId, array $monthKeys, int $monthlyFeeTypeId): array
+    {
+        if ($studentId <= 0 || $monthlyFeeTypeId <= 0 || $monthKeys === []) {
+            return [];
+        }
+
+        $validKeys = array_values(array_filter($monthKeys, static fn ($k) => preg_match('/^\d{4}-\d{2}$/', (string) $k)));
+        if ($validKeys === []) {
+            return [];
+        }
+
+        $rows = $this->db->table('fee_chalan')
+            ->select('chalan_id, fee_month, amount, discount')
+            ->where('student_id', $studentId)
+            ->where('fee_type_id', $monthlyFeeTypeId)
+            ->where('status', 'unpaid')
+            ->whereIn('fee_month', $validKeys)
+            ->orderBy('fee_month', 'ASC')
+            ->orderBy('chalan_id', 'ASC')
+            ->get()
+            ->getResult();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $ym = (string) $row->fee_month;
+            $label = $ym;
+            $ts = strtotime($ym . '-01');
+            if ($ts !== false) {
+                $label = date('M Y', $ts);
+            }
+            $out[] = [
+                'chalan_id' => (int) $row->chalan_id,
+                'fee_month' => $ym,
+                'amount'    => (float) $row->amount,
+                'discount'  => (float) $row->discount,
+                'label'     => $label,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Unpaid monthly fee chalan for one student/month (LIMIT 1 if duplicates exist).
+     */
+    protected function getMonthlyChalan(int $studentId, string $feeMonth, int $monthlyFeeTypeId): ?object
+    {
+        if ($studentId <= 0 || $monthlyFeeTypeId <= 0 || !preg_match('/^\d{4}-\d{2}$/', $feeMonth)) {
+            return null;
+        }
+
+        return $this->db->table('fee_chalan')
+            ->select('chalan_id, amount, discount, fee_month')
+            ->where([
+                'student_id'  => $studentId,
+                'fee_month'   => $feeMonth,
+                'status'      => 'unpaid',
+                'fee_type_id' => $monthlyFeeTypeId,
+            ])
+            ->limit(1)
+            ->get()
+            ->getRow();
     }
 
     protected function normalizeValue(string $type, $val)
