@@ -201,8 +201,17 @@ if (!empty($expiryInfo) && $curr_campus_id > 0 && !empty($expiryInfo['expiry_dat
           </div>
         </li>
 
+        <li class="nav-item d-none d-sm-flex">
+          <a class="nav-link admin-bar-icon-btn admin-logout-link"
+             href="<?= base_url('admin/logout') ?>"
+             aria-label="Logout"
+             title="Logout">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+          </a>
+        </li>
+
         <li class="dropdown user user-menu">
-          <a class="nav-link admin-bar-icon-btn dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" aria-label="User menu">
+          <a class="nav-link admin-user-chip dropdown-toggle" href="#" data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" aria-label="User menu">
             <?php
               $photoUrl = base_url('resource/adminlte/dist/img/emp-avatar.jpg');
               if (!empty($user) && !empty($user->photo)) {
@@ -214,11 +223,18 @@ if (!empty($expiryInfo) && $curr_campus_id > 0 && !empty($expiryInfo['expiry_dat
               $hasPhoto = ($photoUrl !== base_url('resource/adminlte/dist/img/emp-avatar.jpg'));
             ?>
             <?php if ($hasPhoto): ?>
-              <img class="user-image admin-bar-avatar" src="<?= $photoUrl ?>" alt="" />
+              <img class="user-image admin-bar-avatar admin-user-chip__avatar" src="<?= $photoUrl ?>" alt="" />
             <?php else: ?>
-              <i class="fa fa-user" aria-hidden="true"></i>
+              <span class="admin-user-chip__avatar admin-user-chip__avatar--fallback">
+                <i class="fa fa-user" aria-hidden="true"></i>
+              </span>
             <?php endif; ?>
-            <span class="d-none d-sm-inline-block"><?= !empty($user->username) ? esc($user->username) : '' ?></span>
+            <span class="admin-user-chip__meta d-none d-md-flex">
+              <span class="admin-user-chip__name"><?= !empty($user->username) ? esc($user->username) : 'User' ?></span>
+              <?php if (!empty($role_name_info->rolename)): ?>
+                <span class="admin-user-chip__role"><?= esc($role_name_info->rolename) ?></span>
+              <?php endif; ?>
+            </span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li class="user-header">
@@ -234,7 +250,7 @@ if (!empty($expiryInfo) && $curr_campus_id > 0 && !empty($expiryInfo['expiry_dat
             </li>
             <li class="user-footer border-top bg-light">
               <a href="<?= base_url('admin/profile') ?>" class="btn btn-sm btn-outline-secondary btn-flat"><i class="fa fa-gear"></i> Profile</a>
-              <a href="<?= base_url('admin/logout') ?>" class="btn btn-sm btn-outline-secondary btn-flat"><i class="fa fa-sign-out"></i> Logout</a>
+              <a href="<?= base_url('admin/logout') ?>" class="btn btn-sm btn-outline-danger btn-flat"><i class="fa fa-sign-out"></i> Logout</a>
             </li>
           </ul>
         </li>
