@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\BoardPrepQuizCatalogService;
+
 class Home extends BaseController
 {
     /**
@@ -10,6 +12,26 @@ class Home extends BaseController
      */
     public function index()
     {
+        $host = strtolower((string) ($this->request->getServer('HTTP_HOST') ?? ''));
+        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+
+        // Dedicated public quiz domain: root must render, not redirect to itself.
+        if ($host === 'liveeducationquiz.com' || $host === 'www.liveeducationquiz.com') {
+            helper('board_prep');
+
+            if (board_prep_auth()) {
+                return redirect()->to(board_prep_url('dashboard'));
+            }
+
+            return view('board_prep/quiz_landing', [
+                'productName'     => board_prep_product_name(),
+                'featuredQuizzes' => array_slice((new BoardPrepQuizCatalogService())->loadAllPublished(), 0, 6),
+                'dashboardUrl'    => board_prep_url('dashboard'),
+                'signupUrl'       => board_prep_url('signup'),
+                'loginUrl'        => board_prep_url('login'),
+            ]);
+        }
+
         $session = session();
 
         if ($session->get('IsAuthorized') || $session->get('member_userid')) {
@@ -20,15 +42,8 @@ class Home extends BaseController
             return redirect()->to(base_url('student/dashboard'));
         }
 
-        $host = (string) ($this->request->getServer('HTTP_HOST') ?? '');
         if ($host === 'trial.timesoftsol.com') {
             return redirect()->to(base_url('signup'));
-        }
-
-        // Dedicated public quiz domain: root shows the quiz landing page.
-        if (str_contains(strtolower($host), 'liveeducationquiz')) {
-            helper('board_prep');
-            return redirect()->to(board_prep_url(''));
         }
 
         return redirect()->to(base_url('admin/login'));
