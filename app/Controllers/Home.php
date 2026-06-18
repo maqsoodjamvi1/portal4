@@ -7,7 +7,7 @@ use App\Libraries\BoardPrepQuizCatalogService;
 class Home extends BaseController
 {
     /**
-     * Site root — never show the CodeIgniter welcome page.
+     * Site root - never show the CodeIgniter welcome page.
      * Send admins/staff to dashboard or login; parent/student portal users to their dashboard or login.
      */
     public function index()
@@ -23,9 +23,12 @@ class Home extends BaseController
                 return redirect()->to(board_prep_url('dashboard'));
             }
 
+            $quizzes = (new BoardPrepQuizCatalogService())->loadAllPublished();
+
             return view('board_prep/quiz_landing', [
                 'productName'     => board_prep_product_name(),
-                'featuredQuizzes' => array_slice((new BoardPrepQuizCatalogService())->loadAllPublished(), 0, 6),
+                'featuredQuizzes' => array_slice($quizzes, 0, 6),
+                'allQuizzes'      => $quizzes,
                 'dashboardUrl'    => board_prep_url('dashboard'),
                 'signupUrl'       => board_prep_url('signup'),
                 'loginUrl'        => board_prep_url('login'),

@@ -1,0 +1,284 @@
+body.admin-shell-active .admin-bar-row {
+  overflow: visible;
+}
+
+body.admin-shell-active .admin-bar-row__workspace {
+  flex: 1 1 28rem;
+  max-width: 42rem;
+}
+
+body.admin-shell-active .admin-bar-row__search {
+  flex: 0 0 auto;
+  min-width: 2.4rem;
+  margin-inline-end: 0.1rem !important;
+}
+
+body.admin-shell-active .admin-app-breadcrumb {
+  flex: 1 1 10rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+body.admin-shell-active .admin-app-breadcrumb .breadcrumb {
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+body.admin-shell-active .admin-app-breadcrumb .breadcrumb-item {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin-shell-active .admin-bar-row__end {
+  flex: 0 0 auto;
+  min-width: max-content;
+}
+
+body.admin-shell-active .admin-bar-actions {
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}
+
+body.admin-shell-active .admin-bar-command-btn {
+  min-width: 2.4rem;
+  width: 2.4rem;
+  max-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  gap: 0;
+  white-space: nowrap;
+}
+
+body.admin-shell-active .admin-bar-command-btn__label,
+body.admin-shell-active .admin-bar-command-btn__kbd {
+  display: none !important;
+}
+
+body.admin-shell-active .admin-bar-command-btn__kbd {
+  padding: 0.08rem 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+body.admin-shell-active .admin-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.4rem;
+  max-width: 13rem;
+  padding: 0.22rem 0.7rem 0.22rem 0.28rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+}
+
+body.admin-shell-active .admin-user-chip:hover,
+body.admin-shell-active .admin-user-chip:focus {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+body.admin-shell-active .admin-user-chip__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.9rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: #fff;
+}
+
+body.admin-shell-active .admin-user-chip__meta {
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.08;
+}
+
+body.admin-shell-active .admin-user-chip__name,
+body.admin-shell-active .admin-user-chip__role {
+  display: block;
+  max-width: 8.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin-shell-active .admin-app-bar .user-menu > .admin-user-chip .admin-user-chip__name,
+body.admin-shell-active .admin-app-bar .user-menu > .admin-user-chip .admin-user-chip__role {
+  max-width: 8.2rem;
+}
+
+body.admin-shell-active .admin-user-chip__name {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+body.admin-shell-active .admin-app-bar .user-menu > .admin-user-chip .admin-user-chip__name {
+  color: #fff !important;
+}
+
+body.admin-shell-active .admin-user-chip__role {
+  margin-top: 0.12rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+body.admin-shell-active .admin-app-bar .user-menu > .admin-user-chip .admin-user-chip__role {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+body.admin-shell-active .admin-logout-link {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.admin-shell-active .admin-logout-link:hover,
+body.admin-shell-active .admin-logout-link:focus {
+  background: rgba(220, 53, 69, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.admin-shell-active .main-sidebar.sidebar-slim .brand-link.ts-brand-bar {
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.48rem 0.72rem !important;
+}
+
+body.admin-shell-active .ts-brand-bar__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  overflow: hidden;
+}
+
+body.admin-shell-active .ts-brand-bar__mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.18rem;
+}
+
+body.admin-shell-active .ts-brand-bar__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.12;
+}
+
+body.admin-shell-active .ts-brand-bar__text strong,
+body.admin-shell-active .ts-brand-bar__text small {
+  display: block;
+  max-width: 11.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin-shell-active .ts-brand-bar__text strong {
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+body.admin-shell-active .ts-brand-bar__text small {
+  margin-top: 0.16rem;
+  color: rgba(226, 238, 249, 0.72);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+body.admin-shell-active .sidebar-context-card {
+  display: none !important;
+}
+
+body.admin-shell-active .sidebar-shell-top {
+  padding-top: 0.72rem;
+}
+
+body.admin-shell-active .sidebar-controls {
+  padding-top: 0;
+}
+
+body.admin-shell-active .sidebar-controls__hint {
+  display: none;
+}
+
+body.admin-shell-active .sidebar-controls__search {
+  border-radius: 0.5rem;
+  background: rgba(15, 23, 42, 0.58);
+  box-shadow: none;
+}
+
+@media (max-width: 1399.98px) {
+  body.admin-shell-active .admin-bar-row__workspace {
+    max-width: 34rem;
+  }
+
+  body.admin-shell-active .admin-bar-command-btn__kbd {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  body.admin-shell-active .admin-bar-row__workspace {
+    max-width: 28rem;
+  }
+
+  body.admin-shell-active .admin-bar-command-btn__label {
+    display: none !important;
+  }
+
+  body.admin-shell-active .admin-bar-command-btn {
+    width: 2.3rem;
+    padding: 0;
+  }
+}
+
+@media (max-width: 991.98px) {
+  body.admin-shell-active .admin-bar-row {
+    overflow: visible;
+  }
+
+  body.admin-shell-active .admin-bar-row__end {
+    min-width: 0;
+  }
+
+  body.admin-shell-active .admin-user-chip {
+    max-width: 2.45rem;
+    padding: 0.22rem !important;
+  }
+
+  body.admin-shell-active .admin-user-chip::after {
+    display: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  body.admin-shell-active .admin-bar-actions {
+    gap: 0.1rem;
+  }
+
+  body.admin-shell-active .admin-user-chip {
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+}
