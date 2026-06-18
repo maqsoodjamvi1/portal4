@@ -3,6 +3,7 @@
 namespace App\Controllers\BoardPrep;
 
 use App\Libraries\BoardPrepProvisioningService;
+use App\Libraries\BoardPrepQuizCatalogService;
 
 class Auth extends BoardPrepBaseController
 {
@@ -10,6 +11,21 @@ class Auth extends BoardPrepBaseController
     {
         if (board_prep_auth()) {
             return redirect()->to(board_prep_url('dashboard'));
+        }
+
+        $host = strtolower((string) ($this->request->getServer('HTTP_HOST') ?? ''));
+
+        // Public quiz site (liveeducationquiz.com) gets the marketing quiz landing.
+        if (str_contains($host, 'liveeducationquiz')) {
+            $featured = array_slice((new BoardPrepQuizCatalogService())->loadAllPublished(), 0, 6);
+
+            return view('board_prep/quiz_landing', [
+                'productName'     => 'Live Education Quiz',
+                'featuredQuizzes' => $featured,
+                'dashboardUrl'    => board_prep_url('dashboard'),
+                'signupUrl'       => board_prep_url('signup'),
+                'loginUrl'        => board_prep_url('login'),
+            ]);
         }
 
         return view('board_prep/landing', [

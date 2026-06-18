@@ -54,6 +54,13 @@ $routes->group($groupName, $groupOptions, static function ($routes) {
 
     $routes->get('api/captcha', '\App\Controllers\Api\Captcha::index');
 
+    // Public quiz site (liveeducationquiz.com): open catalog + guest play.
+    $routes->get('dashboard', 'Dashboard::index');
+
+    $routes->get('quizzes/guest/(:num)', 'GuestQuiz::play/$1');
+
+    $routes->post('quizzes/guest/score', 'GuestQuiz::score', ['filter' => 'csrf']);
+
 });
 
 
@@ -61,8 +68,6 @@ $routes->group($groupName, $groupOptions, static function ($routes) {
 $authGroup = array_merge($groupOptions, ['filter' => 'boardprepauth']);
 
 $routes->group($groupName, $authGroup, static function ($routes) {
-
-    $routes->get('dashboard', 'Dashboard::index');
 
     $routes->get('profile', 'Profile::index');
     $routes->post('profile/update', 'Profile::update', ['filter' => 'csrf']);

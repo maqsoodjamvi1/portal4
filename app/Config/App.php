@@ -29,7 +29,10 @@ class App extends BaseConfig
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * e.g. ['demo.yourdomain.com', 'trial.yourdomain.com']
      */
-    public array $allowedHostnames = [];
+    public array $allowedHostnames = [
+        'liveeducationquiz.com',
+        'www.liveeducationquiz.com',
+    ];
 
     /**
      * --------------------------------------------------------------------------

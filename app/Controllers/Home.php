@@ -25,6 +25,12 @@ class Home extends BaseController
             return redirect()->to(base_url('signup'));
         }
 
+        // Dedicated public quiz domain: root shows the quiz landing page.
+        if (str_contains(strtolower($host), 'liveeducationquiz')) {
+            helper('board_prep');
+            return redirect()->to(board_prep_url(''));
+        }
+
         return redirect()->to(base_url('admin/login'));
     }
 }

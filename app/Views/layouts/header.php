@@ -66,10 +66,10 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="<?= base_url('assets/js/sweetalert/sweetalert.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616d') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616e') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616g') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616j') ?>">
 
     <script type="text/javascript">
       var BASE_URL   = '<?= base_url() ?>';
@@ -156,6 +156,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.html5.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.print.min.js') ?>"></script>
     <script src="<?= base_url('resource/adminlte/plugins/datatables-buttons/js/buttons.colVis.min.js') ?>"></script>
+    <script src="<?= base_url('assets/js/admin-datatable-ui.js?v=20260616a') ?>"></script>
     <?php endif; ?>
     <script src="<?= base_url('assets/js/sms-form-validation.js?v=20260604') ?>"></script>
     <script src="<?= base_url('assets/js/sms-modal-a11y.js?v=20260604') ?>"></script>
@@ -389,16 +390,14 @@ $regYearExample = date('y');
   $uri         = service('uri');
   $currentPath = trim($uri->getPath(), '/');
 
+  // Sidebar shows ALL menu items: permission gating disabled at build time so
+  // every section/item is constructed. (Display only — controllers still
+  // enforce their own permission checks; Super Admins also bypass those.)
   $can = static function (string $perm): bool {
-      return function_exists('hasPermission') ? hasPermission($perm) : false;
+      return true;
   };
   $canAny = static function (array $perms) use ($can): bool {
-      foreach ($perms as $p) {
-          if ($can($p)) {
-              return true;
-          }
-      }
-      return false;
+      return true;
   };
   $isActive = static function (string $needle) use ($currentPath): bool {
       $needle = trim($needle, '/');
@@ -421,19 +420,10 @@ $regYearExample = date('y');
 
   helper('role');
 
-  $menuItemVisible = static function (array $item) use ($canAny): bool {
-      if (! empty($item['super_admin_only']) || ! empty($item['director_quizzes_menu'])) {
-          return quizzesMenuItemVisible($item, $canAny);
-      }
-
-      $menuKey = trim((string) ($item['key'] ?? ''));
-      if ($menuKey !== '' && ! \App\Libraries\RoleMenuAccess::isAllowedForUser($menuKey)) {
-          return false;
-      }
-
-      $perms = $item['perms'] ?? [];
-
-      return $perms === [] || $canAny($perms);
+  // Sidebar hide/show gating removed: every menu item is always visible.
+  // (Permission/role/menu-prefs checks dropped — controllers still enforce access.)
+  $menuItemVisible = static function (array $item): bool {
+      return true;
   };
 
   $filterMenuChildren = static function (array $children, ?string $sectionKey = null) use ($menuItemVisible): array {
@@ -458,31 +448,9 @@ $regYearExample = date('y');
       return $out;
   };
 
-  $menuSectionVisible = static function (array $sec) use ($menuItemVisible, $filterMenuChildren): bool {
-      if (! empty($sec['super_admin_only']) && ! userIsSuperAdmin()) {
-          return false;
-      }
-
-      $sectionKey = trim((string) ($sec['key'] ?? ''));
-      if ($sectionKey !== '' && ! \App\Libraries\RoleMenuAccess::isAllowedForUser($sectionKey)) {
-          return false;
-      }
-
-      $visible = $sec['visible'] ?? true;
-      if (is_callable($visible)) {
-          $visible = $visible();
-      }
-      if (! $visible) {
-          return false;
-      }
-
-      if (empty($sec['children'])) {
-          return $menuItemVisible($sec);
-      }
-
-      $sectionKey = trim((string) ($sec['key'] ?? ''));
-
-      return $filterMenuChildren($sec['children'], $sectionKey !== '' ? $sectionKey : null) !== [];
+  // Sidebar hide/show gating removed: every section is always visible.
+  $menuSectionVisible = static function (array $sec): bool {
+      return true;
   };
 
   $adminBreadcrumbs = \App\Libraries\AdminMenuBuilder::resolveBreadcrumb($currentPath, $sections);
@@ -622,6 +590,14 @@ $regYearExample = date('y');
       }
   };
 ?>
+<?php
+  $sidebarWorkspaceTitle = trim((string) ($activeCampusLabel ?? ''));
+  if ($sidebarWorkspaceTitle === '') {
+      $sidebarWorkspaceTitle = trim((string) ($school_name ?? 'School workspace'));
+  }
+  $sidebarRoleLabel = trim((string) ($role_name_info->rolename ?? ''));
+  $sidebarNavCount  = is_array($adminNavIndex ?? null) ? count($adminNavIndex) : 0;
+?>
 
 <aside class="main-sidebar sidebar-dark-orange elevation-4 sidebar-slim">
   <a href="<?= base_url('admin/dashboard') ?>" class="brand-link ts-brand-bar">
@@ -629,73 +605,78 @@ $regYearExample = date('y');
   </a>
 
   <div class="sidebar">
-    <div class="image text-center mt-2 mb-1 sidebar-logo-wrap">
-      <?php if(!empty($schoolinfo) && !empty($schoolinfo->logo)): ?>
-        <img class="sidebar-logo" src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="Logo">
-      <?php endif; ?>
-    </div>
-
-    <?php if (empty($curr_session_id) && !empty($canSelectSession)): ?>
-      <div class="sidebar-no-session-notice">
-        <i class="fas fa-info-circle"></i>
-        Choose an academic session in the workspace bar to unlock navigation.
+    <div class="sidebar-shell-top">
+      <div class="image text-center sidebar-logo-wrap">
+        <?php if(!empty($schoolinfo) && !empty($schoolinfo->logo)): ?>
+          <img class="sidebar-logo" src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="Logo">
+        <?php else: ?>
+          <div class="sidebar-logo sidebar-logo--fallback" aria-hidden="true">
+            <i class="fas fa-school"></i>
+          </div>
+        <?php endif; ?>
       </div>
-    <?php endif; ?>
 
-    <div class="sidebar-controls no-print">
-      <div class="sidebar-controls__row">
-        <button type="button"
-                class="btn btn-sidebar sidebar-controls__customize"
-                data-bs-toggle="modal"
-                data-bs-target="#menuPrefsModal"
-                title="Customize menu"
-                aria-label="Customize menu">
-          <i class="fas fa-sliders-h"></i>
-        </button>
-        <div class="sidebar-controls__search">
-          <input id="menuSearch"
-                 class="form-control form-control-sidebar"
-                 type="search"
-                 placeholder="Search menu..."
-                 aria-label="Search menu">
-          <i class="fas fa-search sidebar-controls__search-icon" aria-hidden="true"></i>
+      <div class="sidebar-context-card">
+        <div class="sidebar-context-card__eyebrow">School workspace</div>
+        <div class="sidebar-context-card__title" title="<?= esc($sidebarWorkspaceTitle, 'attr') ?>">
+          <?= esc($sidebarWorkspaceTitle) ?>
         </div>
+        <div class="sidebar-context-card__subline" title="<?= esc($school_name ?? 'School Name', 'attr') ?>">
+          <?= esc($sidebarRoleLabel !== '' ? $sidebarRoleLabel : ($school_name ?? 'School Name')) ?>
+        </div>
+        <div class="sidebar-context-card__chips">
+          <?php if (!empty($activeSessionLabel)): ?>
+            <span class="sidebar-context-card__chip">
+              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+              <span><?= esc($activeSessionLabel) ?></span>
+            </span>
+          <?php endif; ?>
+          <span class="sidebar-context-card__chip sidebar-context-card__chip--quiet">
+            <i class="fas fa-compass" aria-hidden="true"></i>
+            <span><span id="sidebarVisibleLinkCount"><?= (int) $sidebarNavCount ?></span> items</span>
+          </span>
+        </div>
+      </div>
+
+      <?php if (empty($curr_session_id) && !empty($canSelectSession)): ?>
+        <div class="sidebar-no-session-notice">
+          <i class="fas fa-info-circle"></i>
+          Choose an academic session in the workspace bar to unlock navigation.
+        </div>
+      <?php endif; ?>
+
+      <div class="sidebar-controls no-print">
+        <div class="sidebar-controls__row">
+          <div class="sidebar-controls__search">
+            <i class="fas fa-search sidebar-controls__search-icon" aria-hidden="true"></i>
+            <input id="menuSearch"
+                   class="form-control form-control-sidebar"
+                   type="search"
+                   placeholder="Find a menu item"
+                   aria-label="Search menu">
+            <button type="button"
+                    id="menuSearchClear"
+                    class="sidebar-controls__clear"
+                    aria-label="Clear menu search"
+                    hidden>
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-controls__hint">Use search to jump through the school menu quickly.</div>
       </div>
     </div>
 
     <nav class="mt-1 sidebar-nav">
       <div id="sidebarQuickAccess" class="sidebar-quick-access no-print" hidden>
-        <div class="sidebar-quick-access__label text-muted text-xs text-uppercase px-3 mb-1">Quick access</div>
+        <div class="sidebar-quick-access__label">
+          <i class="fas fa-thumbtack" aria-hidden="true"></i>
+          <span>Quick access</span>
+        </div>
         <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent text-sm mb-2" id="sidebarQuickAccessList"></ul>
       </div>
       <ul id="sidebarMenu" class="nav nav-pills nav-sidebar flex-column nav-child-indent text-sm" data-widget="treeview" role="menu" data-accordion="true">
         <?php
-          $userMenuPrefs = $userMenuPrefsMap;
-
-          $applyPrefs = function(array $items) use (&$applyPrefs, $userMenuPrefs, $menuSectionVisible, $filterMenuChildren): array {
-              $out = [];
-              foreach ($items as $item) {
-                  $key = $item['key'] ?? null;
-
-                  if ($key !== null && array_key_exists($key, $userMenuPrefs) && $userMenuPrefs[$key] === false) {
-                      continue;
-                  }
-
-                  if (!empty($item['children'])) {
-                      $item['children'] = $applyPrefs($item['children']);
-                  }
-
-                  if (! $menuSectionVisible($item)) {
-                      continue;
-                  }
-
-                  $out[] = $item;
-              }
-              return $out;
-          };
-
-          $sections = $applyPrefs($sections);
-
           foreach ($sections as $sec) {
             if (! $menuSectionVisible($sec)) {
                 continue;
@@ -705,36 +686,54 @@ $regYearExample = date('y');
           }
         ?>
       </ul>
+      <div id="sidebarMenuEmpty" class="sidebar-nav-empty" hidden>
+        <div class="sidebar-nav-empty__icon">
+          <i class="fas fa-search" aria-hidden="true"></i>
+        </div>
+        <div class="sidebar-nav-empty__title">No menu items found</div>
+        <div class="sidebar-nav-empty__text">Try another keyword.</div>
+      </div>
     </nav>
   </div>
 </aside>
 
 <?php include __DIR__ . '/partials/admin_mobile_nav.php'; ?>
 
-<?php include __DIR__ . '/partials/admin_menu_prefs_modal.php'; ?>
 <?php include __DIR__ . '/partials/admin_command_palette.php'; ?>
 
 <script>
-window.MENU_PREFS_SAVE_URL = <?= json_encode(base_url('admin/ajax/user-menu-prefs')) ?>;
-window.USER_MENU_PREFS = <?= json_encode($userMenuPrefsMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-</script>
-<script>
 $(function () {
-  var MENU_PREFS_KEY = 'menu_prefs_v1';
+  var MENU_PREFS_KEY = 'menu_prefs_v2';
   var MENU_FAVORITES_KEY = 'menu_favorites_v1';
-  var $menu   = $('#sidebarMenu');
-  var $search = $('#menuSearch');
+  var $menu        = $('#sidebarMenu');
+  var $search      = $('#menuSearch');
+  var $searchClear = $('#menuSearchClear');
+  var $menuEmpty   = $('#sidebarMenuEmpty');
+  var $sidebarRoot = $menu.closest('.sidebar');
 
   function loadPrefs() {
-    var p = window.USER_MENU_PREFS || null;
-    if (!p) {
-      try { p = JSON.parse(localStorage.getItem(MENU_PREFS_KEY) || '{}'); }
-      catch(e){ p = {}; }
+    // Hide/show menu preferences removed — never hide any menu item.
+    return {};
+    // eslint-disable-next-line no-unreachable
+    var p = null;
+    try { p = JSON.parse(localStorage.getItem(MENU_PREFS_KEY) || 'null'); }
+    catch(e){ p = null; }
+
+    if (!p || typeof p !== 'object' || p.__schema !== 2) {
+      p = window.USER_MENU_PREFS || null;
     }
-    return p || {};
+
+    if (!p || typeof p !== 'object' || p.__schema !== 2) {
+      return {};
+    }
+
+    var out = $.extend({}, p);
+    delete out.__schema;
+    return out;
   }
   function storePrefs(prefs) {
-    try { localStorage.setItem(MENU_PREFS_KEY, JSON.stringify(prefs)); } catch(e){}
+    var payload = $.extend({ __schema: 2 }, prefs || {});
+    try { localStorage.setItem(MENU_PREFS_KEY, JSON.stringify(payload)); } catch(e){}
     if (window.MENU_PREFS_SAVE_URL) {
       var hidden = [];
       Object.keys(prefs || {}).forEach(function (k) {
@@ -785,20 +784,50 @@ $(function () {
     $wrap.prop('hidden', shown === 0);
   }
 
-  function applyMenuPrefs(prefs) {
-    $menu.find('li.nav-item[data-menu-key]').each(function () {
-      var $li  = $(this);
-      var key  = $li.data('menu-key');
-      var show = (prefs[key] !== false);
-      $li.toggle(show);
+  function syncVisibleHeaders() {
+    var $lists = $menu.add($menu.find('ul.nav-treeview'));
+    $lists.each(function () {
+      var $list = $(this);
+      $list.children('li.nav-header').each(function () {
+        var $header = $(this);
+        var hasVisibleGroupItems = $header
+          .nextUntil('li.nav-header')
+          .filter(':visible')
+          .length > 0;
+        $header.toggle(hasVisibleGroupItems);
+      });
     });
+  }
 
-    $menu.find('li.nav-item.has-treeview').each(function () {
-      var $li = $(this);
-      var hasVisibleChild = $li.find('> ul.nav-treeview > li.nav-item:visible').length > 0;
-      var hasOwnKey = !!$li.data('menu-key');
-      $li.toggle(hasVisibleChild || hasOwnKey);
-    });
+  function updateVisibleLinkCount() {
+    var visibleCount = $menu.find('a.nav-link:visible').filter(function () {
+      var href = ($(this).attr('href') || '').trim();
+      return href !== '' && href !== '#' && href.toLowerCase().indexOf('javascript:') !== 0;
+    }).length;
+    $('#sidebarVisibleLinkCount').text(visibleCount);
+  }
+
+  function updateMenuEmptyState() {
+    var hasVisibleLinks = $menu.find('a.nav-link:visible').filter(function () {
+      var href = ($(this).attr('href') || '').trim();
+      return href !== '' && href !== '#' && href.toLowerCase().indexOf('javascript:') !== 0;
+    }).length > 0;
+    $menuEmpty.prop('hidden', hasVisibleLinks);
+  }
+
+  function updateSearchUi(q) {
+    var hasQuery = !!((q || '').trim());
+    $searchClear.prop('hidden', !hasQuery);
+    $sidebarRoot.toggleClass('sidebar-is-filtering', hasQuery);
+  }
+
+  function applyMenuPrefs(prefs) {
+    // Show every menu item and section header (no hide/show prefs at all).
+    $menu.find('li.nav-item, li.nav-header').show();
+
+    syncVisibleHeaders();
+    updateVisibleLinkCount();
+    updateMenuEmptyState();
   }
 
   function setTreeOpenState() {
@@ -820,12 +849,15 @@ $(function () {
   function resetToPrefs() {
     applyMenuPrefs(prefs);
     setTreeOpenState();
+    updateSearchUi('');
   }
   function performSearch(q) {
     q = (q || '').toLowerCase().trim();
     if (!q) { resetToPrefs(); return; }
 
-    $menu.find('li.nav-item').hide();
+    updateSearchUi(q);
+
+    $menu.find('li').hide();
     $menu.find('ul.nav-treeview').hide();
     $menu.find('li.has-treeview').removeClass('menu-open');
 
@@ -835,15 +867,33 @@ $(function () {
       var $a  = $(this);
       var $li = $a.closest('li.nav-item');
       var key = $li.data('menu-key') || $a.data('menu-key');
+      var isBlockedByPrefs = $li.parents('li[data-menu-key]').addBack().filter(function () {
+        var ancestorKey = $(this).data('menu-key');
+        return ancestorKey && prefs[ancestorKey] === false;
+      }).length > 0;
 
-      if (key && prefs[key] === false) return;
+      if ((key && prefs[key] === false) || isBlockedByPrefs) return;
 
       $li.show();
+      if ($li.hasClass('has-treeview')) {
+        $li.addClass('menu-open');
+        $li.children('ul.nav-treeview').show().children('li.nav-item').each(function () {
+          var $child = $(this);
+          var childKey = $child.data('menu-key');
+          if (!childKey || prefs[childKey] !== false) {
+            $child.show();
+          }
+        });
+      }
       var $ul = $li.closest('ul.nav-treeview');
       if ($ul.length) {
         $ul.show().closest('.has-treeview').addClass('menu-open').show();
       }
     });
+
+    syncVisibleHeaders();
+    updateVisibleLinkCount();
+    updateMenuEmptyState();
   }
 
   function initTogglesFromPrefs() {
@@ -1045,8 +1095,12 @@ $(function () {
     prefsSavedInModal = false;
   });
 
-  $search.on('keyup', function () {
+  $search.on('input', function () {
     performSearch($(this).val());
+  });
+
+  $searchClear.on('click', function () {
+    $search.val('').trigger('input').trigger('focus');
   });
 
   var prefs = loadPrefs();
@@ -1054,6 +1108,7 @@ $(function () {
   setTreeOpenState();
   initTogglesFromPrefs();
   renderQuickAccess();
+  updateSearchUi($search.val());
 
   $(document).on('dblclick', '#sidebarMenu a.nav-link[href]', function (e) {
     var key = $(this).closest('li[data-menu-key]').data('menu-key');

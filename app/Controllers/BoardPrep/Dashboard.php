@@ -10,8 +10,11 @@ class Dashboard extends BoardPrepBaseController
 {
     public function index()
     {
-        if ($redirect = $this->requireAuth()) {
-            return $redirect;
+        // Public site (e.g. liveeducationquiz.com): guests get the open quiz
+        // catalog with "play as guest" + "sign up to save results". Signed-in
+        // prep users get their personalized dashboard below.
+        if (! board_prep_auth()) {
+            return $this->publicCatalog();
         }
 
         helper('server');
@@ -37,6 +40,24 @@ class Dashboard extends BoardPrepBaseController
             'boardLogoUrl'  => $board['logo_url'],
             'photoUrl'      => $photoUrl,
             'gradeLabel'    => board_prep_grade_label($grade),
+        ]);
+    }
+
+    /** Public quiz catalog for guests (no auth). */
+    private function publicCatalog()
+    {
+        $catalog = new BoardPrepQuizCatalogService();
+
+        $host        = strtolower((string) ($this->request->getServer('HTTP_HOST') ?? ''));
+        $productName = str_contains($host, 'liveeducationquiz')
+            ? 'Live Education Quiz'
+            : $this->boardPrepConfig()->productName;
+
+        return view('board_prep/public_catalog', [
+            'productName'   => $productName,
+            'subjectGroups' => $catalog->loadAllPublishedGroupedBySubject(),
+            'signupUrl'     => board_prep_url('signup'),
+            'loginUrl'      => board_prep_url('login'),
         ]);
     }
 

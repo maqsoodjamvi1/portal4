@@ -1385,12 +1385,32 @@ if (!function_exists('termSessionsById')) {
 // SECTION 9: PERMISSION FUNCTIONS
 // ============================================
 
+if (!function_exists('currentUserIsSuperAdmin')) {
+    /**
+     * Memoized Super Admin check for the current request.
+     * Super Admins bypass all permission gates (full menu + full access).
+     */
+    function currentUserIsSuperAdmin(): bool
+    {
+        static $cached = null;
+        if ($cached === null) {
+            helper('role');
+            $cached = function_exists('userIsSuperAdmin') ? userIsSuperAdmin() : false;
+        }
+        return $cached;
+    }
+}
+
 if (!function_exists('check_permission')) {
     /**
      * Check permission and redirect if not allowed
      */
     function check_permission($permKey, $json = true)
     {
+        if (currentUserIsSuperAdmin()) {
+            return;
+        }
+
         $user = \App\Libraries\MemberCurrentUser::user();
 
         if (! $user) {
@@ -1434,6 +1454,10 @@ if (!function_exists('check_permission')) {
 if (! function_exists('check_any_permission')) {
     function check_any_permission(array $permKeys, $json = true)
     {
+        if (currentUserIsSuperAdmin()) {
+            return;
+        }
+
         $user = \App\Libraries\MemberCurrentUser::user();
 
         if (! $user) {
@@ -1473,6 +1497,9 @@ if (!function_exists('hasPermission')) {
      */
     function hasPermission($permKey)
     {
+        if (currentUserIsSuperAdmin()) {
+            return true;
+        }
         $user = \App\Libraries\MemberCurrentUser::user();
         $perms = $user->userPerms ?? [];
         $permKey = strtolower((string) $permKey);
