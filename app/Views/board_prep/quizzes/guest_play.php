@@ -6,265 +6,161 @@ $questionCount = is_array($questions ?? null) ? count($questions) : 0;
 $minutes       = (int) $timeLimit > 0 ? (int) ceil((int) $timeLimit / 60) : 0;
 ?>
 
-<main class="bp-play-page">
-  <section class="bp-play-hero">
-    <div class="container bp-play-hero__inner">
-      <div class="bp-play-hero__copy">
-        <a href="<?= esc($dashboardUrl) ?>" class="bp-play-back">
-          <i class="fas fa-arrow-left"></i>
-          <span>All quizzes</span>
-        </a>
-        <div class="bp-play-kicker">
-          <span><i class="fas fa-star"></i> Guest practice</span>
-          <span>Result not saved</span>
-        </div>
-        <h1><?= esc($quiz->title) ?></h1>
-        <p>Answer at your own pace, submit when ready, and sign up before future attempts to save your progress.</p>
-      </div>
+<nav class="navbar navbar-expand-lg navbar-dark board-prep-nav">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="<?= esc($dashboardUrl) ?>">
+      <i class="fas fa-book-reader me-1"></i><?= esc($productName ?? 'Live Education Quiz') ?>
+    </a>
+    <div class="d-flex gap-2 ms-auto">
+      <a href="<?= esc($loginUrl) ?>" class="btn btn-sm btn-outline-light">Log in</a>
+      <a href="<?= esc($signupUrl) ?>" class="btn btn-sm btn-light">Sign up</a>
+    </div>
+  </div>
+</nav>
 
-      <aside class="bp-play-status" aria-label="Quiz status">
-        <?php if ((int) $timeLimit > 0) : ?>
-          <div class="bp-play-status__item bp-play-status__item--timer">
-            <span class="bp-play-status__label">Time left</span>
-            <strong id="bpTimer">--:--</strong>
+<main class="container py-4 bp-quiz-play">
+  <section class="bp-dashboard-hero board-prep-card mb-4">
+    <div class="bp-dashboard-hero__board bp-quiz-play__hero">
+      <div class="bp-board-logo-wrap bp-board-logo-wrap--placeholder">
+        <i class="fas fa-question-circle"></i>
+      </div>
+      <div class="bp-board-title-wrap">
+        <a href="<?= esc($dashboardUrl) ?>" class="bp-quiz-play__back">
+          <i class="fas fa-arrow-left me-1"></i> All quizzes
+        </a>
+        <p class="bp-board-eyebrow mb-1">Guest practice</p>
+        <h1 class="bp-board-title"><?= esc($quiz->title) ?></h1>
+      </div>
+    </div>
+
+    <div class="bp-dashboard-hero__student bp-quiz-play__meta">
+      <div class="row g-3">
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label">Questions</div>
+            <div class="h3 mb-0 bp-stat-value"><?= (int) $questionCount ?></div>
           </div>
-        <?php else : ?>
-          <div class="bp-play-status__item">
-            <span class="bp-play-status__label">Mode</span>
-            <strong>No timer</strong>
-          </div>
-        <?php endif; ?>
-        <div class="bp-play-status__item">
-          <span class="bp-play-status__label">Questions</span>
-          <strong><?= (int) $questionCount ?></strong>
         </div>
-        <?php if ($minutes > 0) : ?>
-          <div class="bp-play-status__item">
-            <span class="bp-play-status__label">Limit</span>
-            <strong><?= (int) $minutes ?> min</strong>
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label">Answered</div>
+            <div class="h3 mb-0 bp-stat-value"><span id="bpAnsweredCount">0</span></div>
           </div>
-        <?php endif; ?>
-      </aside>
+        </div>
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label"><?= (int) $timeLimit > 0 ? 'Time left' : 'Limit' ?></div>
+            <div class="h3 mb-0 bp-stat-value"><?= (int) $timeLimit > 0 ? '<span id="bpTimer">--:--</span>' : 'Open' ?></div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="container bp-play-shell">
-    <div class="bp-play-alert">
-      <i class="fas fa-lock"></i>
-      <div>
-        <strong>Guest score is temporary.</strong>
-        <span><a href="<?= esc($signupUrl) ?>">Sign up</a> or <a href="<?= esc($loginUrl) ?>">log in</a> before playing if you want results stored.</span>
-      </div>
+  <div class="alert alert-warning d-flex align-items-start">
+    <i class="fas fa-info-circle me-2 mt-1"></i>
+    <div>
+      <strong>Guest mode:</strong> this attempt shows an instant score but is not saved.
+      <a href="<?= esc($signupUrl) ?>" class="fw-semibold">Sign up</a> or
+      <a href="<?= esc($loginUrl) ?>" class="fw-semibold">log in</a> before playing to store results.
     </div>
+  </div>
 
-    <div class="bp-play-progress" aria-live="polite">
-      <div class="bp-play-progress__text">
-        <span id="bpAnsweredCount">0</span> of <?= (int) $questionCount ?> answered
-      </div>
-      <div class="bp-play-progress__track" aria-hidden="true">
-        <div class="bp-play-progress__bar" id="bpProgressBar"></div>
-      </div>
+  <div class="bp-play-progress board-prep-card mb-3" aria-live="polite">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong class="small text-muted">Quiz progress</strong>
+      <span class="small text-muted"><span id="bpProgressText">0</span>% complete</span>
     </div>
+    <div class="bp-play-progress__track" aria-hidden="true">
+      <div class="bp-play-progress__bar" id="bpProgressBar"></div>
+    </div>
+  </div>
 
-    <form method="post" action="<?= esc($scoreUrl) ?>" id="bpGuestForm" class="bp-question-form">
-      <?= csrf_field() ?>
-      <input type="hidden" name="quiz_id" value="<?= (int) $quiz->quiz_id ?>">
+  <form method="post" action="<?= esc($scoreUrl) ?>" id="bpGuestForm">
+    <?= csrf_field() ?>
+    <input type="hidden" name="quiz_id" value="<?= (int) $quiz->quiz_id ?>">
 
-      <?php foreach ($questions as $q) : ?>
-        <article class="bp-question-card" data-question-card>
-          <div class="bp-question-card__head">
-            <span class="bp-question-number"><?= (int) $q['n'] ?></span>
-            <h2><?= esc($q['question']) ?></h2>
-          </div>
+    <?php foreach ($questions as $q) : ?>
+      <article class="board-prep-card bp-question-card mb-3" data-question-card>
+        <div class="bp-question-card__head">
+          <span class="bp-question-number"><?= (int) $q['n'] ?></span>
+          <h2><?= esc($q['question']) ?></h2>
+        </div>
 
-          <div class="bp-answer-grid">
-            <?php foreach ($q['options'] as $opt) : ?>
-              <?php
-                $inputId = 'q' . (int) $q['id'] . '_' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $opt['key']);
-              ?>
-              <label class="bp-answer-option" for="<?= esc($inputId, 'attr') ?>">
-                <input class="bp-answer-input" type="radio"
-                       name="answers[<?= (int) $q['id'] ?>]"
-                       id="<?= esc($inputId, 'attr') ?>"
-                       value="<?= esc($opt['key'], 'attr') ?>">
-                <span class="bp-answer-key"><?= esc($opt['key']) ?></span>
-                <span class="bp-answer-text"><?= esc($opt['text']) ?></span>
-              </label>
-            <?php endforeach; ?>
-          </div>
-        </article>
-      <?php endforeach; ?>
+        <div class="bp-answer-list">
+          <?php foreach ($q['options'] as $opt) : ?>
+            <?php
+              $inputId = 'q' . (int) $q['id'] . '_' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $opt['key']);
+            ?>
+            <label class="bp-answer-option" for="<?= esc($inputId, 'attr') ?>">
+              <input class="bp-answer-input" type="radio"
+                     name="answers[<?= (int) $q['id'] ?>]"
+                     id="<?= esc($inputId, 'attr') ?>"
+                     value="<?= esc($opt['key'], 'attr') ?>">
+              <span class="bp-answer-key"><?= esc($opt['key']) ?></span>
+              <span class="bp-answer-text"><?= esc($opt['text']) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      </article>
+    <?php endforeach; ?>
 
-      <div class="bp-submit-bar">
-        <a href="<?= esc($dashboardUrl) ?>" class="btn btn-outline-secondary">
-          <i class="fas fa-times me-1"></i> Exit
-        </a>
-        <button type="submit" class="btn btn-primary btn-lg">
-          <i class="fas fa-paper-plane me-1"></i> Submit quiz
-        </button>
-      </div>
-    </form>
-  </section>
+    <div class="bp-submit-bar board-prep-card">
+      <a href="<?= esc($dashboardUrl) ?>" class="btn btn-outline-secondary">
+        <i class="fas fa-times me-1"></i> Exit quiz
+      </a>
+      <button type="submit" class="btn btn-bp-primary btn-lg">
+        <i class="fas fa-check me-1"></i> Submit and see score
+      </button>
+    </div>
+  </form>
 </main>
 
 <style>
-  .bp-play-page {
-    min-height: 100vh;
-    background: linear-gradient(180deg, #f7fbff 0%, #eef7f3 100%);
+  .bp-quiz-play {
+    max-width: 980px;
   }
-  .bp-play-hero {
-    background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
-    color: #fff;
+  .bp-quiz-play__hero {
+    align-items: flex-start;
   }
-  .bp-play-hero__inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
-    gap: 1.5rem;
-    align-items: end;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-  }
-  .bp-play-back {
+  .bp-quiz-play__back {
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
     color: rgba(255,255,255,.88);
     text-decoration: none;
-    font-size: .92rem;
-    margin-bottom: 1rem;
+    font-size: .85rem;
+    margin-bottom: .5rem;
   }
-  .bp-play-back:hover { color: #fff; }
-  .bp-play-kicker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    margin-bottom: .8rem;
-  }
-  .bp-play-kicker span {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .25rem .65rem;
-    border-radius: 999px;
-    background: rgba(255,255,255,.16);
+  .bp-quiz-play__back:hover {
     color: #fff;
-    font-size: .8rem;
-    font-weight: 700;
   }
-  .bp-play-hero h1 {
-    max-width: 780px;
-    margin: 0;
-    font-size: clamp(1.75rem, 4vw, 3.25rem);
-    line-height: 1.08;
-    letter-spacing: 0;
-    font-weight: 800;
-  }
-  .bp-play-hero p {
-    max-width: 680px;
-    margin: .8rem 0 0;
-    color: rgba(255,255,255,.86);
-    font-size: 1rem;
-  }
-  .bp-play-status {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .75rem;
-    background: rgba(255,255,255,.14);
-    border: 1px solid rgba(255,255,255,.22);
-    border-radius: 8px;
-    padding: .85rem;
-    backdrop-filter: blur(10px);
-  }
-  .bp-play-status__item {
-    min-height: 74px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    border-radius: 8px;
-    padding: .75rem;
-    background: rgba(255,255,255,.15);
-  }
-  .bp-play-status__item--timer {
-    grid-column: span 2;
-  }
-  .bp-play-status__label {
-    font-size: .75rem;
-    opacity: .8;
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-  .bp-play-status strong {
-    display: block;
-    font-size: 1.55rem;
-    line-height: 1.1;
-  }
-  .bp-play-shell {
-    max-width: 920px;
-    padding-top: 1.25rem;
-    padding-bottom: 2rem;
-  }
-  .bp-play-alert {
-    display: flex;
-    gap: .8rem;
-    align-items: flex-start;
-    background: #fff8df;
-    border: 1px solid #f2d984;
-    color: #614a00;
-    border-radius: 8px;
-    padding: .85rem 1rem;
-    margin-bottom: 1rem;
-  }
-  .bp-play-alert i {
-    margin-top: .15rem;
-  }
-  .bp-play-alert strong,
-  .bp-play-alert span {
-    display: block;
-  }
-  .bp-play-alert a {
-    color: #1d4ed8;
-    font-weight: 700;
+  .bp-quiz-play__meta {
+    padding-top: 1rem;
   }
   .bp-play-progress {
     position: sticky;
     top: 0;
-    z-index: 10;
-    background: rgba(247, 251, 255, .94);
-    border: 1px solid #dbe7ef;
-    border-radius: 8px;
-    padding: .8rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
-    backdrop-filter: blur(8px);
-  }
-  .bp-play-progress__text {
-    color: #334155;
-    font-weight: 700;
-    margin-bottom: .45rem;
+    z-index: 20;
+    padding: .85rem 1rem;
   }
   .bp-play-progress__track {
-    height: 10px;
+    height: 9px;
     overflow: hidden;
     border-radius: 999px;
-    background: #dbeafe;
+    background: #e1ebe6;
   }
   .bp-play-progress__bar {
     width: 0%;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #0f766e, #2563eb);
+    background: linear-gradient(90deg, var(--bp-primary), var(--bp-accent));
     transition: width .2s ease;
   }
   .bp-question-card {
-    background: #fff;
-    border: 1px solid #dfe8f0;
-    border-radius: 8px;
     padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
   }
   .bp-question-card.is-answered {
-    border-color: rgba(15, 118, 110, .45);
+    box-shadow: 0 8px 30px rgba(26, 95, 74, .12);
   }
   .bp-question-card__head {
     display: grid;
@@ -280,41 +176,39 @@ $minutes       = (int) $timeLimit > 0 ? (int) ceil((int) $timeLimit / 60) : 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #e7f7f4;
-    color: #0f766e;
+    background: #e8f4ef;
+    color: var(--bp-primary);
     font-weight: 800;
-    font-size: 1.1rem;
   }
   .bp-question-card h2 {
     margin: 0;
-    color: #111827;
-    font-size: 1.08rem;
+    color: #1a3d32;
+    font-size: 1.05rem;
     line-height: 1.45;
     letter-spacing: 0;
   }
-  .bp-answer-grid {
+  .bp-answer-list {
     display: grid;
-    gap: .65rem;
+    gap: .6rem;
   }
   .bp-answer-option {
     position: relative;
     display: grid;
-    grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-columns: 36px minmax(0, 1fr);
     gap: .75rem;
     align-items: center;
-    min-height: 58px;
+    min-height: 56px;
     margin: 0;
-    padding: .75rem .85rem;
-    border: 1px solid #d8e3ec;
+    padding: .7rem .85rem;
+    border: 1px solid #e5ece8;
     border-radius: 8px;
-    background: #f8fbfd;
-    color: #1f2937;
+    background: #f8fbf9;
     cursor: pointer;
     transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
   }
   .bp-answer-option:hover {
-    border-color: #60a5fa;
-    background: #eef7ff;
+    border-color: var(--bp-primary);
+    background: #f1f8f5;
   }
   .bp-answer-input {
     position: absolute;
@@ -322,55 +216,44 @@ $minutes       = (int) $timeLimit > 0 ? (int) ceil((int) $timeLimit / 60) : 0;
     pointer-events: none;
   }
   .bp-answer-key {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: #fff;
-    border: 1px solid #d5e1eb;
-    color: #2563eb;
+    border: 1px solid #d7e4de;
+    color: var(--bp-primary);
     font-weight: 800;
   }
   .bp-answer-text {
+    color: #243b32;
     line-height: 1.4;
     word-break: break-word;
   }
   .bp-answer-input:checked + .bp-answer-key {
-    background: #0f766e;
-    border-color: #0f766e;
+    background: var(--bp-primary);
+    border-color: var(--bp-primary);
     color: #fff;
   }
   .bp-answer-option.is-selected {
-    border-color: #0f766e;
-    background: #ecfdf5;
-    box-shadow: 0 8px 22px rgba(15, 118, 110, .12);
+    border-color: var(--bp-primary);
+    background: #edf8f3;
+    box-shadow: 0 5px 16px rgba(26, 95, 74, .12);
   }
   .bp-submit-bar {
     position: sticky;
     bottom: 0;
+    z-index: 30;
     display: flex;
     justify-content: space-between;
     gap: .75rem;
     align-items: center;
-    margin-top: 1.25rem;
     padding: .85rem;
-    border: 1px solid #dfe8f0;
     border-radius: 8px 8px 0 0;
-    background: rgba(255,255,255,.96);
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, .08);
-    backdrop-filter: blur(8px);
   }
   @media (max-width: 767.98px) {
-    .bp-play-hero__inner {
-      grid-template-columns: 1fr;
-      padding-top: 1.25rem;
-      padding-bottom: 1.25rem;
-    }
-    .bp-play-status {
-      grid-template-columns: 1fr 1fr;
-    }
     .bp-question-card {
       padding: .85rem;
     }
@@ -403,6 +286,7 @@ $minutes       = (int) $timeLimit > 0 ? (int) ceil((int) $timeLimit / 60) : 0;
 (function () {
   var total = <?= (int) $questionCount ?>;
   var answeredEl = document.getElementById('bpAnsweredCount');
+  var progressTextEl = document.getElementById('bpProgressText');
   var progressEl = document.getElementById('bpProgressBar');
   var form = document.getElementById('bpGuestForm');
 
@@ -417,8 +301,10 @@ $minutes       = (int) $timeLimit > 0 ? (int) ceil((int) $timeLimit / 60) : 0;
       var input = label.querySelector('.bp-answer-input');
       label.classList.toggle('is-selected', !!input && input.checked);
     });
+    var pct = total > 0 ? Math.round((answered / total) * 100) : 0;
     if (answeredEl) answeredEl.textContent = answered;
-    if (progressEl) progressEl.style.width = total > 0 ? ((answered / total) * 100) + '%' : '0%';
+    if (progressTextEl) progressTextEl.textContent = pct;
+    if (progressEl) progressEl.style.width = pct + '%';
   }
 
   document.querySelectorAll('.bp-answer-input').forEach(function (input) {
