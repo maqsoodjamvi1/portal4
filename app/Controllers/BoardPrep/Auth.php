@@ -15,11 +15,12 @@ class Auth extends BoardPrepBaseController
 
         // Public quiz site (liveeducationquiz.com) gets the marketing quiz landing.
         if (board_prep_is_public_quiz_host()) {
-            $featured = array_slice((new BoardPrepQuizCatalogService())->loadAllPublished(), 0, 6);
+            $quizzes = (new BoardPrepQuizCatalogService())->loadAllPublished();
 
             return view('board_prep/quiz_landing', [
                 'productName'     => board_prep_product_name(),
-                'featuredQuizzes' => $featured,
+                'featuredQuizzes' => array_slice($quizzes, 0, 6),
+                'allQuizzes'      => $quizzes,
                 'dashboardUrl'    => board_prep_url('dashboard'),
                 'signupUrl'       => board_prep_url('signup'),
                 'loginUrl'        => board_prep_url('login'),

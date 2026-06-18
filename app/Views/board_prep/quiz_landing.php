@@ -1,276 +1,207 @@
 <?= $this->extend('board_prep/layout') ?>
 
 <?= $this->section('content') ?>
+<?php
+$quizzes = is_array($allQuizzes ?? null) ? $allQuizzes : (is_array($featuredQuizzes ?? null) ? $featuredQuizzes : []);
 
-<header class="leq-topbar">
-  <div class="container leq-topbar__inner">
-    <a href="<?= board_prep_url('') ?>" class="leq-brand">
-      <span class="leq-brand__mark"><i class="fas fa-bolt"></i></span>
-      <span><?= esc($productName ?? 'Live Education Quiz') ?></span>
+$classes = [];
+$subjects = [];
+$boards = [];
+foreach ($quizzes as $quiz) {
+    $grade = trim((string) ($quiz->prep_grade_level ?? ''));
+    if ($grade !== '') {
+        $classes[$grade] = board_prep_grade_label($grade);
+    }
+
+    $subject = trim((string) ($quiz->subject_name ?? ''));
+    if ($subject !== '') {
+        $subjects[$subject] = $subject;
+    }
+
+    $board = trim((string) ($quiz->board_name ?? ''));
+    if ($board !== '') {
+        $boards[$board] = $board;
+    }
+}
+asort($classes);
+asort($subjects);
+asort($boards);
+
+$quizCount = count($quizzes);
+$subjectCount = count($subjects);
+$boardCount = count($boards);
+?>
+
+<nav class="navbar navbar-expand-lg navbar-dark board-prep-nav">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="<?= board_prep_url('') ?>">
+      <i class="fas fa-book-reader me-1"></i><?= esc($productName ?? 'Live Education Quiz') ?>
     </a>
-    <nav class="leq-topbar__actions" aria-label="Account">
-      <a href="<?= esc($loginUrl) ?>" class="btn btn-outline-secondary btn-sm">Log in</a>
-      <a href="<?= esc($signupUrl) ?>" class="btn btn-primary btn-sm">Sign up</a>
-    </nav>
+    <div class="d-flex gap-2 ms-auto">
+      <a href="<?= esc($loginUrl) ?>" class="btn btn-sm btn-outline-light">Log in</a>
+      <a href="<?= esc($signupUrl) ?>" class="btn btn-sm btn-light">Sign up</a>
+    </div>
   </div>
-</header>
+</nav>
 
-<main>
-  <section class="leq-hero">
-    <div class="container leq-hero__grid">
-      <div class="leq-hero__copy">
-        <span class="leq-kicker"><i class="fas fa-play-circle"></i> Free quiz practice</span>
-        <h1><?= esc($productName ?? 'Live Education Quiz') ?></h1>
-        <p>
-          Browse published quizzes, play instantly as a guest, and create a free account
-          when you want your scores saved in your results dashboard.
-        </p>
-        <div class="leq-hero__actions">
-          <a href="<?= esc($dashboardUrl) ?>" class="btn btn-primary btn-lg">
-            <i class="fas fa-th-list me-1"></i> Browse quizzes
-          </a>
-          <a href="<?= esc($loginUrl) ?>" class="btn btn-outline-secondary btn-lg">
-            <i class="fas fa-tachometer-alt me-1"></i> Login dashboard
-          </a>
-        </div>
-        <div class="leq-save-note">
-          <i class="fas fa-lock"></i>
-          Guest play is open. Result history is stored only after signup or login.
-        </div>
+<main class="container py-4 leq-dashboard-home">
+  <section class="bp-dashboard-hero board-prep-card mb-4">
+    <div class="bp-dashboard-hero__board leq-home-hero">
+      <div class="bp-board-logo-wrap bp-board-logo-wrap--placeholder">
+        <i class="fas fa-graduation-cap"></i>
       </div>
+      <div class="bp-board-title-wrap">
+        <p class="bp-board-eyebrow mb-1">Free practice quizzes</p>
+        <h1 class="bp-board-title"><?= esc($productName ?? 'Live Education Quiz') ?></h1>
+        <p class="leq-home-hero__copy mb-0">
+          Select your class, subject, and board. Play instantly as a guest, or sign up before playing to save your results.
+        </p>
+      </div>
+    </div>
 
-      <div class="leq-hero__panel" aria-label="Quiz flow">
-        <div class="leq-flow-step">
-          <span>1</span>
-          <div>
-            <strong>Choose a quiz</strong>
-            <small>Open the quiz dashboard and pick any subject.</small>
+    <div class="bp-dashboard-hero__student">
+      <div class="row g-3">
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label">Quizzes</div>
+            <div class="h3 mb-0 bp-stat-value"><?= (int) $quizCount ?></div>
           </div>
         </div>
-        <div class="leq-flow-step">
-          <span>2</span>
-          <div>
-            <strong>Play as guest</strong>
-            <small>Answer questions and see an instant score.</small>
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label">Subjects</div>
+            <div class="h3 mb-0 bp-stat-value"><?= (int) $subjectCount ?></div>
           </div>
         </div>
-        <div class="leq-flow-step">
-          <span>3</span>
-          <div>
-            <strong>Sign up to save</strong>
-            <small>Saved attempts and progress charts require an account.</small>
+        <div class="col-4">
+          <div class="board-prep-stat bp-stat-card h-100 text-center">
+            <div class="text-muted small bp-stat-label">Boards</div>
+            <div class="h3 mb-0 bp-stat-value"><?= (int) $boardCount ?></div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <?php if (! empty($featuredQuizzes)) : ?>
-    <section class="leq-section">
-      <div class="container">
-        <div class="leq-section__head">
-          <div>
-            <span class="leq-section__eyebrow">Start now</span>
-            <h2>Featured quizzes</h2>
-          </div>
-          <a href="<?= esc($dashboardUrl) ?>" class="btn btn-outline-primary btn-sm">View all quizzes</a>
+  <section class="board-prep-card leq-filter-card mb-4">
+    <div class="card-head d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h2 class="h5 mb-0"><i class="fas fa-filter me-2"></i>Find a quiz</h2>
+      <span class="small opacity-75"><span id="leqVisibleCount"><?= (int) $quizCount ?></span> quiz<?= $quizCount === 1 ? '' : 'zes' ?> shown</span>
+    </div>
+    <div class="p-3">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small text-muted fw-semibold" for="leqClassFilter">Class</label>
+          <select id="leqClassFilter" class="form-select leq-filter">
+            <option value="">All classes</option>
+            <?php foreach ($classes as $key => $label) : ?>
+              <option value="<?= esc(strtolower($key), 'attr') ?>"><?= esc($label) ?></option>
+            <?php endforeach; ?>
+          </select>
         </div>
+        <div class="col-md-4">
+          <label class="form-label small text-muted fw-semibold" for="leqSubjectFilter">Subject</label>
+          <select id="leqSubjectFilter" class="form-select leq-filter">
+            <option value="">All subjects</option>
+            <?php foreach ($subjects as $subject) : ?>
+              <option value="<?= esc(strtolower($subject), 'attr') ?>"><?= esc($subject) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small text-muted fw-semibold" for="leqBoardFilter">Board</label>
+          <select id="leqBoardFilter" class="form-select leq-filter">
+            <option value="">All boards</option>
+            <?php foreach ($boards as $board) : ?>
+              <option value="<?= esc(strtolower($board), 'attr') ?>"><?= esc($board) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="leqResetFilters">
+          <i class="fas fa-undo me-1"></i>Reset
+        </button>
+        <a href="<?= esc($signupUrl) ?>" class="btn btn-sm btn-bp-primary">
+          <i class="fas fa-save me-1"></i>Sign up to save results
+        </a>
+      </div>
+    </div>
+  </section>
 
-        <div class="leq-quiz-grid">
-          <?php foreach ($featuredQuizzes as $quiz) : ?>
-            <article class="leq-quiz-card">
-              <div class="leq-quiz-card__meta">
-                <?php if (! empty($quiz->subject_name)) : ?>
-                  <span><?= esc($quiz->subject_name) ?></span>
+  <section class="leq-quiz-section">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+      <div class="pe-2 mb-2">
+        <h2 class="h5 mb-1 fw-bold">All quizzes</h2>
+        <p class="text-muted small mb-0">Guest play is open. Saved result history requires signup or login.</p>
+      </div>
+      <a href="<?= esc($loginUrl) ?>" class="btn btn-sm btn-outline-secondary mb-1">
+        <i class="fas fa-tachometer-alt me-1"></i>Login dashboard
+      </a>
+    </div>
+
+    <?php if ($quizzes === []) : ?>
+      <div class="alert alert-info mb-0">No quizzes are published yet. Check back soon.</div>
+    <?php else : ?>
+      <div class="leq-quiz-grid" id="leqQuizGrid">
+        <?php foreach ($quizzes as $quiz) : ?>
+          <?php
+            $grade = trim((string) ($quiz->prep_grade_level ?? ''));
+            $subject = trim((string) ($quiz->subject_name ?? ''));
+            $board = trim((string) ($quiz->board_name ?? ''));
+          ?>
+          <article
+            class="board-prep-card leq-quiz-card"
+            data-class="<?= esc(strtolower($grade), 'attr') ?>"
+            data-subject="<?= esc(strtolower($subject), 'attr') ?>"
+            data-board="<?= esc(strtolower($board), 'attr') ?>"
+          >
+            <div class="leq-quiz-card__body">
+              <div class="leq-quiz-card__badges">
+                <?php if ($grade !== '') : ?>
+                  <span class="badge text-bg-light border"><?= esc(board_prep_grade_label($grade)) ?></span>
                 <?php endif; ?>
-                <?php if (! empty($quiz->board_name)) : ?>
-                  <span><?= esc($quiz->board_name) ?></span>
+                <?php if ($subject !== '') : ?>
+                  <span class="badge text-bg-light border"><?= esc($subject) ?></span>
+                <?php endif; ?>
+                <?php if ($board !== '') : ?>
+                  <span class="badge text-bg-light border"><?= esc($board) ?></span>
                 <?php endif; ?>
               </div>
               <h3><?= esc($quiz->title) ?></h3>
-              <p>
+              <div class="small text-muted">
                 <?= (int) ($quiz->questions_count ?? 0) ?> questions
                 <?php if ((int) ($quiz->time_limit_sec ?? 0) > 0) : ?>
-                  | <?= (int) ceil($quiz->time_limit_sec / 60) ?> min
+                  | <?= (int) ceil($quiz->time_limit_sec / 60) ?> min limit
                 <?php endif; ?>
-              </p>
-              <div class="leq-quiz-card__actions">
-                <a href="<?= board_prep_url('quizzes/guest/' . (int) $quiz->quiz_id) ?>" class="btn btn-outline-primary btn-sm">
-                  <i class="fas fa-play me-1"></i> Play guest
-                </a>
-                <a href="<?= esc($signupUrl) ?>" class="btn btn-primary btn-sm">
-                  Save results
-                </a>
               </div>
-            </article>
-          <?php endforeach; ?>
-        </div>
+            </div>
+            <div class="leq-quiz-card__actions">
+              <a href="<?= board_prep_url('quizzes/guest/' . (int) $quiz->quiz_id) ?>" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-play me-1"></i>Play guest
+              </a>
+              <a href="<?= esc($signupUrl) ?>" class="btn btn-sm btn-bp-primary">
+                Save results
+              </a>
+            </div>
+          </article>
+        <?php endforeach; ?>
       </div>
-    </section>
-  <?php endif; ?>
-
-  <section class="leq-account-band">
-    <div class="container leq-account-band__inner">
-      <div>
-        <h2>Want your results stored?</h2>
-        <p>Create an account or log in before taking a quiz. Your completed attempts will appear in the results dashboard.</p>
-      </div>
-      <div class="leq-account-band__actions">
-        <a href="<?= esc($signupUrl) ?>" class="btn btn-light"><i class="fas fa-user-plus me-1"></i> Sign up free</a>
-        <a href="<?= esc($loginUrl) ?>" class="btn btn-outline-light">Log in</a>
-      </div>
-    </div>
+      <div class="alert alert-secondary mt-3 d-none" id="leqNoResults">No quizzes match these filters.</div>
+    <?php endif; ?>
   </section>
 </main>
 
 <style>
-  .leq-topbar {
-    background: #ffffff;
-    border-bottom: 1px solid #e6eaef;
+  .leq-dashboard-home {
+    max-width: 1120px;
   }
-  .leq-topbar__inner {
-    min-height: 68px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  .leq-home-hero__copy {
+    max-width: 760px;
+    color: rgba(255,255,255,.9);
   }
-  .leq-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: .65rem;
-    color: #172033;
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .leq-brand:hover { color: #172033; }
-  .leq-brand__mark {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #0f766e;
-    color: #fff;
-  }
-  .leq-topbar__actions {
-    display: flex;
-    gap: .5rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .leq-hero {
-    background: #f7fafc;
-    border-bottom: 1px solid #e6eaef;
-  }
-  .leq-hero__grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
-    gap: 2rem;
-    align-items: center;
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
-  }
-  .leq-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    margin-bottom: 1rem;
-    color: #0f766e;
-    font-weight: 700;
-    font-size: .9rem;
-  }
-  .leq-hero h1 {
-    margin: 0 0 1rem;
-    color: #111827;
-    font-size: clamp(2.25rem, 5vw, 4.75rem);
-    line-height: 1;
-    letter-spacing: 0;
-    font-weight: 800;
-  }
-  .leq-hero p {
-    max-width: 680px;
-    color: #4b5563;
-    font-size: 1.15rem;
-    margin-bottom: 1.5rem;
-  }
-  .leq-hero__actions,
-  .leq-account-band__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .75rem;
-  }
-  .leq-save-note {
-    margin-top: 1rem;
-    display: inline-flex;
-    align-items: center;
-    gap: .55rem;
-    color: #475569;
-    background: #ffffff;
-    border: 1px solid #d9e2ea;
-    border-radius: 8px;
-    padding: .7rem .85rem;
-    font-size: .95rem;
-  }
-  .leq-hero__panel {
-    background: #ffffff;
-    border: 1px solid #dfe7ef;
-    border-radius: 8px;
-    padding: 1.25rem;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, .08);
-  }
-  .leq-flow-step {
-    display: flex;
-    gap: .85rem;
-    padding: 1rem 0;
-    border-bottom: 1px solid #edf1f5;
-  }
-  .leq-flow-step:last-child { border-bottom: 0; }
-  .leq-flow-step span {
-    flex: 0 0 34px;
-    height: 34px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #e7f7f4;
-    color: #0f766e;
-    font-weight: 800;
-  }
-  .leq-flow-step strong {
-    display: block;
-    color: #172033;
-  }
-  .leq-flow-step small {
-    display: block;
-    color: #64748b;
-    margin-top: .15rem;
-  }
-  .leq-section {
-    padding: 3.5rem 0;
-    background: #ffffff;
-  }
-  .leq-section__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .leq-section__eyebrow {
-    display: block;
-    color: #0f766e;
-    font-size: .8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .leq-section h2,
-  .leq-account-band h2 {
-    margin: 0;
-    color: #172033;
-    font-size: 1.6rem;
-    font-weight: 800;
+  .leq-filter-card .card-head {
+    background: var(--bp-primary);
   }
   .leq-quiz-grid {
     display: grid;
@@ -278,83 +209,101 @@
     gap: 1rem;
   }
   .leq-quiz-card {
-    min-height: 210px;
+    min-height: 230px;
     display: flex;
     flex-direction: column;
-    padding: 1rem;
-    background: #ffffff;
-    border: 1px solid #e1e7ee;
-    border-radius: 8px;
   }
-  .leq-quiz-card__meta {
+  .leq-quiz-card__body {
+    padding: 1rem;
+    flex: 1;
+  }
+  .leq-quiz-card__badges {
     display: flex;
     flex-wrap: wrap;
     gap: .35rem;
-    min-height: 28px;
-  }
-  .leq-quiz-card__meta span {
-    border: 1px solid #d7e2ec;
-    border-radius: 999px;
-    padding: .15rem .55rem;
-    color: #475569;
-    font-size: .78rem;
+    margin-bottom: .75rem;
   }
   .leq-quiz-card h3 {
-    margin: .75rem 0 .35rem;
-    color: #111827;
-    font-size: 1rem;
+    margin: 0 0 .5rem;
+    color: #1a3d32;
+    font-size: 1.05rem;
     line-height: 1.35;
+    letter-spacing: 0;
     font-weight: 700;
   }
-  .leq-quiz-card p {
-    color: #64748b;
-    margin-bottom: 1rem;
-  }
   .leq-quiz-card__actions {
-    margin-top: auto;
     display: flex;
-    gap: .5rem;
     flex-wrap: wrap;
-  }
-  .leq-account-band {
-    background: #0f766e;
-    color: #fff;
-    padding: 2.25rem 0;
-  }
-  .leq-account-band__inner {
-    display: flex;
+    gap: .5rem;
     justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-  }
-  .leq-account-band h2 { color: #fff; }
-  .leq-account-band p {
-    color: rgba(255,255,255,.86);
-    margin: .35rem 0 0;
-    max-width: 650px;
+    padding: .85rem 1rem;
+    border-top: 1px solid #e5ece8;
+    background: #f8fbf9;
   }
   @media (max-width: 991.98px) {
-    .leq-hero__grid,
+    .leq-quiz-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 575.98px) {
     .leq-quiz-grid {
       grid-template-columns: 1fr;
     }
-    .leq-hero__grid {
-      padding-top: 3rem;
-      padding-bottom: 3rem;
-    }
-  }
-  @media (max-width: 767.98px) {
-    .leq-section__head,
-    .leq-account-band__inner {
-      align-items: stretch;
-      flex-direction: column;
-    }
-    .leq-hero__actions .btn,
-    .leq-account-band__actions .btn,
     .leq-quiz-card__actions .btn {
       width: 100%;
     }
   }
 </style>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+(function () {
+  var filters = {
+    class: document.getElementById('leqClassFilter'),
+    subject: document.getElementById('leqSubjectFilter'),
+    board: document.getElementById('leqBoardFilter')
+  };
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.leq-quiz-card'));
+  var visibleCount = document.getElementById('leqVisibleCount');
+  var noResults = document.getElementById('leqNoResults');
+  var reset = document.getElementById('leqResetFilters');
+
+  function matches(card, key, value) {
+    return value === '' || (card.getAttribute('data-' + key) || '') === value;
+  }
+
+  function applyFilters() {
+    var values = {
+      class: filters.class ? filters.class.value : '',
+      subject: filters.subject ? filters.subject.value : '',
+      board: filters.board ? filters.board.value : ''
+    };
+    var shown = 0;
+    cards.forEach(function (card) {
+      var show = matches(card, 'class', values.class)
+        && matches(card, 'subject', values.subject)
+        && matches(card, 'board', values.board);
+      card.classList.toggle('d-none', !show);
+      if (show) shown++;
+    });
+    if (visibleCount) visibleCount.textContent = shown;
+    if (noResults) noResults.classList.toggle('d-none', shown > 0);
+  }
+
+  Object.keys(filters).forEach(function (key) {
+    if (filters[key]) filters[key].addEventListener('change', applyFilters);
+  });
+  if (reset) {
+    reset.addEventListener('click', function () {
+      Object.keys(filters).forEach(function (key) {
+        if (filters[key]) filters[key].value = '';
+      });
+      applyFilters();
+    });
+  }
+  applyFilters();
+})();
+</script>
 <?= $this->endSection() ?>
