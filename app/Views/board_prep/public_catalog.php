@@ -5,12 +5,13 @@
 
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
-      <h1 class="h3 mb-1"><i class="fas fa-graduation-cap text-primary me-2"></i><?= esc($productName ?? 'Live Education Quiz') ?></h1>
-      <p class="text-muted mb-0">Practice quizzes free. Play as a guest, or sign up to save and track your results.</p>
+      <a href="<?= board_prep_url('') ?>" class="small text-decoration-none"><i class="fas fa-arrow-left me-1"></i>Quiz landing</a>
+      <h1 class="h3 mb-1 mt-1"><i class="fas fa-th-list text-primary me-2"></i>Quiz dashboard</h1>
+      <p class="text-muted mb-0">Choose a quiz below. Guest play shows an instant score; saved results require signup or login.</p>
     </div>
     <div class="mt-3 mt-md-0">
-      <a href="<?= esc($loginUrl) ?>" class="btn btn-outline-secondary btn-sm">Log in</a>
-      <a href="<?= esc($signupUrl) ?>" class="btn btn-primary btn-sm"><i class="fas fa-user-plus me-1"></i>Sign up</a>
+      <a href="<?= esc($loginUrl) ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-tachometer-alt me-1"></i>Login dashboard</a>
+      <a href="<?= esc($signupUrl) ?>" class="btn btn-primary btn-sm"><i class="fas fa-user-plus me-1"></i>Sign up to save</a>
     </div>
   </div>
 
@@ -20,7 +21,7 @@
 
   <div class="alert alert-info d-flex align-items-center">
     <i class="fas fa-info-circle me-2"></i>
-    <div>You can play any quiz below as a guest. <strong>Sign up</strong> to save your scores and see your results history.</div>
+    <div>You can play any quiz below as a guest. Scores from guest mode are not stored; <strong>sign up or log in before playing</strong> to save results.</div>
   </div>
 
   <?php if (empty($subjectGroups)) : ?>
@@ -56,16 +57,16 @@
                     <div class="small text-muted mt-1">
                       <?= (int) ($quiz->questions_count ?? 0) ?> questions
                       <?php if ((int) ($quiz->time_limit_sec ?? 0) > 0) : ?>
-                        · <?= (int) ceil($quiz->time_limit_sec / 60) ?> min limit
+                        | <?= (int) ceil($quiz->time_limit_sec / 60) ?> min limit
                       <?php endif; ?>
                     </div>
                   </div>
                   <div class="d-flex gap-2">
                     <a href="<?= board_prep_url('quizzes/guest/' . (int) $quiz->quiz_id) ?>" class="btn btn-outline-primary btn-sm">
-                      <i class="fas fa-play me-1"></i>Play as guest
+                      <i class="fas fa-play me-1"></i>Play guest
                     </a>
                     <a href="<?= esc($signupUrl) ?>" class="btn btn-primary btn-sm">
-                      <i class="fas fa-save me-1"></i>Sign up &amp; save
+                      <i class="fas fa-save me-1"></i>Save results
                     </a>
                   </div>
                 </div>

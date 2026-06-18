@@ -31,7 +31,7 @@ class Dashboard extends BoardPrepBaseController
         $photoUrl = getStudentPhotoUrl($profile ? ($profile->profile_photo ?? '') : '');
 
         return view('board_prep/dashboard', [
-            'productName'   => $this->boardPrepConfig()->productName,
+            'productName'   => board_prep_product_name(),
             'auth'          => $auth,
             'stats'         => $stats,
             'subjectGroups' => $catalog->loadQuizzesGroupedBySubject($studentId, $grade, $boardId),
@@ -48,13 +48,8 @@ class Dashboard extends BoardPrepBaseController
     {
         $catalog = new BoardPrepQuizCatalogService();
 
-        $host        = strtolower((string) ($this->request->getServer('HTTP_HOST') ?? ''));
-        $productName = str_contains($host, 'liveeducationquiz')
-            ? 'Live Education Quiz'
-            : $this->boardPrepConfig()->productName;
-
         return view('board_prep/public_catalog', [
-            'productName'   => $productName,
+            'productName'   => board_prep_product_name(),
             'subjectGroups' => $catalog->loadAllPublishedGroupedBySubject(),
             'signupUrl'     => board_prep_url('signup'),
             'loginUrl'      => board_prep_url('login'),

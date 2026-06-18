@@ -13,14 +13,12 @@ class Auth extends BoardPrepBaseController
             return redirect()->to(board_prep_url('dashboard'));
         }
 
-        $host = strtolower((string) ($this->request->getServer('HTTP_HOST') ?? ''));
-
         // Public quiz site (liveeducationquiz.com) gets the marketing quiz landing.
-        if (str_contains($host, 'liveeducationquiz')) {
+        if (board_prep_is_public_quiz_host()) {
             $featured = array_slice((new BoardPrepQuizCatalogService())->loadAllPublished(), 0, 6);
 
             return view('board_prep/quiz_landing', [
-                'productName'     => 'Live Education Quiz',
+                'productName'     => board_prep_product_name(),
                 'featuredQuizzes' => $featured,
                 'dashboardUrl'    => board_prep_url('dashboard'),
                 'signupUrl'       => board_prep_url('signup'),
@@ -29,7 +27,7 @@ class Auth extends BoardPrepBaseController
         }
 
         return view('board_prep/landing', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
         ]);
     }
 
@@ -40,7 +38,7 @@ class Auth extends BoardPrepBaseController
         }
 
         return view('board_prep/login', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'error'       => session()->getFlashdata('error'),
             'success'     => session()->getFlashdata('success'),
         ]);

@@ -7,7 +7,7 @@ use CodeIgniter\Config\BaseConfig;
 class BoardPrep extends BaseConfig
 {
     /** Hostnames that serve the board-prep portal (comma-separated in .env). */
-    public string $hosts = 'prep.timesoftsol.com';
+    public string $hosts = 'prep.timesoftsol.com,liveeducationquiz.com,www.liveeducationquiz.com';
 
     /**
      * When true, routes are also available under /prep/* on any host (local dev).

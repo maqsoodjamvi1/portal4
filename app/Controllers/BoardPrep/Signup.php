@@ -16,7 +16,7 @@ class Signup extends BoardPrepBaseController
         $platform = new BoardPrepPlatformService();
 
         return view('board_prep/signup', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'gradeLabels' => $this->boardPrepConfig()->gradeLabels,
             'boards'      => $platform->listBoardPublishers(),
             'errors'      => session()->getFlashdata('errors') ?? [],

@@ -82,6 +82,7 @@ if (! function_exists('board_prep_is_prep_subdomain')) {
     {
         $cfg  = board_prep_config();
         $host = strtolower((string) (service('request')->getServer('HTTP_HOST') ?? ''));
+        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
 
         foreach (array_filter(array_map('trim', explode(',', $cfg->hosts))) as $allowed) {
             $allowed = strtolower($allowed);
@@ -91,6 +92,27 @@ if (! function_exists('board_prep_is_prep_subdomain')) {
         }
 
         return false;
+    }
+}
+
+if (! function_exists('board_prep_is_public_quiz_host')) {
+    function board_prep_is_public_quiz_host(): bool
+    {
+        $host = strtolower((string) (service('request')->getServer('HTTP_HOST') ?? ''));
+        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+
+        return $host === 'liveeducationquiz.com'
+            || $host === 'www.liveeducationquiz.com'
+            || str_ends_with($host, '.liveeducationquiz.com');
+    }
+}
+
+if (! function_exists('board_prep_product_name')) {
+    function board_prep_product_name(): string
+    {
+        return board_prep_is_public_quiz_host()
+            ? 'Live Education Quiz'
+            : board_prep_config()->productName;
     }
 }
 

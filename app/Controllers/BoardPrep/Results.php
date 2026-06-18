@@ -16,7 +16,7 @@ class Results extends BoardPrepBaseController
         $recent    = $this->loadRecentAttempts($studentId, 20);
 
         return view('board_prep/results/overall', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'auth'        => $auth,
             'overall'     => $overall,
             'recent'      => $recent,
@@ -34,7 +34,7 @@ class Results extends BoardPrepBaseController
         $subjects  = $this->loadSubjectStats($studentId);
 
         return view('board_prep/results/subjects', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'auth'        => $auth,
             'subjects'    => $subjects,
         ]);
@@ -69,7 +69,7 @@ class Results extends BoardPrepBaseController
             ->getResult();
 
         return view('board_prep/results/quiz_detail', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'auth'        => board_prep_auth(),
             'attempt'     => $attempt,
             'answers'     => $answers,

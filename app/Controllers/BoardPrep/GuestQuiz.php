@@ -37,7 +37,7 @@ class GuestQuiz extends BoardPrepBaseController
         }
 
         return view('board_prep/quizzes/guest_play', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'quiz'        => $quiz,
             'questions'   => $publicQuestions,
             'timeLimit'   => (int) ($quiz->time_limit_sec ?? 0),
@@ -100,7 +100,7 @@ class GuestQuiz extends BoardPrepBaseController
         $showSol = (int) ($quiz->show_solution ?? 0) === 1;
 
         return view('board_prep/quizzes/guest_result', [
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'quiz'        => $quiz,
             'total'       => $total,
             'correct'     => $correct,

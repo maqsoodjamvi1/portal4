@@ -27,6 +27,10 @@ if (board_prep_is_prep_subdomain()) {
     // prep.timesoftsol.com — board prep only at /signup, /login, etc.
     $boardPrepUsePathPrefix = false;
     require __DIR__ . '/Routes/BoardPrep.php';
+
+    // Keep /prep/* available on dedicated prep/quiz domains for shared links.
+    $boardPrepUsePathPrefix = true;
+    require __DIR__ . '/Routes/BoardPrep.php';
 } else {
     require __DIR__ . '/Routes/PublicRoutes.php';
 

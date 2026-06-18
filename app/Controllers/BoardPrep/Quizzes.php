@@ -63,7 +63,7 @@ class Quizzes extends \App\Controllers\Frontend\Quizzes
         }
 
         return view('board_prep/quizzes/attempt_complete', [
-            'productName'  => config('BoardPrep')->productName,
+            'productName'  => board_prep_product_name(),
             'quiz'         => $quiz,
             'attempt'      => $attempt,
             'subjectName'  => $subjectName,

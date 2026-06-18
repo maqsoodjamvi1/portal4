@@ -27,7 +27,7 @@ class Profile extends BoardPrepBaseController
         return view('board_prep/profile', [
             'auth'        => $auth,
             'profile'     => $profile,
-            'productName' => $this->boardPrepConfig()->productName,
+            'productName' => board_prep_product_name(),
             'navActive'   => 'profile',
             'success'     => session()->getFlashdata('success'),
             'error'       => session()->getFlashdata('error'),
