@@ -9,7 +9,6 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 $routes = Services::routes();
-$routes->get('/', 'Home::index');
 
 // Default settings (fallback must not serve welcome_message)
 $routes->setDefaultNamespace('App\Controllers');
@@ -22,6 +21,12 @@ $routes->setAutoRoute(false);
 
 // Domain route files (split from monolithic Routes.php — load order matters)
 helper('board_prep');
+
+if (board_prep_is_prep_subdomain()) {
+    $routes->get('/', '\App\Controllers\BoardPrep\Auth::landing');
+} else {
+    $routes->get('/', 'Home::index');
+}
 
 if (board_prep_is_prep_subdomain()) {
     // prep.timesoftsol.com — board prep only at /signup, /login, etc.
