@@ -616,56 +616,6 @@ $regYearExample = date('y');
           </div>
         <?php endif; ?>
       </div>
-
-      <div class="sidebar-context-card">
-        <div class="sidebar-context-card__eyebrow">School workspace</div>
-        <div class="sidebar-context-card__title" title="<?= esc($sidebarWorkspaceTitle, 'attr') ?>">
-          <?= esc($sidebarWorkspaceTitle) ?>
-        </div>
-        <div class="sidebar-context-card__subline" title="<?= esc($school_name ?? 'School Name', 'attr') ?>">
-          <?= esc($sidebarRoleLabel !== '' ? $sidebarRoleLabel : ($school_name ?? 'School Name')) ?>
-        </div>
-        <div class="sidebar-context-card__chips">
-          <?php if (!empty($activeSessionLabel)): ?>
-            <span class="sidebar-context-card__chip">
-              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-              <span><?= esc($activeSessionLabel) ?></span>
-            </span>
-          <?php endif; ?>
-          <span class="sidebar-context-card__chip sidebar-context-card__chip--quiet">
-            <i class="fas fa-compass" aria-hidden="true"></i>
-            <span><span id="sidebarVisibleLinkCount"><?= (int) $sidebarNavCount ?></span> items</span>
-          </span>
-        </div>
-      </div>
-
-      <?php if (empty($curr_session_id) && !empty($canSelectSession)): ?>
-        <div class="sidebar-no-session-notice">
-          <i class="fas fa-info-circle"></i>
-          Choose an academic session in the workspace bar to unlock navigation.
-        </div>
-      <?php endif; ?>
-
-      <div class="sidebar-controls no-print">
-        <div class="sidebar-controls__row">
-          <div class="sidebar-controls__search">
-            <i class="fas fa-search sidebar-controls__search-icon" aria-hidden="true"></i>
-            <input id="menuSearch"
-                   class="form-control form-control-sidebar"
-                   type="search"
-                   placeholder="Find a menu item"
-                   aria-label="Search menu">
-            <button type="button"
-                    id="menuSearchClear"
-                    class="sidebar-controls__clear"
-                    aria-label="Clear menu search"
-                    hidden>
-              <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
-          </div>
-        </div>
-        <div class="sidebar-controls__hint">Use search to jump through the school menu quickly.</div>
-      </div>
     </div>
 
     <nav class="mt-1 sidebar-nav">
