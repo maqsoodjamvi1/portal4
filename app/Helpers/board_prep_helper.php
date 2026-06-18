@@ -11,6 +11,15 @@ if (! function_exists('board_prep_config')) {
     }
 }
 
+if (! function_exists('board_prep_request_host')) {
+    function board_prep_request_host(): string
+    {
+        $host = strtolower((string) (service('request')->getServer('HTTP_HOST') ?? ''));
+
+        return preg_replace('/:\d+$/', '', $host) ?: $host;
+    }
+}
+
 if (! function_exists('board_prep_path_prefix')) {
     function board_prep_path_prefix(): string
     {
@@ -66,6 +75,14 @@ if (! function_exists('board_prep_url')) {
         $path = ltrim($path, '/');
         $cfg  = board_prep_config();
 
+        if (board_prep_is_public_quiz_host()) {
+            $request = service('request');
+            $scheme  = $request->isSecure() ? 'https' : 'http';
+            $host    = board_prep_request_host();
+
+            return rtrim($scheme . '://' . $host, '/') . ($path === '' ? '/' : '/' . $path);
+        }
+
         if (! board_prep_is_prep_subdomain()) {
             $prefix = board_prep_path_prefix();
             if ($prefix !== '') {
@@ -80,9 +97,12 @@ if (! function_exists('board_prep_url')) {
 if (! function_exists('board_prep_is_prep_subdomain')) {
     function board_prep_is_prep_subdomain(): bool
     {
+        if (board_prep_is_public_quiz_host()) {
+            return true;
+        }
+
         $cfg  = board_prep_config();
-        $host = strtolower((string) (service('request')->getServer('HTTP_HOST') ?? ''));
-        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+        $host = board_prep_request_host();
 
         foreach (array_filter(array_map('trim', explode(',', $cfg->hosts))) as $allowed) {
             $allowed = strtolower($allowed);
@@ -98,8 +118,7 @@ if (! function_exists('board_prep_is_prep_subdomain')) {
 if (! function_exists('board_prep_is_public_quiz_host')) {
     function board_prep_is_public_quiz_host(): bool
     {
-        $host = strtolower((string) (service('request')->getServer('HTTP_HOST') ?? ''));
-        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+        $host = board_prep_request_host();
 
         return $host === 'liveeducationquiz.com'
             || $host === 'www.liveeducationquiz.com'
