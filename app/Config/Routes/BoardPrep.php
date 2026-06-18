@@ -40,24 +40,24 @@ $groupOptions = ['namespace' => 'App\\Controllers\\BoardPrep'];
 
 $routes->group($groupName, $groupOptions, static function ($routes) {
 
-    $routes->get('/', 'Auth::landing');
+    $routes->match(['get', 'head'], '/', 'Auth::landing');
 
-    $routes->get('login', 'Auth::login');
+    $routes->match(['get', 'head'], 'login', 'Auth::login');
 
     $routes->post('login', 'Auth::doLogin', ['filter' => 'csrf']);
 
     $routes->get('logout', 'Auth::logout');
 
-    $routes->get('signup', 'Signup::index');
+    $routes->match(['get', 'head'], 'signup', 'Signup::index');
 
     $routes->post('signup/submit', 'Signup::submit', ['filter' => 'csrf']);
 
-    $routes->get('api/captcha', '\App\Controllers\Api\Captcha::index');
+    $routes->match(['get', 'head'], 'api/captcha', '\App\Controllers\Api\Captcha::index');
 
     // Public quiz site (liveeducationquiz.com): open catalog + guest play.
-    $routes->get('dashboard', 'Dashboard::index');
+    $routes->match(['get', 'head'], 'dashboard', 'Dashboard::index');
 
-    $routes->get('quizzes/guest/(:num)', 'GuestQuiz::play/$1');
+    $routes->match(['get', 'head'], 'quizzes/guest/(:num)', 'GuestQuiz::play/$1');
 
     $routes->post('quizzes/guest/score', 'GuestQuiz::score', ['filter' => 'csrf']);
 

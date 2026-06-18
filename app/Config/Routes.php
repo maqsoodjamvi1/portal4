@@ -23,9 +23,9 @@ $routes->setAutoRoute(false);
 helper('board_prep');
 
 if (board_prep_is_prep_subdomain()) {
-    $routes->get('/', '\App\Controllers\BoardPrep\Auth::landing');
+    $routes->match(['get', 'head'], '/', '\App\Controllers\BoardPrep\Auth::landing');
 } else {
-    $routes->get('/', 'Home::index');
+    $routes->match(['get', 'head'], '/', 'Home::index');
 }
 
 if (board_prep_is_prep_subdomain()) {
