@@ -68,18 +68,6 @@ if (!empty($expiryInfo) && $curr_campus_id > 0 && !empty($expiryInfo['expiry_dat
       <span class="admin-workspace-toggle__label"><?= esc($workspaceSummary) ?></span>
     </button>
 
-    <div class="admin-bar-row__search d-none d-md-flex align-items-center me-2">
-      <button type="button"
-              class="admin-bar-command-btn"
-              id="adminCommandOpen"
-              title="Search menu (Ctrl+K)"
-              aria-label="Search menu">
-        <i class="fas fa-search"></i>
-        <span class="admin-bar-command-btn__label">Search</span>
-        <kbd class="admin-bar-command-btn__kbd">Ctrl K</kbd>
-      </button>
-    </div>
-
     <?php if (!empty($adminBreadcrumbs)): ?>
       <nav class="admin-app-breadcrumb d-none d-md-flex" aria-label="Breadcrumb">
         <ol class="breadcrumb mb-0 bg-transparent p-0">

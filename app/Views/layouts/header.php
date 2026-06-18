@@ -67,7 +67,7 @@ $uiNeedsChart        = $uiNeedsChart ?? false;
     <link rel="stylesheet" href="<?= base_url('assets/css/design-tokens.css?v=20260616b') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell.css?v=20260616e') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell-fixes.css?v=20260618b') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/admin-shell-fixes.css?v=20260618c') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/report-ui.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/components-ui.css?v=20260604') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/school-forms.css?v=20260616j') ?>">
@@ -602,21 +602,21 @@ $regYearExample = date('y');
 
 <aside class="main-sidebar sidebar-dark-orange elevation-4 sidebar-slim">
   <a href="<?= base_url('admin/dashboard') ?>" class="brand-link ts-brand-bar">
-    <span class="ts-brand-bar__mark">
-      <?php if (!empty($schoolinfo) && !empty($schoolinfo->logo)): ?>
-        <img src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="">
-      <?php else: ?>
-        <i class="fas fa-school" aria-hidden="true"></i>
-      <?php endif; ?>
-    </span>
-    <span class="brand-text ts-brand-bar__text">
-      <strong title="<?= esc($school_name ?? 'School Name', 'attr') ?>"><?= esc($school_name ?? 'School Name') ?></strong>
-      <small><?= esc($sidebarRoleLabel !== '' ? $sidebarRoleLabel : 'Admin portal') ?></small>
-    </span>
+    <span class="brand-text fw-light"><?= esc($school_name ?? 'School Name') ?></span>
   </a>
 
   <div class="sidebar">
     <div class="sidebar-shell-top">
+      <div class="image text-center sidebar-logo-wrap">
+        <?php if(!empty($schoolinfo) && !empty($schoolinfo->logo)): ?>
+          <img class="sidebar-logo" src="<?= base_url('system-logo/'.$schoolinfo->logo) ?>" alt="Logo">
+        <?php else: ?>
+          <div class="sidebar-logo sidebar-logo--fallback" aria-hidden="true">
+            <i class="fas fa-school"></i>
+          </div>
+        <?php endif; ?>
+      </div>
+
       <div class="sidebar-context-card">
         <div class="sidebar-context-card__eyebrow">School workspace</div>
         <div class="sidebar-context-card__title" title="<?= esc($sidebarWorkspaceTitle, 'attr') ?>">
