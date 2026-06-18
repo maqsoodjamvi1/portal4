@@ -9,11 +9,12 @@ body.admin-shell-active .admin-bar-row__workspace {
 
 body.admin-shell-active .admin-bar-row__search {
   flex: 0 0 auto;
-  min-width: 2.3rem;
+  min-width: 2.4rem;
+  margin-inline-end: 0.1rem !important;
 }
 
 body.admin-shell-active .admin-app-breadcrumb {
-  flex: 1 1 12rem;
+  flex: 1 1 10rem;
   min-width: 0;
   overflow: hidden;
 }
@@ -42,18 +43,18 @@ body.admin-shell-active .admin-bar-actions {
 }
 
 body.admin-shell-active .admin-bar-command-btn {
-  min-width: 2.3rem;
-  width: auto;
-  max-width: 12rem;
-  padding: 0 0.72rem;
-  gap: 0.45rem;
+  min-width: 2.4rem;
+  width: 2.4rem;
+  max-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  gap: 0;
   white-space: nowrap;
 }
 
 body.admin-shell-active .admin-bar-command-btn__label,
 body.admin-shell-active .admin-bar-command-btn__kbd {
-  display: inline-flex;
-  align-items: center;
+  display: none !important;
 }
 
 body.admin-shell-active .admin-bar-command-btn__kbd {
@@ -206,7 +207,25 @@ body.admin-shell-active .ts-brand-bar__text small {
 }
 
 body.admin-shell-active .sidebar-context-card {
-  border-radius: 0.55rem;
+  display: none !important;
+}
+
+body.admin-shell-active .sidebar-shell-top {
+  padding-top: 0.72rem;
+}
+
+body.admin-shell-active .sidebar-controls {
+  padding-top: 0;
+}
+
+body.admin-shell-active .sidebar-controls__hint {
+  display: none;
+}
+
+body.admin-shell-active .sidebar-controls__search {
+  border-radius: 0.5rem;
+  background: rgba(15, 23, 42, 0.58);
+  box-shadow: none;
 }
 
 @media (max-width: 1399.98px) {
@@ -215,7 +234,7 @@ body.admin-shell-active .sidebar-context-card {
   }
 
   body.admin-shell-active .admin-bar-command-btn__kbd {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -225,7 +244,7 @@ body.admin-shell-active .sidebar-context-card {
   }
 
   body.admin-shell-active .admin-bar-command-btn__label {
-    display: none;
+    display: none !important;
   }
 
   body.admin-shell-active .admin-bar-command-btn {
