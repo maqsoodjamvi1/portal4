@@ -2,124 +2,103 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
+<?php ob_start(); ?>
+<a href="<?= esc(base_url('admin/campus/add'), 'attr') ?>" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Add Campus
+</a>
+<?php $headerActions = trim(ob_get_clean()); ?>
 
 <?= view('components/page_header', [
-    'title' => 'Campus',
+    'title' => 'Campus Management',
+    'subtitle' => 'Oversee campus records, branch contact details, and billing shortcuts from one directory.',
     'icon' => 'fas fa-school',
+    'actionsHtml' => $headerActions,
     'breadcrumbs' => [
         ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
         ['label' => 'Campus', 'active' => true],
     ],
 ]) ?>
-    <!-- Main content -->
-    <section class="content">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card sms-card card-primary card-outline card-tabs">
-            <div class="card-header p-0 pt-1 border-bottom-0">	
-			<ul class="nav nav-tabs">
-				<li class="nav-item"><a class="nav-link active" href="<?= base_url('admin/campus') ?>">Campus</a></li>
-				<li class="nav-item"><a class="nav-link" href="<?= base_url('admin/campus/add') ?>">Add Campus</a></li>
-			</ul>
-		<div class="card-body">
-		<div class="col-lg-12">
-        <table class="table table-striped table-bordered table-hover" id="campus-datatable" width="100%">
-			<thead>
-				<tr>
-					<th nowrap>#</th>
-					<th nowrap>Campus Name</th>
-					<th nowrap>Short Name</th>
-					<th nowrap>Landline No</th>
-					<th nowrap>Mobile No</th>
-					<th nowrap>Location</th>
-					<th nowrap>Operation</th>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table></div></div>
-	</div>
-	<!-- /.box-body -->
-</div>
-<!-- /.box -->
-</div>
-</div>
+
+<section class="content">
+    <div class="card sms-card sms-index-card card-primary card-outline">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-building me-2"></i>
+                Campus Directory
+            </h3>
+            <div class="card-tools">
+                <span class="badge bg-primary">Branch operations</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="sms-section-note mb-3">
+                <i class="fas fa-info-circle"></i>
+                Review branch contact details, locations, and billing actions without leaving the admin workspace.
+            </div>
+
+            <table id="campus-datatable" class="table table-bordered table-hover" data-sms-table-name="campuses">
+                <thead>
+                    <tr>
+                        <th width="60">#</th>
+                        <th>Campus Name</th>
+                        <th>Short Name</th>
+                        <th>Landline</th>
+                        <th>Mobile</th>
+                        <th>Location</th>
+                        <th width="190">Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </section>
-<!-- /.content -->
-<script src="<?php echo base_url();?>resource/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-<script type="text/javascript">
-$(function(){
-	var table = $('#campus-datatable').DataTable({
-		deferRender: true,
-		select:{
-			style:'single',
-			blurable: true
-		},
-		ajax:{
-			url:'<?php echo base_url('admin/campus/data'); ?>',
-			type:'post',
-			data:function(d){
-			}
-		},
-		columns:[
-			{
-				data:'id',
-				className:'select-checkbox',
-				render:function(data, type, row){
-					return data;
-				}
-			},
-			{data:'campus_name'},
-			{data:'short_name'},
-			{data:'landline'},
-			{data:'mobile_no'},
-			{data:'location'},
-			{
-				data:'bill_id',
-				sortable:false,
-				render:function(data, type, row){
-					var html = '';
-					html += '<div class="btn-group">';
-					html += '<a href="<?php echo '#/campus_bill?id=';?>' + row.bill_id + '" title="edit" class="btn btn-secondary btn-sm"><i class="fas fa-file-invoice"></i> Print Bill</a>';
-  					html += '</div>';
-					return html;
-				}
-			}
-		],
-		fnDrawCallback:function(oSettings){
-			$(".switchchk").bootstrapSwitch({
-				onSwitchChange:function(e, state){
-				var fieldval = state;
-				var $element = $(e.currentTarget);
-				var tablename = $element.attr('data-table');
-				var fieldname = $element.attr('data-field');
-				var rowid = $element.attr('data-pk');
-				if(fieldval){
-					fieldval = 1;
-				}else{
-					fieldval = 0;
-				}
-				$.post(
-				   "<?php echo base_url('admin/ajax/setboolattribute'); ?>",
-				   {
-					   act:'upsort',
-					   tbname:tablename,
-					   tbfield:fieldname,
-					   tbfieldvalue:fieldval,
-					   id:rowid//,
-				   },
-				   function(data){
-					   if(data=='success'){
-						   toastr.success('change success');
-					   }else{
-						   toastr.error('change error');
-					   }
-				   });
-				}
-			});
-		}
-	});
+
+<script>
+$(function () {
+    $('#campus-datatable').DataTable({
+        responsive: true,
+        autoWidth: false,
+        searchDelay: 350,
+        order: [[1, 'asc']],
+        ajax: {
+            url: "<?= base_url('admin/campus/data') ?>",
+            type: "POST"
+        },
+        columns: [
+            {
+                data: 'id',
+                className: 'text-center align-middle',
+                render: function(data, type, row, meta) {
+                    return meta.settings._iDisplayStart + meta.row + 1;
+                }
+            },
+            { data: 'campus_name', className: 'align-middle' },
+            { data: 'short_name', className: 'align-middle' },
+            { data: 'landline', className: 'align-middle' },
+            { data: 'mobile_no', className: 'align-middle' },
+            { data: 'location', className: 'align-middle' },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center align-middle',
+                render: function(data, type, row) {
+                    let buttons = `<a href="<?= base_url('admin/campus/edit?id=') ?>${row.id}" class="btn btn-outline-primary btn-sm me-1">
+                                      <i class="fas fa-edit me-1"></i> Edit
+                                   </a>`;
+
+                    if (row.bill_id) {
+                        buttons += `<a href="#/campus_bill?id=${row.bill_id}" class="btn btn-primary btn-sm">
+                                       <i class="fas fa-file-invoice me-1"></i> Bill
+                                    </a>`;
+                    }
+
+                    return buttons;
+                }
+            }
+        ]
+    });
 });
 </script>
 

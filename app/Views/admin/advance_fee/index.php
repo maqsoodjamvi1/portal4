@@ -11,18 +11,18 @@ foreach ($rows as $r) {
 ?>
 
 <?= view('components/page_header', [
-    'title' => 'Update Advance Fee',
+    'title' => 'Advance Fee Balances',
     'icon' => 'fas fa-piggy-bank',
-    'subtitle' => 'Students with a non-zero advance balance. Edit amounts and save. Setting 0 removes the student from this list.',
+    'subtitle' => 'Review and update student advance balances. Setting an amount to 0 removes the student from this list.',
     'breadcrumbs' => [
         ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
-        ['label' => 'Update Advance Fee', 'active' => true],
+        ['label' => 'Advance Fee Balances', 'active' => true],
     ],
 ]) ?>
 
 <section class="content">
   <div class="container-fluid">
-    <div class="card sms-card card-primary card-outline">
+    <div class="card sms-card sms-index-card card-primary card-outline">
       <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
         <h3 class="card-title mb-0">
           <i class="fas fa-piggy-bank me-1"></i>
@@ -30,13 +30,14 @@ foreach ($rows as $r) {
           <span class="badge text-bg-info ms-2"><?= count($rows) ?> student(s)</span>
         </h3>
         <div class="card-tools d-flex align-items-center flex-wrap" style="gap:8px;">
-          <input type="search" id="advanceSearch" class="form-control form-control-sm" style="width:220px;" placeholder="Search name, reg no, class…" />
-          <button type="button" id="btnSaveAdvance" class="btn btn-success btn-sm">
-            <i class="fas fa-save me-1"></i> Save changes
-          </button>
+          <span class="sms-data-chip">
+            <i class="fas fa-wallet"></i>
+            Total Rs <?= number_format($grandTotal, 2) ?>
+          </span>
         </div>
       </div>
-      <div class="card-body p-0">
+
+      <div class="card-body">
         <?php if ($rows === []) : ?>
           <div class="p-4 text-center text-muted">
             <i class="fas fa-info-circle fa-2x mb-2"></i>
@@ -44,8 +45,33 @@ foreach ($rows as $r) {
             <p class="small mb-0">Use <a href="<?= base_url('admin/fee-chalan-pay') ?>">Pay Fee Chalan</a> to deposit advance fee.</p>
           </div>
         <?php else : ?>
+          <div class="sms-filter-bar">
+            <div class="row g-3 align-items-end">
+              <div class="col-lg-4 col-md-6">
+                <label for="advanceSearch">Search balances</label>
+                <input type="search" id="advanceSearch" class="form-control form-control-sm" placeholder="Search name, reg no, or class">
+              </div>
+              <div class="col-lg-8 col-md-6">
+                <div class="sms-filter-actions justify-content-md-end">
+                  <span class="sms-data-chip">
+                    <i class="fas fa-users"></i>
+                    <?= count($rows) ?> active balances
+                  </span>
+                  <button type="button" id="btnSaveAdvance" class="btn btn-success btn-sm">
+                    <i class="fas fa-save me-1"></i> Save changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sms-section-note mb-3">
+            <i class="fas fa-info-circle"></i>
+            Search the roster, adjust advance amounts directly in the table, and save once after reviewing the page total.
+          </div>
+
           <div class="table-responsive">
-            <table class="table table-sm table-striped table-hover mb-0" id="advanceFeeTable">
+            <table class="table table-sm table-striped table-hover mb-0 sms-table-compact" id="advanceFeeTable" data-sms-table-name="advance fee balances">
               <thead class="table-light">
                 <tr>
                   <th style="width:48px;">#</th>
@@ -77,7 +103,7 @@ foreach ($rows as $r) {
                     <td><?= $i + 1 ?></td>
                     <td><?= esc($row->student_name) ?></td>
                     <td><?= esc($row->reg_no ?? '') ?></td>
-                    <td><?= esc($classLabel ?: '—') ?></td>
+                    <td><?= esc($classLabel ?: '-') ?></td>
                     <td>
                       <input type="number"
                              class="form-control form-control-sm text-end advance-amount-input"
@@ -87,7 +113,7 @@ foreach ($rows as $r) {
                              value="<?= esc(number_format((float) $row->amount, 2, '.', '')) ?>"
                              min="0" step="0.01" />
                     </td>
-                    <td class="text-muted small"><?= esc($paidDisplay ?: '—') ?></td>
+                    <td class="text-muted small"><?= esc($paidDisplay ?: '-') ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>

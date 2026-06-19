@@ -33,9 +33,26 @@ class MessageTemplates extends BaseController
                                   ->setJSON(['success' => false, 'msg' => 'Invalid request']);
         }
 
-        $id = intval($this->request->getPost('id'));
+        $campusId = (int) session('member_campusid');
         $userId = session('member_userid');
         $date = date('Y-m-d H:i:s');
+
+        if ($campusId <= 0) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)
+                                  ->setJSON(['success' => false, 'msg' => 'Campus context is missing']);
+        }
+
+        $campusExists = $this->db->table('campus')
+                                 ->select('campus_id')
+                                 ->where('campus_id', $campusId)
+                                 ->limit(1)
+                                 ->get()
+                                 ->getRow();
+
+        if (!$campusExists) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)
+                                  ->setJSON(['success' => false, 'msg' => 'Campus record not found']);
+        }
 
         $data = [
             'welcome_sms'      => trim($this->request->getPost('welcome_sms')),
@@ -47,8 +64,13 @@ class MessageTemplates extends BaseController
         ];
 
         $this->db->transStart();
-        $this->db->table('campus')->where('campus_id', $id)->update($data);
+        $this->db->table('campus')->where('campus_id', $campusId)->update($data);
         $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)
+                                  ->setJSON(['success' => false, 'msg' => 'Unable to update message templates']);
+        }
 
         return $this->response->setJSON([
             'success' => true,

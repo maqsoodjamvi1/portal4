@@ -99,19 +99,24 @@ class StudentIdCard extends BaseController
         $logoUrl = $this->logoUrl((string) ($school->logo ?? ''));
         $fallbackAvatar = $this->defaultAvatarUrl();
 
+        $showDebug = ((string) $this->request->getPost('debug') === '1')
+            || ((string) $this->request->getGet('debug') === '1');
+
         $html = $this->stylesBlock();
-        $html .= '<div class="no-print mb-2 p-2" style="background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;font-size:12px;">
-            <strong>ID Card Debug</strong> | Campus: ' . (int) ($debug['campus_id'] ?? 0) .
-            ' | Session: ' . (int) ($debug['session_id'] ?? 0) .
-            ' | Selected class_id: ' . (int) ($debug['selected_class_id'] ?? 0) .
-            ' | Selected cls_sec_id: ' . (int) ($debug['selected_cls_sec_id'] ?? 0) .
-            ' | Resolved: ' . esc(implode(',', $debug['resolved_cls_sec_ids'] ?? [])) .
-            ' | SC any-session: ' . (int) ($debug['sc_any_session'] ?? 0) .
-            ' | SC this-session: ' . (int) ($debug['sc_this_session'] ?? 0) .
-            ' | Strict count: ' . (int) ($debug['strict_count'] ?? 0) .
-            ' | Fallback count: ' . (int) ($debug['fallback_count'] ?? 0) .
-            ' | Legacy count: ' . (int) ($debug['legacy_count'] ?? 0) .
-        '</div>';
+        if ($showDebug) {
+            $html .= '<div class="id-card-debug no-print">
+                <strong>ID Card Debug</strong> | Campus: ' . (int) ($debug['campus_id'] ?? 0) .
+                ' | Session: ' . (int) ($debug['session_id'] ?? 0) .
+                ' | Selected class_id: ' . (int) ($debug['selected_class_id'] ?? 0) .
+                ' | Selected cls_sec_id: ' . (int) ($debug['selected_cls_sec_id'] ?? 0) .
+                ' | Resolved: ' . esc(implode(',', $debug['resolved_cls_sec_ids'] ?? [])) .
+                ' | SC any-session: ' . (int) ($debug['sc_any_session'] ?? 0) .
+                ' | SC this-session: ' . (int) ($debug['sc_this_session'] ?? 0) .
+                ' | Strict count: ' . (int) ($debug['strict_count'] ?? 0) .
+                ' | Fallback count: ' . (int) ($debug['fallback_count'] ?? 0) .
+                ' | Legacy count: ' . (int) ($debug['legacy_count'] ?? 0) .
+            '</div>';
+        }
         $html .= '<div class="id-cards-grid">';
 
         foreach ($students as $student) {
@@ -580,37 +585,50 @@ class StudentIdCard extends BaseController
     private function stylesBlock(): string
     {
         return '<style>
+.id-card-debug{
+  margin-bottom:10px;
+  padding:8px 10px;
+  border:1px solid #fde68a;
+  border-radius:10px;
+  background:#fffbeb;
+  color:#8a5a00;
+  font-size:12px;
+}
 .id-cards-grid{
   display:grid;
-  grid-template-columns:repeat(2,85.6mm);
-  gap:6mm 6mm;
+  grid-template-columns:repeat(auto-fit,minmax(85.6mm,85.6mm));
+  gap:6mm;
   justify-content:center;
 }
 .id-card-pair{
   width:85.6mm;
   display:grid;
   grid-template-columns:1fr 1fr;
-  column-gap:1mm;
+  column-gap:1.4mm;
   break-inside:avoid;
   page-break-inside:avoid;
 }
 .id-side{
   width:42.8mm;
   height:54mm;
-  border:1px solid #1f2937;
-  border-radius:2mm;
+  border:1px solid #163454;
+  border-radius:2.2mm;
   overflow:hidden;
   background:#fff;
   position:relative;
+  box-shadow:0 2mm 3mm rgba(15,23,42,0.08);
+}
+.front-side{
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
 }
 .front-header{
-  height:10mm;
-  background:#0f4c81;
+  min-height:10mm;
+  background:linear-gradient(135deg,#163e68,#256f9f);
   color:#fff;
   display:flex;
   align-items:center;
   gap:2mm;
-  padding:1.2mm 1.4mm;
+  padding:1.4mm 1.6mm 1.2mm;
 }
 .front-logo{
   width:7mm;
@@ -619,10 +637,12 @@ class StudentIdCard extends BaseController
   background:#fff;
   overflow:hidden;
   flex-shrink:0;
+  padding:0.45mm;
+  box-shadow:0 0 0 0.35mm rgba(255,255,255,0.24);
 }
 .front-logo img{width:100%;height:100%;object-fit:cover;}
 .front-school{
-  font-size:2.35mm;
+  font-size:2.25mm;
   font-weight:700;
   line-height:1.15;
   overflow:hidden;
@@ -632,32 +652,57 @@ class StudentIdCard extends BaseController
 }
 .front-body{
   display:grid;
-  grid-template-columns:14mm 1fr;
-  gap:1.3mm;
-  padding:1.4mm;
+  grid-template-columns:14.4mm 1fr;
+  gap:1.5mm;
+  padding:1.6mm;
 }
 .photo-wrap{
-  width:14mm;
-  height:18mm;
-  border:1px solid #e5e7eb;
-  border-radius:1mm;
+  width:14.4mm;
+  height:18.5mm;
+  border:1px solid #d7e1ec;
+  border-radius:1.4mm;
   overflow:hidden;
   background:#f8fafc;
+  box-shadow:inset 0 0 0 0.4mm rgba(255,255,255,0.55);
 }
 .photo-wrap img{width:100%;height:100%;object-fit:cover;}
-.front-details{font-size:2.15mm;line-height:1.2;}
-.row-item{margin-bottom:1.1mm;overflow:hidden;}
-.row-item .label{display:block;font-weight:700;color:#334155;}
+.front-details{
+  font-size:2.15mm;
+  line-height:1.2;
+  display:flex;
+  flex-direction:column;
+  gap:0.9mm;
+}
+.row-item{
+  padding-bottom:0.8mm;
+  border-bottom:0.2mm dashed #d9e3ef;
+  overflow:hidden;
+}
+.row-item:last-child{
+  padding-bottom:0;
+  border-bottom:0;
+}
+.row-item .label{
+  display:block;
+  font-weight:700;
+  color:#5b6f84;
+  letter-spacing:0.02em;
+  text-transform:uppercase;
+}
 .row-item .value{
   display:-webkit-box;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
   color:#111827;
+  font-weight:700;
+}
+.back-side{
+  background:linear-gradient(180deg,#ffffff 0%,#f5f8fc 100%);
 }
 .back-header{
   height:8mm;
-  background:#0f4c81;
+  background:linear-gradient(135deg,#184974,#215b90);
   color:#fff;
   font-weight:700;
   display:flex;
@@ -665,16 +710,22 @@ class StudentIdCard extends BaseController
   justify-content:center;
   text-align:center;
   padding:0 1.2mm;
-  font-size:2.35mm;
+  font-size:2.2mm;
+  letter-spacing:0.04em;
 }
-.back-body{padding:2mm 1.2mm;text-align:center;}
+.back-body{
+  padding:2mm 1.6mm 4.4mm;
+  text-align:center;
+}
 .qr-box{
-  width:18mm;
-  height:18mm;
-  border:1px solid #d1d5db;
-  border-radius:1mm;
-  margin:0 auto 1.7mm;
-  padding:0.6mm;
+  width:18.5mm;
+  height:18.5mm;
+  border:1px solid #d5dee8;
+  border-radius:1.6mm;
+  margin:0 auto 1.8mm;
+  padding:0.8mm;
+  background:#fff;
+  box-shadow:0 1.1mm 2mm rgba(15,23,42,0.06);
 }
 .qr-box img{width:100%;height:100%;object-fit:contain;}
 .qr-box .qr-svg, .qr-box .qr-svg svg{
@@ -692,22 +743,38 @@ class StudentIdCard extends BaseController
   font-size:2.3mm;
   font-weight:600;
 }
-.back-school{font-size:2.2mm;font-weight:700;margin-bottom:0.8mm;}
-.back-address{font-size:1.9mm;line-height:1.25;color:#374151;min-height:8mm;}
+.back-school{
+  font-size:2.2mm;
+  font-weight:800;
+  margin-bottom:0.7mm;
+  color:#163454;
+}
+.back-address{
+  font-size:1.9mm;
+  line-height:1.3;
+  color:#46576a;
+  min-height:8mm;
+}
 .back-footer{
   position:absolute;
   left:0;right:0;bottom:0;
-  border-top:1px solid #e5e7eb;
-  background:#f8fafc;
+  border-top:1px solid #e1e8f0;
+  background:#eef4f9;
   text-align:center;
-  font-size:1.9mm;
-  padding:1mm;
+  font-size:1.85mm;
+  font-weight:700;
+  color:#35536c;
+  padding:1mm 0.8mm;
 }
 @media print{
+  .id-card-debug{display:none !important;}
   .id-cards-grid{
     grid-template-columns:repeat(2,85.6mm);
     gap:5mm 6mm;
     justify-content:start;
+  }
+  .id-side{
+    box-shadow:none;
   }
 }
 </style>';

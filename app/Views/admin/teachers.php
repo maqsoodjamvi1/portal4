@@ -2,152 +2,137 @@
 <?= $this->extend('layouts/admin_template') ?>
 <?= $this->section('content') ?>
 
-<link rel="stylesheet" href="<?= base_url('resource/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') ?>" />
+<?php ob_start(); ?>
+<a href="<?= esc(base_url('admin/teachers/add'), 'attr') ?>" class="btn btn-primary btn-sm">
+    <i class="fas fa-user-plus me-1"></i> Add Teacher
+</a>
+<?php $headerActions = trim(ob_get_clean()); ?>
 
 <?= view('components/page_header', [
     'title' => 'Teachers',
+    'subtitle' => 'Manage teacher profiles, contact details, and classroom readiness from a dedicated faculty list.',
     'icon' => 'fas fa-chalkboard-teacher',
+    'actionsHtml' => $headerActions,
     'breadcrumbs' => [
         ['label' => 'Dashboard', 'url' => base_url('admin/dashboard')],
         ['label' => 'Teachers', 'active' => true],
     ],
 ]) ?>
-    <!-- Main content -->
-    <section class="content">
-      <div class="row">
-        <div class="col-12">
-          <div class="nav-tabs-custom">
-			<ul class="nav nav-tabs">
-					<li class="active"><a href="<?= base_url('admin/teachers') ?>">Teachers</a></li>
-					<li><a href="<?= base_url('admin/teachers/add') ?>">Add Teachers</a></li>
 
-
-				</ul>
-				<div class="tab-content table-responsive no-padding"><div class="col-12">
-              <table class="table table-striped table-bordered table-hover" id="teachers-datatable" width="100%">
-					<thead>
-						<tr>
-							<th nowrap>#</th>
-							<th nowrap>First Name</th>
-							<th nowrap>Last Name</th>
-							<th nowrap>Status</th>
-							<th nowrap>Mobile No</th>
-							<th nowrap>Operation</th>
-						</tr>
-					</thead>
-					<tbody>
-
-					</tbody>
-				</table></div></div>
+<section class="content">
+    <div class="card sms-card sms-index-card card-primary card-outline">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-user-graduate me-2"></i>
+                Faculty Directory
+            </h3>
+            <div class="card-tools">
+                <span class="badge bg-primary">Teaching staff</span>
             </div>
-            <!-- /.box-body -->
-          </div>
-          <!-- /.box -->
         </div>
-      </div>
+        <div class="card-body">
+            <div class="sms-section-note mb-3">
+                <i class="fas fa-info-circle"></i>
+                Keep teacher records active, easy to update, and ready for timetable or academic assignment work.
+            </div>
 
+            <table class="table table-bordered table-hover" id="teachers-datatable" width="100%" data-sms-table-name="teachers">
+                <thead>
+                    <tr>
+                        <th width="60">#</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th width="160">Status</th>
+                        <th>Mobile No</th>
+                        <th width="180">Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-
-
-    </section>
-    <!-- /.content -->
- <script src="<?php echo base_url();?>resource/bootstrap-switch/js/bootstrap-switch.min.js"></script>
 <script type="text/javascript">
-$(function(){
+$(function () {
+    $('#teachers-datatable').DataTable({
+        deferRender: true,
+        responsive: true,
+        autoWidth: false,
+        searchDelay: 350,
+        order: [[1, 'asc']],
+        ajax: {
+            url: '<?= base_url('admin/teachers/data'); ?>',
+            type: 'post'
+        },
+        columns: [
+            {
+                data: 'id',
+                className: 'text-center align-middle',
+                render: function(data, type, row, meta) {
+                    return meta.settings._iDisplayStart + meta.row + 1;
+                }
+            },
+            { data: 'first_name', className: 'align-middle' },
+            { data: 'last_name', className: 'align-middle' },
+            {
+                data: 'status',
+                className: 'text-center align-middle',
+                render: function(data, type, row) {
+                    var checked = data == '1' ? 'checked="checked"' : '';
+                    return '<input type="checkbox" ' + checked + ' class="switch-small switchchk" data-on-text="Active" data-off-text="Inactive" data-table="teachers" data-field="status" data-size="mini" data-pk="' + row.id + '" />';
+                }
+            },
+            { data: 'mobile_no', className: 'align-middle' },
+            {
+                data: 'id',
+                sortable: false,
+                searchable: false,
+                className: 'text-center align-middle',
+                render: function(data, type, row) {
+                    var html = '';
+                    html += '<div class="btn-group">';
+                    html += '<a href="<?= base_url('admin/teachers/edit?id=') ?>' + data + '" title="Edit teacher" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>';
 
-	var table = $('#teachers-datatable').DataTable({
-		deferRender: true,
-		select:{
-			style:'single',
-			blurable: true
-		},
-		ajax:{
-			url:'<?php echo base_url('admin/teachers/data'); ?>',
-			type:'post',
-			data:function(d){
-				//d.csrf_test_name = $.cookie(CSRF_COOKIE_NAME);
-			}
-		},
-		columns:[
-			{
-				data:'id',
-				className:'select-checkbox',
-				render:function(data, type, row){
-					return data;
-				}
-			},
-			{data:'first_name'},
-			{data:'last_name'},
-			{
-				data:'status',
-				render:function(data, type, row){
+                    if (row.issys !== '1') {
+                        html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?= base_url('admin/teachers/delete&id=') ?>' + data + '\',\'teachers-datatable\');" title="Delete teacher" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Delete</a>';
+                    }
 
-					var status_1 = '';
-					if(data == '1') status_1 = 'checked="checked"';
-					return '<input type="checkbox" ' + status_1 + ' class="switch-small switchchk"  data-on-text="Active" data-off-text="Diactive" data-table="teachers" data-field="status" data-size="mini" data-pk="' + row.id + '" />';
+                    html += '</div>';
+                    return html;
+                }
+            }
+        ],
+        fnDrawCallback: function() {
+            $(".switchchk").bootstrapSwitch({
+                onSwitchChange: function(e, state) {
+                    var fieldval = state ? 1 : 0;
+                    var $element = $(e.currentTarget);
+                    var tablename = $element.attr('data-table');
+                    var fieldname = $element.attr('data-field');
+                    var rowid = $element.attr('data-pk');
 
-
-				}
-			},
-			
- 	    {data:'mobile_no'},
-			{
-				data:'id',
-				sortable:false,
-				render:function(data, type, row){
-					var html = '';
-					html += '<div class="btn-group">';
-						  html += '<a href="<?php echo '#/teachers?m=edit&id=';?>' + data + '" title="edit" class="btn btn-secondary btn-sm"><i class="fa fa-edit icon-pencil"></i></a>';
-						
-						  if(row.issys == '1'){
-
-						  }else{
-							  html += '<a href="javascript:;" onclick="del_confirm(\'notice\', \'Are you sure delete this record\', \'<?php echo base_url('admin/teachers/delete&id='); ?>' + data + '\',\'teachers-datatable\');" title=" delete" class="btn btn-secondary btn-sm"><i class="fa fa-trash icon-trash"></i></a>';
-						  }
-
-					html += '</div>';
-					return html;
-				}
-			}
-		],
-		fnDrawCallback:function(oSettings){
-			$(".switchchk").bootstrapSwitch({
-				onSwitchChange:function(e, state){
-				var fieldval = state;
-				var $element = $(e.currentTarget);
-				var tablename = $element.attr('data-table');
-				var fieldname = $element.attr('data-field');
-				var rowid = $element.attr('data-pk');
-				if(fieldval){
-					fieldval = 1;
-				}else{
-					fieldval = 0;
-				}
-				$.post(
-				   "<?php echo base_url('admin/ajax/setboolattributeteachers'); ?>",
-				   {
-					   act:'upsort',
-					   tbname:tablename,
-					   tbfield:fieldname,
-					   tbfieldvalue:fieldval,
-					   id:rowid//,
-					   // csrf_test_name:$.cookie(CSRF_COOKIE_NAME)
-
-				   },
-				   function(data){
-					//alert(data);
-					   if(data=='success'){
-						   toastr.success('change success');
-
-					   }else{
-						   toastr.error('change error');
-					   }
-				   }
-				  );
-				}
-			});
-		}
-	});
+                    $.post(
+                        "<?= base_url('admin/ajax/setboolattributeteachers'); ?>",
+                        {
+                            act: 'upsort',
+                            tbname: tablename,
+                            tbfield: fieldname,
+                            tbfieldvalue: fieldval,
+                            id: rowid
+                        },
+                        function(data) {
+                            if (data == 'success') {
+                                toastr.success('Status updated');
+                            } else {
+                                toastr.error('Unable to update teacher status');
+                            }
+                        }
+                    );
+                }
+            });
+        }
+    });
 });
 </script>
 

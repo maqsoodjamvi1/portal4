@@ -2515,16 +2515,27 @@ private function getAllLevelNames()
         foreach ($users as $user) {
             $roleNames = $userRolesMap[(int) $user->id] ?? [];
             $roleDisplay = !empty($roleNames) ? implode(', ', $roleNames) : 'No Role';
+            $fullName = trim($user->first_name . ' ' . $user->last_name);
+            if ($fullName === '') {
+                $fullName = trim((string) ($user->username ?? '')) ?: 'Employee';
+            }
+
+            $mobileAlt = trim((string) ($user->mobile_no2 ?? ''));
+            if ($mobileAlt === '') {
+                $mobileAlt = trim((string) ($user->emergency_contact_no ?? ''));
+            }
 
             $response['data'][] = [
                 'id'          => $user->id,
                 'username'    => $user->username,
-                'full_name'   => trim($user->first_name . ' ' . $user->last_name),
+                'full_name'   => $fullName,
                 'email'       => $user->email,
                 'role'        => $roleDisplay,
                 'mobile_no'   => $user->mobile_no,
+                'mobile_alt'  => $mobileAlt,
                 'designation' => $user->designation ?? '',
                 'status'      => $user->status,
+                'photo_url'   => !empty($user->photo) ? $this->getEmployeePhoto($user->photo) : '',
             ];
         }
 
